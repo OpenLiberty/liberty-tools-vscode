@@ -1,0 +1,118 @@
+{
+	"name": "liberty-dev-vscode-ext",
+	"displayName": "Liberty Dev Extension",
+	"description": "VS Code extension for Liberty Dev mode",
+	"version": "0.0.1",
+	"publisher": "IBM",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/dev-tools-for-enterprise-java/liberty-dev-vscode-ext"
+	},
+	"preview": true,
+	"license": "EPL-2.0",
+	"engines": {
+		"vscode": "^1.36.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"icon": "images/ol_logo.png",
+	"activationEvents": [
+		"onCommand:liberty.dev.start",
+		"onCommand:liberty.dev.stop",
+		"onCommand:liberty.dev.custom",
+		"onCommand:liberty.dev.run.tests",
+		"onCommand:liberty.dev.open.failsafe.report",
+		"onCommand:liberty.dev.open.surefire.report",
+		"onView:liberty-dev"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"views": {
+			"explorer": [
+				{
+					"id": "liberty-dev",
+					"name": "Liberty Dev Dashboard"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "liberty.dev.start",
+				"title": "Start"
+			},
+			{
+				"command": "liberty.dev.stop",
+				"title": "Stop"
+			},
+			{
+				"command": "liberty.dev.custom",
+				"title": "Start..."
+			},
+			{
+				"command": "liberty.dev.run.tests",
+				"title": "Run tests"
+			},
+			{
+				"command": "liberty.dev.open.failsafe.report",
+				"title": "View integration test report"
+			},
+			{
+				"command": "liberty.dev.open.surefire.report",
+				"title": "View unit test report"
+			}
+		],
+		"menus": {
+			"view/item/context": [
+				{
+					"command": "liberty.dev.start",
+					"when": "viewItem == liberty-dev-project"
+				},
+				{
+					"command": "liberty.dev.stop",
+					"when": "viewItem == liberty-dev-project"
+				},
+				{
+					"command": "liberty.dev.custom",
+					"when": "viewItem == liberty-dev-project"
+				},
+				{
+					"command": "liberty.dev.run.tests",
+					"when": "viewItem == liberty-dev-project"
+				},
+				{
+					"command": "liberty.dev.open.failsafe.report",
+					"when": "viewItem == liberty-dev-project"
+				},
+				{
+					"command": "liberty.dev.open.surefire.report",
+					"when": "viewItem == liberty-dev-project"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile",
+		"test": "node ./out/test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/glob": "^7.1.1",
+		"@types/mocha": "^5.2.6",
+		"@types/node": "^10.12.21",
+		"@types/vscode": "^1.36.0",
+		"glob": "^7.1.4",
+		"mocha": "^6.1.4",
+		"typescript": "^3.3.1",
+		"tslint": "^5.12.1",
+		"vscode-test": "^1.0.0-next.0"
+	},
+	"dependencies": {
+		"@types/fs-extra": "^8.0.0",
+		"@types/xml2js": "^0.4.4",
+		"fs-extra": "^8.1.0",
+		"xml2js": "^0.4.19"
+	}
+}
