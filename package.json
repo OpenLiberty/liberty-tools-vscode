@@ -2,11 +2,11 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Liberty Dev Extension",
 	"description": "VS Code extension for Liberty Dev mode",
-	"version": "0.0.1",
-	"publisher": "IBM",
+	"version": "0.1",
+	"publisher": "Open Liberty",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/dev-tools-for-enterprise-java/liberty-dev-vscode-ext"
+		"url": "https://github.com/OpenLiberty/liberty-dev-vscode-ext"
 	},
 	"preview": true,
 	"license": "EPL-2.0",

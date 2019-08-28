@@ -10,14 +10,14 @@ A VS Code extension for liberty:dev mode. The extension will automatically run y
 
 ## Installing the Extension
 
-- download the latest `liberty-dev-vscode-ext-0.0.x.vsix` file from [releases](https://github.com/OpenLiberty/liberty-dev-vscode-ext/releases)
-- from VS Code select `Install from vsix...` and select the `liberty-dev-vscode-ext-0.0.x.vsix` file
+- download the latest `liberty-dev-vscode-ext-0.x.vsix` file from [releases](https://github.com/OpenLiberty/liberty-dev-vscode-ext/releases)
+- from VS Code select `Install from vsix...` and select the `liberty-dev-vscode-ext-0.x.vsix` file
 
 ### Generate and install the .vsix file
 - `git clone git@github.com:OpenLiberty/liberty-dev-vscode-ext.git`
 - navigate to the cloned `liberty-dev-vscode-ext` directory
-- `vsce package` to generate the `liberty-dev-vscode-ext-0.0.x.vsix` file
-- from VS Code select `Install from vsix...` and select the `liberty-dev-vscode-ext-0.0.x.vsix` file
+- `vsce package` to generate the `liberty-dev-vscode-ext-0.x.vsix` file
+- from VS Code select `Install from vsix...` and select the `liberty-dev-vscode-ext-0.x.vsix` file
 
 ### Start the extension in debug mode
 - `git clone git@github.com:OpenLiberty/liberty-dev-vscode-ext.git`
