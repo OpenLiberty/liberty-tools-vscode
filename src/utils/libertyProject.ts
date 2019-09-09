@@ -31,14 +31,14 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	private async getProjectFromPom(pomPaths: string[]): Promise<LibertyProject[]> {
 		var projects: LibertyProject[] = [];
 		var validPoms: String[] = [];
-		var modules: String[] = [];
+		var childrenMap: Map<string, String[]> = new Map();
 
 		// check for parentPoms
 		for (var pomPath of pomPaths) {
 			const xmlString: string = await fse.readFile(pomPath, "utf8");
 			var validParent = checkParentPom(xmlString);
 			if (validParent) {
-				modules = modules.concat(findModules(xmlString));
+				childrenMap = new Map([...Array.from(childrenMap.entries()), ...Array.from(findModules(xmlString).entries())]);
 				var project = createProject(xmlString, pomPath);
 				projects.push(project);
 				validPoms.push(pomPath);
@@ -48,7 +48,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		for (var pomPath of pomPaths) {
 			if (!validPoms.includes(pomPath)) {
 				const xmlString: string = await fse.readFile(pomPath, "utf8");
-				var validPom = checkPom(xmlString, modules);
+				var validPom = checkPom(xmlString, childrenMap);
 				if (validPom) {
 					var project = createProject(xmlString, pomPath);
 					projects.push(project);
@@ -127,12 +127,19 @@ export function createProject(xmlString: String, pomPath: string) {
 	});
 	return project;
 }
+
+// find modules listed in a parent pom
 export function findModules(xmlString: String) {
 	var parseString = require('xml2js').parseString;
+	var childrenMap: Map<string, String[]> = new Map();
 	var children: String[] = [];
 	parseString(xmlString, function (err: any, result: any) {
+		var artifactId = "";
+		if (result.project.artifactId[0] !== undefined) {
+			artifactId = result.project.artifactId[0];
+		}
 		var modules = result.project.modules;
-		if (modules !== undefined) {
+		if (modules !== undefined && artifactId !== undefined) {
 			for (var i = 0; i < modules.length; i++) {
 				var module = modules[i].module;
 				if (module !== undefined) {
@@ -143,16 +150,23 @@ export function findModules(xmlString: String) {
 			}
 		}
 
+		if (children.length !== 0) {
+			childrenMap.set(artifactId, children);
+		}
+
 		if (err) {
 			console.error("Error parsing the pom " + err);
 		}
 	});
-	return children;
+	return childrenMap;
 }
+
+// look for a valid parent pom.xml
 export function checkParentPom(xmlString: String) {
 	var parseString = require('xml2js').parseString;
 	var parentPom = false;
 	parseString(xmlString, function (err: any, result: any) {
+
 		// check for open liberty or wlp boost runtime	
 		if (result.project.dependencies !== undefined) {
 			for (var ii = 0; ii < result.project.dependencies.length; ii++) {
@@ -194,14 +208,26 @@ export function checkParentPom(xmlString: String) {
 	return parentPom;
 }
 
-export function checkPom(xmlString: String, modules: String[]) {
+export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) {
 	var parseString = require('xml2js').parseString;
 	var validPom = false;
 	parseString(xmlString, function (err: any, result: any) {
-		if (result.project.artifactId[0] !== undefined && modules.includes(result.project.artifactId[0])) {
-			validPom = true;
-			return;
+
+		// check if the artifactId matches one of the modules found in a parent pom
+		if (result.project.artifactId[0] !== undefined && result.project.parent[0].artifactId !== undefined) {
+			if (childrenMap.has(result.project.parent[0].artifactId[0])) {
+				var modules = childrenMap.get(result.project.parent[0].artifactId[0]);
+				if (modules !== undefined) {
+					for (let module of modules) {
+						if (module === result.project.artifactId[0]){
+							validPom = true;
+							return;
+						}
+					}
+				}
+			}
 		}
+
 		// check for open liberty or wlp boost runtime	
 		if (result.project.dependencies !== undefined) {
 			for (var ii = 0; ii < result.project.dependencies.length; ii++) {
@@ -227,7 +253,7 @@ export function checkPom(xmlString: String, modules: String[]) {
 							console.debug(plugin[k]);
 							if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] == "io.openliberty.tools") {
 								console.debug("Found liberty-maven-plugin in the pom");
-								validPom = true; // no version specified, latest version downloaded from maven central
+								validPom = true;
 								return;
 							}
 						}
