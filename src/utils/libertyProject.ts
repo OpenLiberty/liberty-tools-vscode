@@ -37,9 +37,9 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		for (var pomPath of pomPaths) {
 			const xmlString: string = await fse.readFile(pomPath, "utf8");
 			var validParent = checkParentPom(xmlString);
-			if (validParent[0]) {
+			if (validParent) {
 				childrenMap = new Map([...Array.from(childrenMap.entries()), ...Array.from(findModules(xmlString).entries())]);
-				var project = createProject(xmlString, pomPath, validParent[1]);
+				var project = createProject(xmlString, pomPath);
 				projects.push(project);
 				validPoms.push(pomPath);
 			}
@@ -49,8 +49,8 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			if (!validPoms.includes(pomPath)) {
 				const xmlString: string = await fse.readFile(pomPath, "utf8");
 				var validPom = checkPom(xmlString, childrenMap);
-				if (validPom[0]) {
-					var project = createProject(xmlString, pomPath, validPom[1]);
+				if (validPom) {
+					var project = createProject(xmlString, pomPath);
 					projects.push(project);
 				}
 			}
@@ -68,7 +68,6 @@ export class LibertyProject extends vscode.TreeItem {
 		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
 		public readonly pomPath: string,
 		public state: string,
-		public boost: boolean,
 		public terminal?: vscode.Terminal,
 		public readonly command?: vscode.Command, // ? indicates optional param
 	) {
@@ -97,10 +96,6 @@ export class LibertyProject extends vscode.TreeItem {
 		return `${this.pomPath}`;
 	}
 
-	public getBoost() : boolean {
-		return this.boost;
-	}
-
 	public getTerminal(): vscode.Terminal | undefined {
 		return this.terminal;
 	}
@@ -119,13 +114,13 @@ export class LibertyProject extends vscode.TreeItem {
 	contextValue = 'liberty-dev-project';
 }
 
-export function createProject(xmlString: String, pomPath: string, boost: boolean) {
+export function createProject(xmlString: String, pomPath: string) {
 	var label = "";
 	var parseString = require('xml2js').parseString;
 	parseString(xmlString, function (err: any, result: any) {
 		label = result.project.artifactId[0];
 	});
-	var project: LibertyProject = new LibertyProject(label, vscode.TreeItemCollapsibleState.None, pomPath, 'start', boost, undefined, {
+	var project: LibertyProject = new LibertyProject(label, vscode.TreeItemCollapsibleState.None, pomPath, 'start', undefined, {
 		command: 'extension.open.project',
 		title: '',
 		arguments: [pomPath]
@@ -170,7 +165,6 @@ export function findModules(xmlString: String) {
 export function checkParentPom(xmlString: String) {
 	var parseString = require('xml2js').parseString;
 	var parentPom = false;
-	var boost = false;
 	parseString(xmlString, function (err: any, result: any) {
 
 		// check for liberty maven plugin in plugin management
@@ -191,7 +185,6 @@ export function checkParentPom(xmlString: String) {
 									if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "boost") {
 										console.debug("Found boost-maven-plugin in the pom.xml");
 										parentPom = true;
-										boost = true;
 									}
 								}
 							}
@@ -205,13 +198,12 @@ export function checkParentPom(xmlString: String) {
 			console.error("Error parsing the pom " + err);
 		}
 	});
-	return [parentPom, boost];
+	return parentPom;
 }
 
 export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) {
 	var parseString = require('xml2js').parseString;
 	var validPom = false;
-	var boost = false;
 	parseString(xmlString, function (err: any, result: any) {
 
 		// check if the artifactId matches one of the modules found in a parent pom
@@ -246,7 +238,6 @@ export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) 
 								if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "boost") {
 									console.debug("Found boost-maven-plugin in the pom.xml");
 									validPom = true;
-									boost = true;
 									return;
 								}
 							}
@@ -261,5 +252,5 @@ export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) 
 			return;
 		}
 	});
-	return [validPom, boost];
+	return validPom;
 }
