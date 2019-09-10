@@ -1,5 +1,5 @@
 # Liberty Dev Mode for VS Code
-A VS Code extension for liberty:dev mode. The extension will automatically run your Liberty Maven project in dev mode if it detects the `io.openliberty.tools:liberty-maven-plugin` or `boost.runtimes:openliberty`/`boost.runtimes:wlp` in the `pom.xml`. Through the Liberty Dev Dashboard explorer on the side bar, you can view all available Liberty dev projects in your workspace
+A VS Code extension for Liberty dev mode. The extension will automatically run your Liberty Maven project in dev mode if it detects the `io.openliberty.tools:liberty-maven-plugin` or `boost:boost-maven-plugin` in the `pom.xml`. Through the Liberty Dev Dashboard explorer on the side bar, you can view all available Liberty dev projects in your workspace.
 
 ## Quick Start
 - Install the extension
@@ -7,7 +7,7 @@ A VS Code extension for liberty:dev mode. The extension will automatically run y
 - Right-click a project in the Liberty Dev Dashboard to view the available commands
 
 ## Features
-- View supported `liberty-maven-plugin` or `boost.runtime:openliberty`/`boost.runtimes:wlp` projects in the workspace (must be of version `3.0.M1` or higher)
+- View supported `liberty-maven-plugin` or `boost-maven-plugin` projects in the workspace (must be of version `3.0.M1` or higher)
 - Start/Stop dev mode
 - Start dev mode with custom parameters
 - Run tests
