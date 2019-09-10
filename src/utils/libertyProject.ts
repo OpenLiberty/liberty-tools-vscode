@@ -167,33 +167,25 @@ export function checkParentPom(xmlString: String) {
 	var parentPom = false;
 	parseString(xmlString, function (err: any, result: any) {
 
-		// check for open liberty or wlp boost runtime	
-		if (result.project.dependencies !== undefined) {
-			for (var ii = 0; ii < result.project.dependencies.length; ii++) {
-				for (var jj = 0; jj < result.project.dependencies[ii].dependency.length; jj++) {
-					var dependency = result.project.dependencies[ii].dependency[jj];
-					if (dependency.groupId[0] === "boost.runtimes" && (dependency.artifactId[0] === "openliberty" || dependency.artifactId[0] === "wlp")) {
-						console.debug("Found openliberty or wlp boost runtime in the pom");
-						parentPom = true;
-						return;
-					}
-				}
-			}
-		}
-
 		// check for liberty maven plugin in plugin management
-		for (var i = 0; i < result.project.build.length; i++) {
-			var pluginManagement = result.project.build[i].pluginManagement;
-			if (pluginManagement !== undefined) {
-				var plugins = pluginManagement[i].plugins;
-				if (plugins !== undefined) {
-					for (var j = 0; j < plugins.length; j++) {
-						var plugin = plugins[j].plugin;
-						if (plugin !== undefined) {
-							for (var k = 0; k < plugin.length; k++) {
-								if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] == "io.openliberty.tools") {
-									console.debug("Found liberty-maven-plugin in the pom plugin management");
-									parentPom = true;
+		if (result.project.build !== undefined) {
+			for (var i = 0; i < result.project.build.length; i++) {
+				var pluginManagement = result.project.build[i].pluginManagement;
+				if (pluginManagement !== undefined) {
+					var plugins = pluginManagement[i].plugins;
+					if (plugins !== undefined) {
+						for (var j = 0; j < plugins.length; j++) {
+							var plugin = plugins[j].plugin;
+							if (plugin !== undefined) {
+								for (var k = 0; k < plugin.length; k++) {
+									if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] == "io.openliberty.tools") {
+										console.debug("Found liberty-maven-plugin in the pom.xml plugin management");
+										parentPom = true;
+									}
+									if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "boost") {
+										console.debug("Found boost-maven-plugin in the pom.xml");
+										parentPom = true;
+									}
 								}
 							}
 						}
@@ -201,6 +193,7 @@ export function checkParentPom(xmlString: String) {
 				}
 			}
 		}
+
 		if (err) {
 			console.error("Error parsing the pom " + err);
 		}
@@ -214,12 +207,12 @@ export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) 
 	parseString(xmlString, function (err: any, result: any) {
 
 		// check if the artifactId matches one of the modules found in a parent pom
-		if (result.project.artifactId[0] !== undefined && result.project.parent[0].artifactId !== undefined) {
+		if (result.project.artifactId[0] !== undefined && result.project.parent !== undefined && result.project.parent[0].artifactId !== undefined) {
 			if (childrenMap.has(result.project.parent[0].artifactId[0])) {
 				var modules = childrenMap.get(result.project.parent[0].artifactId[0]);
 				if (modules !== undefined) {
 					for (let module of modules) {
-						if (module === result.project.artifactId[0]){
+						if (module === result.project.artifactId[0]) {
 							validPom = true;
 							return;
 						}
@@ -228,33 +221,25 @@ export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) 
 			}
 		}
 
-		// check for open liberty or wlp boost runtime	
-		if (result.project.dependencies !== undefined) {
-			for (var ii = 0; ii < result.project.dependencies.length; ii++) {
-				for (var jj = 0; jj < result.project.dependencies[ii].dependency.length; jj++) {
-					var dependency = result.project.dependencies[ii].dependency[jj];
-					if (dependency.groupId[0] === "boost.runtimes" && (dependency.artifactId[0] === "openliberty" || dependency.artifactId[0] === "wlp")) {
-						console.debug("Found openliberty or wlp boost runtime in the pom");
-						validPom = true;
-						return;
-					}
-				}
-			}
-		}
-
 		// check for liberty maven plugin
-		for (var i = 0; i < result.project.build.length; i++) {
-			var plugins = result.project.build[i].plugins;
-			if (plugins !== undefined) {
-				for (var j = 0; j < plugins.length; j++) {
-					var plugin = result.project.build[i].plugins[j].plugin;
-					if (plugin !== undefined) {
-						for (var k = 0; k < plugin.length; k++) {
-							console.debug(plugin[k]);
-							if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] == "io.openliberty.tools") {
-								console.debug("Found liberty-maven-plugin in the pom");
-								validPom = true;
-								return;
+		if (result.project.build !== undefined) {
+			for (var i = 0; i < result.project.build.length; i++) {
+				var plugins = result.project.build[i].plugins;
+				if (plugins !== undefined) {
+					for (var j = 0; j < plugins.length; j++) {
+						var plugin = result.project.build[i].plugins[j].plugin;
+						if (plugin !== undefined) {
+							for (var k = 0; k < plugin.length; k++) {
+								if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] === "io.openliberty.tools") {
+									console.debug("Found liberty-maven-plugin in the pom.xml");
+									validPom = true;
+									return;
+								}
+								if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "boost") {
+									console.debug("Found boost-maven-plugin in the pom.xml");
+									validPom = true;
+									return;
+								}
 							}
 						}
 					}
