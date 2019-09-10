@@ -22,7 +22,13 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         if (terminal !== undefined) {
             terminal.show();
             libProject.setTerminal(terminal);
-            terminal.sendText('mvn io.openliberty.tools:liberty-maven-plugin:dev -f "' + libProject.getPomPath() + '"'); // start dev mode on current project
+            var startCommand = "";
+            if (libProject.getBoost()) {
+                startCommand = 'mvn io.openliberty.tools:liberty-maven-plugin:RELEASE:dev -f "'
+            } else {
+                startCommand = 'mvn liberty:dev -f "'
+            }
+            terminal.sendText(startCommand + libProject.getPomPath() + '"'); // start dev mode on current project
         }
     } else {
         console.error("Cannot start liberty:dev on an undefined project");
@@ -72,7 +78,13 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
                     ignoreFocusOut: true
                 }
             ));
-            terminal.sendText('mvn io.openliberty.tools:liberty-maven-plugin:dev ' + customCommand + ' -f "' + libProject.getPomPath() + '"');
+            var startCommand = "";
+            if (libProject.getBoost()) {
+                startCommand = 'mvn io.openliberty.tools:liberty-maven-plugin:RELEASE:dev '
+            } else {
+                startCommand = 'mvn liberty:dev '
+            }
+            terminal.sendText(startCommand + customCommand + ' -f "' + libProject.getPomPath() + '"');
         }
     } else {
         console.error("Cannot custom start liberty:dev on an undefined project");
