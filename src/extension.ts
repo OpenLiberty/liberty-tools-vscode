@@ -11,7 +11,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	if (workspaceFolders !== undefined) {
 		var allPomPaths: string[] = [];
 		for (let folder of workspaceFolders) {
-			var pomPaths: string[] = util.getAllPomPaths(folder);
+			var pomPaths: string[] = await util.getAllPomPaths(folder);
 			allPomPaths = allPomPaths.concat(pomPaths);
 		}
 

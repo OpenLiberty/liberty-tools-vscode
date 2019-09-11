@@ -7,7 +7,7 @@ import { getReport } from './Util';
 
 // opens pom associated with LibertyProject and starts dev mode
 export async function openProject(pomPath: string): Promise<void> {
-    console.log("Opening pom.xml");
+    console.log("Opening " + pomPath);
     vscode.commands.executeCommand('vscode.open', vscode.Uri.file(pomPath));
 }
 
@@ -22,7 +22,7 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         if (terminal !== undefined) {
             terminal.show();
             libProject.setTerminal(terminal);
-            terminal.sendText('mvn liberty:dev -f "' + libProject.getPomPath() + '"'); // start dev mode on current project
+            terminal.sendText('mvn io.openliberty.tools:liberty-maven-plugin:dev -f "' + libProject.getPomPath() + '"'); // start dev mode on current project
         }
     } else {
         console.error("Cannot start liberty:dev on an undefined project");
@@ -72,7 +72,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
                     ignoreFocusOut: true
                 }
             ));
-            terminal.sendText('mvn liberty:dev ' + customCommand + ' -f "' + libProject.getPomPath() + '"');
+            terminal.sendText('mvn io.openliberty.tools:liberty-maven-plugin:dev ' + customCommand + ' -f "' + libProject.getPomPath() + '"');
         }
     } else {
         console.error("Cannot custom start liberty:dev on an undefined project");
