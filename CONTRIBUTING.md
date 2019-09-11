@@ -15,7 +15,7 @@ A good bug report is one that make it easy for us to understand what you were tr
 
 ### Legal
 
-In order to make contribution as easy as possible, we follow the same approach as the he [Developer's Certificate of Origin 1.1 (DCO)](https://developercertificate.org/) - that the Linux® Kernel [community](https://elinux.org/Developer_Certificate_Of_Origin) uses to manage code contributions.
+In order to make contribution as easy as possible, we follow the same approach as the [Developer's Certificate of Origin 1.1 (DCO)](https://developercertificate.org/) - that the Linux® Kernel [community](https://elinux.org/Developer_Certificate_Of_Origin) uses to manage code contributions.
 
 We simply ask that when submitting a pull request for review, the developer
 must include a sign-off statement in the commit message.

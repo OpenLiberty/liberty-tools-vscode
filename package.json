@@ -1,7 +1,7 @@
 {
 	"name": "liberty-dev-vscode-ext",
-	"displayName": "Liberty Dev Extension",
-	"description": "VS Code extension for Liberty Dev mode",
+	"displayName": "Liberty Dev",
+	"description": "Liberty Dev mode support for Visual Studio Code",
 	"version": "0.1.0",
 	"publisher": "Open-Liberty",
 	"repository": {
