@@ -1,6 +1,6 @@
 {
 	"name": "liberty-dev-vscode-ext",
-	"displayName": "Liberty Dev Extension",
+	"displayName": "Liberty Dev",
 	"description": "VS Code extension for Liberty Dev mode",
 	"version": "0.1.0",
 	"publisher": "Open-Liberty",
