@@ -2,8 +2,8 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Liberty Dev Extension",
 	"description": "VS Code extension for Liberty Dev mode",
-	"version": "0.0.1",
-	"publisher": "Open Liberty",
+	"version": "0.1.0",
+	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/OpenLiberty/liberty-dev-vscode-ext"
@@ -14,7 +14,11 @@
 		"vscode": "^1.36.0"
 	},
 	"categories": [
-		"Other"
+		"Programming Languages"
+	],
+	"keywords": [
+		"Java",
+		"Open Liberty"
 	],
 	"icon": "images/ol_logo.png",
 	"activationEvents": [
