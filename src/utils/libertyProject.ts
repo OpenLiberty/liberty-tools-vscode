@@ -182,7 +182,7 @@ export function checkParentPom(xmlString: String) {
 										console.debug("Found liberty-maven-plugin in the pom.xml plugin management");
 										parentPom = true;
 									}
-									if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "boost") {
+									if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "org.microshed.boost") {
 										console.debug("Found boost-maven-plugin in the pom.xml");
 										parentPom = true;
 									}
@@ -235,7 +235,7 @@ export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) 
 									validPom = true;
 									return;
 								}
-								if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "boost") {
+								if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "org.microshed.boost") {
 									console.debug("Found boost-maven-plugin in the pom.xml");
 									validPom = true;
 									return;
