@@ -167,7 +167,7 @@ export function checkParentPom(xmlString: String) {
 	var parentPom = false;
 	parseString(xmlString, function (err: any, result: any) {
 
-		// check for liberty maven plugin in plugin management
+		// check for liberty maven plugin or boost maven plugin in plugin management
 		if (result.project.build !== undefined) {
 			for (var i = 0; i < result.project.build.length; i++) {
 				var pluginManagement = result.project.build[i].pluginManagement;
@@ -201,6 +201,31 @@ export function checkParentPom(xmlString: String) {
 	return parentPom;
 }
 
+export function checkBuild(build: { plugins: { plugin: any; }[]; }[] | undefined) {
+	if (build !== undefined) {
+		for (var i = 0; i < build.length; i++) {
+			var plugins = build[i].plugins;
+			if (plugins !== undefined) {
+				for (var j = 0; j < plugins.length; j++) {
+					var plugin = build[i].plugins[j].plugin;
+					if (plugin !== undefined) {
+						for (var k = 0; k < plugin.length; k++) {
+							if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] === "io.openliberty.tools") {
+								console.debug("Found liberty-maven-plugin in the pom.xml");
+								return true;
+							}
+							if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "org.microshed.boost") {
+								console.debug("Found boost-maven-plugin in the pom.xml");
+								return true;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) {
 	var parseString = require('xml2js').parseString;
 	var validPom = false;
@@ -221,30 +246,25 @@ export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) 
 			}
 		}
 
-		// check for liberty maven plugin
-		if (result.project.build !== undefined) {
-			for (var i = 0; i < result.project.build.length; i++) {
-				var plugins = result.project.build[i].plugins;
-				if (plugins !== undefined) {
-					for (var j = 0; j < plugins.length; j++) {
-						var plugin = result.project.build[i].plugins[j].plugin;
-						if (plugin !== undefined) {
-							for (var k = 0; k < plugin.length; k++) {
-								if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] === "io.openliberty.tools") {
-									console.debug("Found liberty-maven-plugin in the pom.xml");
-									validPom = true;
-									return;
-								}
-								if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "org.microshed.boost") {
-									console.debug("Found boost-maven-plugin in the pom.xml");
-									validPom = true;
-									return;
-								}
-							}
+		// check for liberty maven plugin in profiles
+		if (result.project.profiles !== undefined) {
+			for (var i = 0; i < result.project.profiles.length; i++) {
+				var profile = result.project.profiles[i].profile;
+				if (profile !== undefined) {
+					for(var j = 0; j < profile.length; j++) {
+						if (checkBuild(profile[j].build)) {
+							validPom = true;
+							return;
 						}
 					}
 				}
 			}
+		}
+
+		// check for liberty maven plugin in plugins 
+		if (checkBuild(result.project.build)) {
+			validPom = true;
+			return;
 		}
 
 		if (err) {
