@@ -93,7 +93,20 @@
 					"when": "viewItem == liberty-dev-project"
 				}
 			]
-		}
+		},
+		"configuration": [
+			{
+				"title": "Liberty Dev",
+				"properties": {
+				  "liberty.terminal.useJavaHome": {
+					"type": "boolean",
+					"default": false,
+					"description": "If this value is true, and if the setting java.home from the redhat extension has a value, then the environment variable JAVA_HOME will be set to the value of java.home when a new terminal window is created.",
+					"scope": "window"
+				  }
+				}
+			  }
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

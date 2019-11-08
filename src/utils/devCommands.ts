@@ -72,7 +72,9 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
                     ignoreFocusOut: true
                 }
             ));
-            terminal.sendText('mvn io.openliberty.tools:liberty-maven-plugin:dev ' + customCommand + ' -f "' + libProject.getPomPath() + '"');
+            if (customCommand !== undefined) {
+                terminal.sendText('mvn io.openliberty.tools:liberty-maven-plugin:dev ' + customCommand + ' -f "' + libProject.getPomPath() + '"');
+            }
         }
     } else {
         console.error("Cannot custom start liberty:dev on an undefined project");
