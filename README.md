@@ -16,7 +16,7 @@ A VS Code extension for Liberty dev mode. The extension will detect your Liberty
 ## Configurable User Settings
 | Setting | Description | Default Value |
 | --------  | ----------- | -------  |
-| liberty.terminal.useJavaHome | If this value is true, and if the setting `java.home` from the redhat extension has a value, then the environment variable `JAVA_HOME` will be set to the value of `java.home` when a new terminal window is created. | False |
+| liberty.terminal.useJavaHome | If this value is true, and if the setting `java.home` has a value, then the environment variable `JAVA_HOME` will be set to the value of `java.home` when a new terminal window is created. | False |
 
 ## Contributing
 Our [CONTRIBUTING](CONTRIBUTING.md) document contains details for submitting pull requests.
