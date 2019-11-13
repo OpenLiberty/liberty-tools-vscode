@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as fse from "fs-extra";
+import * as util from './Util';
 
 export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> {
 
@@ -106,7 +107,16 @@ export class LibertyProject extends vscode.TreeItem {
 
 	public createTerminal(): vscode.Terminal | undefined {
 		if (this.terminal === undefined) {
-			var terminal = vscode.window.createTerminal(this.label + " (liberty:dev)");
+			// configure terminal to use java.home if liberty.terminal.useJavaHome is true
+			const useJavaHome: any = util.getConfiguration("terminal.useJavaHome");
+			var env: { [envKey: string]: string } = {};
+			if (useJavaHome) {
+				const javaHome: string | undefined = vscode.workspace.getConfiguration("java").get<string>("home");
+				if (javaHome) {
+					env = {JAVA_HOME: javaHome };
+				}
+			}
+			var terminal = vscode.window.createTerminal({name: this.label + " (liberty:dev)", env: env});
 			return terminal;
 		}
 		return undefined;
