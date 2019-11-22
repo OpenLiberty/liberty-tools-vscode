@@ -7,7 +7,7 @@ A VS Code extension for Liberty dev mode. The extension will detect your Liberty
 - Right-click a project in the Liberty Dev Dashboard to view the available commands
 
 ## Features
-- View supported `liberty-maven-plugin` projects in the workspace (`liberty-maven-plugin` must be of version `3.0` or higher)
+- View supported `liberty-maven-plugin` projects in the workspace (`liberty-maven-plugin` should be of version `3.1` or higher)
 - Start/Stop dev mode
 - Start dev mode with custom parameters
 - Run tests
