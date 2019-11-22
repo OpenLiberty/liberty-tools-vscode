@@ -1,9 +1,9 @@
-# Liberty Dev Mode for VS Code
-A VS Code extension for Liberty dev mode. The extension will detect your Liberty Maven project if it detects the `io.openliberty.tools:liberty-maven-plugin` in the `pom.xml`. Through the Liberty Dev Dashboard explorer on the side bar, you can start, stop, or interact with dev mode on all available Liberty dev projects in your workspace.
+# Open Liberty Tools for VS Code
+A VS Code extension for Open Liberty. The extension will detect your Liberty Maven project if it detects the `io.openliberty.tools:liberty-maven-plugin` in the `pom.xml`. Through the Liberty Dev Dashboard explorer on the side bar, you can start, stop, or interact with Liberty dev mode on all available Liberty Maven projects in your workspace.
 
 ## Quick Start
 - Install the extension
-- Liberty Dev Mode supported projects will appear in the Liberty Dev Dashboard on the side bar
+- Open Liberty supported projects will appear in the Liberty Dev Dashboard on the side bar
 - Right-click a project in the Liberty Dev Dashboard to view the available commands
 
 ## Features

@@ -1,8 +1,8 @@
 {
 	"name": "liberty-dev-vscode-ext",
-	"displayName": "Liberty Dev",
-	"description": "Liberty Dev mode support for Visual Studio Code",
-	"version": "0.1.2",
+	"displayName": "Open Liberty Tools",
+	"description": "Open Liberty Tools for Visual Studio Code",
+	"version": "0.1.3",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
