@@ -92,6 +92,32 @@
 					"command": "liberty.dev.open.surefire.report",
 					"when": "viewItem == liberty-dev-project"
 				}
+			],
+			"commandPalette": [
+				{
+					"command": "liberty.dev.start",
+					"when": "never"
+				},
+				{
+					"command": "liberty.dev.stop",
+					"when": "never"
+				},
+				{
+					"command": "liberty.dev.custom",
+					"when": "never"
+				},
+				{
+					"command": "liberty.dev.run.tests",
+					"when": "never"
+				},
+				{
+					"command": "liberty.dev.open.failsafe.report",
+					"when": "never"
+				},
+				{
+					"command": "liberty.dev.open.surefire.report",
+					"when": "never"
+				}
 			]
 		},
 		"configuration": [
