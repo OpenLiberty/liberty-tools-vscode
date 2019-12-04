@@ -115,7 +115,7 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                     );
                     panel.webview.html = getReport(report); // display HTML content
                 } else {
-                    vscode.window.showInformationMessage("Test report does not exist");
+                    vscode.window.showInformationMessage("Test report (" + report + ") does not exist.  Run tests to generate a test report.");
                 }
             });
         }
@@ -123,5 +123,3 @@ export async function openReport(reportType: string, libProject?: LibertyProject
         console.error("Cannot open test reports on an undefined project");
     }
 }
-
-
