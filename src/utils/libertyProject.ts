@@ -121,7 +121,7 @@ export class LibertyProject extends vscode.TreeItem {
 		}
 		return undefined;
 	}
-	contextValue = 'liberty-dev-project';
+	contextValue = 'libertyProject';
 }
 
 export function createProject(xmlString: String, pomPath: string) {

@@ -70,27 +70,27 @@
 			"view/item/context": [
 				{
 					"command": "liberty.dev.start",
-					"when": "viewItem == liberty-dev-project"
+					"when": "viewItem == libertyProject"
 				},
 				{
 					"command": "liberty.dev.stop",
-					"when": "viewItem == liberty-dev-project"
+					"when": "viewItem == libertyProject"
 				},
 				{
 					"command": "liberty.dev.custom",
-					"when": "viewItem == liberty-dev-project"
+					"when": "viewItem == libertyProject"
 				},
 				{
 					"command": "liberty.dev.run.tests",
-					"when": "viewItem == liberty-dev-project"
+					"when": "viewItem == libertyProject"
 				},
 				{
 					"command": "liberty.dev.open.failsafe.report",
-					"when": "viewItem == liberty-dev-project"
+					"when": "viewItem == libertyProject"
 				},
 				{
 					"command": "liberty.dev.open.surefire.report",
-					"when": "viewItem == liberty-dev-project"
+					"when": "viewItem == libertyProject"
 				}
 			],
 			"commandPalette": [
