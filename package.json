@@ -2,7 +2,7 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Open Liberty Tools",
 	"description": "Open Liberty Tools for Visual Studio Code",
-	"version": "0.1.3",
+	"version": "0.1.4",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
@@ -36,6 +36,7 @@
 			"explorer": [
 				{
 					"id": "liberty-dev",
+					"category": "Open Liberty",
 					"name": "Liberty Dev Dashboard"
 				}
 			]
@@ -43,26 +44,32 @@
 		"commands": [
 			{
 				"command": "liberty.dev.start",
+				"category": "Open Liberty",
 				"title": "Start"
 			},
 			{
 				"command": "liberty.dev.stop",
+				"category": "Open Liberty",
 				"title": "Stop"
 			},
 			{
 				"command": "liberty.dev.custom",
+				"category": "Open Liberty",
 				"title": "Start..."
 			},
 			{
 				"command": "liberty.dev.run.tests",
+				"category": "Open Liberty",
 				"title": "Run tests"
 			},
 			{
 				"command": "liberty.dev.open.failsafe.report",
+				"category": "Open Liberty",
 				"title": "View integration test report"
 			},
 			{
 				"command": "liberty.dev.open.surefire.report",
+				"category": "Open Liberty",
 				"title": "View unit test report"
 			}
 		],
