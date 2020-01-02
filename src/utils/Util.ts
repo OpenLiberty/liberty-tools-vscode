@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 
-export async function getAllPomPaths(workspaceFolder: vscode.WorkspaceFolder): Promise<string[]> {
-	const pattern: string = "**/pom.xml";
+export async function getAllPaths(workspaceFolder: vscode.WorkspaceFolder, pattern: string) : Promise<string[]> {
 	const pomFileUris: vscode.Uri[] = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder, pattern));
 	return pomFileUris.map(_uri => _uri.fsPath);
 }

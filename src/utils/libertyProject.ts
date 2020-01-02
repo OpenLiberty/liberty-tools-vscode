@@ -1,13 +1,14 @@
 import * as vscode from 'vscode';
 import * as fse from "fs-extra";
 import * as util from './Util';
+import * as Path from 'path';
 
 export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> {
 
 	private _onDidChangeTreeData: vscode.EventEmitter<LibertyProject | undefined>;
 	readonly onDidChangeTreeData: vscode.Event<LibertyProject | undefined>;
 
-	constructor(private workspaceRoot: string, private pomPaths: string[]) {
+	constructor(private workspaceFolders: vscode.WorkspaceFolder[], private pomPaths: string[], private gradlePaths: string[]) {
 		this._onDidChangeTreeData = new vscode.EventEmitter<LibertyProject | undefined>();
 		this.onDidChangeTreeData = this._onDidChangeTreeData.event;
 		this.refresh();
@@ -22,14 +23,14 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 
 	getChildren(element?: LibertyProject): Thenable<LibertyProject[]> {
-		if (!this.workspaceRoot) {
-			vscode.window.showInformationMessage("No maven project found in empty workspace");
+		if (this.workspaceFolders == undefined) {
+			vscode.window.showInformationMessage("No Liberty project found in empty workspace");
 			return Promise.resolve([]);
 		}
-		return Promise.resolve(this.getProjectFromPom(this.pomPaths));
+		return Promise.resolve(this.getProjectFromBuildFile(this.pomPaths, this.gradlePaths));
 	}
 
-	private async getProjectFromPom(pomPaths: string[]): Promise<LibertyProject[]> {
+	private async getProjectFromBuildFile(pomPaths: string[], gradlePaths: string[]): Promise<LibertyProject[]> {
 		var projects: LibertyProject[] = [];
 		var validPoms: String[] = [];
 		var childrenMap: Map<string, String[]> = new Map();
@@ -40,24 +41,35 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			var validParent = checkParentPom(xmlString);
 			if (validParent) {
 				childrenMap = new Map([...Array.from(childrenMap.entries()), ...Array.from(findModules(xmlString).entries())]);
-				var project = createProject(xmlString, pomPath);
+				var project = createProject(pomPath, 'libertyMavenProject', xmlString);
 				projects.push(project);
 				validPoms.push(pomPath);
 			}
 		}
-
+		// check poms
 		for (var pomPath of pomPaths) {
 			if (!validPoms.includes(pomPath)) {
 				const xmlString: string = await fse.readFile(pomPath, "utf8");
 				var validPom = checkPom(xmlString, childrenMap);
 				if (validPom) {
-					var project = createProject(xmlString, pomPath);
+					var project = createProject(pomPath, 'libertyMavenProject', xmlString);
 					projects.push(project);
 				}
 			}
 
 		}
 
+		// check build.gradles
+		for (var gradlePath of gradlePaths) {
+			var g2js = require('gradle-to-js/lib/parser');
+			await g2js.parseFile(gradlePath).then(function(representation: any) {
+				var validBuildGradle = checkBuildGradle(representation);
+				if (validBuildGradle) {
+					var project = createProject(gradlePath, 'libertyGradleProject');
+					projects.push(project);
+				}
+			}).catch((err: any) => console.log("Unable to parse build.gradle: " + gradlePath + "; " + err));
+		}
 		return projects;
 	}
 }
@@ -67,8 +79,9 @@ export class LibertyProject extends vscode.TreeItem {
 	constructor(
 		public readonly label: string,
 		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-		public readonly pomPath: string,
+		public readonly path: string,
 		public state: string,
+		public contextValue: string,
 		public terminal?: vscode.Terminal,
 		public readonly command?: vscode.Command, // ? indicates optional param
 	) {
@@ -76,8 +89,7 @@ export class LibertyProject extends vscode.TreeItem {
 	}
 
 	public get iconPath(): string {
-		let path = require('path');
-		var iconPath = path.join(__dirname, '..', '..', 'images', 'ol_logo.png');
+		var iconPath = Path.join(__dirname, '..', '..', 'images', 'ol_logo.png');
 		return iconPath;
 	}
 
@@ -93,8 +105,12 @@ export class LibertyProject extends vscode.TreeItem {
 		this.state = state;
 	}
 
-	public getPomPath(): string {
-		return `${this.pomPath}`;
+	public getPath(): string {
+		return `${this.path}`;
+	}
+
+	public getContextValue(): string {
+		return `${this.contextValue}`;
 	}
 
 	public getTerminal(): vscode.Terminal | undefined {
@@ -121,19 +137,23 @@ export class LibertyProject extends vscode.TreeItem {
 		}
 		return undefined;
 	}
-	contextValue = 'libertyProject';
 }
 
-export function createProject(xmlString: String, pomPath: string) {
+export function createProject(path: string, contextValue: string, xmlString?: String) {
 	var label = "";
-	var parseString = require('xml2js').parseString;
-	parseString(xmlString, function (err: any, result: any) {
+	if (xmlString !== undefined) {
+		var parseString = require('xml2js').parseString;
+		parseString(xmlString, function (err: any, result: any) {
 		label = result.project.artifactId[0];
-	});
-	var project: LibertyProject = new LibertyProject(label, vscode.TreeItemCollapsibleState.None, pomPath, 'start', undefined, {
+		});
+	} else {
+		var dirName = Path.dirname(path);
+		label = Path.basename(dirName) + " (gradle)";
+	}
+	var project: LibertyProject = new LibertyProject(label, vscode.TreeItemCollapsibleState.None, path, 'start', contextValue, undefined, {
 		command: 'extension.open.project',
 		title: '',
-		arguments: [pomPath]
+		arguments: [path]
 	});
 	return project;
 }
@@ -171,7 +191,12 @@ export function findModules(xmlString: String) {
 	return childrenMap;
 }
 
-// look for a valid parent pom.xml
+/**
+ * Look for a valid parent pom.xml
+ * A valid parent contains the liberty-maven-plguin in the plugin management section
+ * Return true if the pom is a valid parent pom.xml
+ * @param xmlString the xmlString version of the pom.xml
+ */
 export function checkParentPom(xmlString: String) {
 	var parseString = require('xml2js').parseString;
 	var parentPom = false;
@@ -211,6 +236,11 @@ export function checkParentPom(xmlString: String) {
 	return parentPom;
 }
 
+/**
+ * Check the build portion of a pom.xml for the liberty-maven-plugin
+ * Return true if the liberty-maven-plugin is found
+ * @param build JS object of the build section in a pom.xml
+ */
 export function checkBuild(build: { plugins: { plugin: any; }[]; }[] | undefined) {
 	if (build !== undefined) {
 		for (var i = 0; i < build.length; i++) {
@@ -236,6 +266,14 @@ export function checkBuild(build: { plugins: { plugin: any; }[]; }[] | undefined
 	}
 }
 
+/**
+ * Check a pom.xml to see if it contains the liberty-maven-plugin
+ * Pom.xml may either match a child pom artifactId, contain the plugin in the profiles section
+ * or define the plugin in the build section
+ * Return true if the pom.xml contains the plugin
+ * @param xmlString string representation of the pom.xml
+ * @param childrenMap map of all the children pom.xml identified
+ */
 export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) {
 	var parseString = require('xml2js').parseString;
 	var validPom = false;
@@ -283,4 +321,22 @@ export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) 
 		}
 	});
 	return validPom;
+}
+/**
+ * Check a build.gradle file for the liberty-gradle-plugin
+ * Return true if the build.gradle contains the plugin
+ * @param buildFile JS object representation of the build.gradle
+ */
+export function checkBuildGradle(buildFile: any) {
+	if (buildFile !== undefined && buildFile.buildscript !== undefined && buildFile.buildscript.dependencies !== undefined) {
+		for (var i = 0; i < buildFile.buildscript.dependencies.length; i++) {
+			var dependency = buildFile.buildscript.dependencies[i];
+			// check that group matches io.openliberty.tools and name matches liberty-gradle-plugin
+			if (dependency.group == "io.openliberty.tools" && dependency.name == "liberty-gradle-plugin") {
+				console.debug("Found liberty-gradle-plugin in the build.gradle");
+				return true;
+			}
+		}
+	}
+	return false;
 }

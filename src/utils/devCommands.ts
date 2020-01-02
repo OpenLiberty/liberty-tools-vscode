@@ -2,6 +2,7 @@
 import * as vscode from 'vscode';
 import { LibertyProject } from './libertyProject';
 import * as fs from 'fs';
+import * as Path from 'path';
 
 import { getReport } from './Util';
 
@@ -22,7 +23,12 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         if (terminal !== undefined) {
             terminal.show();
             libProject.setTerminal(terminal);
-            terminal.sendText('mvn io.openliberty.tools:liberty-maven-plugin:dev -f "' + libProject.getPomPath() + '"'); // start dev mode on current project
+            if (libProject.getContextValue() == "libertyMavenProject") {
+                terminal.sendText('mvn io.openliberty.tools:liberty-maven-plugin:dev -f "' + libProject.getPath() + '"'); // start dev mode on current project
+            }
+            else if (libProject.getContextValue() == "libertyGradleProject") {
+                terminal.sendText('gradle libertyDev -b=' + libProject.getPath()); // start dev mode on current project
+            }
         }
     } else {
         console.error("Cannot start liberty:dev on an undefined project");
@@ -57,6 +63,14 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
             terminal.show();
             libProject.setTerminal(terminal);
 
+            var placeHolderStr = "";
+            if (libProject.getContextValue() == "libertyMavenProject") {
+                placeHolderStr = "e.g. -DhotTests=true";
+            } 
+            else if (libProject.getContextValue() == "libertyGradleProject") {
+                placeHolderStr = "e.g. --hotTests";
+            }
+
             // prompt for custom command
             const customCommand: string | undefined = await vscode.window.showInputBox(Object.assign({
                 validateInput: (value: string) => {
@@ -67,13 +81,18 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
                 }
             },
                 {
-                    placeHolder: "e.g. -DhotTests=true",
+                    placeHolder: placeHolderStr,
                     prompt: "Specify custom parameters for the liberty:dev command.",
                     ignoreFocusOut: true
                 }
             ));
             if (customCommand !== undefined) {
-                terminal.sendText('mvn io.openliberty.tools:liberty-maven-plugin:dev ' + customCommand + ' -f "' + libProject.getPomPath() + '"');
+                if (libProject.getContextValue() == "libertyMavenProject") {
+                    terminal.sendText('mvn io.openliberty.tools:liberty-maven-plugin:dev ' + customCommand + ' -f "' + libProject.getPath() + '"');
+                } 
+                else if (libProject.getContextValue() == "libertyGradleProject") {
+                    terminal.sendText('gradle libertyDev ' + customCommand + ' -b="' + libProject.getPath() + '"');
+                }
             }
         }
     } else {
@@ -101,15 +120,24 @@ export async function runTests(libProject?: LibertyProject | undefined): Promise
 export async function openReport(reportType: string, libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
         console.log("Opening test reports for " + libProject.getLabel());
-        var workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(libProject.getPomPath()));
+        var workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(libProject.getPath()));
         if (workspaceFolder !== undefined) {
-            var path = require('path');
-            var report = path.join(workspaceFolder.uri.fsPath, 'target', 'site', reportType + '-report.html');
+            var report: any
+            if (libProject.getContextValue() == "libertyMavenProject") {
+                report = Path.join(workspaceFolder.uri.fsPath, 'target', 'site', reportType + '-report.html');
+            }
+            else if (libProject.getContextValue() == "libertyGradleProject") {
+                report = Path.join(workspaceFolder.uri.fsPath, 'build', 'reports', 'tests', 'test', 'index.html');
+            }
+            var reportTypeLabel = reportType;
+            if (reportType == "gradle") {
+                reportTypeLabel = "test";
+            }
             fs.exists(report, function (exists) {
                 if (exists) {
                     const panel = vscode.window.createWebviewPanel(
                         reportType, // Identifies the type of the webview. Used internally
-                        libProject.getLabel() + ' ' + reportType + ' report', // Title of the panel displayed to the user
+                        libProject.getLabel() + ' ' + reportTypeLabel + ' report', // Title of the panel displayed to the user
                         vscode.ViewColumn.Two, // Open the panel in the second window
                         {} // Webview options
                     );
