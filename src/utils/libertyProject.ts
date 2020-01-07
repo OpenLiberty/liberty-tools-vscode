@@ -42,7 +42,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			if (validParent) {
 				childrenMap = new Map([...Array.from(childrenMap.entries()), ...Array.from(findModules(xmlString).entries())]);
 				var project = createProject(pomPath, 'libertyMavenProject', xmlString);
-				projects.push(project);
+				projects.push(await project);
 				validPoms.push(pomPath);
 			}
 		}
@@ -53,7 +53,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				var validPom = checkPom(xmlString, childrenMap);
 				if (validPom) {
 					var project = createProject(pomPath, 'libertyMavenProject', xmlString);
-					projects.push(project);
+					projects.push(await project);
 				}
 			}
 
@@ -62,11 +62,11 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		// check build.gradles
 		for (var gradlePath of gradlePaths) {
 			var g2js = require('gradle-to-js/lib/parser');
-			await g2js.parseFile(gradlePath).then(function(representation: any) {
+			await g2js.parseFile(gradlePath).then(async function (representation: any) {
 				var validBuildGradle = checkBuildGradle(representation);
 				if (validBuildGradle) {
 					var project = createProject(gradlePath, 'libertyGradleProject');
-					projects.push(project);
+					projects.push(await project);
 				}
 			}).catch((err: any) => console.log("Unable to parse build.gradle: " + gradlePath + "; " + err));
 		}
@@ -129,26 +129,30 @@ export class LibertyProject extends vscode.TreeItem {
 			if (useJavaHome) {
 				const javaHome: string | undefined = vscode.workspace.getConfiguration("java").get<string>("home");
 				if (javaHome) {
-					env = {JAVA_HOME: javaHome };
+					env = { JAVA_HOME: javaHome };
 				}
 			}
-			var terminal = vscode.window.createTerminal({name: this.label + " (liberty:dev)", env: env});
+			var terminal = vscode.window.createTerminal({ name: this.label + " (liberty:dev)", env: env });
 			return terminal;
 		}
 		return undefined;
 	}
 }
 
-export function createProject(path: string, contextValue: string, xmlString?: String) {
+export async function createProject(path: string, contextValue: string, xmlString?: String) {
 	var label = "";
 	if (xmlString !== undefined) {
 		var parseString = require('xml2js').parseString;
 		parseString(xmlString, function (err: any, result: any) {
-		label = result.project.artifactId[0];
+			if (result.project.artifactId[0] !== undefined) {
+				label = result.project.artifactId[0];
+			} else {
+				var dirName = Path.dirname(path);
+				label = Path.basename(dirName);
+			}
 		});
 	} else {
-		var dirName = Path.dirname(path);
-		label = Path.basename(dirName) + " (gradle)";
+		label = await getGradleProjetName(path);
 	}
 	var project: LibertyProject = new LibertyProject(label, vscode.TreeItemCollapsibleState.None, path, 'start', contextValue, undefined, {
 		command: 'extension.open.project',
@@ -299,7 +303,7 @@ export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) 
 			for (var i = 0; i < result.project.profiles.length; i++) {
 				var profile = result.project.profiles[i].profile;
 				if (profile !== undefined) {
-					for(var j = 0; j < profile.length; j++) {
+					for (var j = 0; j < profile.length; j++) {
 						if (checkBuild(profile[j].build)) {
 							validPom = true;
 							return;
@@ -324,19 +328,54 @@ export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) 
 }
 /**
  * Check a build.gradle file for the liberty-gradle-plugin
- * Return true if the build.gradle contains the plugin
+ * Return true if the build.gradle contains applies the liberty plugin
  * @param buildFile JS object representation of the build.gradle
  */
 export function checkBuildGradle(buildFile: any) {
-	if (buildFile !== undefined && buildFile.buildscript !== undefined && buildFile.buildscript.dependencies !== undefined) {
-		for (var i = 0; i < buildFile.buildscript.dependencies.length; i++) {
-			var dependency = buildFile.buildscript.dependencies[i];
-			// check that group matches io.openliberty.tools and name matches liberty-gradle-plugin
-			if (dependency.group == "io.openliberty.tools" && dependency.name == "liberty-gradle-plugin") {
-				console.debug("Found liberty-gradle-plugin in the build.gradle");
-				return true;
+	if (buildFile !== undefined) {
+		if (buildFile.apply !== undefined && buildFile.buildscript !== undefined && buildFile.buildscript.dependencies !== undefined) {
+			// check that "apply plugin: 'liberty'" is specified in the build.gradle
+			var libertyPlugin = false;
+			for (var i = 0; i < buildFile.apply.length; i++) {
+				if (buildFile.apply[i] == "plugin: 'liberty'") {
+					libertyPlugin = true;
+				}
+			}
+			if (libertyPlugin) {
+				for (var i = 0; i < buildFile.buildscript.dependencies.length; i++) {
+					var dependency = buildFile.buildscript.dependencies[i];
+					// check that group matches io.openliberty.tools and name matches liberty-gradle-plugin
+					if (dependency.group == "io.openliberty.tools" && dependency.name == "liberty-gradle-plugin") {
+						console.debug("Found liberty-gradle-plugin in the build.gradle");
+						return true;
+					}
+				}
 			}
 		}
 	}
 	return false;
 }
+
+/**
+ * Get the name of a gradle project
+ * If a settings.gradle exists with a name specified, return name
+ * Else return the parent directory name of the build.gradle
+ * @param path build.gradle location
+ */
+export async function getGradleProjetName(path: string): Promise<string> {
+	var dirName = Path.dirname(path);
+	var gradleSettings = Path.join(dirName, "settings.gradle");
+	gradleSettings = Path.normalize(gradleSettings);
+
+	var label = Path.basename(dirName);
+	if (fse.existsSync(gradleSettings)) {
+		// File exists in path
+		var g2js = require('gradle-to-js/lib/parser');
+		label = await g2js.parseFile(gradleSettings).then(function (representation: any) {
+			if (representation["rootProject.name"] !== undefined) {
+				return representation["rootProject.name"];
+			}
+		}).catch((err: any) => console.log("Unable to parse settings.gradle: " + gradleSettings + "; " + err));
+	}
+	return label;
+} 
