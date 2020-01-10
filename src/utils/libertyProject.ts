@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import * as fse from "fs-extra";
 import * as util from './Util';
-import * as Path from 'path';
+import * as path from 'path';
+import * as mavenUtil from './MavenUtil';
+import * as gradleUtil from './GradleUtil';
 
 export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> {
 
@@ -33,24 +35,28 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	private async getProjectFromBuildFile(pomPaths: string[], gradlePaths: string[]): Promise<LibertyProject[]> {
 		var projects: LibertyProject[] = [];
 		var validPoms: String[] = [];
-		var childrenMap: Map<string, String[]> = new Map();
+		var mavenChildMap: Map<string, String[]> = new Map();
+		var gradleChildren: Array<string> = new Array();
 
 		// check for parentPoms
-		for (var pomPath of pomPaths) {
-			const xmlString: string = await fse.readFile(pomPath, "utf8");
-			var validParent = checkParentPom(xmlString);
+		for (var parentPom of pomPaths) {
+			const xmlString: string = await fse.readFile(parentPom, "utf8");
+			var validParent = mavenUtil.validParentPom(xmlString);
 			if (validParent) {
-				childrenMap = new Map([...Array.from(childrenMap.entries()), ...Array.from(findModules(xmlString).entries())]);
-				var project = createProject(pomPath, 'libertyMavenProject', xmlString);
+				// mavenChildMap: [parentName, array of child names]
+				mavenChildMap = new Map([...Array.from(mavenChildMap.entries()), ...Array.from(mavenUtil.findChildMavenModules(xmlString).entries())]);
+				var project = createProject(parentPom, 'libertyMavenProject', xmlString);
 				projects.push(await project);
-				validPoms.push(pomPath);
+				validPoms.push(parentPom);
 			}
+
 		}
+
 		// check poms
 		for (var pomPath of pomPaths) {
 			if (!validPoms.includes(pomPath)) {
 				const xmlString: string = await fse.readFile(pomPath, "utf8");
-				var validPom = checkPom(xmlString, childrenMap);
+				var validPom = mavenUtil.validPom(xmlString, mavenChildMap);
 				if (validPom) {
 					var project = createProject(pomPath, 'libertyMavenProject', xmlString);
 					projects.push(await project);
@@ -59,16 +65,35 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 		}
 
+		// check for multi module build.gradles
+		var g2js = require('gradle-to-js/lib/parser');
+		for (var gradlePath of gradlePaths) {
+			await g2js.parseFile(gradlePath).then(async function (buildFile: any) {
+				var gradleSettings = gradleUtil.getGradleSettings(gradlePath);
+				if (gradleSettings !== "") {
+					await g2js.parseFile(gradleSettings).then(async function (settingsFile: any) {
+						let children = gradleUtil.findChildGradleProjects(buildFile, settingsFile);
+						if (children.length !== 0) {
+							gradleChildren = gradleChildren.concat(children);
+							var project = createProject(gradlePath, 'libertyGradleProject');
+							projects.push(await project);
+						}
+					}).catch((err: any) => console.error("Unable to parse settings.gradle: " + gradleSettings + "; " + err));
+				}
+			}).catch((err: any) => console.error("Unable to parse build.gradle: " + gradlePath + "; " + err));
+		}
+
 		// check build.gradles
 		for (var gradlePath of gradlePaths) {
-			var g2js = require('gradle-to-js/lib/parser');
-			await g2js.parseFile(gradlePath).then(async function (representation: any) {
-				var validBuildGradle = checkBuildGradle(representation);
-				if (validBuildGradle) {
+			await g2js.parseFile(gradlePath).then(async function (buildFile: any) {
+				var dirName = path.dirname(gradlePath);
+				var label = path.basename(dirName);
+				// check build.gradle matches any of the subprojects in the gradleChildMap or for liberty-gradle-plugin
+				if (gradleChildren.includes(label) || gradleUtil.validGradleBuild(buildFile)) {
 					var project = createProject(gradlePath, 'libertyGradleProject');
 					projects.push(await project);
 				}
-			}).catch((err: any) => console.log("Unable to parse build.gradle: " + gradlePath + "; " + err));
+			}).catch((err: any) => console.error("Unable to parse build.gradle: " + gradlePath + "; " + err));
 		}
 		return projects;
 	}
@@ -89,7 +114,7 @@ export class LibertyProject extends vscode.TreeItem {
 	}
 
 	public get iconPath(): string {
-		var iconPath = Path.join(__dirname, '..', '..', 'images', 'ol_logo.png');
+		var iconPath = path.join(__dirname, '..', '..', 'images', 'ol_logo.png');
 		return iconPath;
 	}
 
@@ -139,7 +164,7 @@ export class LibertyProject extends vscode.TreeItem {
 	}
 }
 
-export async function createProject(path: string, contextValue: string, xmlString?: String) {
+export async function createProject(buildFile: string, contextValue: string, xmlString?: String) {
 	var label = "";
 	if (xmlString !== undefined) {
 		var parseString = require('xml2js').parseString;
@@ -147,235 +172,17 @@ export async function createProject(path: string, contextValue: string, xmlStrin
 			if (result.project.artifactId[0] !== undefined) {
 				label = result.project.artifactId[0];
 			} else {
-				var dirName = Path.dirname(path);
-				label = Path.basename(dirName);
+				var dirName = path.dirname(buildFile);
+				label = path.basename(dirName);
 			}
 		});
 	} else {
-		label = await getGradleProjetName(path);
+		label = await gradleUtil.getGradleProjetName(buildFile);
 	}
-	var project: LibertyProject = new LibertyProject(label, vscode.TreeItemCollapsibleState.None, path, 'start', contextValue, undefined, {
+	var project: LibertyProject = new LibertyProject(label, vscode.TreeItemCollapsibleState.None, buildFile, 'start', contextValue, undefined, {
 		command: 'extension.open.project',
 		title: '',
-		arguments: [path]
+		arguments: [buildFile]
 	});
 	return project;
 }
-
-// find modules listed in a parent pom
-export function findModules(xmlString: String) {
-	var parseString = require('xml2js').parseString;
-	var childrenMap: Map<string, String[]> = new Map();
-	var children: String[] = [];
-	parseString(xmlString, function (err: any, result: any) {
-		var artifactId = "";
-		if (result.project.artifactId[0] !== undefined) {
-			artifactId = result.project.artifactId[0];
-		}
-		var modules = result.project.modules;
-		if (modules !== undefined && artifactId !== undefined) {
-			for (var i = 0; i < modules.length; i++) {
-				var module = modules[i].module;
-				if (module !== undefined) {
-					for (var k = 0; k < module.length; k++) {
-						children.push(module[k]);
-					}
-				}
-			}
-		}
-
-		if (children.length !== 0) {
-			childrenMap.set(artifactId, children);
-		}
-
-		if (err) {
-			console.error("Error parsing the pom " + err);
-		}
-	});
-	return childrenMap;
-}
-
-/**
- * Look for a valid parent pom.xml
- * A valid parent contains the liberty-maven-plguin in the plugin management section
- * Return true if the pom is a valid parent pom.xml
- * @param xmlString the xmlString version of the pom.xml
- */
-export function checkParentPom(xmlString: String) {
-	var parseString = require('xml2js').parseString;
-	var parentPom = false;
-	parseString(xmlString, function (err: any, result: any) {
-
-		// check for liberty maven plugin or boost maven plugin in plugin management
-		if (result.project.build !== undefined) {
-			for (var i = 0; i < result.project.build.length; i++) {
-				var pluginManagement = result.project.build[i].pluginManagement;
-				if (pluginManagement !== undefined) {
-					var plugins = pluginManagement[i].plugins;
-					if (plugins !== undefined) {
-						for (var j = 0; j < plugins.length; j++) {
-							var plugin = plugins[j].plugin;
-							if (plugin !== undefined) {
-								for (var k = 0; k < plugin.length; k++) {
-									if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] == "io.openliberty.tools") {
-										console.debug("Found liberty-maven-plugin in the pom.xml plugin management");
-										parentPom = true;
-									}
-									if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "org.microshed.boost") {
-										console.debug("Found boost-maven-plugin in the pom.xml");
-										parentPom = true;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		if (err) {
-			console.error("Error parsing the pom " + err);
-		}
-	});
-	return parentPom;
-}
-
-/**
- * Check the build portion of a pom.xml for the liberty-maven-plugin
- * Return true if the liberty-maven-plugin is found
- * @param build JS object of the build section in a pom.xml
- */
-export function checkBuild(build: { plugins: { plugin: any; }[]; }[] | undefined) {
-	if (build !== undefined) {
-		for (var i = 0; i < build.length; i++) {
-			var plugins = build[i].plugins;
-			if (plugins !== undefined) {
-				for (var j = 0; j < plugins.length; j++) {
-					var plugin = build[i].plugins[j].plugin;
-					if (plugin !== undefined) {
-						for (var k = 0; k < plugin.length; k++) {
-							if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] === "io.openliberty.tools") {
-								console.debug("Found liberty-maven-plugin in the pom.xml");
-								return true;
-							}
-							if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "org.microshed.boost") {
-								console.debug("Found boost-maven-plugin in the pom.xml");
-								return true;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
-/**
- * Check a pom.xml to see if it contains the liberty-maven-plugin
- * Pom.xml may either match a child pom artifactId, contain the plugin in the profiles section
- * or define the plugin in the build section
- * Return true if the pom.xml contains the plugin
- * @param xmlString string representation of the pom.xml
- * @param childrenMap map of all the children pom.xml identified
- */
-export function checkPom(xmlString: String, childrenMap: Map<string, String[]>) {
-	var parseString = require('xml2js').parseString;
-	var validPom = false;
-	parseString(xmlString, function (err: any, result: any) {
-
-		// check if the artifactId matches one of the modules found in a parent pom
-		if (result.project.artifactId[0] !== undefined && result.project.parent !== undefined && result.project.parent[0].artifactId !== undefined) {
-			if (childrenMap.has(result.project.parent[0].artifactId[0])) {
-				var modules = childrenMap.get(result.project.parent[0].artifactId[0]);
-				if (modules !== undefined) {
-					for (let module of modules) {
-						if (module === result.project.artifactId[0]) {
-							validPom = true;
-							return;
-						}
-					}
-				}
-			}
-		}
-
-		// check for liberty maven plugin in profiles
-		if (result.project.profiles !== undefined) {
-			for (var i = 0; i < result.project.profiles.length; i++) {
-				var profile = result.project.profiles[i].profile;
-				if (profile !== undefined) {
-					for (var j = 0; j < profile.length; j++) {
-						if (checkBuild(profile[j].build)) {
-							validPom = true;
-							return;
-						}
-					}
-				}
-			}
-		}
-
-		// check for liberty maven plugin in plugins 
-		if (checkBuild(result.project.build)) {
-			validPom = true;
-			return;
-		}
-
-		if (err) {
-			console.error("Error parsing the pom " + err);
-			return;
-		}
-	});
-	return validPom;
-}
-/**
- * Check a build.gradle file for the liberty-gradle-plugin
- * Return true if the build.gradle contains applies the liberty plugin
- * @param buildFile JS object representation of the build.gradle
- */
-export function checkBuildGradle(buildFile: any) {
-	if (buildFile !== undefined) {
-		if (buildFile.apply !== undefined && buildFile.buildscript !== undefined && buildFile.buildscript.dependencies !== undefined) {
-			// check that "apply plugin: 'liberty'" is specified in the build.gradle
-			var libertyPlugin = false;
-			for (var i = 0; i < buildFile.apply.length; i++) {
-				if (buildFile.apply[i] == "plugin: 'liberty'") {
-					libertyPlugin = true;
-				}
-			}
-			if (libertyPlugin) {
-				for (var i = 0; i < buildFile.buildscript.dependencies.length; i++) {
-					var dependency = buildFile.buildscript.dependencies[i];
-					// check that group matches io.openliberty.tools and name matches liberty-gradle-plugin
-					if (dependency.group == "io.openliberty.tools" && dependency.name == "liberty-gradle-plugin") {
-						console.debug("Found liberty-gradle-plugin in the build.gradle");
-						return true;
-					}
-				}
-			}
-		}
-	}
-	return false;
-}
-
-/**
- * Get the name of a gradle project
- * If a settings.gradle exists with a name specified, return name
- * Else return the parent directory name of the build.gradle
- * @param path build.gradle location
- */
-export async function getGradleProjetName(path: string): Promise<string> {
-	var dirName = Path.dirname(path);
-	var gradleSettings = Path.join(dirName, "settings.gradle");
-	gradleSettings = Path.normalize(gradleSettings);
-
-	var label = Path.basename(dirName);
-	if (fse.existsSync(gradleSettings)) {
-		// File exists in path
-		var g2js = require('gradle-to-js/lib/parser');
-		label = await g2js.parseFile(gradleSettings).then(function (representation: any) {
-			if (representation["rootProject.name"] !== undefined) {
-				return representation["rootProject.name"];
-			}
-		}).catch((err: any) => console.log("Unable to parse settings.gradle: " + gradleSettings + "; " + err));
-	}
-	return label;
-} 

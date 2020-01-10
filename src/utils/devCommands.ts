@@ -116,7 +116,7 @@ export async function runTests(libProject?: LibertyProject | undefined): Promise
     }
 }
 
-// open surefire or failsafe test report
+// open surefire, failsafe, or gradle test report
 export async function openReport(reportType: string, libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
         console.log("Opening test reports for " + libProject.getLabel());

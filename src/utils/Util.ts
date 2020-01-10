@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 export async function getAllPaths(workspaceFolder: vscode.WorkspaceFolder, pattern: string) : Promise<string[]> {
-	const pomFileUris: vscode.Uri[] = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder, pattern));
-	return pomFileUris.map(_uri => _uri.fsPath);
+	const fileUris: vscode.Uri[] = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder, pattern),'**/{bin,classes,target}/**');
+	return fileUris.map(_uri => _uri.fsPath);
 }
 
 export function getReport(report: string) {
