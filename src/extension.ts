@@ -23,13 +23,11 @@ export async function activate(context: vscode.ExtensionContext) {
 			vscode.window.registerTreeDataProvider('liberty-dev', projectProvider);
 			vscode.workspace.onDidChangeTextDocument((e) => {
 				pomPaths.forEach((pom) => {
-					console.log("pom: " + pom);
 					if (pom === e.document.uri.fsPath) {
 						projectProvider.refresh();
 					}
 				});
 				gradlePaths.forEach((gradlePath) => {
-					console.log("gradlePath: " + gradlePath);
 					if (gradlePath === e.document.uri.fsPath) {
 						projectProvider.refresh();
 					}
@@ -45,7 +43,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand('liberty.dev.stop', async (libProject?: LibertyProject | undefined) => devCommands.stopDevMode(libProject))
-	);LibertyProject
+	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand('liberty.dev.custom', async (libProject?: LibertyProject | undefined) => devCommands.customDevMode(libProject))
 	);
