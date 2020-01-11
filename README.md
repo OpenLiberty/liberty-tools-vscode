@@ -1,5 +1,5 @@
 # Open Liberty Tools for VS Code
-A VS Code extension for Open Liberty. The extension will detect your Liberty Maven or Liberty Gradle project if it detects the `io.openliberty.tools:liberty-maven-plugin` in the `pom.xml` or `io.openliberty.tools:liberty-gradle-plugin` in the `build.gradle`. Through the Liberty Dev Dashboard, you can start, stop, or interact with Liberty dev mode on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) in your workspace.
+A VS Code extension for Open Liberty. The extension will detect your Liberty Maven or Liberty Gradle project if it detects the `io.openliberty.tools:liberty-maven-plugin` in the `pom.xml` or `io.openliberty.tools:liberty-gradle-plugin` in the `build.gradle`. Through the Liberty Dev Dashboard, you can start, stop, or interact with Liberty dev mode on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace.
 
 ## Quick Start
 - Install the extension
@@ -7,7 +7,7 @@ A VS Code extension for Open Liberty. The extension will detect your Liberty Mav
 - Right-click a project in the Liberty Dev Dashboard to view the available commands
 
 ## Features
-- View supported `liberty-maven-plugin` (version `3.1` or higher) or `liberty-gradle-plugin`(versoin `3.0` or higher) projects in the workspace
+- View supported `liberty-maven-plugin` (version `3.1` or higher) or `liberty-gradle-plugin`(version `3.0` or higher) projects in the workspace
 - Start/Stop dev mode
 - Start dev mode with custom parameters
 - Run tests

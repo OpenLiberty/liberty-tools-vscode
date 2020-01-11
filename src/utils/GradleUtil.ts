@@ -1,6 +1,5 @@
 import * as path from 'path';
 import * as fse from "fs-extra";
-import { settings } from 'cluster';
 
 /**
  * Check a build.gradle file for the liberty-gradle-plugin
@@ -8,23 +7,22 @@ import { settings } from 'cluster';
  * @param buildFile JS object representation of the build.gradle
  */
 export function validGradleBuild(buildFile: any) {
-    if (buildFile !== undefined) {
-        if (buildFile.apply !== undefined && buildFile.buildscript !== undefined && buildFile.buildscript.dependencies !== undefined) {
-            // check that "apply plugin: 'liberty'" is specified in the build.gradle
-            var libertyPlugin = false;
-            for (var i = 0; i < buildFile.apply.length; i++) {
-                if (buildFile.apply[i] == "plugin: 'liberty'") {
-                    libertyPlugin = true;
-                }
+    if (buildFile !== undefined && buildFile.apply !== undefined && buildFile.buildscript !== undefined && buildFile.buildscript.dependencies !== undefined) {
+        // check that "apply plugin: 'liberty'" is specified in the build.gradle
+        var libertyPlugin = false;
+        for (var i = 0; i < buildFile.apply.length; i++) {
+            if (buildFile.apply[i] == "plugin: 'liberty'") {
+                libertyPlugin = true;
+                break;
             }
-            if (libertyPlugin) {
-                for (var i = 0; i < buildFile.buildscript.dependencies.length; i++) {
-                    var dependency = buildFile.buildscript.dependencies[i];
-                    // check that group matches io.openliberty.tools and name matches liberty-gradle-plugin
-                    if (dependency.group == "io.openliberty.tools" && dependency.name == "liberty-gradle-plugin") {
-                        console.debug("Found liberty-gradle-plugin in the build.gradle");
-                        return true;
-                    }
+        }
+        if (libertyPlugin) {
+            for (var i = 0; i < buildFile.buildscript.dependencies.length; i++) {
+                var dependency = buildFile.buildscript.dependencies[i];
+                // check that group matches io.openliberty.tools and name matches liberty-gradle-plugin
+                if (dependency.group == "io.openliberty.tools" && dependency.name == "liberty-gradle-plugin") {
+                    console.debug("Found liberty-gradle-plugin in the build.gradle");
+                    return true;
                 }
             }
         }
