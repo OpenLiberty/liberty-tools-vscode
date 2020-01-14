@@ -20,6 +20,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		if (vscode.workspace.workspaceFolders !== undefined) {
 			const projectProvider = new ProjectProvider(vscode.workspace.workspaceFolders, allPomPaths, allGradlePaths);
+			registerFileWatcher(projectProvider);
 			vscode.window.registerTreeDataProvider('liberty-dev', projectProvider);
 			vscode.workspace.onDidChangeTextDocument((e) => {
 				pomPaths.forEach((pom) => {
@@ -65,3 +66,19 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
 }
 
+/**
+ * File Watcher to prompt the dev explorer to refresh on file changes
+ * @param projectProvider Liberty Dev projects
+ */
+export function registerFileWatcher(projectProvider: ProjectProvider): void {
+	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher('{**/pom.xml,**/build.gradle,**/settings.gradle}');
+	watcher.onDidCreate(async (e: vscode.Uri) => {
+		projectProvider.refresh();
+	});
+	watcher.onDidChange(async (e: vscode.Uri) => {
+		projectProvider.refresh();
+	});
+	watcher.onDidDelete(async (e: vscode.Uri) => {
+		projectProvider.refresh();
+	});
+}

@@ -18,10 +18,14 @@
 	],
 	"keywords": [
 		"Java",
-		"Open Liberty"
+		"Open Liberty",
+		"Maven",
+		"Gradle"
 	],
 	"icon": "images/ol_logo.png",
 	"activationEvents": [
+		"workspaceContains:**/pom.xml",
+		"workspaceContains:**/build.gradle",
 		"onCommand:liberty.dev.start",
 		"onCommand:liberty.dev.stop",
 		"onCommand:liberty.dev.custom",
