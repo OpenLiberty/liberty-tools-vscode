@@ -28,6 +28,7 @@
 		"onCommand:liberty.dev.run.tests",
 		"onCommand:liberty.dev.open.failsafe.report",
 		"onCommand:liberty.dev.open.surefire.report",
+		"onCommand:liberty.dev.open.gradle.test.report",
 		"onView:liberty-dev"
 	],
 	"main": "./out/extension.js",
@@ -71,33 +72,42 @@
 				"command": "liberty.dev.open.surefire.report",
 				"category": "Open Liberty",
 				"title": "View unit test report"
+			},
+			{
+				"command": "liberty.dev.open.gradle.test.report",
+				"category": "Open Liberty",
+				"title": "View test report"
 			}
 		],
 		"menus": {
 			"view/item/context": [
 				{
 					"command": "liberty.dev.start",
-					"when": "viewItem == libertyProject"
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject"
 				},
 				{
 					"command": "liberty.dev.stop",
-					"when": "viewItem == libertyProject"
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject"
 				},
 				{
 					"command": "liberty.dev.custom",
-					"when": "viewItem == libertyProject"
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject"
 				},
 				{
 					"command": "liberty.dev.run.tests",
-					"when": "viewItem == libertyProject"
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject"
 				},
 				{
 					"command": "liberty.dev.open.failsafe.report",
-					"when": "viewItem == libertyProject"
+					"when": "viewItem == libertyMavenProject"
 				},
 				{
 					"command": "liberty.dev.open.surefire.report",
-					"when": "viewItem == libertyProject"
+					"when": "viewItem == libertyMavenProject"
+				},
+				{
+					"command": "liberty.dev.open.gradle.test.report",
+					"when": "viewItem == libertyGradleProject"
 				}
 			],
 			"commandPalette": [
@@ -124,6 +134,10 @@
 				{
 					"command": "liberty.dev.open.surefire.report",
 					"when": "never"
+				},
+				{
+					"command": "liberty.dev.open.gradle.test.report",
+					"when": "never"
 				}
 			]
 		},
@@ -131,14 +145,14 @@
 			{
 				"title": "Liberty Dev",
 				"properties": {
-				  "liberty.terminal.useJavaHome": {
-					"type": "boolean",
-					"default": false,
-					"description": "If this value is true, and if the setting java.home has a value, then the environment variable JAVA_HOME will be set to the value of java.home when a new terminal window is created.",
-					"scope": "window"
-				  }
+					"liberty.terminal.useJavaHome": {
+						"type": "boolean",
+						"default": false,
+						"description": "If this value is true, and if the setting java.home has a value, then the environment variable JAVA_HOME will be set to the value of java.home when a new terminal window is created.",
+						"scope": "window"
+					}
 				}
-			  }
+			}
 		]
 	},
 	"scripts": {
@@ -163,6 +177,7 @@
 		"@types/fs-extra": "^8.0.0",
 		"@types/xml2js": "^0.4.4",
 		"fs-extra": "^8.1.0",
+		"gradle-to-js": "^2.0.0",
 		"xml2js": "^0.4.19"
 	}
 }
