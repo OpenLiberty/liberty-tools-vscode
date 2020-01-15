@@ -21,7 +21,6 @@ export function validGradleBuild(buildFile: any) {
                 var dependency = buildFile.buildscript.dependencies[i];
                 // check that group matches io.openliberty.tools and name matches liberty-gradle-plugin
                 if (dependency.group == "io.openliberty.tools" && dependency.name == "liberty-gradle-plugin") {
-                    console.debug("Found liberty-gradle-plugin in the build.gradle");
                     return true;
                 }
             }

@@ -115,7 +115,6 @@ function mavenPluginDetected(build: { plugins: { plugin: any; }[]; }[] | undefin
                     if (plugin !== undefined) {
                         for (var k = 0; k < plugin.length; k++) {
                             if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] === "io.openliberty.tools") {
-                                console.debug("Found liberty-maven-plugin in the pom.xml");
                                 return true;
                             }
                             if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "org.microshed.boost") {
