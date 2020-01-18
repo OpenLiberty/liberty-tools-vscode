@@ -23,12 +23,12 @@ export async function activate(context: vscode.ExtensionContext) {
 			registerFileWatcher(projectProvider);
 			vscode.window.registerTreeDataProvider('liberty-dev', projectProvider);
 			vscode.workspace.onDidChangeTextDocument((e) => {
-				pomPaths.forEach((pom) => {
+				allPomPaths.forEach((pom) => {
 					if (pom === e.document.uri.fsPath) {
 						projectProvider.refresh();
 					}
 				});
-				gradlePaths.forEach((gradlePath) => {
+				allGradlePaths.forEach((gradlePath) => {
 					if (gradlePath === e.document.uri.fsPath) {
 						projectProvider.refresh();
 					}
