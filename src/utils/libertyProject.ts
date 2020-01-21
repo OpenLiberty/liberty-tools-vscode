@@ -49,7 +49,6 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				projects.push(await project);
 				validPoms.push(parentPom);
 			}
-
 		}
 
 		// check poms
@@ -161,6 +160,10 @@ export class LibertyProject extends vscode.TreeItem {
 			return terminal;
 		}
 		return undefined;
+	}
+
+	public deleteTerminal(): void {
+		delete this.terminal;
 	}
 }
 
