@@ -4,7 +4,7 @@
  * Return true if the pom is a valid parent pom.xml
  * @param xmlString the xmlString version of the pom.xml
  */
-export function validParentPom(xmlString: string) {
+export function validParentPom(xmlString: string): boolean {
     const parseString = require("xml2js").parseString;
     let parentPom = false;
     parseString(xmlString, (err: any, result: any) => {
@@ -51,7 +51,7 @@ export function validParentPom(xmlString: string) {
  * @param xmlString string representation of the pom.xml
  * @param childrenMap map of all the children pom.xml identified
  */
-export function validPom(xmlString: string, childrenMap: Map<string, string[]>) {
+export function validPom(xmlString: string, childrenMap: Map<string, string[]>): boolean {
     const parseString = require("xml2js").parseString;
     let isValidPom = false;
     parseString(xmlString, (err: any, result: any) => {
@@ -105,7 +105,7 @@ export function validPom(xmlString: string, childrenMap: Map<string, string[]>) 
  * Return true if the liberty-maven-plugin is found
  * @param build JS object of the build section in a pom.xml
  */
-function mavenPluginDetected(build: Array<{ plugins: Array<{ plugin: any; }>; }> | undefined) {
+function mavenPluginDetected(build: Array<{ plugins: Array<{ plugin: any }> }> | undefined): boolean {
     if (build !== undefined) {
         for (let i = 0; i < build.length; i++) {
             const plugins = build[i].plugins;
@@ -127,6 +127,7 @@ function mavenPluginDetected(build: Array<{ plugins: Array<{ plugin: any; }>; }>
             }
         }
     }
+    return false;
 }
 
 /**

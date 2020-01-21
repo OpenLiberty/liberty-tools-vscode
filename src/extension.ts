@@ -4,7 +4,7 @@ import * as util from "./utils/Util";
 
 import { LibertyProject, ProjectProvider } from "./utils/libertyProject";
 
-export async function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	console.log('"vscode-liberty-dev" extension is now active!');
 
 	const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -63,8 +63,8 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 // this method is called when your extension is deactivated
-// tslint:disable-next-line: no-empty
-export function deactivate() {
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export function deactivate(): void {
 }
 
 /**
@@ -73,13 +73,13 @@ export function deactivate() {
  */
 export function registerFileWatcher(projectProvider: ProjectProvider): void {
 	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle}");
-	watcher.onDidCreate(async (e: vscode.Uri) => {
+	watcher.onDidCreate(async () => {
 		projectProvider.refresh();
 	});
-	watcher.onDidChange(async (e: vscode.Uri) => {
+	watcher.onDidChange(async () => {
 		projectProvider.refresh();
 	});
-	watcher.onDidDelete(async (e: vscode.Uri) => {
+	watcher.onDidDelete(async () => {
 		projectProvider.refresh();
 	});
 }

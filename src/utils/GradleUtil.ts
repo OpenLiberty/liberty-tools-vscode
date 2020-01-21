@@ -6,7 +6,7 @@ import * as path from "path";
  * Return true if the build.gradle contains applies the liberty plugin
  * @param buildFile JS object representation of the build.gradle
  */
-export function validGradleBuild(buildFile: any) {
+export function validGradleBuild(buildFile: any): boolean {
     if (buildFile !== undefined && buildFile.apply !== undefined && buildFile.buildscript !== undefined && buildFile.buildscript.dependencies !== undefined) {
         // check that "apply plugin: 'liberty'" is specified in the build.gradle
         let libertyPlugin = false;
@@ -41,6 +41,7 @@ export async function getGradleProjetName(gradlePath: string): Promise<string> {
     let label = path.basename(dirName);
     if (fse.existsSync(gradleSettings)) {
         // File exists in path
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const g2js = require("gradle-to-js/lib/parser");
         label = await g2js.parseFile(gradleSettings).then((representation: any) => {
             if (representation["rootProject.name"] !== undefined) {
@@ -83,8 +84,8 @@ export function getGradleSettings(gradlePath: string): string {
  * @param settingsFile settings.gradle file
  */
 export function findChildGradleProjects(buildFile: any, settingsFile: any): string[] {
-    let gradleChildren: string[] = new Array();
-    let validGradleChildren: string[] = new Array();
+    let gradleChildren: string[] = [];
+    let validGradleChildren: string[] = [];
     if (settingsFile !== undefined) {
         // look for a valid "include" section in the settingsFile
         if (settingsFile.include !== undefined) {
@@ -112,5 +113,5 @@ function validParent(buildFile: any, gradleChildren: string[]): string[] {
     if (validGradleBuild(buildFile.subprojects) || validGradleBuild(buildFile.allprojects)) {
         return gradleChildren;
     }
-    return new Array();
+    return [];
 }

@@ -6,7 +6,7 @@ export async function getAllPaths(workspaceFolder: vscode.WorkspaceFolder, patte
 	return fileUris.map((uri) => uri.fsPath);
 }
 
-export function getReport(report: string) {
+export function getReport(report: string): string {
 	const file = fs.readFileSync(report, "utf8");
 	return file;
 }

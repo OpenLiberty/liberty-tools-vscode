@@ -25,6 +25,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		return element;
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public getChildren(element?: LibertyProject): Thenable<LibertyProject[]> {
 		if (this.workspaceFolders === undefined) {
 			vscode.window.showInformationMessage("No Liberty project found in empty workspace");
@@ -37,7 +38,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		const projects: LibertyProject[] = [];
 		const validPoms: string[] = [];
 		let mavenChildMap: Map<string, string[]> = new Map();
-		let gradleChildren: string[] = new Array();
+		let gradleChildren: string[] = [];
 
 		// check for parentPoms
 		for (const parentPom of pomPaths) {
@@ -67,6 +68,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		}
 
 		// check for multi module build.gradles
+		// eslint-disable-next-line @typescript-eslint/no-var-requires
 		const g2js = require("gradle-to-js/lib/parser");
 		for (const gradlePath of gradlePaths) {
 			await g2js.parseFile(gradlePath).then(async (buildFile: any) => {
@@ -165,7 +167,7 @@ export class LibertyProject extends vscode.TreeItem {
 	}
 }
 
-export async function createProject(buildFile: string, contextValue: string, xmlString?: string) {
+export async function createProject(buildFile: string, contextValue: string, xmlString?: string): Promise<LibertyProject> {
 	let label = "";
 	if (xmlString !== undefined) {
 		const parseString = require("xml2js").parseString;
