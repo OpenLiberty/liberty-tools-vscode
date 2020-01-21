@@ -1,19 +1,19 @@
-import * as vscode from 'vscode';
-import * as util from './utils/Util';
-import * as devCommands from './utils/devCommands';
+import * as vscode from "vscode";
+import * as devCommands from "./utils/devCommands";
+import * as util from "./utils/Util";
 
-import { ProjectProvider, LibertyProject } from './utils/libertyProject';
+import { LibertyProject, ProjectProvider } from "./utils/libertyProject";
 
-export async function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	console.log('"vscode-liberty-dev" extension is now active!');
 
 	const workspaceFolders = vscode.workspace.workspaceFolders;
 	if (workspaceFolders !== undefined) {
-		var allPomPaths: string[] = [];
-		var allGradlePaths: string[] = [];
-		for (let folder of workspaceFolders) {
-			var pomPaths: string[] = await util.getAllPaths(folder, "**/pom.xml");
-			var gradlePaths: string[] = await util.getAllPaths(folder, "**/build.gradle");
+		let allPomPaths: string[] = [];
+		let allGradlePaths: string[] = [];
+		for (const folder of workspaceFolders) {
+			const pomPaths: string[] = await util.getAllPaths(folder, "**/pom.xml");
+			const gradlePaths: string[] = await util.getAllPaths(folder, "**/build.gradle");
 			allPomPaths = allPomPaths.concat(pomPaths);
 			allGradlePaths = allGradlePaths.concat(gradlePaths);
 		}
@@ -21,7 +21,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		if (vscode.workspace.workspaceFolders !== undefined) {
 			const projectProvider = new ProjectProvider(vscode.workspace.workspaceFolders, allPomPaths, allGradlePaths);
 			registerFileWatcher(projectProvider);
-			vscode.window.registerTreeDataProvider('liberty-dev', projectProvider);
+			vscode.window.registerTreeDataProvider("liberty-dev", projectProvider);
 			vscode.workspace.onDidChangeTextDocument((e) => {
 				allPomPaths.forEach((pom) => {
 					if (pom === e.document.uri.fsPath) {
@@ -37,28 +37,28 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	}
 	context.subscriptions.push(
-		vscode.commands.registerCommand('extension.open.project', (pomPath) => devCommands.openProject(pomPath))
+		vscode.commands.registerCommand("extension.open.project", (pomPath) => devCommands.openProject(pomPath)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand('liberty.dev.start', async (libProject?: LibertyProject | undefined) => devCommands.startDevMode(libProject))
+		vscode.commands.registerCommand("liberty.dev.start", async (libProject?: LibertyProject | undefined) => devCommands.startDevMode(libProject)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand('liberty.dev.stop', async (libProject?: LibertyProject | undefined) => devCommands.stopDevMode(libProject))
+		vscode.commands.registerCommand("liberty.dev.stop", async (libProject?: LibertyProject | undefined) => devCommands.stopDevMode(libProject)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand('liberty.dev.custom', async (libProject?: LibertyProject | undefined) => devCommands.customDevMode(libProject))
+		vscode.commands.registerCommand("liberty.dev.custom", async (libProject?: LibertyProject | undefined) => devCommands.customDevMode(libProject)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand('liberty.dev.run.tests', async (libProject?: LibertyProject | undefined) => devCommands.runTests(libProject))
+		vscode.commands.registerCommand("liberty.dev.run.tests", async (libProject?: LibertyProject | undefined) => devCommands.runTests(libProject)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand('liberty.dev.open.failsafe.report', async (libProject?: LibertyProject | undefined) => devCommands.openReport('failsafe', libProject))
+		vscode.commands.registerCommand("liberty.dev.open.failsafe.report", async (libProject?: LibertyProject | undefined) => devCommands.openReport("failsafe", libProject)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand('liberty.dev.open.surefire.report', async (libProject?: LibertyProject | undefined) => devCommands.openReport('surefire', libProject))
+		vscode.commands.registerCommand("liberty.dev.open.surefire.report", async (libProject?: LibertyProject | undefined) => devCommands.openReport("surefire", libProject)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand('liberty.dev.open.gradle.test.report', async (libProject?: LibertyProject | undefined) => devCommands.openReport('gradle', libProject))
+		vscode.commands.registerCommand("liberty.dev.open.gradle.test.report", async (libProject?: LibertyProject | undefined) => devCommands.openReport("gradle", libProject)),
 	);
 	context.subscriptions.push(
 		vscode.window.onDidCloseTerminal((closedTerminal: vscode.Terminal) => {
@@ -68,7 +68,8 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export function deactivate(): void {
 }
 
 /**
@@ -76,14 +77,14 @@ export function deactivate() {
  * @param projectProvider Liberty Dev projects
  */
 export function registerFileWatcher(projectProvider: ProjectProvider): void {
-	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher('{**/pom.xml,**/build.gradle,**/settings.gradle}');
-	watcher.onDidCreate(async (e: vscode.Uri) => {
+	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle}");
+	watcher.onDidCreate(async () => {
 		projectProvider.refresh();
 	});
-	watcher.onDidChange(async (e: vscode.Uri) => {
+	watcher.onDidChange(async () => {
 		projectProvider.refresh();
 	});
-	watcher.onDidDelete(async (e: vscode.Uri) => {
+	watcher.onDidDelete(async () => {
 		projectProvider.refresh();
 	});
 }

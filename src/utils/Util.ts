@@ -1,13 +1,13 @@
-import * as vscode from 'vscode';
-import * as fs from 'fs';
+import * as fs from "fs";
+import * as vscode from "vscode";
 
-export async function getAllPaths(workspaceFolder: vscode.WorkspaceFolder, pattern: string) : Promise<string[]> {
-	const fileUris: vscode.Uri[] = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder, pattern),'**/{bin,classes,target}/**');
-	return fileUris.map(_uri => _uri.fsPath);
+export async function getAllPaths(workspaceFolder: vscode.WorkspaceFolder, pattern: string): Promise<string[]> {
+	const fileUris: vscode.Uri[] = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder, pattern), "**/{bin,classes,target}/**");
+	return fileUris.map((uri) => uri.fsPath);
 }
 
-export function getReport(report: string) {
-	var file = fs.readFileSync(report, 'utf8');
+export function getReport(report: string): string {
+	const file = fs.readFileSync(report, "utf8");
 	return file;
 }
 

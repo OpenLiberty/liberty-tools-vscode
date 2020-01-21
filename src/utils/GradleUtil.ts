@@ -1,26 +1,26 @@
-import * as path from 'path';
 import * as fse from "fs-extra";
+import * as path from "path";
 
 /**
  * Check a build.gradle file for the liberty-gradle-plugin
  * Return true if the build.gradle contains applies the liberty plugin
  * @param buildFile JS object representation of the build.gradle
  */
-export function validGradleBuild(buildFile: any) {
+export function validGradleBuild(buildFile: any): boolean {
     if (buildFile !== undefined && buildFile.apply !== undefined && buildFile.buildscript !== undefined && buildFile.buildscript.dependencies !== undefined) {
         // check that "apply plugin: 'liberty'" is specified in the build.gradle
-        var libertyPlugin = false;
-        for (var i = 0; i < buildFile.apply.length; i++) {
-            if (buildFile.apply[i] == "plugin: 'liberty'") {
+        let libertyPlugin = false;
+        for (let i = 0; i < buildFile.apply.length; i++) {
+            if (buildFile.apply[i] === "plugin: 'liberty'") {
                 libertyPlugin = true;
                 break;
             }
         }
         if (libertyPlugin) {
-            for (var i = 0; i < buildFile.buildscript.dependencies.length; i++) {
-                var dependency = buildFile.buildscript.dependencies[i];
+            for (let i = 0; i < buildFile.buildscript.dependencies.length; i++) {
+                const dependency = buildFile.buildscript.dependencies[i];
                 // check that group matches io.openliberty.tools and name matches liberty-gradle-plugin
-                if (dependency.group == "io.openliberty.tools" && dependency.name == "liberty-gradle-plugin") {
+                if (dependency.group === "io.openliberty.tools" && dependency.name === "liberty-gradle-plugin") {
                     return true;
                 }
             }
@@ -36,13 +36,14 @@ export function validGradleBuild(buildFile: any) {
  * @param path build.gradle location
  */
 export async function getGradleProjetName(gradlePath: string): Promise<string> {
-    var dirName = path.dirname(gradlePath);
-    var gradleSettings = getGradleSettings(gradlePath);
-    var label = path.basename(dirName);
+    const dirName = path.dirname(gradlePath);
+    const gradleSettings = getGradleSettings(gradlePath);
+    let label = path.basename(dirName);
     if (fse.existsSync(gradleSettings)) {
         // File exists in path
-        var g2js = require('gradle-to-js/lib/parser');
-        label = await g2js.parseFile(gradleSettings).then(function (representation: any) {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const g2js = require("gradle-to-js/lib/parser");
+        label = await g2js.parseFile(gradleSettings).then((representation: any) => {
             if (representation["rootProject.name"] !== undefined) {
                 return representation["rootProject.name"];
             }
@@ -58,8 +59,8 @@ export async function getGradleProjetName(gradlePath: string): Promise<string> {
  * @param gradlePath
  */
 export function getGradleSettings(gradlePath: string): string {
-    var dirName = path.dirname(gradlePath);
-    var gradleSettings = path.normalize(path.join(dirName, "settings.gradle"));
+    const dirName = path.dirname(gradlePath);
+    let gradleSettings = path.normalize(path.join(dirName, "settings.gradle"));
     if (fse.existsSync(gradleSettings)) {
         // settings.gradle exists in same directory as build.gradle
         return gradleSettings;
@@ -75,26 +76,25 @@ export function getGradleSettings(gradlePath: string): string {
     return "";
 }
 
-
 /**
  * Given a settings.gradle file, determine if there are valid child gradle projects
- * The parent build.gradle must have subprojects in the `include` section and 
+ * The parent build.gradle must have subprojects in the `include` section and
  * apply the liberty-gradle-plugin to the subprojects
  * Returns children associated with the parent build.gradle
  * @param settingsFile settings.gradle file
  */
 export function findChildGradleProjects(buildFile: any, settingsFile: any): string[] {
-    var gradleChildren: string[] = new Array();
-    var validGradleChildren: string[] = new Array();
+    let gradleChildren: string[] = [];
+    let validGradleChildren: string[] = [];
     if (settingsFile !== undefined) {
         // look for a valid "include" section in the settingsFile
         if (settingsFile.include !== undefined) {
             if (typeof settingsFile.include === "string") {
                 // strip quotations and spaces from "include" string
-                let subprojects = settingsFile.include.replace(/['" ]+/g, '');
-                gradleChildren = subprojects.split(',');
+                const subprojects = settingsFile.include.replace(/['" ]+/g, "");
+                gradleChildren = subprojects.split(",");
             } else {
-                for (var i = 0; i < settingsFile.include.length; i++) {
+                for (let i = 0; i < settingsFile.include.length; i++) {
                     gradleChildren.push(settingsFile.include[i]);
                 }
             }
@@ -113,5 +113,5 @@ function validParent(buildFile: any, gradleChildren: string[]): string[] {
     if (validGradleBuild(buildFile.subprojects) || validGradleBuild(buildFile.allprojects)) {
         return gradleChildren;
     }
-    return new Array();
+    return [];
 }
