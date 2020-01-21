@@ -11,7 +11,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	// tslint:disable-next-line: variable-name
 	private _onDidChangeTreeData: vscode.EventEmitter<LibertyProject | undefined>;
 
-	constructor(private workspaceFolders: vscode.WorkspaceFolder[], private pomPaths: string[], private gradlePaths: string[]) {
+	constructor() {
 		this._onDidChangeTreeData = new vscode.EventEmitter<LibertyProject | undefined>();
 		this.onDidChangeTreeData = this._onDidChangeTreeData.event;
 		this.refresh();
@@ -27,14 +27,17 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public getChildren(element?: LibertyProject): Thenable<LibertyProject[]> {
-		if (this.workspaceFolders === undefined) {
+		if (vscode.workspace.workspaceFolders === undefined) {
 			vscode.window.showInformationMessage("No Liberty project found in empty workspace");
 			return Promise.resolve([]);
 		}
-		return Promise.resolve(this.getProjectFromBuildFile(this.pomPaths, this.gradlePaths));
+		return Promise.resolve(this.getProjectFromBuildFile());
 	}
 
-	private async getProjectFromBuildFile(pomPaths: string[], gradlePaths: string[]): Promise<LibertyProject[]> {
+	private async getProjectFromBuildFile(): Promise<LibertyProject[]> {
+		const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target}/**";
+		const pomPaths = (await vscode.workspace.findFiles("**/pom.xml", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
+		const gradlePaths = (await vscode.workspace.findFiles("**/build.gradle", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
 		const projects: LibertyProject[] = [];
 		const validPoms: string[] = [];
 		let mavenChildMap: Map<string, string[]> = new Map();

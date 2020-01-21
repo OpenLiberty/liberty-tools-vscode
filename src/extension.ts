@@ -9,31 +9,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	const workspaceFolders = vscode.workspace.workspaceFolders;
 	if (workspaceFolders !== undefined) {
-		let allPomPaths: string[] = [];
-		let allGradlePaths: string[] = [];
-		for (const folder of workspaceFolders) {
-			const pomPaths: string[] = await util.getAllPaths(folder, "**/pom.xml");
-			const gradlePaths: string[] = await util.getAllPaths(folder, "**/build.gradle");
-			allPomPaths = allPomPaths.concat(pomPaths);
-			allGradlePaths = allGradlePaths.concat(gradlePaths);
-		}
-
 		if (vscode.workspace.workspaceFolders !== undefined) {
-			const projectProvider = new ProjectProvider(vscode.workspace.workspaceFolders, allPomPaths, allGradlePaths);
+			const projectProvider = new ProjectProvider();
 			registerFileWatcher(projectProvider);
 			vscode.window.registerTreeDataProvider("liberty-dev", projectProvider);
-			vscode.workspace.onDidChangeTextDocument((e) => {
-				allPomPaths.forEach((pom) => {
-					if (pom === e.document.uri.fsPath) {
-						projectProvider.refresh();
-					}
-				});
-				allGradlePaths.forEach((gradlePath) => {
-					if (gradlePath === e.document.uri.fsPath) {
-						projectProvider.refresh();
-					}
-				});
-			});
 		}
 	}
 	context.subscriptions.push(
