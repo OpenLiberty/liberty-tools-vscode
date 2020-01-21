@@ -5,6 +5,8 @@ import * as vscode from "vscode";
 import { LibertyProject } from "./libertyProject";
 import { getReport } from "./Util";
 
+export const terminals: { [libProjectId: number]: LibertyProject } = {};
+
 // opens pom associated with LibertyProject and starts dev mode
 export async function openProject(pomPath: string): Promise<void> {
     console.log("Opening " + pomPath);
@@ -18,6 +20,9 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             terminal = libProject.createTerminal();
+            if (terminal !== undefined) {
+                terminals[Number(terminal.processId)] = libProject;
+            }
         }
         if (terminal !== undefined) {
             terminal.show();
@@ -56,6 +61,9 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             terminal = libProject.createTerminal();
+            if (terminal !== undefined) {
+                terminals[Number(terminal.processId)] = libProject;
+            }
         }
         if (terminal !== undefined) {
             terminal.show();
@@ -144,5 +152,15 @@ export async function openReport(reportType: string, libProject?: LibertyProject
         }
     } else {
         console.error("Cannot open test reports on an undefined project");
+    }
+}
+
+// retrieve LibertyProject correpsonding to closed terminal and delete terminal
+export function deleteTerminal(terminal: vscode.Terminal): void {
+    try {
+        const libProject = terminals[Number(terminal.processId)];
+        libProject.deleteTerminal();
+    } catch {
+        console.error("Unable to delete terminal: " + terminal.name);
     }
 }

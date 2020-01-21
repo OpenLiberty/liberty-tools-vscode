@@ -60,6 +60,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	context.subscriptions.push(
 		vscode.commands.registerCommand("liberty.dev.open.gradle.test.report", async (libProject?: LibertyProject | undefined) => devCommands.openReport("gradle", libProject)),
 	);
+	context.subscriptions.push(
+		vscode.window.onDidCloseTerminal((closedTerminal: vscode.Terminal) => {
+			devCommands.deleteTerminal(closedTerminal);
+		})
+	);
 }
 
 // this method is called when your extension is deactivated
