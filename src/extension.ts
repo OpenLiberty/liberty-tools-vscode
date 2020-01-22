@@ -6,37 +6,35 @@ import { LibertyProject, ProjectProvider } from "./utils/libertyProject";
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	console.log('"vscode-liberty-dev" extension is now active!');
 
-	const workspaceFolders = vscode.workspace.workspaceFolders;
-	if (workspaceFolders !== undefined) {
-		if (vscode.workspace.workspaceFolders !== undefined) {
-			const projectProvider = new ProjectProvider();
-			registerFileWatcher(projectProvider);
-			vscode.window.registerTreeDataProvider("liberty-dev", projectProvider);
-		}
+	if (vscode.workspace.workspaceFolders !== undefined) {
+		const projectProvider = new ProjectProvider();
+		registerFileWatcher(projectProvider);
+		vscode.window.registerTreeDataProvider("liberty-dev", projectProvider);
 	}
+
 	context.subscriptions.push(
 		vscode.commands.registerCommand("extension.open.project", (pomPath) => devCommands.openProject(pomPath)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand("liberty.dev.start", async (libProject?: LibertyProject | undefined) => devCommands.startDevMode(libProject)),
+		vscode.commands.registerCommand("liberty.dev.start", (libProject?: LibertyProject) => devCommands.startDevMode(libProject)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand("liberty.dev.stop", async (libProject?: LibertyProject | undefined) => devCommands.stopDevMode(libProject)),
+		vscode.commands.registerCommand("liberty.dev.stop", (libProject?: LibertyProject) => devCommands.stopDevMode(libProject)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand("liberty.dev.custom", async (libProject?: LibertyProject | undefined) => devCommands.customDevMode(libProject)),
+		vscode.commands.registerCommand("liberty.dev.custom", (libProject?: LibertyProject) => devCommands.customDevMode(libProject)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand("liberty.dev.run.tests", async (libProject?: LibertyProject | undefined) => devCommands.runTests(libProject)),
+		vscode.commands.registerCommand("liberty.dev.run.tests", (libProject?: LibertyProject) => devCommands.runTests(libProject)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand("liberty.dev.open.failsafe.report", async (libProject?: LibertyProject | undefined) => devCommands.openReport("failsafe", libProject)),
+		vscode.commands.registerCommand("liberty.dev.open.failsafe.report", (libProject?: LibertyProject) => devCommands.openReport("failsafe", libProject)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand("liberty.dev.open.surefire.report", async (libProject?: LibertyProject | undefined) => devCommands.openReport("surefire", libProject)),
+		vscode.commands.registerCommand("liberty.dev.open.surefire.report", (libProject?: LibertyProject) => devCommands.openReport("surefire", libProject)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand("liberty.dev.open.gradle.test.report", async (libProject?: LibertyProject | undefined) => devCommands.openReport("gradle", libProject)),
+		vscode.commands.registerCommand("liberty.dev.open.gradle.test.report", (libProject?: LibertyProject) => devCommands.openReport("gradle", libProject)),
 	);
 	context.subscriptions.push(
 		vscode.window.onDidCloseTerminal((closedTerminal: vscode.Terminal) => {
