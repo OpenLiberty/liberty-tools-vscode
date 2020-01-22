@@ -38,9 +38,14 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			vscode.window.showInformationMessage("No Liberty project found in empty workspace");
 			return [];
 		}
-		// projects is a map of buildFilePath -> LibertyProjects
-		// Need to return an array of just the LibertyProjects
-		return [... this.projects.values()];
+		// if element is null, vscode is asking for the root node
+		if (element === undefined) {
+			// projects is a map of buildFilePath -> LibertyProjects
+			// Need to return an array of just the LibertyProject
+			return [... this.projects.values()];
+		}
+		// else it is asking for a child node
+		return [];
 	}
 
 	// Given a list of pom.xml files, find ones that are valid to use with liberty dev-mode
