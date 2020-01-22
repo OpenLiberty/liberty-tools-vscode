@@ -24,7 +24,8 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 
 	public async refresh(): Promise<void> {
-		this.projects = await this.findProjects();
+		// update the map of projects
+		await this.updateProjects();
 		// trigger a re-render of the tree view
 		this._onDidChangeTreeData.fire();
 	}
@@ -111,14 +112,15 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		return validGradleBuildFiles;
 	}
 
-	private async findProjects(): Promise<Map<string, LibertyProject>> {
+	private async updateProjects(): Promise<void> {
+		// find all build files in the open workspace and find all the ones that are valid for dev-mode
 		const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target}/**";
 		const pomPaths = (await vscode.workspace.findFiles("**/pom.xml", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
 		const gradlePaths = (await vscode.workspace.findFiles("**/build.gradle", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
-
 		const validPomPaths = await this.findValidPOMs(pomPaths);
 		const validGradlePaths = await this.findValidGradleBuildFiles(gradlePaths);
 
+		// map of buildFilePath -> LibertyProject
 		const projectsMap: Map<string, LibertyProject> = new Map();
 
 		for (const pomPath of validPomPaths) {
@@ -142,13 +144,15 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			if (this.projects.has(gradlePath)) {
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 				projectsMap.set(gradlePath, this.projects.get(gradlePath)!);
-			} else {
+			}
+			// else we create a new LibertyProject for that build file
+			else {
 				const project = await createProject(gradlePath, LIBERTY_GRADLE_PROJECT);
 				projectsMap.set(gradlePath, project);
 			}
 		}
 
-		return projectsMap;
+		this.projects = projectsMap;
 	}
 }
 
