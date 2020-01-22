@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import * as devCommands from "./utils/devCommands";
-import * as util from "./utils/Util";
 
 import { LibertyProject, ProjectProvider } from "./utils/libertyProject";
 
