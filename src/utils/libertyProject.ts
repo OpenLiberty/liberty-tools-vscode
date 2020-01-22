@@ -125,20 +125,20 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		const validGradlePaths = await this.findValidGradleBuildFiles(gradlePaths);
 
 		// map of buildFilePath -> LibertyProject
-		const projectsMap: Map<string, LibertyProject> = new Map();
+		const newProjectsMap: Map<string, LibertyProject> = new Map();
 
 		for (const pomPath of validPomPaths) {
 			// if a LibertyProject for this pom has already been created
 			// we want to re-use it since it stores state such as the terminal being used for dev-mode
 			if (this.projects.has(pomPath)) {
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				projectsMap.set(pomPath, this.projects.get(pomPath)!);
+				newProjectsMap.set(pomPath, this.projects.get(pomPath)!);
 			}
 			// else we create a new LibertyProject for that POM
 			else {
 				const xmlString = await fse.readFile(pomPath, "utf8");
 				const project = await createProject(pomPath, LIBERTY_MAVEN_PROJECT, xmlString);
-				projectsMap.set(pomPath, project);
+				newProjectsMap.set(pomPath, project);
 			}
 		}
 
@@ -147,16 +147,16 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			// we want to re-use it
 			if (this.projects.has(gradlePath)) {
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				projectsMap.set(gradlePath, this.projects.get(gradlePath)!);
+				newProjectsMap.set(gradlePath, this.projects.get(gradlePath)!);
 			}
 			// else we create a new LibertyProject for that build file
 			else {
 				const project = await createProject(gradlePath, LIBERTY_GRADLE_PROJECT);
-				projectsMap.set(gradlePath, project);
+				newProjectsMap.set(gradlePath, project);
 			}
 		}
 
-		this.projects = projectsMap;
+		this.projects = newProjectsMap;
 	}
 }
 
