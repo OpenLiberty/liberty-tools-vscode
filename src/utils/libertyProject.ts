@@ -4,9 +4,7 @@ import * as vscode from "vscode";
 import * as gradleUtil from "./GradleUtil";
 import * as mavenUtil from "./MavenUtil";
 import * as util from "./Util";
-
-const LIBERTY_MAVEN_PROJECT = "libertyMavenProject";
-const LIBERTY_GRADLE_PROJECT = "libertyGradleProject";
+import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT } from "./constants";
 
 export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> {
 	public readonly onDidChangeTreeData: vscode.Event<LibertyProject | undefined>;
@@ -41,6 +39,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			return [];
 		}
 		// projects is a map of buildFilePath -> LibertyProjects
+		// Need to return an array of just the LibertyProjects
 		return [... this.projects.values()];
 	}
 
