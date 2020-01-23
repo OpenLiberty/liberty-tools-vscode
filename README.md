@@ -26,9 +26,10 @@ Contributions to the Open Liberty Tools extension are welcome!
 Our [CONTRIBUTING](CONTRIBUTING.md) document contains details for submitting pull requests.
 
 To build the extension locally:
-1. `git clone git@github.com:OpenLiberty/liberty-dev-vscode-ext.git`
-2. Execute `npm install`
-3. Run the extension in Debug and Run mode by selecting `Run Extension` or `F5`
+1. `git clone https://github.com/OpenLiberty/liberty-dev-vscode-ext`
+2. `cd liberty-dev-vscode-ext`
+3. Execute `npm install`
+4. Run the extension in Debug and Run mode by selecting `Run Extension` or `F5`
 
     Alternatively, build a `.vsix` file:
     - `vsce package` to generate the `liberty-dev-vscode-ext-xxx.vsix` file
