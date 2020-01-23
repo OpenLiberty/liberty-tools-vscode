@@ -20,9 +20,14 @@
 		"Java",
 		"Open Liberty",
 		"Maven",
-		"Gradle"
+		"Gradle",
+		"MicroProfile"
 	],
 	"icon": "images/ol_logo.png",
+	"galleryBanner": {
+		"color": "#24243B",
+		"theme": "dark"
+	},
 	"activationEvents": [
 		"workspaceContains:**/pom.xml",
 		"workspaceContains:**/build.gradle",
