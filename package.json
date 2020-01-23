@@ -19,9 +19,9 @@
 	"keywords": [
 		"Java",
 		"Open Liberty",
-		"Maven",
-		"Gradle",
-		"MicroProfile"
+		"MicroProfile",
+		"Jakarta EE",
+		"Cloud Native"
 	],
 	"icon": "images/ol_logo.png",
 	"galleryBanner": {
