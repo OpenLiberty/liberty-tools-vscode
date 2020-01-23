@@ -19,10 +19,15 @@
 	"keywords": [
 		"Java",
 		"Open Liberty",
-		"Maven",
-		"Gradle"
+		"MicroProfile",
+		"Jakarta EE",
+		"Cloud Native"
 	],
 	"icon": "images/ol_logo.png",
+	"galleryBanner": {
+		"color": "#24243B",
+		"theme": "dark"
+	},
 	"activationEvents": [
 		"workspaceContains:**/pom.xml",
 		"workspaceContains:**/build.gradle",
