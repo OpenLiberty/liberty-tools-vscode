@@ -35,7 +35,7 @@ export function validGradleBuild(buildFile: any): boolean {
  * Else return the parent directory name of the build.gradle
  * @param path build.gradle location
  */
-export async function getGradleProjetName(gradlePath: string): Promise<string> {
+export async function getGradleProjectName(gradlePath: string): Promise<string> {
     const dirName = path.dirname(gradlePath);
     const gradleSettings = getGradleSettings(gradlePath);
     let label = path.basename(dirName);

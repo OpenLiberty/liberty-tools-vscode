@@ -17,7 +17,7 @@ export async function openProject(pomPath: string): Promise<void> {
 // start dev mode
 export async function startDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log("Starting liberty:dev on " + libProject.getLabel());
+        console.log("Starting liberty dev on " + libProject.getLabel());
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             terminal = libProject.createTerminal();
@@ -35,30 +35,30 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
             }
         }
     } else {
-        console.error("Cannot start liberty:dev on an undefined project");
+        console.error("Cannot start liberty dev on an undefined project");
     }
 }
 
 // stop dev mode
 export async function stopDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log("Stopping liberty:dev on " + libProject.getLabel());
+        console.log("Stopping liberty dev on " + libProject.getLabel());
         const terminal = libProject.getTerminal();
         if (terminal !== undefined) {
             terminal.show();
             terminal.sendText("exit"); // stop dev mode on current project
         } else {
-            vscode.window.showWarningMessage("liberty:dev has not been started on " + libProject.getLabel());
+            vscode.window.showWarningMessage("liberty dev has not been started on " + libProject.getLabel());
         }
     } else {
-        console.error("Cannot stop liberty:dev on an undefined project");
+        console.error("Cannot stop liberty dev on an undefined project");
     }
 }
 
 // custom start dev mode command
 export async function customDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log("Starting liberty:dev with custom parameters on " + libProject.getLabel());
+        console.log("Starting liberty dev with custom parameters on " + libProject.getLabel());
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             terminal = libProject.createTerminal();
@@ -88,7 +88,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
             },
                 {
                     placeHolder: placeHolderStr,
-                    prompt: "Specify custom parameters for the liberty:dev command.",
+                    prompt: "Specify custom parameters for the liberty dev command.",
                     ignoreFocusOut: true,
                 },
             ));
@@ -101,20 +101,20 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
             }
         }
     } else {
-        console.error("Cannot custom start liberty:dev on an undefined project");
+        console.error("Cannot custom start liberty dev on an undefined project");
     }
 }
 
 // run tests on dev mode
 export async function runTests(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log("Running liberty:dev tests on " + libProject.getLabel());
+        console.log("Running liberty dev tests on " + libProject.getLabel());
         const terminal = libProject.getTerminal();
         if (terminal !== undefined) {
             terminal.show();
             terminal.sendText(" "); // sends Enter to run tests in terminal
         } else {
-            vscode.window.showWarningMessage("liberty:dev has not been started on " + libProject.getLabel());
+            vscode.window.showWarningMessage("liberty dev has not been started on " + libProject.getLabel());
         }
     } else {
         console.error("Cannot run tests on an undefined project");
@@ -156,7 +156,7 @@ export async function openReport(reportType: string, libProject?: LibertyProject
     }
 }
 
-// retrieve LibertyProject correpsonding to closed terminal and delete terminal
+// retrieve LibertyProject corresponding to closed terminal and delete terminal
 export function deleteTerminal(terminal: vscode.Terminal): void {
     try {
         const libProject = terminals[Number(terminal.processId)];
