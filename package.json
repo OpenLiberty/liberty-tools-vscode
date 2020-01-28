@@ -92,31 +92,38 @@
 			"view/item/context": [
 				{
 					"command": "liberty.dev.start",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject"
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject",
+					"group": "libertyCore@1"
 				},
 				{
 					"command": "liberty.dev.stop",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject"
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject",
+					"group": "libertyCore@3"
 				},
 				{
 					"command": "liberty.dev.custom",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject"
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject",
+					"group": "libertyCore@2"
 				},
 				{
 					"command": "liberty.dev.run.tests",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject"
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject",
+					"group": "libertyCore@4"
 				},
 				{
 					"command": "liberty.dev.open.failsafe.report",
-					"when": "viewItem == libertyMavenProject"
+					"when": "viewItem == libertyMavenProject",
+					"group": "libertyCore@5"
 				},
 				{
 					"command": "liberty.dev.open.surefire.report",
-					"when": "viewItem == libertyMavenProject"
+					"when": "viewItem == libertyMavenProject",
+					"group": "libertyCore@6"
 				},
 				{
 					"command": "liberty.dev.open.gradle.test.report",
-					"when": "viewItem == libertyGradleProject"
+					"when": "viewItem == libertyGradleProject",
+					"group": "libertyCore@5"
 				}
 			],
 			"commandPalette": [

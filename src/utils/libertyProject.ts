@@ -218,7 +218,7 @@ export class LibertyProject extends vscode.TreeItem {
 					env = { JAVA_HOME: javaHome };
 				}
 			}
-			const terminal = vscode.window.createTerminal({ name: this.label + " (liberty:dev)", env });
+			const terminal = vscode.window.createTerminal({ name: this.label + " (liberty dev)", env });
 			return terminal;
 		}
 		return undefined;
@@ -242,7 +242,7 @@ export async function createProject(buildFile: string, contextValue: string, xml
 			}
 		});
 	} else {
-		label = await gradleUtil.getGradleProjetName(buildFile);
+		label = await gradleUtil.getGradleProjectName(buildFile);
 	}
 	const project: LibertyProject = new LibertyProject(label, vscode.TreeItemCollapsibleState.None, buildFile, "start", contextValue, undefined, {
 		command: "extension.open.project",
