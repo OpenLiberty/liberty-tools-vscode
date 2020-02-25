@@ -1,5 +1,8 @@
 import * as fse from "fs-extra";
 import * as path from "path";
+import * as vscode from "vscode";
+import { getAllPaths, getReport } from "./Util";
+import { TEST_REPORT_STRING } from "./constants";
 
 /**
  * Check a build.gradle file for the liberty-gradle-plugin
@@ -108,10 +111,62 @@ export function findChildGradleProjects(buildFile: any, settingsFile: any): stri
     return validGradleChildren;
 }
 
+/**
+ * Given a build.gradle, resolve test report locations
+ * @param gradlePath build.gradle file
+ * @param workspaceFolder workspace of current project
+ */
+export async function getGradleTestReport(gradlePath: any, workspaceFolder: vscode.WorkspaceFolder): Promise<string> {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const g2js = require("gradle-to-js/lib/parser");
+    let testReport = await g2js.parseFile(gradlePath).then(async (buildFile: any) => {
+        let dest: string | undefined;
+        if (buildFile["test.reports.html.destination"] !== undefined) {
+            dest = buildFile["test.reports.html.destination"];
+        } else if (buildFile.test !== undefined) {
+            dest = buildFile.test["reports.html.destination"];
+        }
+        return dest;
+    }).catch((err: any) => console.error("Unable to parse build.gradle: " + gradlePath + "; " + err));
+    if (testReport === undefined) {
+        testReport = path.join(workspaceFolder.uri.fsPath, "build", "reports", "tests", "test", "index.html");
+    } else {
+        if (!fse.existsSync(testReport)) {
+            testReport = findCustomTestReport(workspaceFolder, testReport);
+        }
+    }
+    return testReport;
+}
+
 function validParent(buildFile: any, gradleChildren: string[]): string[] {
     // every subproject listed in the include section of the parent is supported by the liberty-gradle-plugin
     if (validGradleBuild(buildFile.subprojects) || validGradleBuild(buildFile.allprojects)) {
         return gradleChildren;
     }
     return [];
+}
+
+async function findCustomTestReport(workspaceFolder: vscode.WorkspaceFolder, testReport: string): Promise<string> {
+    const testReports: string[] = [];
+    const paths = await getAllPaths(workspaceFolder, "**/index.html");
+    for (let i = 0; i < paths.length; i++) {
+        const report = getReport(paths[i]);
+        if (report.includes(TEST_REPORT_STRING)) {
+            testReports.push(paths[i]);
+        }
+    }
+    // if there are multiple test reports, use most recently modified
+    if (testReports.length > 0) {
+        let lastModified = fse.statSync(testReports[0]).mtime;
+        let lastModifiedPath = testReports[0];
+        for (let i = 0; i < testReports.length; i++) {
+            const reportLastModified = fse.statSync(testReports[i]).mtime;
+            if (lastModified < reportLastModified) {
+                lastModifiedPath = testReports[i];
+                lastModified = reportLastModified;
+            }
+        }
+        testReport = lastModifiedPath;
+    }
+    return testReport;
 }

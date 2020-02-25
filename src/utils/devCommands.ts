@@ -5,6 +5,7 @@ import * as vscode from "vscode";
 import { LibertyProject } from "./libertyProject";
 import { getReport } from "./Util";
 import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT } from "./constants";
+import { getGradleTestReport } from "./GradleUtil";
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 
@@ -131,7 +132,7 @@ export async function openReport(reportType: string, libProject?: LibertyProject
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT) {
                 report = Path.join(workspaceFolder.uri.fsPath, "target", "site", reportType + "-report.html");
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT) {
-                report = Path.join(workspaceFolder.uri.fsPath, "build", "reports", "tests", "test", "index.html");
+                report = await getGradleTestReport(libProject.path, workspaceFolder);
             }
             let reportTypeLabel = reportType;
             if (reportType === "gradle") {
