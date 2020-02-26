@@ -8,6 +8,7 @@ import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT } from "./constants";
 import { getGradleTestReport } from "./GradleUtil";
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
+let _customParameters = "";
 
 // opens pom associated with LibertyProject and starts dev mode
 export async function openProject(pomPath: string): Promise<void> {
@@ -91,9 +92,11 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
                     placeHolder: placeHolderStr,
                     prompt: "Specify custom parameters for the liberty dev command.",
                     ignoreFocusOut: true,
+                    value: _customParameters
                 },
             ));
             if (customCommand !== undefined) {
+                _customParameters = customCommand;
                 if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT) {
                     terminal.sendText("mvn io.openliberty.tools:liberty-maven-plugin:dev " + customCommand + ' -f "' + libProject.getPath() + '"');
                 } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT) {
