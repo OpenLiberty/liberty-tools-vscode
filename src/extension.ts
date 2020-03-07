@@ -3,14 +3,20 @@ import * as devCommands from "./utils/devCommands";
 
 import { LibertyProject, ProjectProvider } from "./utils/libertyProject";
 
+export const projectProvider = new ProjectProvider();
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	console.log('"vscode-liberty-dev" extension is now active!');
 
 	if (vscode.workspace.workspaceFolders !== undefined) {
-		const projectProvider = new ProjectProvider();
 		registerFileWatcher(projectProvider);
 		vscode.window.registerTreeDataProvider("liberty-dev", projectProvider);
 	}
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand("liberty.explorer.refresh", (async () => {
+			projectProvider.refresh();
+		}))
+	);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand("extension.open.project", (pomPath) => devCommands.openProject(pomPath)),
