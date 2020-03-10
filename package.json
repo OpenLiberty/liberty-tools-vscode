@@ -53,6 +53,12 @@
 		},
 		"commands": [
 			{
+				"command": "liberty.explorer.refresh",
+				"title": "%contributes.commands.liberty.explorer.refresh%",
+				"category": "Open Liberty",
+				"icon": "$(refresh)"
+			},
+			{
 				"command": "liberty.dev.start",
 				"category": "Open Liberty",
 				"title": "Start"
@@ -89,6 +95,13 @@
 			}
 		],
 		"menus": {
+			"view/title": [
+				{
+				  "command": "liberty.explorer.refresh",
+				  "when": "view == liberty-dev",
+				  "group": "navigation@1"
+				}
+			],
 			"view/item/context": [
 				{
 					"command": "liberty.dev.start",
@@ -153,6 +166,10 @@
 				},
 				{
 					"command": "liberty.dev.open.gradle.test.report",
+					"when": "never"
+				},
+				{
+					"command": "liberty.explorer.refresh",
 					"when": "never"
 				}
 			]
