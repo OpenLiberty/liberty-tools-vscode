@@ -56,10 +56,7 @@
 				"command": "liberty.explorer.refresh",
 				"title": "%contributes.commands.liberty.explorer.refresh%",
 				"category": "Open Liberty",
-				"icon": {
-				  "light": "images/refresh.svg",
-				  "dark": "images/refresh.svg"
-				}
+				"icon": "$(refresh)"
 			},
 			{
 				"command": "liberty.dev.start",
