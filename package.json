@@ -97,9 +97,9 @@
 		"menus": {
 			"view/title": [
 				{
-				  "command": "liberty.explorer.refresh",
-				  "when": "view == liberty-dev",
-				  "group": "navigation@1"
+					"command": "liberty.explorer.refresh",
+					"when": "view == liberty-dev",
+					"group": "navigation@1"
 				}
 			],
 			"view/item/context": [
@@ -200,14 +200,15 @@
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
 		"@types/mocha": "^5.2.6",
-		"@types/node": "^10.12.21",
+		"@types/node": "^10.17.17",
 		"@types/vscode": "^1.36.0",
-		"@typescript-eslint/eslint-plugin": "^2.17.0",
-		"@typescript-eslint/parser": "^2.17.0",
+		"@typescript-eslint/eslint-plugin": "^2.23.0",
+		"@typescript-eslint/parser": "^2.23.0",
 		"eslint": "^6.8.0",
 		"glob": "^7.1.4",
+		"minimist": ">=1.2.2",
 		"mocha": "^6.1.4",
-		"typescript": "^3.3.1",
+		"typescript": "^3.8.3",
 		"vscode-test": "^1.0.0-next.0"
 	},
 	"dependencies": {
@@ -215,6 +216,7 @@
 		"@types/xml2js": "^0.4.4",
 		"fs-extra": "^8.1.0",
 		"gradle-to-js": "^2.0.0",
-		"xml2js": "^0.4.19"
+		"xml2js": "^0.4.19",
+		"minimist": ">=1.2.2"
 	}
 }
