@@ -5,7 +5,7 @@
 
 A VS Code extension for Open Liberty. The extension will detect your Liberty Maven or Liberty Gradle project if it detects the `io.openliberty.tools:liberty-maven-plugin` in the `pom.xml` or `io.openliberty.tools:liberty-gradle-plugin` in the `build.gradle`. Through the Liberty Dev Dashboard, you can start, stop, or interact with Liberty dev mode on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace.
 
-![Open Liberty Tools Extension](images/OpenLibertyTools.png)
+![Open Liberty Tools Extension](images/open-liberty-tools.png)
 
 ## Quick Start
 
@@ -25,12 +25,14 @@ A VS Code extension for Open Liberty. The extension will detect your Liberty Mav
 
 | Command                      | Description                                                                                                                                                                                                                                                                                                                  |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Run tests                    | Runs the unit tests and integration tests that are configured for your project. This command requires dev mode to be already started.                                                                                                                                                                                        |
 | Start                        | Starts dev mode.                                                                                                                                                                                                                                                                                                             |
 | Start…​                      | Starts dev mode with custom parameters. For example, to run tests automatically after every change, include the -DhotTests parameter. Additional supported parameters can be found in the documentation for the [dev goal of the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev). |
 | Stop                         | Stops dev mode.                                                                                                                                                                                                                                                                                                              |
+| Run tests                    | Runs the unit tests and integration tests that are configured for your project. This command requires dev mode to be already started.                                                                                                                                                                                        |
 | View integration test report | Views the integration test report file.                                                                                                                                                                                                                                                                                      |
 | View unit test report        | Views the unit test report file.                                                                                                                                                                                                                                                                                             |
+
+**Note:** Gradle projects only have a single `View test report` option.
 
 ## Configurable User Settings
 
