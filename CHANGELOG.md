@@ -1,11 +1,11 @@
 # Change Log
 
-All notable changes to the MicroProfile Starter extension will be documented below.
+All notable changes to the Open Liberty Tools extension will be documented below.
 
 ## 0.1.6
 
 - Detect custom test report locations
-- Add refresh button to liberty dev dashboard
+- Add refresh button to Liberty Dev Dashboard
 - Persist custom parameters between runs of dev mode
 
 ## 0.1.5
