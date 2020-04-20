@@ -7,6 +7,7 @@ All notable changes to the Open Liberty Tools extension will be documented below
 - Detect custom test report locations
 - Add refresh button to Liberty Dev Dashboard
 - Persist custom parameters between runs of dev mode
+- Upgrade minimist and acorn dependency versions
 
 ## 0.1.5
 
