@@ -74,6 +74,11 @@
 				"title": "Start..."
 			},
 			{
+				"command": "liberty.dev.start.container",
+				"category": "Open Liberty",
+				"title": "Start in container (tech preview)"
+			},
+			{
 				"command": "liberty.dev.run.tests",
 				"category": "Open Liberty",
 				"title": "Run tests"
@@ -105,37 +110,42 @@
 			"view/item/context": [
 				{
 					"command": "liberty.dev.start",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject",
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
 					"group": "libertyCore@1"
 				},
 				{
 					"command": "liberty.dev.stop",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject",
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
 					"group": "libertyCore@3"
 				},
 				{
 					"command": "liberty.dev.custom",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject",
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+					"group": "libertyCore@2"
+				},
+				{
+					"command": "liberty.dev.start.container",
+					"when": "viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
 					"group": "libertyCore@2"
 				},
 				{
 					"command": "liberty.dev.run.tests",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject",
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
 					"group": "libertyCore@4"
 				},
 				{
 					"command": "liberty.dev.open.failsafe.report",
-					"when": "viewItem == libertyMavenProject",
+					"when": "viewItem == libertyMavenProject || viewItem == libertyMavenProjectContainer",
 					"group": "libertyCore@5"
 				},
 				{
 					"command": "liberty.dev.open.surefire.report",
-					"when": "viewItem == libertyMavenProject",
+					"when": "viewItem == libertyMavenProject || viewItem == libertyMavenProjectContainer",
 					"group": "libertyCore@6"
 				},
 				{
 					"command": "liberty.dev.open.gradle.test.report",
-					"when": "viewItem == libertyGradleProject",
+					"when": "viewItem == libertyGradleProject || viewItem == libertyGradleProjectContainer",
 					"group": "libertyCore@5"
 				}
 			],
@@ -150,6 +160,10 @@
 				},
 				{
 					"command": "liberty.dev.custom",
+					"when": "never"
+				},
+				{
+					"command": "liberty.dev.start.container",
 					"when": "never"
 				},
 				{

@@ -1,12 +1,16 @@
+import { LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT } from "./constants";
+import { Console } from "console";
+
 /**
  * Look for a valid parent pom.xml
  * A valid parent contains the liberty-maven-plguin in the plugin management section
- * Return true if the pom is a valid parent pom.xml
+ *  Return [true, liberty project type] if valid, else [false, ""]
+ * 
  * @param xmlString the xmlString version of the pom.xml
  */
-export function validParentPom(xmlString: string): boolean {
+export function validParentPom(xmlString: string): [boolean, string] {
     const parseString = require("xml2js").parseString;
-    let parentPom = false;
+    let parentPom: [boolean, string] = [false, ""];
     parseString(xmlString, (err: any, result: any) => {
 
         // check for liberty maven plugin or boost maven plugin in plugin management
@@ -22,11 +26,18 @@ export function validParentPom(xmlString: string): boolean {
                                 for (let k = 0; k < plugin.length; k++) {
                                     if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] === "io.openliberty.tools") {
                                         console.debug("Found liberty-maven-plugin in the pom.xml plugin management");
-                                        parentPom = true;
+                                        if (mavenPluginVersionValid(plugin[k])) {
+                                            parentPom = [true, LIBERTY_MAVEN_PROJECT_CONTAINER];
+                                            return;
+                                        } else {
+                                            parentPom = [true, LIBERTY_MAVEN_PROJECT];
+                                            return;
+                                        }
                                     }
                                     if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "org.microshed.boost") {
                                         console.debug("Found boost-maven-plugin in the pom.xml");
-                                        parentPom = true;
+                                        parentPom = [true, LIBERTY_MAVEN_PROJECT];
+                                        return;
                                     }
                                 }
                             }
@@ -45,25 +56,30 @@ export function validParentPom(xmlString: string): boolean {
 
 /**
  * Check a pom.xml to see if it contains the liberty-maven-plugin
- * Pom.xml may either match a child pom artifactId, contain the plugin in the profiles section
+ * pom.xml may either match a child pom artifactId, contain the plugin in the profiles section
  * or define the plugin in the build section
- * Return true if the pom.xml contains the plugin
+ * Return [true, liberty project type] if valid, else [false, ""]
+ * 
  * @param xmlString string representation of the pom.xml
  * @param childrenMap map of all the children pom.xml identified
  */
-export function validPom(xmlString: string, childrenMap: Map<string, string[]>): boolean {
+export function validPom(xmlString: string, childrenMap: Map<string, string[]>): [boolean, string] {
     const parseString = require("xml2js").parseString;
-    let isValidPom = false;
+    let isValidPom: [boolean, string] = [false, ""];
     parseString(xmlString, (err: any, result: any) => {
 
         // check if the artifactId matches one of the modules found in a parent pom
-        if (result.project.artifactId[0] !== undefined && result.project.parent !== undefined && result.project.parent[0].artifactId !== undefined) {
+        if (result.project.arifactId !== undefined && result.project.artifactId[0] !== undefined
+            && result.project.parent !== undefined && result.project.parent[0].artifactId !== undefined) {
             if (childrenMap.has(result.project.parent[0].artifactId[0])) {
                 const modules = childrenMap.get(result.project.parent[0].artifactId[0]);
                 if (modules !== undefined) {
                     for (const module of modules) {
                         if (module === result.project.artifactId[0]) {
-                            isValidPom = true;
+                            // TODO: add ability to detect version of LMP once multi-module project scenarios are defined
+                            // @see https://github.com/OpenLiberty/open-liberty-tools-vscode/issues/61
+                            // @see https://github.com/OpenLiberty/open-liberty-tools-vscode/issues/26 
+                            isValidPom = [true, LIBERTY_MAVEN_PROJECT];
                             return;
                         }
                     }
@@ -77,8 +93,9 @@ export function validPom(xmlString: string, childrenMap: Map<string, string[]>):
                 const profile = result.project.profiles[i].profile;
                 if (profile !== undefined) {
                     for (let j = 0; j < profile.length; j++) {
-                        if (mavenPluginDetected(profile[j].build)) {
-                            isValidPom = true;
+                        const validPom = mavenPluginDetected(profile[j].build);
+                        if (validPom[0]) {
+                            isValidPom = validPom;
                             return;
                         }
                     }
@@ -87,8 +104,9 @@ export function validPom(xmlString: string, childrenMap: Map<string, string[]>):
         }
 
         // check for liberty maven plugin in plugins
-        if (mavenPluginDetected(result.project.build)) {
-            isValidPom = true;
+        const validPom = mavenPluginDetected(result.project.build);
+        if (validPom[0]) {
+            isValidPom = validPom;
             return;
         }
 
@@ -102,10 +120,12 @@ export function validPom(xmlString: string, childrenMap: Map<string, string[]>):
 
 /**
  * Check the build portion of a pom.xml for the liberty-maven-plugin
- * Return true if the liberty-maven-plugin is found
+ * Return [true, liberty project type] if liberty-maven-plugin is found
+ * else [false, ""]
+ * 
  * @param build JS object of the build section in a pom.xml
  */
-function mavenPluginDetected(build: Array<{ plugins: Array<{ plugin: any }> }> | undefined): boolean {
+export function mavenPluginDetected(build: Array<{ plugins: Array<{ plugin: any }> }> | undefined): [boolean, string] {
     if (build !== undefined) {
         for (let i = 0; i < build.length; i++) {
             const plugins = build[i].plugins;
@@ -115,11 +135,15 @@ function mavenPluginDetected(build: Array<{ plugins: Array<{ plugin: any }> }> |
                     if (plugin !== undefined) {
                         for (let k = 0; k < plugin.length; k++) {
                             if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] === "io.openliberty.tools") {
-                                return true;
+                                if (mavenPluginVersionValid(plugin[k])) {
+                                    return [true, LIBERTY_MAVEN_PROJECT_CONTAINER]
+                                } else {
+                                    return [true, LIBERTY_MAVEN_PROJECT]
+                                }
                             }
                             if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "org.microshed.boost") {
                                 console.debug("Found boost-maven-plugin in the pom.xml");
-                                return true;
+                                return [true, LIBERTY_MAVEN_PROJECT]
                             }
                         }
                     }
@@ -127,7 +151,7 @@ function mavenPluginDetected(build: Array<{ plugins: Array<{ plugin: any }> }> |
             }
         }
     }
-    return false;
+    return [false, ""];
 }
 
 /**
@@ -164,4 +188,24 @@ export function findChildMavenModules(xmlString: string): Map<string, string[]> 
         }
     });
     return childrenMap;
+}
+
+/**
+ * Return true if the liberty-maven-plugin version is compatible
+ * for dev mode with containers 
+ * 
+ * @param plugin JS object for liberty-maven-plugin
+ */
+function mavenPluginVersionValid(plugin: any): boolean {
+    if (plugin.version === undefined) {
+        return true;
+    }
+    if (plugin.version[0] !== undefined) {
+        // grab the first 2 digits, ie. if version is 3.3.1 return a float of `3.3`
+        let versionStart = plugin.version[0].substring(0,3);
+        if (parseFloat(versionStart) >= LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION) {
+            return true;
+        }
+    }
+    return false;
 }
