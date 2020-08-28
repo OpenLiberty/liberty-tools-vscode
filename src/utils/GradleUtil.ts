@@ -3,15 +3,15 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { getAllPaths, getReport } from "./Util";
 import { TEST_REPORT_STRING, LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT } from "./constants";
+import { BuildFile, GradleBuildFile } from "./buildFile";
 
 /**
  * Check a build.gradle file for the liberty-gradle-plugin
- * Return [true, liberty project type] if liberty-gradle-plugin is found
- * else [false, ""]
+ * Return GradleBuildFile object
  * 
  * @param buildFile JS object representation of the build.gradle
  */
-export function validGradleBuild(buildFile: any): [boolean, string] {
+export function validGradleBuild(buildFile: any): GradleBuildFile {
     if (buildFile !== undefined && buildFile.apply !== undefined && buildFile.buildscript !== undefined && buildFile.buildscript.dependencies !== undefined) {
         // check that "apply plugin: 'liberty'" is specified in the build.gradle
         let libertyPlugin = false;
@@ -26,16 +26,15 @@ export function validGradleBuild(buildFile: any): [boolean, string] {
                 const dependency = buildFile.buildscript.dependencies[i];
                 // check that group matches io.openliberty.tools and name matches liberty-gradle-plugin
                 if (dependency.group === "io.openliberty.tools" && dependency.name === "liberty-gradle-plugin") {
-                    if (gradlePluginVersionValid(dependency.version)) {
-                        return [true, LIBERTY_GRADLE_PROJECT_CONTAINER];
-                    } else {
-                        return [true, LIBERTY_GRADLE_PROJECT];
+                    if (containerVersion(dependency.version)) {
+                        return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT_CONTAINER));
                     }
+                    return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT));
                 }
             }
         }
     }
-    return [false, ""];
+    return (new GradleBuildFile(false, ""));
 }
 
 /**
@@ -89,14 +88,14 @@ export function getGradleSettings(gradlePath: string): string {
  * Given a settings.gradle file, determine if there are valid child gradle projects
  * The parent build.gradle must have subprojects in the `include` section and
  * apply the liberty-gradle-plugin to the subprojects
- * Returns [project type of parent, list of children]
+ * Return GradleBuildFile object
  * 
  * @param settingsFile settings.gradle file
  */
-export function findChildGradleProjects(buildFile: any, settingsFile: any): [string, string[]] {
+export function findChildGradleProjects(buildFile: any, settingsFile: any): GradleBuildFile {
     let projectType: string = LIBERTY_GRADLE_PROJECT;
     let gradleChildren: string[] = [];
-    let validGradleChildren: string[] = [];
+    let gradleBuildFile: GradleBuildFile = new GradleBuildFile(false, "");
     if (settingsFile !== undefined) {
         // look for a valid "include" section in the settingsFile
         if (settingsFile.include !== undefined) {
@@ -114,13 +113,14 @@ export function findChildGradleProjects(buildFile: any, settingsFile: any): [str
 
     // check if the liberty-gradle-plugin is applied to any/all of the subprojects
     if (gradleChildren.length !== 0) {
-        const parent = validParent(buildFile, gradleChildren);
-        if (parent[0]) {
-            validGradleChildren = gradleChildren;
-            projectType = parent[1];
+        const parent: GradleBuildFile = validParent(buildFile);
+        if (parent.isValidBuildFile()) {
+            projectType = parent.getProjectType();
+            gradleBuildFile.setProjectType(projectType);
+            gradleBuildFile.setChildren(gradleChildren);
         }
     }
-    return [projectType, validGradleChildren];
+    return gradleBuildFile;
 }
 
 /**
@@ -150,16 +150,16 @@ export async function getGradleTestReport(gradlePath: any, workspaceFolder: vsco
     return testReport;
 }
 
-function validParent(buildFile: any, gradleChildren: string[]): [boolean, string] {
+function validParent(buildFile: any): GradleBuildFile {
     // every subproject listed in the include section of the parent is supported by the liberty-gradle-plugin
-    const gradleBuildSub = validGradleBuild(buildFile.subprojects);
-    const gradleBuildAll = validGradleBuild(buildFile.allprojects);
-    if (gradleBuildSub[0]) {
+    const gradleBuildSub: GradleBuildFile = validGradleBuild(buildFile.subprojects);
+    const gradleBuildAll: GradleBuildFile = validGradleBuild(buildFile.allprojects);
+    if (gradleBuildSub.isValidBuildFile()) {
         return gradleBuildSub;
-    } else if (gradleBuildAll[0]) {
+    } else if (gradleBuildAll.isValidBuildFile()) {
         return gradleBuildAll;
     }
-    return [false, ""];
+    return (new GradleBuildFile(false, ""));
 }
 
 /**
@@ -168,9 +168,9 @@ function validParent(buildFile: any, gradleChildren: string[]): [boolean, string
  * 
  * @param version plugin version as string
  */
-function gradlePluginVersionValid(version: string): boolean {
+function containerVersion(version: string): boolean {
     if (version !== undefined) {
-        let versionStart = version.substring(0,3);
+        let versionStart = version.substring(0, 3);
         if (parseFloat(versionStart) >= LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION) {
             return true;
         }
