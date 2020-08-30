@@ -196,14 +196,14 @@ export function findChildMavenModules(xmlString: string): Map<string, string[]> 
  * @param plugin JS object for liberty-maven-plugin
  */
 function containerVersion(plugin: any): boolean {
+    const semver = require('semver')
     if (plugin.version === undefined) {
         return true;
     }
     if (plugin.version[0] !== undefined) {
-        // grab the first 2 digits, ie. if version is 3.3.1 return a float of `3.3`
-        let versionStart = plugin.version[0].substring(0,3);
-        if (parseFloat(versionStart) >= LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION) {
-            return true;
+        let version = semver.coerce(plugin.version[0]);
+        if (version != null) {
+            return semver.gte(version, LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION);
         }
     }
     return false;

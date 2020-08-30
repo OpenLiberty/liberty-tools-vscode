@@ -168,11 +168,12 @@ function validParent(buildFile: any): GradleBuildFile {
  * 
  * @param version plugin version as string
  */
-function containerVersion(version: string): boolean {
-    if (version !== undefined) {
-        let versionStart = version.substring(0, 3);
-        if (parseFloat(versionStart) >= LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION) {
-            return true;
+function containerVersion(pluginVersion: string): boolean {
+    const semver = require('semver')
+    if (pluginVersion !== undefined) {
+        let version = semver.coerce(pluginVersion);
+        if (version != null) {
+            return semver.gte(version, LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION);
         }
     }
     return false;
