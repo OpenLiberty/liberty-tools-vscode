@@ -4,7 +4,7 @@ import * as Path from "path";
 import * as vscode from "vscode";
 import { LibertyProject } from "./libertyProject";
 import { getReport } from "./Util";
-import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT } from "./constants";
+import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER } from "./constants";
 import { getGradleTestReport } from "./GradleUtil";
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
@@ -30,9 +30,9 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         if (terminal !== undefined) {
             terminal.show();
             libProject.setTerminal(terminal);
-            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT) {
+            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                 terminal.sendText('mvn io.openliberty.tools:liberty-maven-plugin:dev -f "' + libProject.getPath() + '"'); // start dev mode on current project
-            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT) {
+            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
                 terminal.sendText("gradle libertyDev -b=" + libProject.getPath()); // start dev mode on current project
             }
         }
@@ -73,9 +73,9 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
             libProject.setTerminal(terminal);
 
             let placeHolderStr = "";
-            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT) {
+            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                 placeHolderStr = "e.g. -DhotTests=true";
-            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT) {
+            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
                 placeHolderStr = "e.g. --hotTests";
             }
 
@@ -97,15 +97,39 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
             ));
             if (customCommand !== undefined) {
                 _customParameters = customCommand;
-                if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT) {
+                if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                     terminal.sendText("mvn io.openliberty.tools:liberty-maven-plugin:dev " + customCommand + ' -f "' + libProject.getPath() + '"');
-                } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT) {
+                } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
                     terminal.sendText("gradle libertyDev " + customCommand + ' -b="' + libProject.getPath() + '"');
                 }
             }
         }
     } else {
         console.error("Cannot custom start liberty dev on an undefined project");
+    }
+}
+
+// start dev mode in a container
+export async function startContainerDevMode(libProject?: LibertyProject | undefined): Promise<void> {
+    if (libProject !== undefined) {
+        let terminal = libProject.getTerminal();
+        if (terminal === undefined) {
+            terminal = libProject.createTerminal();
+            if (terminal !== undefined) {
+                terminals[Number(terminal.processId)] = libProject;
+            }
+        }
+        if (terminal !== undefined) {
+            terminal.show();
+            libProject.setTerminal(terminal);
+            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+                terminal.sendText('mvn io.openliberty.tools:liberty-maven-plugin:devc -f "' + libProject.getPath() + '"');
+            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+                terminal.sendText("gradle libertyDevc -b=" + libProject.getPath());
+            }
+        }
+    } else {
+        console.error("Cannot start liberty dev in a container on an undefined project");
     }
 }
 
@@ -132,9 +156,9 @@ export async function openReport(reportType: string, libProject?: LibertyProject
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(libProject.getPath()));
         if (workspaceFolder !== undefined) {
             let report: any;
-            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT) {
+            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                 report = Path.join(workspaceFolder.uri.fsPath, "target", "site", reportType + "-report.html");
-            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT) {
+            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
                 report = await getGradleTestReport(libProject.path, workspaceFolder);
             }
             let reportTypeLabel = reportType;

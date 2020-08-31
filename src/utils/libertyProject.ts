@@ -4,7 +4,8 @@ import * as vscode from "vscode";
 import * as gradleUtil from "./GradleUtil";
 import * as mavenUtil from "./MavenUtil";
 import * as util from "./Util";
-import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT } from "./constants";
+import { LIBERTY_GRADLE_PROJECT } from "./constants";
+import { BuildFile, GradleBuildFile } from "./buildFile";
 
 export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> {
 	public readonly onDidChangeTreeData: vscode.Event<LibertyProject | undefined>;
@@ -49,38 +50,41 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 
 	// Given a list of pom.xml files, find ones that are valid to use with liberty dev-mode
-	private async findValidPOMs(pomPaths: string[]): Promise<string[]> {
-		const validPoms: string[] = [];
+	private async findValidPOMs(pomPaths: string[]): Promise<BuildFile[]> {
+		// [pom, liberty project type]
+		const validPoms: BuildFile[] = [];
 		let mavenChildMap: Map<string, string[]> = new Map();
 
 		// check for parentPoms
 		for (const parentPom of pomPaths) {
 			const xmlString: string = await fse.readFile(parentPom, "utf8");
-			const validParent = mavenUtil.validParentPom(xmlString);
-			if (validParent) {
+			const validParent: BuildFile = mavenUtil.validParentPom(xmlString);
+			if (validParent.isValidBuildFile()) {
 				// mavenChildMap: [parentName, array of child names]
 				mavenChildMap = new Map([...Array.from(mavenChildMap.entries()), ...Array.from(mavenUtil.findChildMavenModules(xmlString).entries())]);
-				validPoms.push(parentPom);
+				validParent.setBuildFilePath(parentPom);
+				validPoms.push(validParent);
 			}
 		}
 
 		// check poms
 		for (const pomPath of pomPaths) {
-			if (!validPoms.includes(pomPath)) {
+			if (!validPoms.some(mavenPom => mavenPom['buildFilePath'] == pomPath)) {
 				const xmlString: string = await fse.readFile(pomPath, "utf8");
-				const validPom = mavenUtil.validPom(xmlString, mavenChildMap);
-				if (validPom) {
-					validPoms.push(pomPath);
+				const validPom: BuildFile = mavenUtil.validPom(xmlString, mavenChildMap);
+				if (validPom.isValidBuildFile()) {
+					validPom.setBuildFilePath(pomPath);
+					validPoms.push(validPom);
 				}
 			}
 		}
-
 		return validPoms;
 	}
 
 	// Given a list of build.gradle files, find ones that are valid to use with liberty dev-mode
-	private async findValidGradleBuildFiles(gradlePaths: string[]): Promise<string[]> {
-		const validGradleBuildFiles: string[] = [];
+	private async findValidGradleBuildFiles(gradlePaths: string[]): Promise<BuildFile[]> {
+		// [gradle path, liberty project type]
+		const validGradleBuildFiles: BuildFile[] = [];
 		let gradleChildren: string[] = [];
 
 		// check for multi module build.gradles
@@ -91,10 +95,12 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				const gradleSettings = gradleUtil.getGradleSettings(gradlePath);
 				if (gradleSettings !== "") {
 					await g2js.parseFile(gradleSettings).then(async (settingsFile: any) => {
-						const children = gradleUtil.findChildGradleProjects(buildFile, settingsFile);
-						if (children.length !== 0) {
-							gradleChildren = gradleChildren.concat(children);
-							validGradleBuildFiles.push(gradlePath);
+						const gradleBuildFile: GradleBuildFile = gradleUtil.findChildGradleProjects(buildFile, settingsFile);
+						if (gradleBuildFile.getChildren().length !== 0) {
+							gradleChildren = gradleChildren.concat(gradleBuildFile.getChildren());
+							let gradleParent: GradleBuildFile = new GradleBuildFile(true, gradleBuildFile.getProjectType());
+							gradleParent.setBuildFilePath(gradlePath);
+							validGradleBuildFiles.push(gradleParent);
 						}
 					}).catch((err: any) => console.error("Unable to parse settings.gradle: " + gradleSettings + "; " + err));
 				}
@@ -107,8 +113,19 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				const dirName = path.dirname(gradlePath);
 				const label = path.basename(dirName);
 				// check build.gradle matches any of the subprojects in the gradleChildMap or for liberty-gradle-plugin
-				if (gradleChildren.includes(label) || gradleUtil.validGradleBuild(buildFile)) {
-					validGradleBuildFiles.push(gradlePath);
+				if (gradleChildren.includes(label)) {
+					// TODO: add ability to detect version of LMP once multi-module project scenarios are defined
+					// @see https://github.com/OpenLiberty/open-liberty-tools-vscode/issues/61
+					// @see https://github.com/OpenLiberty/open-liberty-tools-vscode/issues/26 
+					let gradleChild: GradleBuildFile = new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT);
+					gradleChild.setBuildFilePath(gradlePath);
+					validGradleBuildFiles.push(gradleChild);
+				} else {
+					const gradleBuild: BuildFile = gradleUtil.validGradleBuild(buildFile);
+					if (gradleBuild.isValidBuildFile()) {
+						gradleBuild.setBuildFilePath(gradlePath);
+						validGradleBuildFiles.push(gradleBuild);
+					}
 				}
 			}).catch((err: any) => console.error("Unable to parse build.gradle: " + gradlePath + "; " + err));
 		}
@@ -121,38 +138,54 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target}/**";
 		const pomPaths = (await vscode.workspace.findFiles("**/pom.xml", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
 		const gradlePaths = (await vscode.workspace.findFiles("**/build.gradle", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
-		const validPomPaths = await this.findValidPOMs(pomPaths);
-		const validGradlePaths = await this.findValidGradleBuildFiles(gradlePaths);
+		const validPoms: BuildFile[] = await this.findValidPOMs(pomPaths);
+		const validGradleBuilds: BuildFile[] = await this.findValidGradleBuildFiles(gradlePaths);
 
 		// map of buildFilePath -> LibertyProject
 		const newProjectsMap: Map<string, LibertyProject> = new Map();
 
-		for (const pomPath of validPomPaths) {
+		for (const pom of validPoms) {
 			// if a LibertyProject for this pom has already been created
 			// we want to re-use it since it stores state such as the terminal being used for dev-mode
-			if (this.projects.has(pomPath)) {
+			if (this.projects.has(pom.getBuildFilePath())) {
+				// check version of liberty-maven-plugin to see if it is valid for contatiners
+				const project = this.projects.get(pom.getBuildFilePath());
+				if (project !== undefined) {
+					if (project.contextValue != pom.getProjectType()) {
+						project.setContextValue(pom.getProjectType());
+					}
+				}
+
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				newProjectsMap.set(pomPath, this.projects.get(pomPath)!);
+				newProjectsMap.set(pom.getBuildFilePath(), this.projects.get(pom.getBuildFilePath())!);
 			}
 			// else we create a new LibertyProject for that POM
 			else {
-				const xmlString = await fse.readFile(pomPath, "utf8");
-				const project = await createProject(pomPath, LIBERTY_MAVEN_PROJECT, xmlString);
-				newProjectsMap.set(pomPath, project);
+				const xmlString = await fse.readFile(pom.getBuildFilePath(), "utf8");
+				const project = await createProject(pom.getBuildFilePath(), pom.getProjectType(), xmlString);
+				newProjectsMap.set(pom.getBuildFilePath(), project);
 			}
 		}
 
-		for (const gradlePath of validGradlePaths) {
+		for (const gradleBuild of validGradleBuilds) {
 			// if a LibertyProject for this build.gradle has already been created
 			// we want to re-use it
-			if (this.projects.has(gradlePath)) {
+			if (this.projects.has(gradleBuild.getBuildFilePath())) {
+				// check version of liberty-gradle-plugin to see if it is valid for contatiners
+				const project = this.projects.get(gradleBuild.getBuildFilePath());
+				if (project !== undefined) {
+					if (project.contextValue != gradleBuild.getProjectType()) {
+						project.setContextValue(gradleBuild.getProjectType());
+					}
+				}
+
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				newProjectsMap.set(gradlePath, this.projects.get(gradlePath)!);
+				newProjectsMap.set(gradleBuild.getBuildFilePath(), this.projects.get(gradleBuild.getBuildFilePath())!);
 			}
 			// else we create a new LibertyProject for that build file
 			else {
-				const project = await createProject(gradlePath, LIBERTY_GRADLE_PROJECT);
-				newProjectsMap.set(gradlePath, project);
+				const project = await createProject(gradleBuild.getBuildFilePath(), gradleBuild.getProjectType());
+				newProjectsMap.set(gradleBuild.getBuildFilePath(), project);
 			}
 		}
 
@@ -197,6 +230,9 @@ export class LibertyProject extends vscode.TreeItem {
 
 	public getContextValue(): string {
 		return `${this.contextValue}`;
+	}
+	public setContextValue(contextValue: string) {
+		this.contextValue = contextValue;
 	}
 
 	public getTerminal(): vscode.Terminal | undefined {

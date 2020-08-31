@@ -4,7 +4,6 @@ import * as devCommands from "./utils/devCommands";
 import { LibertyProject, ProjectProvider } from "./utils/libertyProject";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-	console.log('"vscode-liberty-dev" extension is now active!');
 	const projectProvider = new ProjectProvider();
 
 	if (vscode.workspace.workspaceFolders !== undefined) {
@@ -29,6 +28,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand("liberty.dev.custom", (libProject?: LibertyProject) => devCommands.customDevMode(libProject)),
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand("liberty.dev.start.container", (libProject?: LibertyProject) => devCommands.startContainerDevMode(libProject)),
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand("liberty.dev.run.tests", (libProject?: LibertyProject) => devCommands.runTests(libProject)),
