@@ -3,9 +3,9 @@ import * as fs from "fs";
 import * as Path from "path";
 import * as vscode from "vscode";
 import { LibertyProject } from "./libertyProject";
-import { getReport } from "./Util";
-import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER } from "./constants";
-import { getGradleTestReport } from "./GradleUtil";
+import { getReport } from "../util/Util";
+import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER } from "../definitions/constants";
+import { getGradleTestReport } from "../util/gradleUtil";
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 let _customParameters = "";

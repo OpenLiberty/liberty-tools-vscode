@@ -1,11 +1,11 @@
 import * as fse from "fs-extra";
 import * as path from "path";
 import * as vscode from "vscode";
-import * as gradleUtil from "./GradleUtil";
-import * as mavenUtil from "./MavenUtil";
-import * as util from "./Util";
-import { LIBERTY_GRADLE_PROJECT } from "./constants";
-import { BuildFile, GradleBuildFile } from "./buildFile";
+import * as gradleUtil from "../util/gradleUtil";
+import * as mavenUtil from "../util/mavenUtil";
+import * as util from "../util/util";
+import { LIBERTY_GRADLE_PROJECT } from "../definitions/constants";
+import { BuildFile, GradleBuildFile } from "../util/buildFile";
 
 export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> {
 	public readonly onDidChangeTreeData: vscode.Event<LibertyProject | undefined>;
