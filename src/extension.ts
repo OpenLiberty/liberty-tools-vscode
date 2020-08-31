@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import * as devCommands from "./utils/devCommands";
+import * as devCommands from "./liberty/devCommands";
 
-import { LibertyProject, ProjectProvider } from "./utils/libertyProject";
+import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	const projectProvider = new ProjectProvider();
