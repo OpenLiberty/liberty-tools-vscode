@@ -2,6 +2,10 @@
 
 All notable changes to the Open Liberty Tools extension will be documented below.
 
+## 0.1.7
+- Added Start in container (tech preview) action
+- Upgrade lodash dependency version
+
 ## 0.1.6
 
 - Detect custom test report locations
