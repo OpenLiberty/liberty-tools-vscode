@@ -41,6 +41,10 @@ A VS Code extension for Open Liberty. The extension will detect your Liberty Mav
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | liberty.terminal.useJavaHome | If this value is true, and if the setting `java.home` has a value, then the environment variable `JAVA_HOME` will be set to the value of `java.home` when a new terminal window is created. | False         |
 
+## Requirements
+
+- [Tools for MicroProfile extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-microprofile)
+
 ## Contributing
 
 Contributions to the Open Liberty Tools extension are welcome!
@@ -62,4 +66,4 @@ To build the extension locally:
 
 ## Issues
 
-Please report bugs, issues and feature requests by creating a [GitHub issue](https://github.com/OpenLiberty/liberty-dev-vscode-ext/issues)
+Please report bugs, issues and feature requests by creating a [GitHub issue](https://github.com/OpenLiberty/liberty-dev-vscode-ext/issues).
