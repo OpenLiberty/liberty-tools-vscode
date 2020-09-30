@@ -2,6 +2,9 @@
 
 All notable changes to the Open Liberty Tools extension will be documented below.
 
+## 0.1.8
+- Added dependency on [Tools for MicroProfile](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-microprofile)
+
 ## 0.1.7
 - Added Start in container (tech preview) action
 - Upgrade lodash dependency version
