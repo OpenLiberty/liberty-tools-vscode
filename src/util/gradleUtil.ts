@@ -1,7 +1,7 @@
 import * as fse from "fs-extra";
 import * as path from "path";
 import * as vscode from "vscode";
-import { getAllPaths, getReport } from "./Util";
+import { getAllPaths, getReport } from "./helperUtil";
 import { TEST_REPORT_STRING, LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT } from "../definitions/constants";
 import { BuildFile, GradleBuildFile } from "./buildFile";
 
