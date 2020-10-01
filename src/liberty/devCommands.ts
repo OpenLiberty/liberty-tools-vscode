@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as Path from "path";
 import * as vscode from "vscode";
 import { LibertyProject } from "./libertyProject";
-import { getReport } from "../util/Util";
+import { getReport } from "../util/helperUtil";
 import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 
@@ -12,7 +12,6 @@ let _customParameters = "";
 
 // opens pom associated with LibertyProject and starts dev mode
 export async function openProject(pomPath: string): Promise<void> {
-    console.log("Opening " + pomPath);
     vscode.commands.executeCommand("vscode.open", vscode.Uri.file(pomPath));
 }
 
@@ -152,7 +151,6 @@ export async function runTests(libProject?: LibertyProject | undefined): Promise
 // open surefire, failsafe, or gradle test report
 export async function openReport(reportType: string, libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log("Opening test reports for " + libProject.getLabel());
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(libProject.getPath()));
         if (workspaceFolder !== undefined) {
             let report: any;
