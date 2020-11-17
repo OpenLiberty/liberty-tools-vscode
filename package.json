@@ -2,7 +2,7 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Open Liberty Tools",
 	"description": "Open Liberty Tools for Visual Studio Code",
-	"version": "0.1.8",
+	"version": "0.1.9",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
@@ -79,7 +79,7 @@
 			{
 				"command": "liberty.dev.start.container",
 				"category": "Open Liberty",
-				"title": "Start in container (tech preview)"
+				"title": "Start in container"
 			},
 			{
 				"command": "liberty.dev.run.tests",
