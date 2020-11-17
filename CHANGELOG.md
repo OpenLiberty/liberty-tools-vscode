@@ -2,6 +2,9 @@
 
 All notable changes to the Open Liberty Tools extension will be documented below.
 
+## 0.1.9
+- Removed "tech preview" wording from "Start in container" action
+
 ## 0.1.8
 - Added dependency on [Tools for MicroProfile](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-microprofile)
 
