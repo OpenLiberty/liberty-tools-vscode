@@ -33,7 +33,12 @@ A VS Code extension for Open Liberty. The extension will detect your Liberty Mav
 | View integration test report | Views the integration test report file.                                                                                                                                                                                                                                                                                      |
 | View unit test report        | Views the unit test report file.                                                                                                                                                                                                                                                                                             |
 
+
 **Note:** Gradle projects only have a single `View test report` command.
+
+**Build Wrappers:**
+- Maven commands will honour the `maven.executable.path` setting. If this value is empty, Maven commands will attempt to use `mvn` or `mvnw` according to the `maven.executable.preferMavenWrapper` setting. Both of these settings are made available by the [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven).
+- Gradle commands will honour the `java.import.gradle.wrapper.enabled` setting made available by the [Language support for Java extension](https://marketplace.visualstudio.com/items?itemName=redhat.java). If this setting is true, Gradle commands will attempt to use `gradlew` if a wrapper exists for the current project, otherwise will default to `gradle`.
 
 ## Configurable User Settings
 
