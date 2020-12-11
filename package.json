@@ -1,238 +1,243 @@
 {
-	"name": "liberty-dev-vscode-ext",
-	"displayName": "Open Liberty Tools",
-	"description": "Open Liberty Tools for Visual Studio Code",
-	"version": "0.1.9",
-	"publisher": "Open-Liberty",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/OpenLiberty/liberty-dev-vscode-ext"
-	},
-	"preview": true,
-	"license": "EPL-2.0",
-	"engines": {
-		"vscode": "^1.36.0"
-	},
-	"categories": [
-		"Programming Languages"
-	],
-	"keywords": [
-		"Java",
-		"Open Liberty",
-		"MicroProfile",
-		"Jakarta EE",
-		"Cloud Native"
-	],
-	"icon": "images/ol_logo.png",
-	"galleryBanner": {
-		"color": "#24243B",
-		"theme": "dark"
-	},
-	"activationEvents": [
-		"workspaceContains:**/pom.xml",
-		"workspaceContains:**/build.gradle",
-		"onCommand:liberty.dev.start",
-		"onCommand:liberty.dev.stop",
-		"onCommand:liberty.dev.custom",
-		"onCommand:liberty.dev.run.tests",
-		"onCommand:liberty.dev.open.failsafe.report",
-		"onCommand:liberty.dev.open.surefire.report",
-		"onCommand:liberty.dev.open.gradle.test.report",
-		"onView:liberty-dev"
-	],
-	"main": "./dist/extension",
-	"extensionDependencies": [
-		"redhat.vscode-microprofile"
-	],
-	"contributes": {
-		"views": {
-			"explorer": [
-				{
-					"id": "liberty-dev",
-					"category": "Open Liberty",
-					"name": "Liberty Dev Dashboard"
-				}
-			]
-		},
-		"commands": [
-			{
-				"command": "liberty.explorer.refresh",
-				"title": "%contributes.commands.liberty.explorer.refresh%",
-				"category": "Open Liberty",
-				"icon": "$(refresh)"
-			},
-			{
-				"command": "liberty.dev.start",
-				"category": "Open Liberty",
-				"title": "Start"
-			},
-			{
-				"command": "liberty.dev.stop",
-				"category": "Open Liberty",
-				"title": "Stop"
-			},
-			{
-				"command": "liberty.dev.custom",
-				"category": "Open Liberty",
-				"title": "Start..."
-			},
-			{
-				"command": "liberty.dev.start.container",
-				"category": "Open Liberty",
-				"title": "Start in container"
-			},
-			{
-				"command": "liberty.dev.run.tests",
-				"category": "Open Liberty",
-				"title": "Run tests"
-			},
-			{
-				"command": "liberty.dev.open.failsafe.report",
-				"category": "Open Liberty",
-				"title": "View integration test report"
-			},
-			{
-				"command": "liberty.dev.open.surefire.report",
-				"category": "Open Liberty",
-				"title": "View unit test report"
-			},
-			{
-				"command": "liberty.dev.open.gradle.test.report",
-				"category": "Open Liberty",
-				"title": "View test report"
-			}
-		],
-		"menus": {
-			"view/title": [
-				{
-					"command": "liberty.explorer.refresh",
-					"when": "view == liberty-dev",
-					"group": "navigation@1"
-				}
-			],
-			"view/item/context": [
-				{
-					"command": "liberty.dev.start",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
-					"group": "libertyCore@1"
-				},
-				{
-					"command": "liberty.dev.stop",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
-					"group": "libertyCore@3"
-				},
-				{
-					"command": "liberty.dev.custom",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
-					"group": "libertyCore@2"
-				},
-				{
-					"command": "liberty.dev.start.container",
-					"when": "viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
-					"group": "libertyCore@2"
-				},
-				{
-					"command": "liberty.dev.run.tests",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
-					"group": "libertyCore@4"
-				},
-				{
-					"command": "liberty.dev.open.failsafe.report",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyMavenProjectContainer",
-					"group": "libertyCore@5"
-				},
-				{
-					"command": "liberty.dev.open.surefire.report",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyMavenProjectContainer",
-					"group": "libertyCore@6"
-				},
-				{
-					"command": "liberty.dev.open.gradle.test.report",
-					"when": "viewItem == libertyGradleProject || viewItem == libertyGradleProjectContainer",
-					"group": "libertyCore@5"
-				}
-			],
-			"commandPalette": [
-				{
-					"command": "liberty.dev.start",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.stop",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.custom",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.start.container",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.run.tests",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.open.failsafe.report",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.open.surefire.report",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.open.gradle.test.report",
-					"when": "never"
-				},
-				{
-					"command": "liberty.explorer.refresh",
-					"when": "never"
-				}
-			]
-		},
-		"configuration": [
-			{
-				"title": "Liberty Dev",
-				"properties": {
-					"liberty.terminal.useJavaHome": {
-						"type": "boolean",
-						"default": false,
-						"description": "If this value is true, and if the setting java.home has a value, then the environment variable JAVA_HOME will be set to the value of java.home when a new terminal window is created.",
-						"scope": "window"
-					}
-				}
-			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "webpack --mode production",
-		"compile": "webpack --mode none",
-		"watch": "webpack --mode development --watch --info-verbosity verbose",
-		"test-compile": "tsc -p ./"
-	},
-	"devDependencies": {
-		"@types/glob": "^7.1.1",
-		"@types/mocha": "^7.0.2",
-		"@types/node": "^13.9.2",
-		"@types/vscode": "^1.36.0",
-		"@typescript-eslint/eslint-plugin": "^2.24.0",
-		"@typescript-eslint/parser": "^2.24.0",
-		"eslint": "^6.8.0",
-		"glob": "^7.1.6",
-		"mocha": "^7.1.1",
-		"ts-loader": "^8.0.4",
-		"typescript": "^3.8.3",
-		"vscode-test": "^1.3.0",
-		"webpack": "^4.44.2",
-		"webpack-cli": "^3.3.12"
-	},
-	"dependencies": {
-		"@types/fs-extra": "^8.1.0",
-		"@types/xml2js": "^0.4.5",
-		"fs-extra": "^9.0.0",
-		"gradle-to-js": "^2.0.0",
-		"semver": "^7.3.2",
-		"xml2js": "^0.4.23"
-	}
+  "name": "liberty-dev-vscode-ext",
+  "displayName": "Open Liberty Tools",
+  "description": "Open Liberty Tools for Visual Studio Code",
+  "version": "0.1.9",
+  "publisher": "Open-Liberty",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OpenLiberty/liberty-dev-vscode-ext"
+  },
+  "preview": true,
+  "license": "EPL-2.0",
+  "engines": {
+    "vscode": "^1.36.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "Java",
+    "Open Liberty",
+    "MicroProfile",
+    "Jakarta EE",
+    "Cloud Native"
+  ],
+  "icon": "images/ol_logo.png",
+  "galleryBanner": {
+    "color": "#24243B",
+    "theme": "dark"
+  },
+  "activationEvents": [
+    "workspaceContains:**/pom.xml",
+    "workspaceContains:**/build.gradle",
+    "onCommand:liberty.dev.start",
+    "onCommand:liberty.dev.stop",
+    "onCommand:liberty.dev.custom",
+    "onCommand:liberty.dev.run.tests",
+    "onCommand:liberty.dev.open.failsafe.report",
+    "onCommand:liberty.dev.open.surefire.report",
+    "onCommand:liberty.dev.open.gradle.test.report",
+    "onView:liberty-dev"
+  ],
+  "main": "./dist/extension",
+  "extensionDependencies": [
+    "redhat.vscode-microprofile"
+  ],
+  "contributes": {
+    "xml.javaExtensions": [
+      "./jars/lemminx-liberty-1.0-SNAPSHOT-jar-with-dependencies.jar"
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "liberty-dev",
+          "category": "Open Liberty",
+          "name": "Liberty Dev Dashboard"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "liberty.explorer.refresh",
+        "title": "%contributes.commands.liberty.explorer.refresh%",
+        "category": "Open Liberty",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "liberty.dev.start",
+        "category": "Open Liberty",
+        "title": "Start"
+      },
+      {
+        "command": "liberty.dev.stop",
+        "category": "Open Liberty",
+        "title": "Stop"
+      },
+      {
+        "command": "liberty.dev.custom",
+        "category": "Open Liberty",
+        "title": "Start..."
+      },
+      {
+        "command": "liberty.dev.start.container",
+        "category": "Open Liberty",
+        "title": "Start in container"
+      },
+      {
+        "command": "liberty.dev.run.tests",
+        "category": "Open Liberty",
+        "title": "Run tests"
+      },
+      {
+        "command": "liberty.dev.open.failsafe.report",
+        "category": "Open Liberty",
+        "title": "View integration test report"
+      },
+      {
+        "command": "liberty.dev.open.surefire.report",
+        "category": "Open Liberty",
+        "title": "View unit test report"
+      },
+      {
+        "command": "liberty.dev.open.gradle.test.report",
+        "category": "Open Liberty",
+        "title": "View test report"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "liberty.explorer.refresh",
+          "when": "view == liberty-dev",
+          "group": "navigation@1"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "liberty.dev.start",
+          "when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+          "group": "libertyCore@1"
+        },
+        {
+          "command": "liberty.dev.stop",
+          "when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+          "group": "libertyCore@3"
+        },
+        {
+          "command": "liberty.dev.custom",
+          "when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+          "group": "libertyCore@2"
+        },
+        {
+          "command": "liberty.dev.start.container",
+          "when": "viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+          "group": "libertyCore@2"
+        },
+        {
+          "command": "liberty.dev.run.tests",
+          "when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+          "group": "libertyCore@4"
+        },
+        {
+          "command": "liberty.dev.open.failsafe.report",
+          "when": "viewItem == libertyMavenProject || viewItem == libertyMavenProjectContainer",
+          "group": "libertyCore@5"
+        },
+        {
+          "command": "liberty.dev.open.surefire.report",
+          "when": "viewItem == libertyMavenProject || viewItem == libertyMavenProjectContainer",
+          "group": "libertyCore@6"
+        },
+        {
+          "command": "liberty.dev.open.gradle.test.report",
+          "when": "viewItem == libertyGradleProject || viewItem == libertyGradleProjectContainer",
+          "group": "libertyCore@5"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "liberty.dev.start",
+          "when": "never"
+        },
+        {
+          "command": "liberty.dev.stop",
+          "when": "never"
+        },
+        {
+          "command": "liberty.dev.custom",
+          "when": "never"
+        },
+        {
+          "command": "liberty.dev.start.container",
+          "when": "never"
+        },
+        {
+          "command": "liberty.dev.run.tests",
+          "when": "never"
+        },
+        {
+          "command": "liberty.dev.open.failsafe.report",
+          "when": "never"
+        },
+        {
+          "command": "liberty.dev.open.surefire.report",
+          "when": "never"
+        },
+        {
+          "command": "liberty.dev.open.gradle.test.report",
+          "when": "never"
+        },
+        {
+          "command": "liberty.explorer.refresh",
+          "when": "never"
+        }
+      ]
+    },
+    "configuration": [
+      {
+        "title": "Liberty Dev",
+        "properties": {
+          "liberty.terminal.useJavaHome": {
+            "type": "boolean",
+            "default": false,
+            "description": "If this value is true, and if the setting java.home has a value, then the environment variable JAVA_HOME will be set to the value of java.home when a new terminal window is created.",
+            "scope": "window"
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "webpack --mode production",
+    "compile": "webpack --mode none",
+    "watch": "webpack --mode development --watch --info-verbosity verbose",
+    "test-compile": "tsc -p ./",
+    "build": "gulp buildServer"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.1",
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^13.9.2",
+    "@types/vscode": "^1.36.0",
+    "@typescript-eslint/eslint-plugin": "^2.24.0",
+    "@typescript-eslint/parser": "^2.24.0",
+    "eslint": "^6.8.0",
+    "glob": "^7.1.6",
+    "mocha": "^7.1.1",
+    "ts-loader": "^8.0.4",
+    "typescript": "^3.8.3",
+    "vscode-test": "^1.3.0",
+    "webpack": "^4.44.2",
+    "webpack-cli": "^3.3.12"
+  },
+  "dependencies": {
+    "@types/fs-extra": "^8.1.0",
+    "@types/xml2js": "^0.4.5",
+    "fs-extra": "^9.0.0",
+    "gradle-to-js": "^2.0.0",
+    "gulp": "^4.0.2",
+    "semver": "^7.3.2",
+    "xml2js": "^0.4.23"
+  }
 }
