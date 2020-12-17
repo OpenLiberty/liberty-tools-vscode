@@ -33,18 +33,22 @@ A VS Code extension for Open Liberty. The extension will detect your Liberty Mav
 | View integration test report | Views the integration test report file.                                                                                                                                                                                                                                                                                      |
 | View unit test report        | Views the unit test report file.                                                                                                                                                                                                                                                                                             |
 
-
 **Note:** Gradle projects only have a single `View test report` command.
-
-**Build Wrappers:**
-- Maven commands will honour the `maven.executable.path` setting. If this value is empty, Maven commands will attempt to use `mvn` or `mvnw` according to the `maven.executable.preferMavenWrapper` setting. Both of these settings are made available by the [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven).
-- Gradle commands will honour the `java.import.gradle.wrapper.enabled` setting made available by the [Language support for Java extension](https://marketplace.visualstudio.com/items?itemName=redhat.java). If this setting is true, Gradle commands will attempt to use `gradlew` if a wrapper exists for the current project, otherwise will default to `gradle`.
 
 ## Configurable User Settings
 
 | Setting                      | Description                                                                                                                                                                                 | Default Value |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | liberty.terminal.useJavaHome | If this value is true, and if the setting `java.home` has a value, then the environment variable `JAVA_HOME` will be set to the value of `java.home` when a new terminal window is created. | False         |
+
+### External Settings
+The following settings provided by external extensions will be honoured when executing dev mode commands.
+
+| Setting                      | Description                                                                                                                                                                                 | Provided By |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| maven.executable.path | Maven commands executed by dev mode will honour this setting. When this value is empty, it tries to use `mvn` or `mvnw` accroding to the value of `maven.executable.preferMavenWrapper`. | [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven)         |
+| maven.executable.preferMavenWrapper | Maven commands executed by dev mode will honour this setting. If true, it tries to use `mvnw` if a Maven wrapper file can be found. Otherwise it will use `mvn`. | [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven)         |
+| java.import.gradle.wrapper.enabled | Gradle commands executed by dev mode will honour this setting. If true, it tries to use `gradlew` if a Gradle wrapper file can be found. Otherwise it will use `gradle`. | [Language support for Java extension](https://marketplace.visualstudio.com/items?itemName=redhat.java)        |
 
 ## Requirements
 
