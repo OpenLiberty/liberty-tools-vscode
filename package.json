@@ -238,6 +238,7 @@
     "gradle-to-js": "^2.0.0",
     "gulp": "^4.0.2",
     "semver": "^7.3.2",
-    "xml2js": "^0.4.23"
+    "xml2js": "^0.4.23",
+    "vscode-languageclient": "^4.4.0"
   }
 }

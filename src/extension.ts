@@ -2,8 +2,13 @@ import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
 
 import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
+import { LanguageClient, LanguageClientOptions, Executable } from 'vscode-languageclient';
+
+const LANGUAGE_CLIENT_ID = 'LANGUAGE_ID_LIBERTY';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+	startupLanguageServer(context);
+	
 	const projectProvider = new ProjectProvider(context);
 
 	if (vscode.workspace.workspaceFolders !== undefined) {
@@ -71,4 +76,32 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
 	watcher.onDidDelete(async () => {
 		projectProvider.refresh();
 	});
+}
+
+function startupLanguageServer(context: vscode.ExtensionContext) {
+	//Start up Liberty Language Server
+	var path = require('path');
+	var languageServerPath = context.asAbsolutePath(path.join('jars','liberty.ls-1.0-SNAPSHOT-jar-with-dependencies.jar'));
+
+	// Language server options 
+	let serverOptions: Executable = {
+		command: 'java',
+		args: [ '-jar', languageServerPath],
+		options: {stdio:'pipe'}
+	};
+
+	// Options to control the language client
+	let clientOptions: LanguageClientOptions = {
+		documentSelector: [{ language: 'plaintext' }],
+		synchronize: {
+			fileEvents: [
+				vscode.workspace.createFileSystemWatcher('**/*.properties'),
+				vscode.workspace.createFileSystemWatcher('**/*.env')
+			],
+		}
+	};
+
+	let languageClient = new LanguageClient(LANGUAGE_CLIENT_ID, 'Language Support for Liberty', serverOptions, clientOptions);
+	let disposable = languageClient.start();
+	context.subscriptions.push(disposable);
 }
