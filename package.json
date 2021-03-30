@@ -213,7 +213,7 @@
     "compile": "webpack --mode none",
     "watch": "webpack --mode development --watch --info-verbosity verbose",
     "test-compile": "tsc -p ./",
-    "build": "gulp buildServer"
+    "build": "gulp buildLemminxLiberty buildLibertyServer"
   },
   "devDependencies": {
     "@types/glob": "^7.1.1",
