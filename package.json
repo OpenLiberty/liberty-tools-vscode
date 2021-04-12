@@ -224,8 +224,8 @@
 		"ts-loader": "^8.0.4",
 		"typescript": "^3.8.3",
 		"vscode-test": "^1.3.0",
-		"webpack": "^4.44.2",
-		"webpack-cli": "^3.3.12"
+		"webpack": "^5.31.2",
+		"webpack-cli": "^4.6.0"
 	},
 	"dependencies": {
 		"@types/fs-extra": "^8.1.0",
