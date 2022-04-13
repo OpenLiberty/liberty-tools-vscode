@@ -1,9 +1,9 @@
 const gulp = require("gulp");
 const cp = require("child_process");
 
-const libertyLemminxName = "lemminx-liberty-1.0-SNAPSHOT-jar-with-dependencies.jar";
+const libertyLemminxName = "liberty-langserver-lemminx-1.0-SNAPSHOT-jar-with-dependencies.jar";
 const libertyLemminxDir = "../liberty-language-server/lemminx-liberty";
-const libertyLSName = "liberty.ls-1.0-SNAPSHOT-jar-with-dependencies.jar";
+const libertyLSName = "liberty-langserver-1.0-SNAPSHOT-jar-with-dependencies.jar";
 const libertyLSDir = "../liberty-language-server/liberty-ls"
 
 gulp.task("buildLemminxLiberty", (done) => {

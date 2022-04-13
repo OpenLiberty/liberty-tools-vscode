@@ -81,7 +81,7 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
 function startupLanguageServer(context: vscode.ExtensionContext) {
     //Start up Liberty Language Server
     var path = require('path');
-    var languageServerPath = context.asAbsolutePath(path.join('jars','liberty.ls-1.0-SNAPSHOT-jar-with-dependencies.jar'));
+    var languageServerPath = context.asAbsolutePath(path.join('jars','liberty-langserver-1.0-SNAPSHOT-jar-with-dependencies.jar'));
 
     // Language server options 
     let serverOptions: Executable = {

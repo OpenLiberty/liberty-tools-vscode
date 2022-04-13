@@ -46,7 +46,7 @@
   ],
   "contributes": {
     "xml.javaExtensions": [
-      "./jars/lemminx-liberty-1.0-SNAPSHOT-jar-with-dependencies.jar"
+      "./jars/liberty-langserver-lemminx-1.0-SNAPSHOT-jar-with-dependencies.jar"
     ],
     "views": {
       "explorer": [
