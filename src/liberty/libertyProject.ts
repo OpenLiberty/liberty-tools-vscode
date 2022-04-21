@@ -29,7 +29,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		// update the map of projects
 		await this.updateProjects();
 		// trigger a re-render of the tree view
-		this._onDidChangeTreeData.fire();
+		this._onDidChangeTreeData.fire(undefined);
 	}
 
 	public getTreeItem(element: LibertyProject): vscode.TreeItem {
