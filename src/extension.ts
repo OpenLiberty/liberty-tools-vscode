@@ -2,9 +2,12 @@ import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
 
 import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
-import { LanguageClient, LanguageClientOptions, Executable } from 'vscode-languageclient';
+import { LanguageClient, LanguageClientOptions, Executable } from "vscode-languageclient";
+import { workspace, commands, ExtensionContext, extensions, window, languages } from "vscode";
 
-const LANGUAGE_CLIENT_ID = 'LANGUAGE_ID_LIBERTY';
+const LANGUAGE_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
+
+let languageClient: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     startupLanguageServer(context);
@@ -80,28 +83,29 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
 
 function startupLanguageServer(context: vscode.ExtensionContext) {
     //Start up Liberty Language Server
-    var path = require('path');
-    var languageServerPath = context.asAbsolutePath(path.join('jars','liberty-langserver-1.0-SNAPSHOT-jar-with-dependencies.jar'));
+    const path = require("path");
+    const languageServerPath = context.asAbsolutePath(path.join("jars","liberty-langserver-1.0-SNAPSHOT-jar-with-dependencies.jar"));
 
     // Language server options 
     let serverOptions: Executable = {
-        command: 'java',
-        args: [ '-jar', languageServerPath],
-        options: {stdio:'pipe'}
+        command: "java",
+        args: [ "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1074", "-jar", languageServerPath],
+        options: {stdio:"pipe"}
     };
+    serverOptions.args?.push("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1074");
 
     // Options to control the language client
     let clientOptions: LanguageClientOptions = {
-        documentSelector: [{ language: 'plaintext' }],
+        documentSelector: [{ language: "plaintext" }],
         synchronize: {
             fileEvents: [
-                vscode.workspace.createFileSystemWatcher('**/*.properties'),
-                vscode.workspace.createFileSystemWatcher('**/*.env')
+                workspace.createFileSystemWatcher("**/*.properties"),
+                workspace.createFileSystemWatcher("**/*.env")
             ],
         }
     };
 
-    let languageClient = new LanguageClient(LANGUAGE_CLIENT_ID, 'Language Support for Liberty', serverOptions, clientOptions);
+    languageClient = new LanguageClient(LANGUAGE_CLIENT_ID, "Language Support for Liberty", serverOptions, clientOptions);
     let disposable = languageClient.start();
     context.subscriptions.push(disposable);
 }
