@@ -22,16 +22,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         console.log("Language client ready, registering commands");
         
         item.text = "Liberty LS $(thumbsup)";
-		item.tooltip = "Language Server for Liberty started";
-		toggleItem(window.activeTextEditor, item);
+        item.tooltip = "Language Server for Liberty started";
+        toggleItem(window.activeTextEditor, item);
 
         registerCommands(context);
     }, error => {
         console.log("Language client was not ready. Did not initialize");
         console.log(error);
         
-		item.text = "Liberty LS $(thumbsdown)";
-		item.tooltip = "Language Server for Liberty failed to start";
+        item.text = "Liberty LS $(thumbsdown)";
+        item.tooltip = "Language Server for Liberty failed to start";
     });
 }
 
@@ -147,9 +147,9 @@ function startupLanguageServer(context: ExtensionContext) {
 }
 
 function toggleItem(editor: TextEditor | undefined, item: vscode.StatusBarItem) {
-	if(editor && editor.document && SUPPORTED_LANGUAGE_IDS.includes(editor.document.languageId)){
-		item.show();
-	} else{
-		item.hide();
-	}
+    if(editor && editor.document && SUPPORTED_LANGUAGE_IDS.includes(editor.document.languageId)){
+        item.show();
+    } else{
+        item.hide();
+    }
 }
