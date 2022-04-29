@@ -1,17 +1,41 @@
 import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
+import * as path from "path";
 
 import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
-import { LanguageClient, LanguageClientOptions, Executable } from "vscode-languageclient";
-import { workspace, commands, ExtensionContext, extensions, window, languages } from "vscode";
+import { LanguageClient, LanguageClientOptions, Executable, ServerOptions } from "vscode-languageclient";
+import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor, languages } from "vscode";
 
 const LANGUAGE_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 
 let languageClient: LanguageClient;
-
+const SUPPORTED_LANGUAGE_IDS = ["properties", "plaintext"];
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    startupLanguageServer(context);
     
+    let item = window.createStatusBarItem(StatusBarAlignment.Right, Number.MIN_VALUE);
+    // item.name = "Liberty Language Server";
+    item.text = "Liberty LS";
+    item.tooltip = "Language Server for Liberty is starting...";
+    toggleItem(window.activeTextEditor, item);
+
+    startupLanguageServer(context).then(() => {
+        console.log("Language client ready, registering commands");
+        
+        item.text = "Liberty LS $(thumbsup)";
+		item.tooltip = "Language Server for Liberty started";
+		toggleItem(window.activeTextEditor, item);
+
+        registerCommands(context);
+    }, error => {
+        console.log("Language client was not ready. Did not initialize");
+        console.log(error);
+        
+		item.text = "Liberty LS $(thumbsdown)";
+		item.tooltip = "Language Server for Liberty failed to start";
+    });
+}
+
+function registerCommands(context: ExtensionContext) {
     const projectProvider = new ProjectProvider(context);
 
     if (vscode.workspace.workspaceFolders !== undefined) {
@@ -69,7 +93,7 @@ export function deactivate(): void {
  * @param projectProvider Liberty Dev projects
  */
 export function registerFileWatcher(projectProvider: ProjectProvider): void {
-    const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle}");
+    const watcher: vscode.FileSystemWatcher = workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle}");
     watcher.onDidCreate(async () => {
         projectProvider.refresh();
     });
@@ -81,23 +105,31 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
     });
 }
 
-function startupLanguageServer(context: vscode.ExtensionContext) {
+function startupLanguageServer(context: ExtensionContext) {
     //Start up Liberty Language Server
-    const path = require("path");
     const languageServerPath = context.asAbsolutePath(path.join("jars","liberty-langserver-1.0-SNAPSHOT-jar-with-dependencies.jar"));
-
+    const debugArgs = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:1074";
     // Language server options 
-    let serverOptions: Executable = {
-        command: "java",
-        args: [ "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1074", "-jar", languageServerPath],
-        options: {stdio:"pipe"}
+    const serverOptions: ServerOptions = {
+        run: <Executable> { 
+            command: "java",
+            args: ["-jar", languageServerPath],
+            options: {stdio:"pipe"}
+        },
+        debug: <Executable> {
+            command: "java",
+            // TODO: using the debug arguments seems to still run the language server and open the debug port,
+            // but, the extension doesn't seem to work properly nor does it run the .onReady.then() commands
+            args: [debugArgs, "-jar", languageServerPath],
+            options: {stdio:"pipe"}
+        }
     };
-    serverOptions.args?.push("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1074");
 
     // Options to control the language client
-    let clientOptions: LanguageClientOptions = {
-        documentSelector: [{ language: "plaintext" }],
+    const clientOptions: LanguageClientOptions = {
+        documentSelector: SUPPORTED_LANGUAGE_IDS,
         synchronize: {
+            configurationSection: ["properties", "plaintext"],
             fileEvents: [
                 workspace.createFileSystemWatcher("**/*.properties"),
                 workspace.createFileSystemWatcher("**/*.env")
@@ -105,7 +137,19 @@ function startupLanguageServer(context: vscode.ExtensionContext) {
         }
     };
 
+    console.log("Creating new language client");
     languageClient = new LanguageClient(LANGUAGE_CLIENT_ID, "Language Support for Liberty", serverOptions, clientOptions);
-    let disposable = languageClient.start();
+
+    const disposable = languageClient.start();
     context.subscriptions.push(disposable);
+
+    return languageClient.onReady();
+}
+
+function toggleItem(editor: TextEditor | undefined, item: vscode.StatusBarItem) {
+	if(editor && editor.document && SUPPORTED_LANGUAGE_IDS.includes(editor.document.languageId)){
+		item.show();
+	} else{
+		item.hide();
+	}
 }
