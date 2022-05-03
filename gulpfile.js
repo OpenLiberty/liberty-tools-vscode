@@ -7,7 +7,7 @@ const libertyLSName = "liberty-langserver-1.0-SNAPSHOT-jar-with-dependencies.jar
 const libertyLSDir = "../liberty-language-server/liberty-ls"
 
 gulp.task("buildLemminxLiberty", (done) => {
-  cp.execSync(mvnw() + " clean install -DskipTests", {
+  cp.execSync(mvnw() + " clean install -DskipTests -Dinvoker.skip=true", {
     cwd: libertyLemminxDir,
     stdio: "inherit",
   });
