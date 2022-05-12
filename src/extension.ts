@@ -120,7 +120,8 @@ function startupLanguageServer(context: ExtensionContext) {
             command: "java",
             // TODO: using the debug arguments seems to still run the language server and open the debug port,
             // but, the extension doesn't seem to work properly nor does it run the .onReady.then() commands
-            args: [debugArgs, "-jar", languageServerPath],
+            // args: [debugArgs, "-jar", languageServerPath],
+            args: ["-jar", languageServerPath],
             options: {stdio:"pipe"}
         }
     };
