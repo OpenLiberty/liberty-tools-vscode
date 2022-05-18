@@ -38,7 +38,7 @@ Feature diagnostics for invalid features:
 ![Server.xml feature diagnostic](images/liberty-ls-prototype/feature-diagnostic.png)
 ---
 
-[![Marketplace Version](https://vsmarketplacebadge.apphb.com/version/Open-Liberty.liberty-dev-vscode-ext.svg "Current Release")](https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext)
+[![Marketplace Version](https://vsmarketplacebadge.apphb.com/version/Open-Liberty.open-liberty-tools-vscode.svg "Current Release")](https://marketplace.visualstudio.com/items?itemName=Open-Liberty.open-liberty-tools-vscode)
 [![License](https://img.shields.io/badge/License-EPL%202.0-red.svg?label=license&logo=eclipse)](https://www.eclipse.org/legal/epl-2.0/)
 
 A VS Code extension for Open Liberty. The extension will detect your Liberty Maven or Liberty Gradle project if it detects the `io.openliberty.tools:liberty-maven-plugin` in the `pom.xml` or `io.openliberty.tools:liberty-gradle-plugin` in the `build.gradle`. Through the Liberty Dev Dashboard, you can start, stop, or interact with Liberty dev mode on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace.
@@ -100,17 +100,17 @@ Our [CONTRIBUTING](CONTRIBUTING.md) document contains details for submitting pul
 
 To build the extension locally:
 
-1. `git clone https://github.com/OpenLiberty/liberty-dev-vscode-ext`
-2. `cd liberty-dev-vscode-ext`
+1. `git clone https://github.com/OpenLiberty/open-liberty-tools-vscode`
+2. `cd open-liberty-tools-vscode`
 3. Execute `npm install`
 4. Run the extension in Debug and Run mode by selecting `Run Extension` or `F5`
 
    Alternatively, build a `.vsix` file:
 
-   - `vsce package` to generate the `liberty-dev-vscode-ext-xxx.vsix` file
+   - `vsce package` to generate the `open-liberty-tools-vscode-xxx.vsix` file
    - Install the extension to VS Code by `View/Command Palette`
-   - Select `Extensions: Install from VSIX...` and choose the generated `liberty-dev-vscode-ext-xxx.vsix` file
+   - Select `Extensions: Install from VSIX...` and choose the generated `open-liberty-tools-vscode-xxx.vsix` file
 
 ## Issues
 
-Please report bugs, issues and feature requests by creating a [GitHub issue](https://github.com/OpenLiberty/liberty-dev-vscode-ext/issues).
+Please report bugs, issues and feature requests by creating a [GitHub issue](https://github.com/OpenLiberty/open-liberty-tools-vscode/issues).
