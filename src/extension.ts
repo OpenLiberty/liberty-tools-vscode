@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
+import { multiStepInput } from './liberty/multiStepInput';
 
 import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
 
@@ -20,6 +21,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	context.subscriptions.push(
 		vscode.commands.registerCommand("extension.open.project", (pomPath) => devCommands.openProject(pomPath)),
 	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand('liberty.multiStepInput', () => multiStepInput(context))
+		);
+
 	context.subscriptions.push(
 		vscode.commands.registerCommand("liberty.dev.start", (libProject?: LibertyProject) => devCommands.startDevMode(libProject)),
 	);

@@ -33,6 +33,21 @@ export function validGradleBuild(buildFile: any): GradleBuildFile {
                 }
             }
         }
+    } else {
+        var returnVal = (new GradleBuildFile(false, ""));
+        function searchKeys(file: any){
+            for (let key in file){
+                if (typeof (file[key]) == "string") {
+                    if (file[key].includes('openliberty')) {
+                        returnVal = (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT_CONTAINER));
+                    }
+                } else {
+                    searchKeys(file[key]); 
+                }
+              }
+        }
+        searchKeys(buildFile);
+        return returnVal;
     }
     return (new GradleBuildFile(false, ""));
 }
