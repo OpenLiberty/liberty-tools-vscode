@@ -166,9 +166,13 @@ export async function multiStepInput(context: ExtensionContext) {
 	}
 
 	function shouldResume() {
-		// Could show a notification with the option to resume.
 		return new Promise<boolean>((resolve, reject) => {
-			// noop
+			window.showInformationMessage("Would you like to resume Liberty project generation?", "yes", "no") 
+			.then(selection => {
+				if (selection == "yes") {
+					resolve(shouldResume);
+				}
+			});
 		});
 	}
 
