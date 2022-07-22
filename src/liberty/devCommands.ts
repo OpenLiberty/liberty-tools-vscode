@@ -147,7 +147,6 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
 
 export async function buildStarterProject( state?: any, libProject?: LibertyProject | undefined): Promise<void> {
     var apiURL = `https://start.openliberty.io/api/start?a=${state.a}&b=${state.b}&e=${state.e}&g=${state.g}&j=${state.j}&m=${state.m}`;
-    let folderPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
     const downloadStarterProject = async function(downloadLocation: string): Promise<void> {
         axios({
         method: "get",
@@ -157,17 +156,15 @@ export async function buildStarterProject( state?: any, libProject?: LibertyProj
             response.data.pipe(fs.createWriteStream(downloadLocation))
             .on("close", () => {
                 var unzip = require("unzip-stream");
-                fs.createReadStream(downloadLocation).pipe(unzip.Extract({ path: `${folderPath}/${state.a}`}));
+                fs.createReadStream(downloadLocation).pipe(unzip.Extract({ path: `${state.dir}/${state.a}`}));
                 fs.unlink(downloadLocation, (err) => {
-                  if (err) {
-                    console.error(err)
-                    return
-                  }
+                  const folderUri = vscode.Uri.file(state.dir);
+                  vscode.commands.executeCommand(`vscode.openFolder`, folderUri);
                 })
             })
         });
     }
-    let zipPath = `${folderPath}/${state.a}.zip`;
+    let zipPath = `${state.dir}/${state.a}.zip`;
     downloadStarterProject(zipPath);
 }
 

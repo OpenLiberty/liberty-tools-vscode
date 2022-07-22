@@ -1,9 +1,12 @@
 import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, ExtensionContext, QuickInputButtons } from 'vscode';
 import * as devCommands from "./devCommands";
-import { projectOptions } from '../definitions/starterOptions';
+import { getProjectOptions } from '../definitions/starterOptions';
+import * as vscode from "vscode";
+import * as fs from "fs";
 
 export async function multiStepInput(context: ExtensionContext) {
 
+	const projectOptions = await getProjectOptions();
 	const buildTools: QuickPickItem[] = projectOptions.b.options
 		.map(label => ({ label }));
 
@@ -11,6 +14,9 @@ export async function multiStepInput(context: ExtensionContext) {
 		.map(label => ({ label }));
 
 	const javaEEVersions: QuickPickItem[] = projectOptions.e.options
+		.map(label => ({ label }));
+
+	const projectDir: QuickPickItem[] = ["Yes", "No"]
 		.map(label => ({ label }));
 
 	interface State {
@@ -22,21 +28,49 @@ export async function multiStepInput(context: ExtensionContext) {
         m: QuickPickItem | string,
 		step: number;
 		totalSteps: number;
+		dir: string;
 	}
 
 	async function collectInputs() {
 		const state = {} as Partial<State>;
-		await MultiStepInput.run(input => inputGroupName(input, state));
+		await MultiStepInput.run(input => pickDir(input, state));
 		return state as State;
 	}
 
 	const title = 'Create Open Liberty Starter Code';
 
+	async function pickDir(input: MultiStepInput, state: Partial<State>) {
+		state.dir = await input.showQuickPick({
+			title,
+			step: 1,
+			totalSteps: 7,
+			placeholder: "Create project in current directory?",
+			items: projectDir,
+			value: state.dir,
+			shouldResume: shouldResume
+		});
+		state.dir = state.dir.label;
+		if (state.dir != "Yes") {
+			const folder = await window.showOpenDialog({
+				canSelectMany: false,
+				openLabel: 'Select',
+				canSelectFiles: false,
+				canSelectFolders: true
+				});
+			state.dir = folder[0].path
+			return (input: MultiStepInput) => inputGroupName(input, state);
+		} else {
+			state.dir = vscode.workspace.workspaceFolders[0].uri.fsPath; 
+			return (input: MultiStepInput) => inputGroupName(input, state);
+		}
+		
+	}
+
 	async function inputGroupName(input: MultiStepInput, state: Partial<State>) {
 		state.g = await input.showInputBox({
 			title,
-			step: 1,
-			totalSteps: 6,
+			step: 2,
+			totalSteps: 7,
 			value: state.g || projectOptions.g.default,
 			prompt: projectOptions.g.name,
 			validate: validateNameIsUnique,
@@ -54,13 +88,17 @@ export async function multiStepInput(context: ExtensionContext) {
 	async function inputArtifactName(input: MultiStepInput, state: Partial<State>) {
 		state.a = await input.showInputBox({
 			title,
-			step: 2,
-			totalSteps: 6,
+			step: 3,
+			totalSteps: 7,
 			value: state.a || projectOptions.a.default,
 			prompt: projectOptions.a.name,
 			validate: validateNameIsUnique,
 			shouldResume: shouldResume
 		});
+		if (fs.existsSync(`${state.dir}/${state.a}`)) {
+			window.showErrorMessage("App name must be unique in the directory");
+			return (input: MultiStepInput) => inputArtifactName(input, state);
+		}
 		const regexp = new RegExp("^([a-z]+-)*[a-z]+$", "i");
 		if (! regexp.test(state.a) ) {
 			window.showErrorMessage("App name must be a-z characters separated by dashes");
@@ -73,8 +111,8 @@ export async function multiStepInput(context: ExtensionContext) {
 	async function pickResourceGroup(input: MultiStepInput, state: Partial<State>) {
 		state.b = await input.showQuickPick({
 			title,
-			step: 3,
-			totalSteps: 6,
+			step: 4,
+			totalSteps: 7,
 			placeholder: projectOptions.b.name,
 			items: buildTools,
 			value: state.b,
@@ -87,8 +125,8 @@ export async function multiStepInput(context: ExtensionContext) {
 	async function pickJavaSE(input: MultiStepInput, state: Partial<State>) {
 		state.j = await input.showQuickPick({
 			title,
-			step: 4,
-			totalSteps: 6,
+			step: 5,
+			totalSteps: 7,
 			placeholder: projectOptions.j.name,
 			items: javaSEVersions,
 			value: state.j,
@@ -101,8 +139,8 @@ export async function multiStepInput(context: ExtensionContext) {
 	async function pickJavaEE(input: MultiStepInput, state: Partial<State>) {
 		state.e = await input.showQuickPick({
 			title,
-			step: 5,
-			totalSteps: 6,
+			step: 6,
+			totalSteps: 7,
 			placeholder: projectOptions.e.name,
 			items: javaEEVersions,
 			value: state.e,
@@ -117,8 +155,8 @@ export async function multiStepInput(context: ExtensionContext) {
 	async function pickMP(input: MultiStepInput, state: Partial<State>, MPVersions: QuickPickItem) {
 		state.m = await input.showQuickPick({
 			title,
-			step: 6,
-			totalSteps: 6,
+			step: 7,
+			totalSteps: 7,
 			placeholder: projectOptions.m.name,
 			items: MPVersions,
 			value: state.m,
