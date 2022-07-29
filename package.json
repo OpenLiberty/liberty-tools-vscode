@@ -31,7 +31,7 @@
 	"activationEvents": [
 		"workspaceContains:**/pom.xml",
 		"workspaceContains:**/build.gradle",
-		"onCommand:liberty.multiStepInput",
+		"onCommand:liberty.starterProject",
 		"onCommand:liberty.dev.start",
 		"onCommand:liberty.dev.stop",
 		"onCommand:liberty.dev.custom",
@@ -57,7 +57,8 @@
 		},
 		"commands": [
 			{
-				"command": "liberty.multiStepInput",
+				"command": "liberty.starterProject",
+				"category": "Open Liberty",
 				"title": "Open Liberty Starter Project"
 			},
 			{
@@ -213,7 +214,7 @@
 	"scripts": {
 		"vscode:prepublish": "webpack --mode production",
 		"compile": "webpack --mode none",
-		"watch": "tsc src/extension.ts --watch",
+		"watch": "webpack --mode development --watch --info-verbosity verbose",
 		"test-compile": "tsc -p ./"
 	},
 	"devDependencies": {

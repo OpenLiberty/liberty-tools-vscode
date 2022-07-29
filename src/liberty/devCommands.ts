@@ -157,9 +157,20 @@ export async function buildStarterProject( state?: any, libProject?: LibertyProj
             .on("close", () => {
                 var unzip = require("unzip-stream");
                 fs.createReadStream(downloadLocation).pipe(unzip.Extract({ path: `${state.dir}/${state.a}`}));
-                fs.unlink(downloadLocation, (err) => {
-                  const folderUri = vscode.Uri.file(state.dir);
-                  vscode.commands.executeCommand(`vscode.openFolder`, folderUri);
+                fs.unlink(downloadLocation, async (err) => {
+                    const folderUri = vscode.Uri.file(state.dir);
+                    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath != state.dir) {
+                        await vscode.window.showInformationMessage("Where would you like to open the project?", "Current Window", "New Window") 
+                        .then(selection => {
+                            if (selection == "Current Window") {
+                                vscode.commands.executeCommand(`vscode.openFolder`, folderUri);
+                            } else {
+                                vscode.commands.executeCommand(`vscode.openFolder`, folderUri, true);
+                            }
+                        });
+                    } else {
+                        vscode.commands.executeCommand(`vscode.openFolder`, folderUri);
+                    }
                 })
             })
         });

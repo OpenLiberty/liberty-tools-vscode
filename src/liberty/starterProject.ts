@@ -4,115 +4,72 @@ import { getProjectOptions } from '../definitions/starterOptions';
 import * as vscode from "vscode";
 import * as fs from "fs";
 
-export async function multiStepInput(context: ExtensionContext) {
+export async function starterProject(context: ExtensionContext) {
 
 	const projectOptions = await getProjectOptions();
 	const buildTools: QuickPickItem[] = projectOptions.b.options
-		.map(label => ({ label }));
+		.map((label: any) => ({ label }));
 
 	const javaSEVersions: QuickPickItem[] = projectOptions.j.options
-		.map(label => ({ label }));
+		.map((label: any) => ({ label }));
 
 	const javaEEVersions: QuickPickItem[] = projectOptions.e.options
-		.map(label => ({ label }));
+		.map((label: any) => ({ label }));
 
 	const projectDir: QuickPickItem[] = ["Yes", "No"]
 		.map(label => ({ label }));
 
 	interface State {
-		a: string,
+		a: QuickPickItem | string,
         b: QuickPickItem | string,
         e: QuickPickItem | string,
-        g: string,
+        g: QuickPickItem | string,
         j: QuickPickItem | string,
         m: QuickPickItem | string,
 		step: number;
 		totalSteps: number;
-		dir: string;
+		dir: QuickPickItem | string;
 	}
 
 	async function collectInputs() {
 		const state = {} as Partial<State>;
-		await MultiStepInput.run(input => pickDir(input, state));
+		await MultiStepInput.run(input => inputGroupName(input, state));
 		return state as State;
 	}
 
 	const title = 'Create Open Liberty Starter Code';
 
-	async function pickDir(input: MultiStepInput, state: Partial<State>) {
-		state.dir = await input.showQuickPick({
-			title,
-			step: 1,
-			totalSteps: 7,
-			placeholder: "Create project in current directory?",
-			items: projectDir,
-			value: state.dir,
-			shouldResume: shouldResume
-		});
-		state.dir = state.dir.label;
-		if (state.dir != "Yes") {
-			const folder = await window.showOpenDialog({
-				canSelectMany: false,
-				openLabel: 'Select',
-				canSelectFiles: false,
-				canSelectFolders: true
-				});
-			state.dir = folder[0].path
-			return (input: MultiStepInput) => inputGroupName(input, state);
-		} else {
-			state.dir = vscode.workspace.workspaceFolders[0].uri.fsPath; 
-			return (input: MultiStepInput) => inputGroupName(input, state);
-		}
-		
-	}
-
-	async function inputGroupName(input: MultiStepInput, state: Partial<State>) {
+	async function inputGroupName(input: MultiStepInput, state: Partial<State>) :Promise<any> {
 		state.g = await input.showInputBox({
 			title,
-			step: 2,
-			totalSteps: 7,
+			step: 1,
+			totalSteps: 6,
 			value: state.g || projectOptions.g.default,
 			prompt: projectOptions.g.name,
-			validate: validateNameIsUnique,
+			validate: validGroupName,
 			shouldResume: shouldResume
 		});
-		const regexp = new RegExp("^([a-z]+\\.)*[a-z]+$", "i");
-		if (! regexp.test(state.g) ) {
-			window.showErrorMessage("Group name must be a-z separated by periods");
-			return (input: MultiStepInput) => inputGroupName(input, state);
-		} else {
-			return (input: MultiStepInput) => inputArtifactName(input, state);
-		}
+		return (input: MultiStepInput) => inputArtifactName(input, state);
 	}
 
-	async function inputArtifactName(input: MultiStepInput, state: Partial<State>) {
+	async function inputArtifactName(input: MultiStepInput, state: Partial<State>) :Promise<any> {
 		state.a = await input.showInputBox({
 			title,
-			step: 3,
-			totalSteps: 7,
+			step: 2,
+			totalSteps: 6,
 			value: state.a || projectOptions.a.default,
 			prompt: projectOptions.a.name,
-			validate: validateNameIsUnique,
+			validate: validArtifactName,
 			shouldResume: shouldResume
 		});
-		if (fs.existsSync(`${state.dir}/${state.a}`)) {
-			window.showErrorMessage("App name must be unique in the directory");
-			return (input: MultiStepInput) => inputArtifactName(input, state);
-		}
-		const regexp = new RegExp("^([a-z]+-)*[a-z]+$", "i");
-		if (! regexp.test(state.a) ) {
-			window.showErrorMessage("App name must be a-z characters separated by dashes");
-			return (input: MultiStepInput) => inputArtifactName(input, state);
-		} else {
-			return (input: MultiStepInput) => pickResourceGroup(input, state);
-		}
+		return (input: MultiStepInput) => pickResourceGroup(input, state);
 	}
 
 	async function pickResourceGroup(input: MultiStepInput, state: Partial<State>) {
 		state.b = await input.showQuickPick({
 			title,
-			step: 4,
-			totalSteps: 7,
+			step: 3,
+			totalSteps: 6,
 			placeholder: projectOptions.b.name,
 			items: buildTools,
 			value: state.b,
@@ -125,8 +82,8 @@ export async function multiStepInput(context: ExtensionContext) {
 	async function pickJavaSE(input: MultiStepInput, state: Partial<State>) {
 		state.j = await input.showQuickPick({
 			title,
-			step: 5,
-			totalSteps: 7,
+			step: 4,
+			totalSteps: 6,
 			placeholder: projectOptions.j.name,
 			items: javaSEVersions,
 			value: state.j,
@@ -139,8 +96,8 @@ export async function multiStepInput(context: ExtensionContext) {
 	async function pickJavaEE(input: MultiStepInput, state: Partial<State>) {
 		state.e = await input.showQuickPick({
 			title,
-			step: 6,
-			totalSteps: 7,
+			step: 5,
+			totalSteps: 6,
 			placeholder: projectOptions.e.name,
 			items: javaEEVersions,
 			value: state.e,
@@ -148,42 +105,113 @@ export async function multiStepInput(context: ExtensionContext) {
 		});
 		state.e = state.e.label;
 		var MPVersions: QuickPickItem[] = projectOptions.e.constraints[state.e].m
-		.map(label => ({ label }));
+		.map((label: any) => ({ label }));
 		return (input: MultiStepInput) => pickMP(input, state, MPVersions);
 	}
 
-	async function pickMP(input: MultiStepInput, state: Partial<State>, MPVersions: QuickPickItem) {
+	async function pickMP(input: MultiStepInput, state: Partial<State>, MPVersions: QuickPickItem[]) {
 		state.m = await input.showQuickPick({
 			title,
-			step: 7,
-			totalSteps: 7,
+			step: 6,
+			totalSteps: 6,
 			placeholder: projectOptions.m.name,
 			items: MPVersions,
 			value: state.m,
 			shouldResume: shouldResume
 		});
 		state.m = state.m.label;
+		return (input: MultiStepInput) => pickDirectory(input, state);
 	}
 
-	function shouldResume() {
-		return new Promise<boolean>((resolve, reject) => {
+	async function pickDirectory(input: MultiStepInput, state: Partial<State>) {
+		const folder = await window.showOpenDialog({
+			canSelectMany: false,
+			openLabel: 'Select',
+			canSelectFiles: false,
+			canSelectFolders: true
+			})
+			.then(async response => {
+				if (response) {
+					if (fs.existsSync(`${response[0].path}/${state.a}`)) {
+						await window.showErrorMessage(`${state.a} already exists in ${response[0].path}. ${state.a} will be replaced, are you sure you want to continue?`, "yes", "no")
+						.then(selection => {
+							if (selection == "yes") {
+								fs.rmdirSync(`${response[0].path}/${state.a}`, { recursive: true });
+								state.dir = response[0].path;
+							} else {
+								return pickNewName(input, state);
+							}
+						});
+					} else {
+						state.dir = response[0].path;
+					}
+				} else {
+					const res = await shouldResume();
+					if (res) {
+						return pickDirectory(input, state);
+					}
+				}
+		});		
+	}
+
+	async function pickNewName(input: MultiStepInput, state: Partial<State>) {
+		state.a = await input.showInputBox({
+			title,
+			step: 2,
+			totalSteps: 6,
+			value: state.a || projectOptions.a.default,
+			prompt: "Enter a different artifact name",
+			validate: validArtifactName,
+			shouldResume: shouldResume
+		});
+		return pickDirectory(input, state);
+	}
+
+	async function shouldResume() {
+		return new Promise<boolean>((resolve) => {
 			window.showInformationMessage("Would you like to resume Liberty project generation?", "yes", "no") 
 			.then(selection => {
 				if (selection == "yes") {
-					resolve(shouldResume);
+					return resolve(true);
+				} else {
+					return resolve(false);
 				}
 			});
 		});
 	}
 
-	async function validateNameIsUnique(name: string) {
-		// ...validate...
-		await new Promise(resolve => setTimeout(resolve, 1000));
-		return name === 'vscode' ? 'Name not unique' : undefined;
+	async function validArtifactName(name: string) {
+		const regexp = new RegExp("^([a-z]+-)*[a-z]+$", "i");
+		if (! regexp.test(name) ) {
+			return("App name must be a-z characters separated by dashes");
+		} else {
+			return undefined;
+		}
+	}
+
+	async function validGroupName(name: string) {
+		const regexp = new RegExp("^([a-z]+\\.)*[a-z]+$", "i");
+		if (! regexp.test(name) ) {
+			return("Group name must be a-z separated by periods");
+		} else {
+			return undefined;
+		}
 	}
 
 	const state = await collectInputs();
-	window.showInformationMessage(`Creating starter code for '${state.a}'`);
+
+	window.withProgress({
+		location: vscode.ProgressLocation.Window,
+		cancellable: false,
+		title: `Creating starter code for ${state.a}`
+	}, async (progress) => {
+		progress.report({  increment: 0 });
+		await new Promise((resolve) => {
+				setTimeout(() => { resolve(true); }, 3000);
+			});
+		progress.report({ increment: 100 });
+	});
+	
 	devCommands.buildStarterProject(state);
 }
 
