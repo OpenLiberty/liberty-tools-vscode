@@ -7,17 +7,21 @@ import * as fs from "fs";
 export async function starterProject(context: ExtensionContext) {
 
 	const projectOptions = await getProjectOptions();
+
+	const comparator = (a: any, b: any) => {
+		return b - a;
+	  };
+
 	const buildTools: QuickPickItem[] = projectOptions.b.options
 		.map((label: any) => ({ label }));
 
 	const javaSEVersions: QuickPickItem[] = projectOptions.j.options
+		.sort(comparator)
 		.map((label: any) => ({ label }));
 
 	const javaEEVersions: QuickPickItem[] = projectOptions.e.options
+		.sort(comparator)
 		.map((label: any) => ({ label }));
-
-	const projectDir: QuickPickItem[] = ["Yes", "No"]
-		.map(label => ({ label }));
 
 	interface State {
 		a: QuickPickItem | string,
@@ -71,6 +75,7 @@ export async function starterProject(context: ExtensionContext) {
 			step: 3,
 			totalSteps: 6,
 			placeholder: projectOptions.b.name,
+			activeItem: buildTools[buildTools.findIndex(item => item.label === projectOptions.b.default)],
 			items: buildTools,
 			value: state.b,
 			shouldResume: shouldResume
@@ -85,6 +90,7 @@ export async function starterProject(context: ExtensionContext) {
 			step: 4,
 			totalSteps: 6,
 			placeholder: projectOptions.j.name,
+			activeItem: javaSEVersions[javaSEVersions.findIndex(item => item.label === projectOptions.j.default)],
 			items: javaSEVersions,
 			value: state.j,
 			shouldResume: shouldResume
@@ -99,12 +105,14 @@ export async function starterProject(context: ExtensionContext) {
 			step: 5,
 			totalSteps: 6,
 			placeholder: projectOptions.e.name,
+			activeItem: javaEEVersions[javaEEVersions.findIndex(item => item.label === projectOptions.e.default)],
 			items: javaEEVersions,
 			value: state.e,
 			shouldResume: shouldResume
 		});
 		state.e = state.e.label;
 		var MPVersions: QuickPickItem[] = projectOptions.e.constraints[state.e].m
+		.sort(comparator)
 		.map((label: any) => ({ label }));
 		return (input: MultiStepInput) => pickMP(input, state, MPVersions);
 	}
@@ -115,6 +123,7 @@ export async function starterProject(context: ExtensionContext) {
 			step: 6,
 			totalSteps: 6,
 			placeholder: projectOptions.m.name,
+			activeItem: MPVersions[MPVersions.findIndex(item => item.label === projectOptions.m.default)],
 			items: MPVersions,
 			value: state.m,
 			shouldResume: shouldResume
