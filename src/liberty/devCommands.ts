@@ -147,6 +147,8 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
 
 export async function buildStarterProject( state?: any, libProject?: LibertyProject | undefined): Promise<void> {
     var apiURL = `https://start.openliberty.io/api/start?a=${state.a}&b=${state.b}&e=${state.e}&g=${state.g}&j=${state.j}&m=${state.m}`;
+    var targetDir = `${state.dir}/${state.a}`;
+    const targetUri = vscode.Uri.file(targetDir);
     const downloadStarterProject = async function(downloadLocation: string): Promise<void> {
         axios({
         method: "get",
@@ -156,27 +158,29 @@ export async function buildStarterProject( state?: any, libProject?: LibertyProj
             response.data.pipe(fs.createWriteStream(downloadLocation))
             .on("close", () => {
                 var unzip = require("unzip-stream");
-                fs.createReadStream(downloadLocation).pipe(unzip.Extract({ path: `${state.dir}/${state.a}`}));
+                fs.createReadStream(downloadLocation).pipe(unzip.Extract({ path: targetDir }));
                 fs.unlink(downloadLocation, async (err) => {
-                    const folderUri = vscode.Uri.file(state.dir);
-                    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath != state.dir) {
+                    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath != targetDir) {
                         await vscode.window.showInformationMessage("Where would you like to open the project?", "Current Window", "New Window") 
                         .then(selection => {
                             if (selection == "Current Window") {
-                                vscode.commands.executeCommand(`vscode.openFolder`, folderUri);
+                                vscode.commands.executeCommand(`vscode.openFolder`, targetUri);
+
                             } else {
-                                vscode.commands.executeCommand(`vscode.openFolder`, folderUri, true);
+                                vscode.commands.executeCommand(`vscode.openFolder`, targetUri, true);
                             }
                         });
                     } else {
-                        vscode.commands.executeCommand(`vscode.openFolder`, folderUri);
+                        vscode.commands.executeCommand(`vscode.openFolder`, targetUri);
                     }
                 })
             })
         });
     }
-    let zipPath = `${state.dir}/${state.a}.zip`;
-    downloadStarterProject(zipPath);
+    downloadStarterProject(`${targetDir}.zip`);
+    await new Promise((resolve) => {
+        setTimeout(() => { resolve(true); }, 3000);
+    }).then(function() {vscode.commands.executeCommand("workbench.files.action.refreshFilesExplorer");});
 }
 
 // run tests on dev mode
