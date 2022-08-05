@@ -4,6 +4,18 @@ import { getProjectOptions } from '../definitions/starterOptions';
 import * as vscode from "vscode";
 import * as fs from "fs";
 
+export interface State {
+	a: QuickPickItem | string,
+	b: QuickPickItem | string,
+	e: QuickPickItem | string,
+	g: QuickPickItem | string,
+	j: QuickPickItem | string,
+	m: QuickPickItem | string,
+	step: number;
+	totalSteps: number;
+	dir: QuickPickItem | string;
+}
+
 export async function starterProject(context: ExtensionContext) {
 
     const projectOptions = await getProjectOptions();
@@ -22,18 +34,6 @@ export async function starterProject(context: ExtensionContext) {
     const javaEEVersions: QuickPickItem[] = projectOptions.e.options
         .sort(comparator)
         .map((label: any) => ({ label }));
-
-    interface State {
-        a: QuickPickItem | string,
-        b: QuickPickItem | string,
-        e: QuickPickItem | string,
-        g: QuickPickItem | string,
-        j: QuickPickItem | string,
-        m: QuickPickItem | string,
-        step: number;
-        totalSteps: number;
-        dir: QuickPickItem | string;
-    }
 
     async function collectInputs() {
         const state = {} as Partial<State>;
