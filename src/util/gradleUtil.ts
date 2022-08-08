@@ -11,20 +11,30 @@ import { BuildFile, GradleBuildFile } from "./buildFile";
  * 
  * @param buildFile JS object representation of the build.gradle
  */
-export function validGradleBuild(buildFile: any): GradleBuildFile {
-    var returnVal = (new GradleBuildFile(false, ""));
-    function searchKeys(file: any){
-        for (let key in file){
-            if (typeof (file[key]) == "string") {
-                if (file[key].includes("io.openliberty.tools")) {
-                    returnVal = (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT_CONTAINER));
+ export function validGradleBuild(buildFile: any): GradleBuildFile {
+    if (buildFile !== undefined && buildFile.apply !== undefined && buildFile.buildscript !== undefined && buildFile.buildscript.dependencies !== undefined) {
+        // check that "apply plugin: 'liberty'" is specified in the build.gradle
+        let libertyPlugin = false;
+        for (let i = 0; i < buildFile.apply.length; i++) {
+            if (buildFile.apply[i] === "plugin: 'liberty'") {
+                libertyPlugin = true;
+                break;
+            }
+        }
+        if (libertyPlugin) {
+            for (let i = 0; i < buildFile.buildscript.dependencies.length; i++) {
+                const dependency = buildFile.buildscript.dependencies[i];
+                // check that group matches io.openliberty.tools and name matches liberty-gradle-plugin
+                if (dependency.group === "io.openliberty.tools" && dependency.name === "liberty-gradle-plugin") {
+                    if (containerVersion(dependency.version)) {
+                        return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT_CONTAINER));
+                    }
+                    return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT));
                 }
-            } else {
-                searchKeys(file[key]); 
-            }}
+            }
+        }
     }
-    searchKeys(buildFile);
-    return returnVal;
+    return (new GradleBuildFile(false, ""));
 }
 
 /**
