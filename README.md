@@ -1,17 +1,17 @@
-# Open Liberty Tools for VS Code
+# Liberty Tools for VS Code
 
 [![Marketplace Version](https://vsmarketplacebadge.apphb.com/version/Open-Liberty.liberty-dev-vscode-ext.svg "Current Release")](https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext)
 [![License](https://img.shields.io/badge/License-EPL%202.0-red.svg?label=license&logo=eclipse)](https://www.eclipse.org/legal/epl-2.0/)
 
-A VS Code extension for Open Liberty. The extension will detect your Liberty Maven or Liberty Gradle project if it detects the `io.openliberty.tools:liberty-maven-plugin` in the `pom.xml` or `io.openliberty.tools:liberty-gradle-plugin` in the `build.gradle`. Through the Liberty Dev Dashboard, you can start, stop, or interact with Liberty dev mode on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace.
+A VS Code extension for Open Liberty. The extension will detect your Liberty Maven or Liberty Gradle project if it detects the `io.openliberty.tools:liberty-maven-plugin` in the `pom.xml` or `io.openliberty.tools:liberty-gradle-plugin` in the `build.gradle`. Through the Liberty Dashboard, you can start, stop, or interact with Liberty dev mode on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace.
 
-![Open Liberty Tools Extension](images/open-liberty-tools.png)
+![Liberty Tools Extension](images/open-liberty-tools.png)
 
 ## Quick Start
 
 - Install the extension
-- Open Liberty supported projects will appear in the Liberty Dev Dashboard on the side bar
-- Right-click a project in the Liberty Dev Dashboard to view the available commands
+- Open Liberty supported projects will appear in the Liberty Dashboard on the side bar
+- Right-click a project in the Liberty Dashboard to view the available commands
 
 ## Features
 
