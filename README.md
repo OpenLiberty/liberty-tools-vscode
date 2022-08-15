@@ -10,7 +10,7 @@ A VS Code extension for Open Liberty. The extension will detect your Liberty Mav
 ## Quick Start
 
 - Install the extension
-- Open Liberty supported projects will appear in the Liberty Dashboard on the side bar
+- Liberty supported projects will appear in the Liberty Dashboard on the side bar
 - Right-click a project in the Liberty Dashboard to view the available commands
 
 ## Features
@@ -56,7 +56,7 @@ The following settings provided by external extensions will be honoured when exe
 
 ## Contributing
 
-Contributions to the Open Liberty Tools extension are welcome!
+Contributions to the Liberty Tools extension are welcome!
 
 Our [CONTRIBUTING](CONTRIBUTING.md) document contains details for submitting pull requests.
 
