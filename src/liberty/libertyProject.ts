@@ -4,7 +4,7 @@ import * as vscode from "vscode";
 import * as gradleUtil from "../util/gradleUtil";
 import * as mavenUtil from "../util/mavenUtil";
 import * as util from "../util/helperUtil";
-import { LIBERTY_GRADLE_PROJECT } from "../definitions/constants";
+import { LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT } from "../definitions/constants";
 import { BuildFile, GradleBuildFile } from "../util/buildFile";
 
 export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> {
@@ -51,6 +51,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		// else it is asking for a child node
 		return [];
 	}
+
 
 	// Given a list of pom.xml files, find ones that are valid to use with liberty dev-mode
 	private async findValidPOMs(pomPaths: string[]): Promise<BuildFile[]> {
@@ -132,10 +133,43 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				}
 			}).catch((err: any) => console.error("Unable to parse build.gradle: " + gradlePath + "; " + err));
 		}
-
 		return validGradleBuildFiles;
 	}
 
+	private projectRootPathExists(path: string, keys: Iterable<string>): Boolean {
+		for (const existingPath of keys) {
+			if ( vscodePath.dirname(existingPath) === path) {
+				return true;
+			}
+		  }
+		return false;
+	}
+
+	/**
+	 * Checks if given build file exists in existing project map (<code>this.projects</code>).
+	 * If it exists, it will be added to the given <code>projectMap</code>.
+	 * 
+	 * @param buildFilePath The build file to check (full path to pom.xml or build.gradle)
+	 * @param projectType Project type
+	 * @param projectsMap Existing projects.
+	 * @returns 
+	 */
+	private addExistingProjectToNewProjectsMap (buildFilePath: string, projectType: string, projectsMap: Map<string, LibertyProject> ) : Boolean {
+		let added = false;
+		if (this.projects.has(buildFilePath)) {
+			// check version of liberty-maven-plugin to see if it is valid for contatiners
+			const project = this.projects.get(buildFilePath);
+			if (project !== undefined) {
+				if (project.contextValue != projectType) {
+					project.setContextValue(projectType);
+				}
+				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+				projectsMap.set(buildFilePath, this.projects.get(buildFilePath)!);
+				added = true;
+			}
+		}
+		return added;
+	}
 	private async updateProjects(): Promise<void> {
 		// find all build files in the open workspace and find all the ones that are valid for dev-mode
 		const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target}/**";
@@ -143,27 +177,16 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		const gradlePaths = (await vscode.workspace.findFiles("**/build.gradle", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
 		const validPoms: BuildFile[] = await this.findValidPOMs(pomPaths);
 		const validGradleBuilds: BuildFile[] = await this.findValidGradleBuildFiles(gradlePaths);
-
+		let serverXMLPaths: string[] = [];
+		
 		// map of buildFilePath -> LibertyProject
 		const newProjectsMap: Map<string, LibertyProject> = new Map();
 
 		for (const pom of validPoms) {
 			// if a LibertyProject for this pom has already been created
 			// we want to re-use it since it stores state such as the terminal being used for dev-mode
-			if (this.projects.has(pom.getBuildFilePath())) {
-				// check version of liberty-maven-plugin to see if it is valid for contatiners
-				const project = this.projects.get(pom.getBuildFilePath());
-				if (project !== undefined) {
-					if (project.contextValue != pom.getProjectType()) {
-						project.setContextValue(pom.getProjectType());
-					}
-				}
-
-				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				newProjectsMap.set(pom.getBuildFilePath(), this.projects.get(pom.getBuildFilePath())!);
-			}
-			// else we create a new LibertyProject for that POM
-			else {
+			if ( !this.addExistingProjectToNewProjectsMap(pom.getBuildFilePath(), pom.getProjectType(),
+					newProjectsMap) ) {
 				const xmlString = await fse.readFile(pom.getBuildFilePath(), "utf8");
 				const project = await createProject(this._context, pom.getBuildFilePath(), pom.getProjectType(), xmlString);
 				newProjectsMap.set(pom.getBuildFilePath(), project);
@@ -173,25 +196,48 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		for (const gradleBuild of validGradleBuilds) {
 			// if a LibertyProject for this build.gradle has already been created
 			// we want to re-use it
-			if (this.projects.has(gradleBuild.getBuildFilePath())) {
-				// check version of liberty-gradle-plugin to see if it is valid for contatiners
-				const project = this.projects.get(gradleBuild.getBuildFilePath());
-				if (project !== undefined) {
-					if (project.contextValue != gradleBuild.getProjectType()) {
-						project.setContextValue(gradleBuild.getProjectType());
-					}
-				}
-
-				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				newProjectsMap.set(gradleBuild.getBuildFilePath(), this.projects.get(gradleBuild.getBuildFilePath())!);
-			}
-			// else we create a new LibertyProject for that build file
-			else {
+			if ( !this.addExistingProjectToNewProjectsMap(gradleBuild.getBuildFilePath(), gradleBuild.getProjectType(),
+					newProjectsMap) ) {
 				const project = await createProject(this._context, gradleBuild.getBuildFilePath(), gradleBuild.getProjectType());
 				newProjectsMap.set(gradleBuild.getBuildFilePath(), project);
 			}
 		}
 
+		const wsFolders = vscode.workspace.workspaceFolders;
+		if ( wsFolders ) {
+			for ( const folder of wsFolders ) {
+				const path = folder.uri.fsPath;
+				if ( this.projectRootPathExists(path, newProjectsMap.keys() ) === false ) {
+					const includeRelativePath = new vscode.RelativePattern(path, '**/src/main/liberty/config/server.xml')
+					const paths = (await vscode.workspace.findFiles(includeRelativePath, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
+					serverXMLPaths = serverXMLPaths.concat(paths);
+				}
+			}
+		}
+
+		/* 
+		 * Finde the projects by server.xml
+		 */
+		for (const serverXML of serverXMLPaths) {
+			const folder = vscodePath.parse(vscodePath.resolve(serverXML, '../../../../../')).dir;
+			const pomFile = vscodePath.resolve(folder, 'pom.xml');
+			
+			if ( fse.existsSync(pomFile)) {
+				if ( !this.addExistingProjectToNewProjectsMap(pomFile, LIBERTY_MAVEN_PROJECT, newProjectsMap) ) {
+					const xmlString = await fse.readFile(pomFile, "utf8");
+					const project = await createProject(this._context, pomFile, LIBERTY_MAVEN_PROJECT, xmlString);
+					newProjectsMap.set(pomFile, project); 
+				}
+			} else {
+				const gradleFile = vscodePath.resolve(folder, 'build.gradle');
+				if ( fse.existsSync (gradleFile) ) {
+					if ( !this.addExistingProjectToNewProjectsMap(gradleFile, LIBERTY_GRADLE_PROJECT, newProjectsMap) ) {
+						const project = await createProject(this._context, pomFile, LIBERTY_GRADLE_PROJECT);
+						newProjectsMap.set(pomFile, project);
+					}
+				}
+			}			
+		}
 		this.projects = newProjectsMap;
 	}
 }
