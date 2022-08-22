@@ -216,7 +216,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		}
 
 		/* 
-		 * Finde the projects by server.xml
+		 * Find the projects by server.xml
 		 */
 		for (const serverXML of serverXMLPaths) {
 			const folder = vscodePath.parse(vscodePath.resolve(serverXML, '../../../../../')).dir;
