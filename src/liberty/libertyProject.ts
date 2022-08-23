@@ -147,7 +147,8 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	/**
 	 * Checks if given build file exists in existing project map (<code>this.projects</code>).
-	 * If it exists, it will be added to the given <code>projectMap</code>.
+	 * If it exists, then the corresponding liberty project will be added to the given 
+	 * <code>projectsMap</code>.
 	 * 
 	 * @param buildFilePath The build file to check (full path to pom.xml or build.gradle)
 	 * @param projectType Project type
@@ -216,7 +217,9 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		}
 
 		/* 
-		 * Find the projects by server.xml
+		 * Find the projects by server.xml.
+		 * This method assumes if pom.xml is under project root, then the server.xml is in
+		 * ./src/main/liberty/config/server.xml
 		 */
 		for (const serverXML of serverXMLPaths) {
 			const folder = vscodePath.parse(vscodePath.resolve(serverXML, '../../../../../')).dir;
