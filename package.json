@@ -31,6 +31,7 @@
 	"activationEvents": [
 		"workspaceContains:**/pom.xml",
 		"workspaceContains:**/build.gradle",
+		"onCommand:liberty.starterProject",
 		"onCommand:liberty.dev.start",
 		"onCommand:liberty.dev.stop",
 		"onCommand:liberty.dev.custom",
@@ -55,6 +56,11 @@
 			]
 		},
 		"commands": [
+			{
+				"command": "liberty.starterProject",
+				"category": "Open Liberty",
+				"title": "Open Liberty Starter Project"
+			},
 			{
 				"command": "liberty.explorer.refresh",
 				"title": "%contributes.commands.liberty.explorer.refresh%",
@@ -114,7 +120,7 @@
 				{
 					"command": "liberty.dev.start",
 					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
-					"group": "libertyCore@1"
+					"group": "libertyCore@2"
 				},
 				{
 					"command": "liberty.dev.stop",
@@ -214,7 +220,7 @@
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
 		"@types/mocha": "^7.0.2",
-		"@types/node": "^13.13.36",
+		"@types/node": "^13.13.52",
 		"@types/vscode": "^1.36.0",
 		"@typescript-eslint/eslint-plugin": "^2.24.0",
 		"@typescript-eslint/parser": "^2.24.0",
@@ -228,11 +234,16 @@
 		"webpack-cli": "^4.6.0"
 	},
 	"dependencies": {
+		"@microsoft/vscode-file-downloader-api": "^1.0.1",
 		"@types/fs-extra": "^8.1.0",
 		"@types/xml2js": "^0.4.5",
+		"axios": "^0.27.2",
 		"fs-extra": "^9.0.0",
 		"gradle-to-js": "^2.0.0",
 		"semver": "^7.3.2",
+		"unzip-stream": "^0.3.1",
+		"update": "^0.7.4",
+		"vsce": "^2.9.2",
 		"xml2js": "^0.4.23"
 	}
 }

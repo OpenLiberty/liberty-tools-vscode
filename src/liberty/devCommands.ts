@@ -1,13 +1,14 @@
-
 import * as fs from "fs";
 import * as Path from "path";
 import * as vscode from "vscode";
+import axios from "axios";
 import { LibertyProject } from "./libertyProject";
+import * as starterProject from "./starterProject";
 import { getReport } from "../util/helperUtil";
 import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { pathExists } from "fs-extra";
-
+ 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 let _customParameters = "";
 
@@ -143,6 +144,58 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
     } else {
         console.error("Cannot start liberty dev in a container on an undefined project");
     }
+}
+
+/**
+ * Downloads a starter project from https://start.openliberty.io/
+ * @param state see {@link starterProject.State}
+ * @param libProject see {@link LibertyProject}
+ */
+export async function buildStarterProject( state?: any, libProject?: LibertyProject | undefined): Promise<void> {
+    var apiURL = `https://start.openliberty.io/api/start?a=${state.a}&b=${state.b}&e=${state.e}&g=${state.g}&j=${state.j}&m=${state.m}`;
+    var targetDir = `${state.dir}/${state.a}`;
+    const targetUri = vscode.Uri.file(targetDir);
+
+    /**
+     * Decides what window to use when opening the project
+     */
+    async function toBeHereOrNotToBeHere() {
+        var newWin = false;
+        if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath != targetDir) {
+            await vscode.window.showInformationMessage("Where would you like to open the project?", "Current Window", "New Window") 
+            .then(selection => {
+                if (selection != "Current Window") { newWin = true; }
+            });
+        }
+        vscode.commands.executeCommand(`vscode.openFolder`, targetUri, newWin);
+    }
+
+    /**
+     * gets zip -> unzips zip -> removes zip 
+     */
+    (async function(): Promise<void> {
+        let downloadLocation = `${targetDir}.zip`;
+        axios({
+        method: "get",
+        url: apiURL,
+        responseType: "stream"
+        }).then( function (response){
+            response.data.pipe(fs.createWriteStream(downloadLocation))
+            .on("close", () => {
+                var unzip = require("unzip-stream");
+                fs.createReadStream(downloadLocation).pipe(unzip.Extract({ path: targetDir }));
+                fs.unlink(downloadLocation, async (err) => { toBeHereOrNotToBeHere() })
+            })
+        });
+    }())
+
+    /**
+     * TODO: Convert to async/await
+     * Waits 3 seconds and refreshes the file explorer.
+     */
+    await new Promise((resolve) => {
+        setTimeout(() => { resolve(true); }, 3000);
+    }).then(function() {vscode.commands.executeCommand("workbench.files.action.refreshFilesExplorer");});
 }
 
 // run tests on dev mode

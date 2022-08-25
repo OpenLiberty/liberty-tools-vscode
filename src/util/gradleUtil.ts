@@ -11,7 +11,7 @@ import { BuildFile, GradleBuildFile } from "./buildFile";
  * 
  * @param buildFile JS object representation of the build.gradle
  */
-export function validGradleBuild(buildFile: any): GradleBuildFile {
+ export function validGradleBuild(buildFile: any): GradleBuildFile {
     if (buildFile !== undefined && buildFile.apply !== undefined && buildFile.buildscript !== undefined && buildFile.buildscript.dependencies !== undefined) {
         // check that "apply plugin: 'liberty'" is specified in the build.gradle
         let libertyPlugin = false;
