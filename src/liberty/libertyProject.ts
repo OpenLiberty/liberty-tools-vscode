@@ -222,7 +222,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		 * ./src/main/liberty/config/server.xml
 		 */
 		for (const serverXML of serverXMLPaths) {
-			const folder = vscodePath.parse(vscodePath.resolve(serverXML, '../../../../../')).dir;
+			const folder = vscodePath.parse(vscodePath.resolve(serverXML, '../../../../')).dir;
 			const pomFile = vscodePath.resolve(folder, 'pom.xml');
 			
 			if ( fse.existsSync(pomFile)) {
@@ -235,8 +235,8 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				const gradleFile = vscodePath.resolve(folder, 'build.gradle');
 				if ( fse.existsSync (gradleFile) ) {
 					if ( !this.addExistingProjectToNewProjectsMap(gradleFile, LIBERTY_GRADLE_PROJECT, newProjectsMap) ) {
-						const project = await createProject(this._context, pomFile, LIBERTY_GRADLE_PROJECT);
-						newProjectsMap.set(pomFile, project);
+						const project = await createProject(this._context, gradleFile, LIBERTY_GRADLE_PROJECT);
+						newProjectsMap.set(gradleFile, project);
 					}
 				}
 			}			
