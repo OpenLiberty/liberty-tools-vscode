@@ -158,7 +158,6 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	private addExistingProjectToNewProjectsMap (buildFilePath: string, projectType: string, projectsMap: Map<string, LibertyProject> ) : Boolean {
 		let added = false;
 		if (this.projects.has(buildFilePath)) {
-			// check version of liberty-maven-plugin to see if it is valid for contatiners
 			const project = this.projects.get(buildFilePath);
 			if (project !== undefined) {
 				if (project.contextValue != projectType) {
