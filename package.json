@@ -18,7 +18,7 @@
 	],
 	"keywords": [
 		"Java",
-		"Open Liberty",
+		"Liberty",
 		"MicroProfile",
 		"Jakarta EE",
 		"Cloud Native"
@@ -57,7 +57,7 @@
 		"commands": [
 			{
 				"command": "liberty.explorer.refresh",
-				"title": "%contributes.commands.liberty.explorer.refresh%",
+				"title": "Refresh projects",
 				"category": "Liberty",
 				"icon": "$(refresh)"
 			},
@@ -74,7 +74,7 @@
 			{
 				"command": "liberty.dev.custom",
 				"category": "Liberty",
-				"title": "Start..."
+				"title": "Start custom"
 			},
 			{
 				"command": "liberty.dev.start.container",
@@ -150,44 +150,6 @@
 					"command": "liberty.dev.open.gradle.test.report",
 					"when": "viewItem == libertyGradleProject || viewItem == libertyGradleProjectContainer",
 					"group": "libertyCore@5"
-				}
-			],
-			"commandPalette": [
-				{
-					"command": "liberty.dev.start",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.stop",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.custom",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.start.container",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.run.tests",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.open.failsafe.report",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.open.surefire.report",
-					"when": "never"
-				},
-				{
-					"command": "liberty.dev.open.gradle.test.report",
-					"when": "never"
-				},
-				{
-					"command": "liberty.explorer.refresh",
-					"when": "never"
 				}
 			]
 		},

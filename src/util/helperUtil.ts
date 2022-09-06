@@ -1,5 +1,7 @@
 import * as fs from "fs";
 import * as vscode from "vscode";
+import { LibertyProject } from "../liberty/libertyProject";
+import { COMMAND_AND_PROJECT_TYPE_MAP } from "../definitions/constants";
 
 export async function getAllPaths(workspaceFolder: vscode.WorkspaceFolder, pattern: string): Promise<string[]> {
 	const fileUris: vscode.Uri[] = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder, pattern), "**/{bin,classes,target}/**");
@@ -19,4 +21,21 @@ export function getConfiguration<T>(section: string, resourceOrFilepath?: vscode
 		resource = resourceOrFilepath;
 	}
 	return vscode.workspace.getConfiguration("liberty", resource).get<T>(section);
+}
+
+/**
+ * Filters the projects by command.
+ * @param projects The list of projects
+ * @param commamnd The command to check
+ * @returns a list of projects that the given command can be excuted on.
+ */
+export function filterProjects(projects: LibertyProject[], commamnd: string): LibertyProject[] {
+	let resultProjects: LibertyProject[] = [];
+	for ( const project of projects) {
+		const applicableTypes = COMMAND_AND_PROJECT_TYPE_MAP["liberty.dev.start"];
+		if (applicableTypes.includes(project.getContextValue())) {
+			resultProjects.push(project);
+		}
+	}
+	return resultProjects;
 }
