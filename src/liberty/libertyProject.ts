@@ -39,7 +39,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 	public async refresh(): Promise<void> {
 		// update the map of projects
-		var statusMessage = vscode.window.setStatusBarMessage("Refreshing Liberty Dev Dashboard projects...");
+		var statusMessage = vscode.window.setStatusBarMessage("Refreshing Liberty Dashboard projects...");
 		await this.updateProjects();
 		// trigger a re-render of the tree view
 		this._onDidChangeTreeData.fire(undefined);

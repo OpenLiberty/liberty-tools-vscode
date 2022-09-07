@@ -29,10 +29,10 @@ export function getConfiguration<T>(section: string, resourceOrFilepath?: vscode
  * @param commamnd The command to check
  * @returns a list of projects that the given command can be excuted on.
  */
-export function filterProjects(projects: LibertyProject[], commamnd: string): LibertyProject[] {
+export function filterProjects(projects: LibertyProject[], command: string): LibertyProject[] {
 	let resultProjects: LibertyProject[] = [];
 	for ( const project of projects) {
-		const applicableTypes = COMMAND_AND_PROJECT_TYPE_MAP["liberty.dev.start"];
+		const applicableTypes = COMMAND_AND_PROJECT_TYPE_MAP[command];
 		if (applicableTypes.includes(project.getContextValue())) {
 			resultProjects.push(project);
 		}
