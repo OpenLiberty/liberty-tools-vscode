@@ -74,7 +74,7 @@
 			{
 				"command": "liberty.dev.custom",
 				"category": "Liberty",
-				"title": "Start custom"
+				"title": "Start..."
 			},
 			{
 				"command": "liberty.dev.start.container",
