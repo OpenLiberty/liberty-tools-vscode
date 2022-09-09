@@ -4,7 +4,12 @@ import * as devCommands from "./liberty/devCommands";
 import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-	const projectProvider = new ProjectProvider(context);
+	
+	let projectProvider = ProjectProvider.getInstance();
+	if ( !projectProvider ) {
+		projectProvider = new ProjectProvider(context);
+		ProjectProvider.setInstance(projectProvider);
+	}
 
 	if (vscode.workspace.workspaceFolders !== undefined) {
 		registerFileWatcher(projectProvider);
@@ -61,7 +66,7 @@ export function deactivate(): void {
  * @param projectProvider Liberty Dev projects
  */
 export function registerFileWatcher(projectProvider: ProjectProvider): void {
-const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
+	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
 	watcher.onDidCreate(async () => {
 		projectProvider.refresh();
 	});

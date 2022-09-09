@@ -10,6 +10,8 @@ import { BuildFile, GradleBuildFile } from "../util/buildFile";
 export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> {
 	public readonly onDidChangeTreeData: vscode.Event<LibertyProject | undefined>;
 
+	private static instance: ProjectProvider;
+
 	// tslint:disable-next-line: variable-name
 	private _onDidChangeTreeData: vscode.EventEmitter<LibertyProject | undefined>;
 
@@ -25,11 +27,23 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		this.refresh();
 	}
 
+	public static getInstance() {
+		return ProjectProvider.instance;
+	}
+
+	public static setInstance(projectProvider: ProjectProvider) {
+		ProjectProvider.instance = projectProvider;
+	}
+	public getProjects() {
+		return this.projects;
+	}
 	public async refresh(): Promise<void> {
 		// update the map of projects
+		var statusMessage = vscode.window.setStatusBarMessage("Refreshing Liberty Dashboard projects...");
 		await this.updateProjects();
 		// trigger a re-render of the tree view
 		this._onDidChangeTreeData.fire(undefined);
+		statusMessage.dispose();
 	}
 
 	public getTreeItem(element: LibertyProject): vscode.TreeItem {
@@ -181,7 +195,6 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		
 		// map of buildFilePath -> LibertyProject
 		const newProjectsMap: Map<string, LibertyProject> = new Map();
-
 		for (const pom of validPoms) {
 			// if a LibertyProject for this pom has already been created
 			// we want to re-use it since it stores state such as the terminal being used for dev-mode
@@ -192,7 +205,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				newProjectsMap.set(pom.getBuildFilePath(), project);
 			}
 		}
-
+		
 		for (const gradleBuild of validGradleBuilds) {
 			// if a LibertyProject for this build.gradle has already been created
 			// we want to re-use it
@@ -252,6 +265,7 @@ export class LibertyProject extends vscode.TreeItem {
 		// tslint:disable-next-line: no-shadowed-variable
 		public readonly path: string,
 		public state: string,
+		// valid context values are defined in src/definitions/constants.ts
 		public contextValue: string,
 		public terminal?: vscode.Terminal,
 		public readonly command?: vscode.Command, // ? indicates optional param

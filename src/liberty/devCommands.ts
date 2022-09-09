@@ -2,8 +2,9 @@
 import * as fs from "fs";
 import * as Path from "path";
 import * as vscode from "vscode";
-import { LibertyProject } from "./libertyProject";
-import { getReport } from "../util/helperUtil";
+import { QuickPickItem } from 'vscode';
+import { LibertyProject, ProjectProvider } from "./libertyProject";
+import { getReport, filterProjects } from "../util/helperUtil";
 import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { pathExists } from "fs-extra";
@@ -11,6 +12,49 @@ import { pathExists } from "fs-extra";
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 let _customParameters = "";
 
+class LibertyProjectQuickPickItem implements QuickPickItem {
+    
+    project: LibertyProject;
+    label: string;
+	detail: string;
+	
+	constructor(public itemLabel: string, public itemDetail: string, public itemProject: LibertyProject) {
+		this.label = itemLabel;
+		this.detail = itemDetail;
+        this.project = itemProject;
+	}
+  }
+
+function showProjects(command: string, callback: Function, reportType?: string) {
+    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    // Find a list of projects that can be started
+    const projects: LibertyProject[] = filterProjects(Array.from(projectProvider.getProjects().values()),
+        command);
+    if (projects.length === 0) {
+        const message = "No liberty projects found.";
+        console.error(message);
+        vscode.window.showInformationMessage(message);
+    } else {
+        let items: LibertyProjectQuickPickItem[] = [];
+        for (let index = 0; index < projects.length; index++) {
+            let item = projects[index];
+            const qpItem = new LibertyProjectQuickPickItem(item.label,
+                item.path, item);
+            items.push(qpItem);
+        }
+        vscode.window.showQuickPick(items).then(selection => {
+            if (!selection) {
+                return;
+            }
+            if ( reportType ) {
+                callback(reportType, selection.project);
+            }
+            else {
+                callback(selection.project);
+            }
+        });
+    }
+}
 // opens pom associated with LibertyProject and starts dev mode
 export async function openProject(pomPath: string): Promise<void> {
     vscode.commands.executeCommand("vscode.open", vscode.Uri.file(pomPath));
@@ -40,8 +84,12 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
                 terminal.sendText(cmd); // start dev mode on current project
             }
         }
+    } else  if ( ProjectProvider.getInstance() ) {
+        showProjects("liberty.dev.start", startDevMode);
     } else {
-        console.error("Cannot start liberty dev on an undefined project");
+        const message = "Cannot start liberty dev on an undefined project";
+        console.error(message);
+        vscode.window.showInformationMessage(message);
     }
 }
 
@@ -56,8 +104,13 @@ export async function stopDevMode(libProject?: LibertyProject | undefined): Prom
         } else {
             vscode.window.showWarningMessage("liberty dev has not been started on " + libProject.getLabel());
         }
+    } else if ( ProjectProvider.getInstance() ) {
+        showProjects("liberty.dev.stop", stopDevMode);
+        
     } else {
-        console.error("Cannot stop liberty dev on an undefined project");
+        const message = "Cannot stop liberty dev on an undefined project";
+        console.error(message);
+        vscode.window.showInformationMessage(message);
     }
 }
 
@@ -112,8 +165,13 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
                 }
             }
         }
-    } else {
-        console.error("Cannot custom start liberty dev on an undefined project");
+    } else if ( ProjectProvider.getInstance() ) {
+        showProjects("liberty.dev.custom", customDevMode);
+        
+    }  else {
+        const message = "Cannot custom start liberty dev on an undefined project";
+        console.error(message);
+        vscode.window.showInformationMessage(message);
     }
 }
 
@@ -140,8 +198,13 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
                 terminal.sendText(cmd);
             }
         }
-    } else {
-        console.error("Cannot start liberty dev in a container on an undefined project");
+    } else if ( ProjectProvider.getInstance() ) {
+        showProjects("liberty.dev.start.container", startContainerDevMode);
+        
+    }  else {
+        const message = "Cannot start liberty dev in a container on an undefined project";
+        console.error(message);
+        vscode.window.showInformationMessage(message);
     }
 }
 
@@ -156,8 +219,13 @@ export async function runTests(libProject?: LibertyProject | undefined): Promise
         } else {
             vscode.window.showWarningMessage("liberty dev has not been started on " + libProject.getLabel());
         }
+    } else if ( ProjectProvider.getInstance() ) {
+        showProjects("liberty.dev.run.tests", runTests);
+        
     } else {
-        console.error("Cannot run tests on an undefined project");
+        const message = "Cannot run tests on an undefined project";
+        console.error(message);
+        vscode.window.showInformationMessage(message);
     }
 }
 
@@ -190,8 +258,12 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                 }
             });
         }
+    } else if ( ProjectProvider.getInstance() && reportType ) {
+        showProjects(reportType, openReport, reportType);
     } else {
-        console.error("Cannot open test reports on an undefined project");
+        const message = "Cannot open test reports on an undefined project";
+        console.error(message);
+        vscode.window.showInformationMessage(message);
     }
 }
 
