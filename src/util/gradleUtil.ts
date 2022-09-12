@@ -1,6 +1,7 @@
 import * as fse from "fs-extra";
 import * as path from "path";
 import * as vscode from "vscode";
+import { localize } from "../util/i18nUtil";
 import { getAllPaths, getReport } from "./helperUtil";
 import { TEST_REPORT_STRING, LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT } from "../definitions/constants";
 import { BuildFile, GradleBuildFile } from "./buildFile";
@@ -55,7 +56,7 @@ export async function getGradleProjectName(gradlePath: string): Promise<string> 
             if (representation["rootProject.name"] !== undefined) {
                 return representation["rootProject.name"];
             }
-        }).catch((err: any) => console.error("Unable to parse settings.gradle: " + gradleSettings + "; " + err));
+        }).catch((err: any) => console.error(localize("unable.to.parse.settings.gradle", gradleSettings , err)));
     }
     return label;
 }
@@ -139,7 +140,7 @@ export async function getGradleTestReport(gradlePath: any, workspaceFolder: vsco
             dest = buildFile.test["reports.html.destination"];
         }
         return dest;
-    }).catch((err: any) => console.error("Unable to parse build.gradle: " + gradlePath + "; " + err));
+    }).catch((err: any) => console.error(localize("unable.to.parse.build.gradle", gradlePath, err)));
     if (testReport === undefined) {
         testReport = path.join(workspaceFolder.uri.fsPath, "build", "reports", "tests", "test", "index.html");
     } else {

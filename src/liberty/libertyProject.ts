@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 import * as gradleUtil from "../util/gradleUtil";
 import * as mavenUtil from "../util/mavenUtil";
 import * as util from "../util/helperUtil";
+import { localize } from "../util/i18nUtil";
 import { LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT } from "../definitions/constants";
 import { BuildFile, GradleBuildFile } from "../util/buildFile";
 
@@ -39,7 +40,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 	public async refresh(): Promise<void> {
 		// update the map of projects
-		var statusMessage = vscode.window.setStatusBarMessage("Refreshing Liberty Dashboard projects...");
+		var statusMessage = vscode.window.setStatusBarMessage(localize("refreshing.liberty.dashboard"));
 		await this.updateProjects();
 		// trigger a re-render of the tree view
 		this._onDidChangeTreeData.fire(undefined);
@@ -53,7 +54,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public async getChildren(element?: LibertyProject): Promise<LibertyProject[]> {
 		if (vscode.workspace.workspaceFolders === undefined) {
-			vscode.window.showInformationMessage("No Liberty project found in empty workspace");
+			vscode.window.showInformationMessage(localize("no.liberty.project.found.in.empty.workspace"));
 			return [];
 		}
 		// if element is null, vscode is asking for the root node
@@ -120,9 +121,9 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 							gradleParent.setBuildFilePath(gradlePath);
 							validGradleBuildFiles.push(gradleParent);
 						}
-					}).catch((err: any) => console.error("Unable to parse settings.gradle: " + gradleSettings + "; " + err));
+					}).catch((err: any) => console.error(localize("unable.to.parse.settings.gradle", gradleSettings, err)));
 				}
-			}).catch((err: any) => console.error("Unable to parse build.gradle: " + gradlePath + "; " + err));
+			}).catch((err: any) => console.error(localize("unable.to.parse.build.gradle", gradlePath, err)));
 		}
 
 		// check build.gradles
@@ -145,7 +146,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 						validGradleBuildFiles.push(gradleBuild);
 					}
 				}
-			}).catch((err: any) => console.error("Unable to parse build.gradle: " + gradlePath + "; " + err));
+			}).catch((err: any) => console.error(localize("unable.to.parse.build.gradle", gradlePath, err)));
 		}
 		return validGradleBuildFiles;
 	}
