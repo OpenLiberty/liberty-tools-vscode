@@ -132,8 +132,8 @@ function startupLanguageServer(context: ExtensionContext) {
         synchronize: {
             configurationSection: ["properties", "plaintext"],
             fileEvents: [
-                workspace.createFileSystemWatcher("**/*.properties"),
-                workspace.createFileSystemWatcher("**/*.env")
+                workspace.createFileSystemWatcher("**/bootstrap.properties"),
+                workspace.createFileSystemWatcher("**/server.env")
             ],
         }
     };
