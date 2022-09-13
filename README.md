@@ -77,7 +77,7 @@ To build the extension locally:
 
 #### package.json
 This follows vscode extenstion standard: add localized strings in `package.nls.{locale}.json`.
-The defaul nls message file is `package.nls.json`.
+The default nls message file is `package.nls.json`.
 
 #### Source code
 

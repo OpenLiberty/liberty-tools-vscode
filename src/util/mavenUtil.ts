@@ -24,25 +24,25 @@ export function validParentPom(xmlString: string): BuildFile {
                         for (let j = 0; j < plugins.length; j++) {
                             const plugin = plugins[j].plugin;
                             if (plugin !== undefined) {
-                for (let k = 0; k < plugin.length; k++) {
-                    if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] === "io.openliberty.tools") {
-                        console.debug("Found liberty-maven-plugin in the pom.xml plugin management");
-                        if (containerVersion(plugin[k])) {
-                            parentPom = new BuildFile(true, LIBERTY_MAVEN_PROJECT_CONTAINER);
-                            return;
-                        } else {
-                            parentPom = new BuildFile(true, LIBERTY_MAVEN_PROJECT);
-                            return;
+                                for (let k = 0; k < plugin.length; k++) {
+                                    if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] === "io.openliberty.tools") {
+                                        console.debug("Found liberty-maven-plugin in the pom.xml plugin management");
+                                        if (containerVersion(plugin[k])) {
+                                            parentPom = new BuildFile(true, LIBERTY_MAVEN_PROJECT_CONTAINER);
+                                            return;
+                                        } else {
+                                            parentPom = new BuildFile(true, LIBERTY_MAVEN_PROJECT);
+                                            return;
+                                        }
+                                    }
+                                    if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "org.microshed.boost") {
+                                        console.debug("Found boost-maven-plugin in the pom.xml");
+                                        parentPom = new BuildFile(true, LIBERTY_MAVEN_PROJECT);
+                                        return;
+                                    }
+                                }
+                            }
                         }
-                    }
-                    if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "org.microshed.boost") {
-                        console.debug("Found boost-maven-plugin in the pom.xml");
-                        parentPom = new BuildFile(true, LIBERTY_MAVEN_PROJECT);
-                        return;
-                    }
-                }
-            }
-        }
                     }
                 }
             }
