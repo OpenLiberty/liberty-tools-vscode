@@ -2,6 +2,7 @@
 import * as fs from "fs";
 import * as Path from "path";
 import * as vscode from "vscode";
+import { localize } from "../util/i18nUtil";
 import { QuickPickItem } from 'vscode';
 import { LibertyProject, ProjectProvider } from "./libertyProject";
 import { getReport, filterProjects } from "../util/helperUtil";
@@ -31,7 +32,7 @@ function showProjects(command: string, callback: Function, reportType?: string) 
     const projects: LibertyProject[] = filterProjects(Array.from(projectProvider.getProjects().values()),
         command);
     if (projects.length === 0) {
-        const message = "No liberty projects found.";
+        const message = localize("no.liberty.projects.found");
         console.error(message);
         vscode.window.showInformationMessage(message);
     } else {
@@ -63,7 +64,7 @@ export async function openProject(pomPath: string): Promise<void> {
 // start dev mode
 export async function startDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log("Starting liberty dev on " + libProject.getLabel());
+        console.log(localize("starting.liberty.dev.on",libProject.getLabel()));
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             terminal = libProject.createTerminal();
@@ -87,7 +88,7 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
     } else  if ( ProjectProvider.getInstance() ) {
         showProjects("liberty.dev.start", startDevMode);
     } else {
-        const message = "Cannot start liberty dev on an undefined project";
+        const message = localize("cannot.start.liberty.dev");
         console.error(message);
         vscode.window.showInformationMessage(message);
     }
@@ -96,19 +97,20 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
 // stop dev mode
 export async function stopDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log("Stopping liberty dev on " + libProject.getLabel());
+        console.log(localize("stopping.liverty.dev.on",libProject.getLabel()));
         const terminal = libProject.getTerminal();
         if (terminal !== undefined) {
             terminal.show();
             terminal.sendText("exit"); // stop dev mode on current project
         } else {
-            vscode.window.showWarningMessage("liberty dev has not been started on " + libProject.getLabel());
+            const message = localize("liberty.dev.not.started.on",libProject.getLabel());
+            vscode.window.showWarningMessage(message);
         }
     } else if ( ProjectProvider.getInstance() ) {
         showProjects("liberty.dev.stop", stopDevMode);
         
     } else {
-        const message = "Cannot stop liberty dev on an undefined project";
+        const message = localize("cannot.stop.liberty.dev.on.undefined");
         console.error(message);
         vscode.window.showInformationMessage(message);
     }
@@ -117,7 +119,7 @@ export async function stopDevMode(libProject?: LibertyProject | undefined): Prom
 // custom start dev mode command
 export async function customDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log("Starting liberty dev with custom parameters on " + libProject.getLabel());
+        console.log(localize("starting.liberty.dev.with.custom.param",libProject.getLabel()));
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             terminal = libProject.createTerminal();
@@ -140,14 +142,14 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
             const customCommand: string | undefined = await vscode.window.showInputBox(Object.assign({
                 validateInput: (value: string) => {
                     if (value && !value.startsWith("-")) {
-                        return "Parameters must start with -";
+                        return localize("params.must.start.with.dash");
                     }
                     return null;
                 },
             },
                 {
                     placeHolder: placeHolderStr,
-                    prompt: "Specify custom parameters for the liberty dev command.",
+                    prompt: localize("specify.custom.parms"),
                     ignoreFocusOut: true,
                     value: _customParameters
                 },
@@ -169,7 +171,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
         showProjects("liberty.dev.custom", customDevMode);
         
     }  else {
-        const message = "Cannot custom start liberty dev on an undefined project";
+        const message = localize("cannot.custom.start.liberty.dev");
         console.error(message);
         vscode.window.showInformationMessage(message);
     }
@@ -202,7 +204,7 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
         showProjects("liberty.dev.start.container", startContainerDevMode);
         
     }  else {
-        const message = "Cannot start liberty dev in a container on an undefined project";
+        const message = localize("cannot.start.liberty.dev.in.container.on.undefined.project");
         console.error(message);
         vscode.window.showInformationMessage(message);
     }
@@ -211,19 +213,19 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
 // run tests on dev mode
 export async function runTests(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log("Running liberty dev tests on " + libProject.getLabel());
+        console.log(localize("running.liberty.dev.tests.on", libProject.getLabel()));
         const terminal = libProject.getTerminal();
         if (terminal !== undefined) {
             terminal.show();
             terminal.sendText(" "); // sends Enter to run tests in terminal
         } else {
-            vscode.window.showWarningMessage("liberty dev has not been started on " + libProject.getLabel());
+            vscode.window.showWarningMessage(localize("liberty.dev.has.not.been.started.on",libProject.getLabel()));
         }
     } else if ( ProjectProvider.getInstance() ) {
         showProjects("liberty.dev.run.tests", runTests);
         
     } else {
-        const message = "Cannot run tests on an undefined project";
+        const message = localize("cannot.run.test.on.undefined.project");
         console.error(message);
         vscode.window.showInformationMessage(message);
     }
@@ -254,14 +256,15 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                     );
                     panel.webview.html = getReport(report); // display HTML content
                 } else {
-                    vscode.window.showInformationMessage("Test report (" + report + ") does not exist.  Run tests to generate a test report.");
+                    const message = localize("test.report.does.not.exist.run.test.first", report);
+                    vscode.window.showInformationMessage(message);
                 }
             });
         }
     } else if ( ProjectProvider.getInstance() && reportType ) {
         showProjects(reportType, openReport, reportType);
     } else {
-        const message = "Cannot open test reports on an undefined project";
+        const message = localize("cannot.open.test.reports.on.undefined.project");
         console.error(message);
         vscode.window.showInformationMessage(message);
     }
@@ -273,7 +276,7 @@ export function deleteTerminal(terminal: vscode.Terminal): void {
         const libProject = terminals[Number(terminal.processId)];
         libProject.deleteTerminal();
     } catch {
-        console.error("Unable to delete terminal: " + terminal.name);
+        console.error(localize("unable.to.delete.terminal",terminal.name));
     }
 }
 

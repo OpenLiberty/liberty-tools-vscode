@@ -50,56 +50,56 @@
 				{
 					"id": "liberty-dev",
 					"category": "Liberty",
-					"name": "Liberty Dashboard"
+					"name": "%views.explorer.name%"
 				}
 			]
 		},
 		"commands": [
 			{
 				"command": "liberty.explorer.refresh",
-				"title": "Refresh projects",
+				"title": "%commands.title.refresh%",
 				"category": "Liberty",
 				"icon": "$(refresh)"
 			},
 			{
 				"command": "liberty.dev.start",
 				"category": "Liberty",
-				"title": "Start"
+				"title": "%commands.title.start%"
 			},
 			{
 				"command": "liberty.dev.stop",
 				"category": "Liberty",
-				"title": "Stop"
+				"title": "%commands.title.stop%"
 			},
 			{
 				"command": "liberty.dev.custom",
 				"category": "Liberty",
-				"title": "Start..."
+				"title": "%commands.title.start.custom%"
 			},
 			{
 				"command": "liberty.dev.start.container",
 				"category": "Liberty",
-				"title": "Start in container"
+				"title": "%commands.title.start.in.container%"
 			},
 			{
 				"command": "liberty.dev.run.tests",
 				"category": "Liberty",
-				"title": "Run tests"
+				"title": "%commands.title.run.tests%"
 			},
 			{
 				"command": "liberty.dev.open.failsafe.report",
 				"category": "Liberty",
-				"title": "View integration test report"
+				"title": "%commands.title.view.integration.test.report%"
 			},
 			{
 				"command": "liberty.dev.open.surefire.report",
 				"category": "Liberty",
-				"title": "View unit test report"
+				"title": "%commands.title.view.unit.test.report%"
 			},
 			{
 				"command": "liberty.dev.open.gradle.test.report",
 				"category": "Liberty",
-				"title": "View test report"
+				"title": "%commands.title.view.test.report%"
 			}
 		],
 		"menus": {

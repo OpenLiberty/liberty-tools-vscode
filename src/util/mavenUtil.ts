@@ -1,5 +1,6 @@
 import { LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT } from "../definitions/constants";
 import { BuildFile } from "./buildFile";
+import { localize } from "../util/i18nUtil";
 
 /**
  * Look for a valid parent pom.xml
@@ -48,7 +49,7 @@ export function validParentPom(xmlString: string): BuildFile {
         }
 
         if (err) {
-            console.error("Error parsing the pom " + err);
+            console.error(localize("error.parsing.pom","Error parsing the pom " + err, err));
         }
     });
     return parentPom;
@@ -111,7 +112,7 @@ export function validPom(xmlString: string, childrenMap: Map<string, string[]>):
         }
 
         if (err) {
-            console.error("Error parsing the pom " + err);
+            console.error(localize("error.parsing.pom", "Error parsing the pom " + err, err));
             return;
         }
     });
@@ -183,7 +184,7 @@ export function findChildMavenModules(xmlString: string): Map<string, string[]> 
         }
 
         if (err) {
-            console.error("Error parsing the pom " + err);
+            console.error(localize("error.parsing.pom", err));
         }
     });
     return childrenMap;

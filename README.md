@@ -73,6 +73,33 @@ To build the extension locally:
    - Install the extension to VS Code by `View/Command Palette`
    - Select `Extensions: Install from VSIX...` and choose the generated `liberty-dev-vscode-ext-xxx.vsix` file
 
+### Localization
+
+#### package.json
+This follows vscode extenstion standard: add localized strings in `package.nls.{locale}.json`.
+The default nls message file is `package.nls.json`.
+
+#### Source code
+
+1. Add new messages in `locales/{locale}.json` file.  If message has parameters, use curly brackets to enclose them: `{0}`, `{1}`... 
+
+
+2. Add the following import statement in your source code:
+   
+   ```ts
+   import { localize } from "../util/i18nUtil";
+   ```
+
+3. Call method `localize` to return localized message.
+
+   Example without parameters:
+   ```ts
+   const message = localize("my.message.key");
+   ```
+   Example with parameters:
+   ```ts
+   const message = localize("my.message.key.with.params", param1, param2);
+   ```
 ## Issues
 
 Please report bugs, issues and feature requests by creating a [GitHub issue](https://github.com/OpenLiberty/liberty-dev-vscode-ext/issues).
