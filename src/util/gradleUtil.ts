@@ -1,6 +1,7 @@
 import * as fse from "fs-extra";
 import * as path from "path";
 import * as vscode from "vscode";
+const { JSONPath } = require('jsonpath-plus');
 import { localize } from "../util/i18nUtil";
 import { getAllPaths, getReport } from "./helperUtil";
 import { TEST_REPORT_STRING, LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT } from "../definitions/constants";
@@ -13,28 +14,30 @@ import { BuildFile, GradleBuildFile } from "./buildFile";
  * @param buildFile JS object representation of the build.gradle
  */
 export function validGradleBuild(buildFile: any): GradleBuildFile {
-    if (buildFile !== undefined && buildFile.apply !== undefined && buildFile.buildscript !== undefined && buildFile.buildscript.dependencies !== undefined) {
-        // check that "apply plugin: 'liberty'" is specified in the build.gradle
-        let libertyPlugin = false;
-        for (let i = 0; i < buildFile.apply.length; i++) {
-            if (buildFile.apply[i] === "plugin: 'liberty'") {
-                libertyPlugin = true;
-                break;
-            }
-        }
-        if (libertyPlugin) {
-            for (let i = 0; i < buildFile.buildscript.dependencies.length; i++) {
-                const dependency = buildFile.buildscript.dependencies[i];
-                // check that group matches io.openliberty.tools and name matches liberty-gradle-plugin
-                if (dependency.group === "io.openliberty.tools" && dependency.name === "liberty-gradle-plugin") {
-                    if (containerVersion(dependency.version)) {
-                        return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT_CONTAINER));
-                    }
-                    return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT));
+    const buildDependencies = JSONPath({ path: '$..buildscript.dependencies', json: buildFile });
+    for ( const buildDependency of buildDependencies ) {
+        for ( const dependency of buildDependency ) {
+            if ( "io.openliberty.tools" === dependency.group && "liberty-gradle-plugin" === dependency.name) {
+                if (containerVersion(dependency.version)) {
+                    return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT_CONTAINER));
                 }
+                return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT));
             }
         }
     }
+    
+    const plugins = JSONPath({ path: '$..plugins', json: buildFile });
+    for ( const plugin of plugins) {
+        for (const onePlugin of plugin) {
+            if ( "io.openliberty.tools.gradle.Liberty" === onePlugin.id ) {
+                if (containerVersion(onePlugin.version)) {
+                    return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT_CONTAINER));
+                }
+                return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT));
+            }
+        }
+     }
+    
     return (new GradleBuildFile(false, ""));
 }
 
