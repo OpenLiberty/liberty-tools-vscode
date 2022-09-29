@@ -67,6 +67,16 @@
 				"title": "%commands.title.start%"
 			},
 			{
+				"command": "liberty.dev.add.project",
+				"category": "Liberty",
+				"title": "%commands.title.add.project%"
+			},
+			{
+				"command": "liberty.dev.remove.project",
+				"category": "Liberty",
+				"title": "%commands.title.remove.project%"
+			},
+			{
 				"command": "liberty.dev.stop",
 				"category": "Liberty",
 				"title": "%commands.title.stop%"
@@ -103,6 +113,18 @@
 			}
 		],
 		"menus": {
+			"explorer/context": [
+                {
+                    "command": "liberty.dev.add.project",
+                    "when": "explorerResourceIsRoot",
+                    "group": "liberty"
+                },
+				{
+                    "command": "liberty.dev.remove.project",
+                    "when": "explorerResourceIsRoot",
+                    "group": "liberty"
+                }
+            ],
 			"view/title": [
 				{
 					"command": "liberty.explorer.refresh",
@@ -194,7 +216,7 @@
 		"@types/xml2js": "^0.4.5",
 		"fs-extra": "^9.0.0",
 		"gradle-to-js": "^2.0.0",
-		"semver": "^7.3.2",
+		"@types/semver": "^7.3.2",
 		"xml2js": "^0.4.23",
 		"jsonpath-plus": "^7.0.0"
 	}

@@ -50,6 +50,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		vscode.commands.registerCommand("liberty.dev.open.gradle.test.report", (libProject?: LibertyProject) => devCommands.openReport("gradle", libProject)),
 	);
 	context.subscriptions.push(
+		vscode.commands.registerCommand("liberty.dev.add.project", (uri: vscode.Uri) => devCommands.addProject(uri)),
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand("liberty.dev.remove.project", (uri: vscode.Uri) => devCommands.removeProject(uri)),
+	);
+	context.subscriptions.push(
 		vscode.window.onDidCloseTerminal((closedTerminal: vscode.Terminal) => {
 			devCommands.deleteTerminal(closedTerminal);
 		})

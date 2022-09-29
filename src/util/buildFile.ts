@@ -1,14 +1,14 @@
-interface IBuildFile {
+interface BuildFile {
     buildFilePath: string;
     projectType: string;
     validBuildFile: boolean;
-    children?: string[]
+    children?: string[];
 }
 
 /**
  * Defines a general BuilFile object
  */
-export class BuildFile implements IBuildFile{
+export class BuildFileImpl implements BuildFile{
     buildFilePath: string;
     projectType: string;
     validBuildFile: boolean;
@@ -19,23 +19,23 @@ export class BuildFile implements IBuildFile{
         this.buildFilePath = "";
     }
 
-    public getBuildFilePath() {
+    public getBuildFilePath(): string {
         return this.buildFilePath;
     }
 
-    public setBuildFilePath(buildFilePath: string) {
+    public setBuildFilePath(buildFilePath: string): void {
         this.buildFilePath = buildFilePath;
     }
 
-    public getProjectType() {
+    public getProjectType(): string {
         return this.projectType;
     }
 
-    public setProjectType(projectType: string) {
+    public setProjectType(projectType: string): void {
         this.projectType = projectType;
     }
 
-    public isValidBuildFile() {
+    public isValidBuildFile(): boolean{
         return this.validBuildFile;
     }
 }
@@ -43,7 +43,7 @@ export class BuildFile implements IBuildFile{
 /**
  * Defines a Gradle Build File object
  */
-export class GradleBuildFile extends BuildFile implements IBuildFile {
+export class GradleBuildFile extends BuildFileImpl implements BuildFile {
     children: string[]; // list to track children associated with parent
 
     constructor(validBuildFile: boolean, projectType: string) {
@@ -51,11 +51,11 @@ export class GradleBuildFile extends BuildFile implements IBuildFile {
         this.children = [];
     }
 
-    public getChildren() {
+    public getChildren(): string[] {
         return this.children;
     }
 
-    public setChildren(children: string[]) {
+    public setChildren(children: string[]): void {
         this.children = children;
     }
 }

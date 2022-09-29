@@ -1,7 +1,9 @@
+import { DashboardData } from "./../liberty/dashboard";
 import * as fs from "fs";
 import * as vscode from "vscode";
-import { LibertyProject } from "../liberty/libertyProject";
-import { COMMAND_AND_PROJECT_TYPE_MAP } from "../definitions/constants";
+import { LibertyProject } from "./../liberty/libertyProject";
+import { COMMAND_AND_PROJECT_TYPE_MAP, LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY } from "../definitions/constants";
+
 
 export async function getAllPaths(workspaceFolder: vscode.WorkspaceFolder, pattern: string): Promise<string[]> {
 	const fileUris: vscode.Uri[] = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder, pattern), "**/{bin,classes,target}/**");
@@ -30,7 +32,7 @@ export function getConfiguration<T>(section: string, resourceOrFilepath?: vscode
  * @returns a list of projects that the given command can be excuted on.
  */
 export function filterProjects(projects: LibertyProject[], command: string): LibertyProject[] {
-	let resultProjects: LibertyProject[] = [];
+	const resultProjects: LibertyProject[] = [];
 	for ( const project of projects) {
 		const applicableTypes = COMMAND_AND_PROJECT_TYPE_MAP[command];
 		if (applicableTypes.includes(project.getContextValue())) {
@@ -39,3 +41,24 @@ export function filterProjects(projects: LibertyProject[], command: string): Lib
 	}
 	return resultProjects;
 }
+
+
+/**
+ * Gets the stored dashboard data.
+ * @param context 
+ * @returns 
+ */
+export function getStorageData(context: vscode.ExtensionContext): DashboardData {
+	let data = context.workspaceState.get<DashboardData>(LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY, new DashboardData([]));
+	data = new DashboardData(data.projects);
+	return data;
+}
+/**
+ * Stores the dashboard data to workspace storage
+ * @param context
+ * @param dasboardData 
+ */
+export async function saveStorageData(context: vscode.ExtensionContext, dasboardData: DashboardData): Promise<void>{
+	await context.workspaceState.update(LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY, dasboardData);
+}
+

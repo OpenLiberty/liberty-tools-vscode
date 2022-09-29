@@ -1,9 +1,8 @@
-
 import * as fs from "fs";
 import * as Path from "path";
 import * as vscode from "vscode";
 import { localize } from "../util/i18nUtil";
-import { QuickPickItem } from 'vscode';
+import { QuickPickItem } from "vscode";
 import { LibertyProject, ProjectProvider } from "./libertyProject";
 import { getReport, filterProjects } from "../util/helperUtil";
 import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER } from "../definitions/constants";
@@ -15,18 +14,18 @@ let _customParameters = "";
 
 class LibertyProjectQuickPickItem implements QuickPickItem {
     
-    project: LibertyProject;
+    project: LibertyProject | undefined;
     label: string;
 	detail: string;
 	
-	constructor(public itemLabel: string, public itemDetail: string, public itemProject: LibertyProject) {
+	constructor(itemLabel: string, itemDetail: string, itemProject?: LibertyProject) {
 		this.label = itemLabel;
 		this.detail = itemDetail;
         this.project = itemProject;
 	}
   }
 
-function showProjects(command: string, callback: Function, reportType?: string) {
+function showProjects(command: string, callback: Function, reportType?: string): void {
     const projectProvider: ProjectProvider = ProjectProvider.getInstance();
     // Find a list of projects that can be started
     const projects: LibertyProject[] = filterProjects(Array.from(projectProvider.getProjects().values()),
@@ -36,9 +35,9 @@ function showProjects(command: string, callback: Function, reportType?: string) 
         console.error(message);
         vscode.window.showInformationMessage(message);
     } else {
-        let items: LibertyProjectQuickPickItem[] = [];
+        const items: LibertyProjectQuickPickItem[] = [];
         for (let index = 0; index < projects.length; index++) {
-            let item = projects[index];
+            const item = projects[index];
             const qpItem = new LibertyProjectQuickPickItem(item.label,
                 item.path, item);
             items.push(qpItem);
@@ -94,6 +93,121 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
     }
 }
 
+
+export async function removeProject(uri: vscode.Uri): Promise<void> {
+    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    if (undefined !== uri && undefined !== uri.fsPath ) {
+        // Right mouse clicked on a root folder, or on empty space with only one folder in workspace.
+        // Add project if:
+        // 1. Project has build files (pom.xml or build.gradle)
+        // 2. Not in liberty dashboard
+        // Once added, presist the data in workspace storage.\
+        // check if the path is in current list
+        const file = projectProvider.isPathExistsInPersistedProjects(uri.fsPath);
+        if (undefined !== file) {
+            const yes = localize("confirmation.button.label.yes");
+            const no = localize("confirmation.button.label.no");
+            vscode.window
+                .showInformationMessage(localize("remove.custom.project.confirmation", uri.fsPath), yes, no)
+                .then(answer => {
+                    if (answer === yes) {
+                    // delete and save
+                        projectProvider.removeInPersistedProjects(file);
+                        vscode.window
+                            .showInformationMessage(localize("remove.custom.project.successful"));
+                            projectProvider.fireChangeEvent();
+                    }
+                });
+        } else {
+            const message = localize("remove.custom.project.not.in.list");
+            console.error(message);
+            vscode.window.showInformationMessage(message);
+        }
+    } else {
+        // clicked on the empty space and workspace has more than one folders, or
+        // from command palette
+        // Display the list of current cusomer added project for user to select.
+        const items: LibertyProjectQuickPickItem[] = [];
+        projectProvider.getUserAddedProjects().forEach(function (item) {
+            const qpItem = new LibertyProjectQuickPickItem(item.label,
+                item.path);
+            items.push(qpItem);
+        });
+        if ( items.length === 0 ) {
+            const message = localize("remove.custom.project.empty.list");
+            console.error(message);
+            vscode.window.showInformationMessage(message);
+        } else {
+            vscode.window.showQuickPick(items).then(selection => {
+                if (!selection) {
+                    return;
+                }
+                const yes = localize("confirmation.button.label.yes");
+                const no = localize("confirmation.button.label.no");
+                vscode.window
+                .showInformationMessage(localize("remove.custom.project.confirmation", Path.dirname(selection.detail)), yes, no)
+                .then(answer => {
+                    if (answer === yes) {
+                    // delete and save
+                        projectProvider.removeInPersistedProjects(selection.detail);
+                        vscode.window
+                            .showInformationMessage(localize("remove.custom.project.successful"));
+                        projectProvider.fireChangeEvent();
+                    }
+                });
+            });
+        }   
+    }
+}
+
+export async function addProject(uri: vscode.Uri): Promise<void> {
+    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    if (undefined !== uri && undefined !== uri.fsPath ) {
+        // Right mouse clicked on a root folder, or on empty space with only one folder in workspace.
+        // Add project if:
+        // 1. Not in liberty dashboard
+        // 2. Project has build files (pom.xml or build.gradle)
+        // 
+        // Once added, presist the data in workspace storage.
+        const result: number = await projectProvider.addUserSelectedPath(uri.fsPath, projectProvider.getProjects());
+        const message = localize(`add.project.manually.message.${result}`);
+        (result!==0)? console.error(message):console.info(message);projectProvider.fireChangeEvent();
+        vscode.window.showInformationMessage(message);
+        
+    } else {
+        // clicked on the empty space and workspace has more than one folders, or
+        // from command palette
+        // Display the list of workspace folders for user to select.
+        // The list should not contain any existing projects
+        const uris: string[] = [];
+        const wsFolders = vscode.workspace.workspaceFolders;
+		if ( wsFolders ) {
+			for ( const folder of wsFolders ) {
+				const path = folder.uri.fsPath;
+				if ( projectProvider.projectRootPathExists(path, projectProvider.getProjects().keys() ) === false ) {
+					uris.push(folder.uri.fsPath);
+				}
+			}
+		}
+        if ( uris.length === 0 ) {
+            // show error
+            const message = localize("add.project.manually.no.projects.available.to.add");
+            console.error(message);
+            vscode.window.showInformationMessage(message);
+        } else {
+            // present the list
+            vscode.window.showQuickPick(uris).then(async selection => {
+                if (!selection) {
+                    return;
+                }
+                const result = await projectProvider.addUserSelectedPath (selection, projectProvider.getProjects());
+                const message = localize(`add.project.manually.message.${result}`);
+                (result!==0)? console.error(message):console.info(message);projectProvider.fireChangeEvent();
+                vscode.window.showInformationMessage(message);
+            });
+        }
+    } 
+}
 // stop dev mode
 export async function stopDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
