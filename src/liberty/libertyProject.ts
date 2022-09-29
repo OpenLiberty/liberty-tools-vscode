@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2020, 2022 IBM Corporation.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 import * as fse from "fs-extra";
 import * as vscodePath from "path";
 import * as vscode from "vscode";
@@ -55,7 +64,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				project = await createProject(this._context, pomFile, LIBERTY_MAVEN_PROJECT, xmlString);
 			} else {
 				const gradleFile = vscodePath.resolve(path, "build.gradle");
-				if ( fse.existsSync (gradleFile) ) {		
+				if ( fse.existsSync (gradleFile)) {		
 					project = await createProject(this._context, gradleFile, LIBERTY_GRADLE_PROJECT);	
 				}
 			}
@@ -74,27 +83,27 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	 */
 	public async addUserSelectedPath(path: string, existingProjects: Map<string, LibertyProject>): Promise<number>{
 		let baseProject = undefined;
+		const pomFile = vscodePath.resolve(path, "pom.xml");
+		const gradleFile = vscodePath.resolve(path, "build.gradle");
 		let returnCode = 0;
-		const project = await this.createLibertyProject(path, undefined);
-		if ( project !== undefined ) {
-			existingProjects.set(project.getPath(), project);
-			baseProject = new BaseLibertyProject(project.getLabel(), project.getPath(), project.getContextValue());
-		}
-		else {
-			// path already exists
+		if ( this.projects.has(pomFile) || this.projects.has(gradleFile)) {
+			// project already exists
 			returnCode = 1;
-		}
-		if ( baseProject !== undefined ) {
-			// save it
-			const dashboardData: DashboardData = util.getStorageData(this._context);
-			if ( dashboardData.addProjectToManualProjects(baseProject) ){
-				await util.saveStorageData(this._context, dashboardData);
-			} else {
-				returnCode = 1;
-			}
 		} else {
-			// Not a maven or gradle project.
-			returnCode = 2;
+			const project = await this.createLibertyProject(path, undefined);
+			if ( project !== undefined ) {
+				// pom or gradle build file exists.
+				existingProjects.set(project.getPath(), project);
+				baseProject = new BaseLibertyProject(project.getLabel(), project.getPath(), project.getContextValue());
+				// save it
+				const dashboardData: DashboardData = util.getStorageData(this._context);
+				dashboardData.addProjectToManualProjects(baseProject);
+				await util.saveStorageData(this._context, dashboardData);
+			}
+			else {
+				// Not a maven or gradle project.
+				returnCode = 2;
+			}
 		}
 		return returnCode;
 	}
