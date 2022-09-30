@@ -45,6 +45,24 @@
 		"redhat.vscode-microprofile"
 	],
 	"contributes": {
+		"debuggers": [
+			{
+				"type": "liberty",
+				"configurationSnippets": [
+					{
+						"label":  "Liberty: Attach to dev mode",
+						"body": {
+							"type": "java",
+							"name": "Attach to Liberty dev mode",
+							"request": "attach",
+							"hostName": "localhost",
+							"port": "7777"
+						  }
+  
+					}
+				]
+			}
+		],
 		"views": {
 			"explorer": [
 				{
