@@ -9,6 +9,6 @@
     "commands.title.view.integration.test.report": "View integration test report",
     "commands.title.view.unit.test.report": "View unit test report",
     "commands.title.view.test.report": "View test report",
-    "commands.title.add.project": "Add to Liberty dashboard",
-    "commands.title.remove.project": "Remove from Liberty Dashboard"
+    "commands.title.add.project": "Add project to Liberty Dashboard",
+    "commands.title.remove.project": "Remove project from Liberty Dashboard"
 }
