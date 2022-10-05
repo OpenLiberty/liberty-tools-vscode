@@ -22,13 +22,13 @@
     "refreshing.liberty.dashboard": "Refreshing Liberty Dashboard projects...",
     "no.liberty.project.found.in.empty.workspace": "No Liberty project found in empty workspace",
     "add.project.manually.no.projects.available.to.add": "No workspace folders available to be added to Liberty Dashboard",
-    "add.project.manually.message.0": "The selected project has been successfully added to Liberty Dashboard",
-    "add.project.manually.message.1": "The selected project already exists in Liberty Dashboard",
-    "add.project.manually.message.2": "The selected project is not a Maven or Gradle project",
+    "add.project.manually.message.0": "The selected project at {0} has been successfully added to Liberty Dashboard",
+    "add.project.manually.message.1": "The selected project at {0} already exists in Liberty Dashboard",
+    "add.project.manually.message.2": "The selected project at {0} is not a Maven or Gradle project",
     "confirmation.button.label.yes": "Yes",
     "confirmation.button.label.no": "No",
-    "remove.custom.project.confirmation": "Are you sure you want to remove the project in {0} from Liberty Dashboard?",
+    "remove.custom.project.confirmation": "Are you sure you want to remove the project in {0} from the Liberty Dashboard?",
     "remove.custom.project.successful": "The project has been successfully removed from Liberty Dashboard",
     "remove.custom.project.empty.list": "User added project list is empty.  Nothing to remove",
-    "remove.custom.project.not.in.list": "Select project does not exsit in Liberty Dashboard, or it was not manually added to Liberty Dashboard.  Nothing to remove."
+    "remove.custom.project.not.in.list": "Select project does not exist in Liberty Dashboard, or it was not manually added to Liberty Dashboard.  Nothing to remove."
 }

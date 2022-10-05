@@ -1,5 +1,3 @@
-import { BaseLibertyProject } from "./baseLibertyProject";
-
 /**
  * Copyright (c) 2022 IBM Corporation.
  *
@@ -9,6 +7,9 @@ import { BaseLibertyProject } from "./baseLibertyProject";
  *
  * SPDX-License-Identifier: EPL-2.0
  */
+
+import { BaseLibertyProject } from "./baseLibertyProject";
+
 export class DashboardData {
   public projects: BaseLibertyProject[] = [];
 

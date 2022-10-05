@@ -179,7 +179,7 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
         // 
         // Once added, presist the data in workspace storage.
         const result: number = await projectProvider.addUserSelectedPath(uri.fsPath, projectProvider.getProjects());
-        const message = localize(`add.project.manually.message.${result}`);
+        const message = localize(`add.project.manually.message.${result}`, uri.fsPath);
         (result!==0)? console.error(message):console.info(message);projectProvider.fireChangeEvent();
         vscode.window.showInformationMessage(message);
         
@@ -210,7 +210,7 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
                     return;
                 }
                 const result = await projectProvider.addUserSelectedPath (selection, projectProvider.getProjects());
-                const message = localize(`add.project.manually.message.${result}`);
+                const message = localize(`add.project.manually.message.${result}`, selection);
                 (result!==0)? console.error(message):console.info(message);projectProvider.fireChangeEvent();
                 vscode.window.showInformationMessage(message);
             });

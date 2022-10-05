@@ -38,6 +38,8 @@
 		"onCommand:liberty.dev.open.failsafe.report",
 		"onCommand:liberty.dev.open.surefire.report",
 		"onCommand:liberty.dev.open.gradle.test.report",
+		"onCommand:liberty.dev.add.project",
+		"onCommand:liberty.dev.remove.project",
 		"onView:liberty-dev"
 	],
 	"main": "./dist/extension",
@@ -114,17 +116,17 @@
 		],
 		"menus": {
 			"explorer/context": [
-                {
-                    "command": "liberty.dev.add.project",
-                    "when": "explorerResourceIsRoot",
-                    "group": "liberty"
-                },
 				{
-                    "command": "liberty.dev.remove.project",
-                    "when": "explorerResourceIsRoot",
-                    "group": "liberty"
-                }
-            ],
+					"command": "liberty.dev.add.project",
+					"when": "explorerResourceIsRoot",
+					"group": "liberty"
+				},
+				{
+					"command": "liberty.dev.remove.project",
+					"when": "explorerResourceIsRoot",
+					"group": "liberty"
+				}
+			],
 			"view/title": [
 				{
 					"command": "liberty.explorer.refresh",
