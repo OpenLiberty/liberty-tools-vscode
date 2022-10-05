@@ -9,38 +9,80 @@
  */
 import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
+import * as lsp4jakartaLS from './definitions/lsp4jakartaLSRequestNames';
 import * as path from "path";
 
 import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
-import { LanguageClient, LanguageClientOptions, Executable, ServerOptions } from "vscode-languageclient";
+import { LanguageClient, LanguageClientOptions, Executable, ServerOptions, DocumentSelector, HoverParams } from "vscode-languageclient";
 import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor, languages } from "vscode";
+import { registerProviders } from "./providers/lsp4jakartaProfileProviders";
 
-const LANGUAGE_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
+const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
+const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
 
-let languageClient: LanguageClient;
+let libertyClient: LanguageClient;
+let jakartaClient: LanguageClient;
+
 const SUPPORTED_LANGUAGE_IDS = ["properties", "plaintext"];
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    
+
     let item = window.createStatusBarItem(StatusBarAlignment.Right, Number.MIN_VALUE);
     // item.name = "Liberty Language Server";
     item.text = "Liberty LS";
     item.tooltip = "Language Server for Liberty is starting...";
     toggleItem(window.activeTextEditor, item);
 
-    startupLanguageServer(context).then(() => {
-        console.log("Language client ready, registering commands");
+    // startupLibertyLanguageServer(context).then(() => {
+    //     console.log("Liberty client ready, registering commands");
         
-        item.text = "Liberty LS $(thumbsup)";
-        item.tooltip = "Language Server for Liberty started";
-        toggleItem(window.activeTextEditor, item);
+    //     item.text = "Liberty LS $(thumbsup)";
+    //     item.tooltip = "Language Server for Liberty started";
+    //     toggleItem(window.activeTextEditor, item);
 
-        registerCommands(context);
+    //     registerCommands(context);
+    // }, error => {
+    //     console.log("Liberty client was not ready. Did not initialize");
+    //     console.log(error);
+        
+    //     item.text = "Liberty LS $(thumbsdown)";
+    //     item.tooltip = "Language Server for Liberty failed to start";
+    // });
+
+    // const documentSelector = getDocumentSelector();
+    startupJakartaLangServer(context).then(() => {
+        console.log("Jakarta client ready");
+
+        // Delegate requests from Jakarta LS to the Jakarta JDT core
+        bindRequest(lsp4jakartaLS.JAVA_CLASSPATH_REQUEST); // completion
+        // bindRequest(lsp4jakartaLS.JAVA_CODEACTION_REQUEST);
+        // bindRequest(lsp4jakartaLS.JAVA_DIAGNOSTICS_REQUEST);
+        // bindRequest(lsp4jakartaLS.JAVA_HOVER_REQUEST);
+
+        // item.text = "Liberty LS $(thumbsup)";
+        // item.tooltip = "Language Server for Liberty started";
+        // toggleItem(window.activeTextEditor, item);
+
+        // registerProviders(language)
     }, error => {
-        console.log("Language client was not ready. Did not initialize");
+        console.log("Jakarta languauge client was not ready. Did not initialize");
         console.log(error);
         
-        item.text = "Liberty LS $(thumbsdown)";
-        item.tooltip = "Language Server for Liberty failed to start";
+        item.text = "Jakarta LS $(thumbsdown)";
+        item.tooltip = "Language Server for Jakarta failed to start";
+    });
+}
+
+function bindRequest(request: string) {
+    jakartaClient.onRequest(request, async (params: any) => {
+        console.log("1");
+        <any>await commands.executeCommand("java.execute.workspaceCommand", request, params);
+
+        // console.log("2");
+        // <any>await commands.executeCommand("java.execute.workspaceCommand", request, params).then((result) => {
+        //     console.log("Hopefully this prints something: " + result);
+        // }, onrejected => {
+        //     console.log("Undefined");
+        // })
     });
 }
 
@@ -124,10 +166,10 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
 	});
 }
 
-function startupLanguageServer(context: ExtensionContext) {
+function startupLibertyLanguageServer(context: ExtensionContext) {
     //Start up Liberty Language Server
     const languageServerPath = context.asAbsolutePath(path.join("jars","liberty-langserver-1.0-SNAPSHOT-jar-with-dependencies.jar"));
-    const debugArgs = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:1074";
+    // const debugArgs = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:1074";
     // Language server options 
     const serverOptions: ServerOptions = {
         run: <Executable> { 
@@ -157,13 +199,50 @@ function startupLanguageServer(context: ExtensionContext) {
         }
     };
 
-    console.log("Creating new language client");
-    languageClient = new LanguageClient(LANGUAGE_CLIENT_ID, "Language Support for Liberty", serverOptions, clientOptions);
-
-    const disposable = languageClient.start();
+    console.log("Creating new language client for Liberty Language Server");
+    libertyClient = new LanguageClient(LIBERTY_CLIENT_ID, "Language Support for Liberty", serverOptions, clientOptions);
+    
+    const disposable = libertyClient.start();
     context.subscriptions.push(disposable);
 
-    return languageClient.onReady();
+    return libertyClient.onReady();
+}
+
+function startupJakartaLangServer(context: ExtensionContext) {
+    const jakartaLsPath = context.asAbsolutePath(path.join("jars","org.eclipse.lsp4jakarta.ls-0.0.1-SNAPSHOT-jar-with-dependencies.jar"));
+    // const debugArgs = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1054";
+    // Language server options 
+    const serverOptions2: ServerOptions = {
+        run: <Executable> { 
+            command: "java",
+            args: ["-jar", jakartaLsPath],
+            options: {stdio:"pipe"}
+        },
+        debug: <Executable> {
+            command: "java",
+            // TODO: using the debug arguments seems to still run the language server and open the debug port,
+            // but, the extension doesn't seem to work properly nor does it run the .onReady.then() commands
+            // args: [debugArgs, "-jar", jakartaLsPath],
+            args: ["-jar", jakartaLsPath],
+            options: {stdio:"pipe"}
+        }
+    }
+
+    // Options to control the language client
+    const clientOptions2: LanguageClientOptions = {
+        documentSelector: [{ scheme: 'file', language: 'java' }],
+        synchronize: {
+            configurationSection: ["java", "[java]"],
+            fileEvents: [
+                workspace.createFileSystemWatcher("**/*.java")
+            ],
+        }
+    };
+    console.log("Creating new language client for Jakarta Language Server")
+    jakartaClient = new LanguageClient(JAKARTA_CLIENT_ID, "Language Support for Jakarta", serverOptions2, clientOptions2);
+
+    context.subscriptions.push(jakartaClient.start());
+    return jakartaClient.onReady();
 }
 
 function toggleItem(editor: TextEditor | undefined, item: vscode.StatusBarItem) {
