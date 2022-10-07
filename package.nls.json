@@ -8,5 +8,7 @@
     "commands.title.run.tests": "Run tests",
     "commands.title.view.integration.test.report": "View integration test report",
     "commands.title.view.unit.test.report": "View unit test report",
-    "commands.title.view.test.report": "View test report"
+    "commands.title.view.test.report": "View test report",
+    "commands.title.add.project": "Add Project to Liberty Dashboard",
+    "commands.title.remove.project": "Remove Project from Liberty Dashboard"
 }

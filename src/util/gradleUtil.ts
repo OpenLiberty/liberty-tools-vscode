@@ -10,11 +10,12 @@
 import * as fse from "fs-extra";
 import * as path from "path";
 import * as vscode from "vscode";
-const { JSONPath } = require('jsonpath-plus');
+import * as semver from "semver";
+import { JSONPath } from "jsonpath-plus";
 import { localize } from "../util/i18nUtil";
 import { getAllPaths, getReport } from "./helperUtil";
 import { TEST_REPORT_STRING, LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT } from "../definitions/constants";
-import { BuildFile, GradleBuildFile } from "./buildFile";
+import { GradleBuildFile } from "./buildFile";
 
 /**
  * Check a build.gradle file for the liberty-gradle-plugin
@@ -23,7 +24,7 @@ import { BuildFile, GradleBuildFile } from "./buildFile";
  * @param buildFile JS object representation of the build.gradle
  */
 export function validGradleBuild(buildFile: any): GradleBuildFile {
-    const buildDependencies = JSONPath({ path: '$..buildscript.dependencies', json: buildFile });
+    const buildDependencies = JSONPath({ path: "$..buildscript.dependencies", json: buildFile });
     for ( const buildDependency of buildDependencies ) {
         for ( const dependency of buildDependency ) {
             if ( "io.openliberty.tools" === dependency.group && "liberty-gradle-plugin" === dependency.name) {
@@ -35,7 +36,7 @@ export function validGradleBuild(buildFile: any): GradleBuildFile {
         }
     }
     
-    const plugins = JSONPath({ path: '$..plugins', json: buildFile });
+    const plugins = JSONPath({ path: "$..plugins", json: buildFile });
     for ( const plugin of plugins) {
         for (const onePlugin of plugin) {
             if ( "io.openliberty.tools.gradle.Liberty" === onePlugin.id ) {
@@ -108,7 +109,7 @@ export function getGradleSettings(gradlePath: string): string {
 export function findChildGradleProjects(buildFile: any, settingsFile: any): GradleBuildFile {
     let projectType: string = LIBERTY_GRADLE_PROJECT;
     let gradleChildren: string[] = [];
-    let gradleBuildFile: GradleBuildFile = new GradleBuildFile(false, "");
+    const gradleBuildFile: GradleBuildFile = new GradleBuildFile(false, "");
     if (settingsFile !== undefined) {
         // look for a valid "include" section in the settingsFile
         if (settingsFile.include !== undefined) {
@@ -182,10 +183,9 @@ function validParent(buildFile: any): GradleBuildFile {
  * @param version plugin version as string
  */
 function containerVersion(pluginVersion: string): boolean {
-    const semver = require('semver')
     if (pluginVersion !== undefined) {
-        let version = semver.coerce(pluginVersion);
-        if (version != null) {
+        const version = semver.coerce(pluginVersion);
+        if (version !== null) {
             return semver.gte(version, LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION);
         }
     }
