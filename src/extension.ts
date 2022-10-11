@@ -75,10 +75,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 function bindRequest(request: string) {
     jakartaClient.onRequest(request, async (params: any) => {
         console.log("1");
-        <any>await commands.executeCommand("java.execute.workspaceCommand", request, params);
+        return <any>await commands.executeCommand("java.execute.workspaceCommand", request, params);
 
         // console.log("2");
-        // <any>await commands.executeCommand("java.execute.workspaceCommand", request, params).then((result) => {
+        // return <any>await commands.executeCommand("java.execute.workspaceCommand", request, params).then((result) => {
         //     console.log("Hopefully this prints something: " + result);
         // }, onrejected => {
         //     console.log("Undefined");
