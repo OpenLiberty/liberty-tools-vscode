@@ -1,9 +1,19 @@
-
+/**
+ * Copyright (c) 2020, 2022 IBM Corporation.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 import * as fs from "fs";
 import * as Path from "path";
 import * as vscode from "vscode";
-import { LibertyProject } from "./libertyProject";
-import { getReport } from "../util/helperUtil";
+import { localize } from "../util/i18nUtil";
+import { QuickPickItem } from "vscode";
+import { LibertyProject, ProjectProvider } from "./libertyProject";
+import { getReport, filterProjects } from "../util/helperUtil";
 import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { pathExists } from "fs-extra";
@@ -11,6 +21,49 @@ import { pathExists } from "fs-extra";
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 let _customParameters = "";
 
+class LibertyProjectQuickPickItem implements QuickPickItem {
+    
+    project: LibertyProject | undefined;
+    label: string;
+	detail: string;
+	
+	constructor(itemLabel: string, itemDetail: string, itemProject?: LibertyProject) {
+		this.label = itemLabel;
+		this.detail = itemDetail;
+        this.project = itemProject;
+	}
+  }
+
+function showProjects(command: string, callback: Function, reportType?: string): void {
+    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    // Find a list of projects that can be started
+    const projects: LibertyProject[] = filterProjects(Array.from(projectProvider.getProjects().values()),
+        command);
+    if (projects.length === 0) {
+        const message = localize("no.liberty.projects.found");
+        console.error(message);
+        vscode.window.showInformationMessage(message);
+    } else {
+        const items: LibertyProjectQuickPickItem[] = [];
+        for (let index = 0; index < projects.length; index++) {
+            const item = projects[index];
+            const qpItem = new LibertyProjectQuickPickItem(item.label,
+                item.path, item);
+            items.push(qpItem);
+        }
+        vscode.window.showQuickPick(items).then(selection => {
+            if (!selection) {
+                return;
+            }
+            if ( reportType ) {
+                callback(reportType, selection.project);
+            }
+            else {
+                callback(selection.project);
+            }
+        });
+    }
+}
 // opens pom associated with LibertyProject and starts dev mode
 export async function openProject(pomPath: string): Promise<void> {
     vscode.commands.executeCommand("vscode.open", vscode.Uri.file(pomPath));
@@ -19,7 +72,7 @@ export async function openProject(pomPath: string): Promise<void> {
 // start dev mode
 export async function startDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log("Starting liberty dev on " + libProject.getLabel());
+        console.log(localize("starting.liberty.dev.on",libProject.getLabel()));
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             terminal = libProject.createTerminal();
@@ -40,31 +93,156 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
                 terminal.sendText(cmd); // start dev mode on current project
             }
         }
+    } else  if ( ProjectProvider.getInstance() ) {
+        showProjects("liberty.dev.start", startDevMode);
     } else {
-        console.error("Cannot start liberty dev on an undefined project");
+        const message = localize("cannot.start.liberty.dev");
+        console.error(message);
+        vscode.window.showInformationMessage(message);
     }
 }
 
+
+export async function removeProject(uri: vscode.Uri): Promise<void> {
+    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    if (undefined !== uri && undefined !== uri.fsPath ) {
+        // Right mouse clicked on a root folder, or on empty space with only one folder in workspace.
+        // Add project if:
+        // 1. Project has build files (pom.xml or build.gradle)
+        // 2. Not in liberty dashboard
+        // Once added, presist the data in workspace storage.\
+        // check if the path is in current list
+        const file = projectProvider.isPathExistsInPersistedProjects(uri.fsPath);
+        if (undefined !== file) {
+            const yes = localize("confirmation.button.label.yes");
+            const no = localize("confirmation.button.label.no");
+            vscode.window
+                .showInformationMessage(localize("remove.custom.project.confirmation", uri.fsPath), yes, no)
+                .then(answer => {
+                    if (answer === yes) {
+                    // delete and save
+                        projectProvider.removeInPersistedProjects(file);
+                        vscode.window
+                            .showInformationMessage(localize("remove.custom.project.successful"));
+                            projectProvider.fireChangeEvent();
+                    }
+                });
+        } else {
+            const message = localize("remove.custom.project.not.in.list");
+            console.error(message);
+            vscode.window.showInformationMessage(message);
+        }
+    } else {
+        // clicked on the empty space and workspace has more than one folders, or
+        // from command palette
+        // Display the list of current cusomer added project for user to select.
+        const items: LibertyProjectQuickPickItem[] = [];
+        projectProvider.getUserAddedProjects().forEach(function (item) {
+            const qpItem = new LibertyProjectQuickPickItem(item.label,
+                item.path);
+            items.push(qpItem);
+        });
+        if ( items.length === 0 ) {
+            const message = localize("remove.custom.project.empty.list");
+            console.error(message);
+            vscode.window.showInformationMessage(message);
+        } else {
+            vscode.window.showQuickPick(items).then(selection => {
+                if (!selection) {
+                    return;
+                }
+                const yes = localize("confirmation.button.label.yes");
+                const no = localize("confirmation.button.label.no");
+                vscode.window
+                .showInformationMessage(localize("remove.custom.project.confirmation", Path.dirname(selection.detail)), yes, no)
+                .then(answer => {
+                    if (answer === yes) {
+                    // delete and save
+                        projectProvider.removeInPersistedProjects(selection.detail);
+                        vscode.window
+                            .showInformationMessage(localize("remove.custom.project.successful"));
+                        projectProvider.fireChangeEvent();
+                    }
+                });
+            });
+        }   
+    }
+}
+
+export async function addProject(uri: vscode.Uri): Promise<void> {
+    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    if (undefined !== uri && undefined !== uri.fsPath ) {
+        // Right mouse clicked on a root folder, or on empty space with only one folder in workspace.
+        // Add project if:
+        // 1. Not in liberty dashboard
+        // 2. Project has build files (pom.xml or build.gradle)
+        // 
+        // Once added, presist the data in workspace storage.
+        const result: number = await projectProvider.addUserSelectedPath(uri.fsPath, projectProvider.getProjects());
+        const message = localize(`add.project.manually.message.${result}`, uri.fsPath);
+        (result!==0)? console.error(message):console.info(message);projectProvider.fireChangeEvent();
+        vscode.window.showInformationMessage(message);
+        
+    } else {
+        // clicked on the empty space and workspace has more than one folders, or
+        // from command palette
+        // Display the list of workspace folders for user to select.
+        // The list should not contain any existing projects
+        const uris: string[] = [];
+        const wsFolders = vscode.workspace.workspaceFolders;
+		if ( wsFolders ) {
+			for ( const folder of wsFolders ) {
+				const path = folder.uri.fsPath;
+				if ( projectProvider.projectRootPathExists(path, projectProvider.getProjects().keys() ) === false ) {
+					uris.push(folder.uri.fsPath);
+				}
+			}
+		}
+        if ( uris.length === 0 ) {
+            // show error
+            const message = localize("add.project.manually.no.projects.available.to.add");
+            console.error(message);
+            vscode.window.showInformationMessage(message);
+        } else {
+            // present the list
+            vscode.window.showQuickPick(uris).then(async selection => {
+                if (!selection) {
+                    return;
+                }
+                const result = await projectProvider.addUserSelectedPath (selection, projectProvider.getProjects());
+                const message = localize(`add.project.manually.message.${result}`, selection);
+                (result!==0)? console.error(message):console.info(message);projectProvider.fireChangeEvent();
+                vscode.window.showInformationMessage(message);
+            });
+        }
+    } 
+}
 // stop dev mode
 export async function stopDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log("Stopping liberty dev on " + libProject.getLabel());
+        console.log(localize("stopping.liverty.dev.on",libProject.getLabel()));
         const terminal = libProject.getTerminal();
         if (terminal !== undefined) {
             terminal.show();
             terminal.sendText("exit"); // stop dev mode on current project
         } else {
-            vscode.window.showWarningMessage("liberty dev has not been started on " + libProject.getLabel());
+            const message = localize("liberty.dev.not.started.on",libProject.getLabel());
+            vscode.window.showWarningMessage(message);
         }
+    } else if ( ProjectProvider.getInstance() ) {
+        showProjects("liberty.dev.stop", stopDevMode);
+        
     } else {
-        console.error("Cannot stop liberty dev on an undefined project");
+        const message = localize("cannot.stop.liberty.dev.on.undefined");
+        console.error(message);
+        vscode.window.showInformationMessage(message);
     }
 }
 
 // custom start dev mode command
 export async function customDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log("Starting liberty dev with custom parameters on " + libProject.getLabel());
+        console.log(localize("starting.liberty.dev.with.custom.param",libProject.getLabel()));
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             terminal = libProject.createTerminal();
@@ -87,14 +265,14 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
             const customCommand: string | undefined = await vscode.window.showInputBox(Object.assign({
                 validateInput: (value: string) => {
                     if (value && !value.startsWith("-")) {
-                        return "Parameters must start with -";
+                        return localize("params.must.start.with.dash");
                     }
                     return null;
                 },
             },
                 {
                     placeHolder: placeHolderStr,
-                    prompt: "Specify custom parameters for the liberty dev command.",
+                    prompt: localize("specify.custom.parms"),
                     ignoreFocusOut: true,
                     value: _customParameters
                 },
@@ -112,8 +290,13 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
                 }
             }
         }
-    } else {
-        console.error("Cannot custom start liberty dev on an undefined project");
+    } else if ( ProjectProvider.getInstance() ) {
+        showProjects("liberty.dev.custom", customDevMode);
+        
+    }  else {
+        const message = localize("cannot.custom.start.liberty.dev");
+        console.error(message);
+        vscode.window.showInformationMessage(message);
     }
 }
 
@@ -140,24 +323,34 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
                 terminal.sendText(cmd);
             }
         }
-    } else {
-        console.error("Cannot start liberty dev in a container on an undefined project");
+    } else if ( ProjectProvider.getInstance() ) {
+        showProjects("liberty.dev.start.container", startContainerDevMode);
+        
+    }  else {
+        const message = localize("cannot.start.liberty.dev.in.container.on.undefined.project");
+        console.error(message);
+        vscode.window.showInformationMessage(message);
     }
 }
 
 // run tests on dev mode
 export async function runTests(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log("Running liberty dev tests on " + libProject.getLabel());
+        console.log(localize("running.liberty.dev.tests.on", libProject.getLabel()));
         const terminal = libProject.getTerminal();
         if (terminal !== undefined) {
             terminal.show();
             terminal.sendText(" "); // sends Enter to run tests in terminal
         } else {
-            vscode.window.showWarningMessage("liberty dev has not been started on " + libProject.getLabel());
+            vscode.window.showWarningMessage(localize("liberty.dev.has.not.been.started.on",libProject.getLabel()));
         }
+    } else if ( ProjectProvider.getInstance() ) {
+        showProjects("liberty.dev.run.tests", runTests);
+        
     } else {
-        console.error("Cannot run tests on an undefined project");
+        const message = localize("cannot.run.test.on.undefined.project");
+        console.error(message);
+        vscode.window.showInformationMessage(message);
     }
 }
 
@@ -186,12 +379,17 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                     );
                     panel.webview.html = getReport(report); // display HTML content
                 } else {
-                    vscode.window.showInformationMessage("Test report (" + report + ") does not exist.  Run tests to generate a test report.");
+                    const message = localize("test.report.does.not.exist.run.test.first", report);
+                    vscode.window.showInformationMessage(message);
                 }
             });
         }
+    } else if ( ProjectProvider.getInstance() && reportType ) {
+        showProjects(reportType, openReport, reportType);
     } else {
-        console.error("Cannot open test reports on an undefined project");
+        const message = localize("cannot.open.test.reports.on.undefined.project");
+        console.error(message);
+        vscode.window.showInformationMessage(message);
     }
 }
 
@@ -201,7 +399,7 @@ export function deleteTerminal(terminal: vscode.Terminal): void {
         const libProject = terminals[Number(terminal.processId)];
         libProject.deleteTerminal();
     } catch {
-        console.error("Unable to delete terminal: " + terminal.name);
+        console.error(localize("unable.to.delete.terminal",terminal.name));
     }
 }
 

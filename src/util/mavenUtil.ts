@@ -1,5 +1,16 @@
+/**
+ * Copyright (c) 2020, 2022 IBM Corporation.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 import { LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT } from "../definitions/constants";
-import { BuildFile } from "./buildFile";
+import { BuildFileImpl } from "./buildFile";
+import { localize } from "../util/i18nUtil";
+import * as semver from "semver";
 
 /**
  * Look for a valid parent pom.xml
@@ -8,9 +19,9 @@ import { BuildFile } from "./buildFile";
  * 
  * @param xmlString the xmlString version of the pom.xml
  */
-export function validParentPom(xmlString: string): BuildFile {
+export function validParentPom(xmlString: string): BuildFileImpl {
     const parseString = require("xml2js").parseString;
-    let parentPom: BuildFile = new BuildFile(false, "");
+    let parentPom: BuildFileImpl = new BuildFileImpl(false, "");
     parseString(xmlString, (err: any, result: any) => {
 
         // check for liberty maven plugin or boost maven plugin in plugin management
@@ -27,16 +38,16 @@ export function validParentPom(xmlString: string): BuildFile {
                                     if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] === "io.openliberty.tools") {
                                         console.debug("Found liberty-maven-plugin in the pom.xml plugin management");
                                         if (containerVersion(plugin[k])) {
-                                            parentPom = new BuildFile(true, LIBERTY_MAVEN_PROJECT_CONTAINER);
+                                            parentPom = new BuildFileImpl(true, LIBERTY_MAVEN_PROJECT_CONTAINER);
                                             return;
                                         } else {
-                                            parentPom = new BuildFile(true, LIBERTY_MAVEN_PROJECT);
+                                            parentPom = new BuildFileImpl(true, LIBERTY_MAVEN_PROJECT);
                                             return;
                                         }
                                     }
                                     if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "org.microshed.boost") {
                                         console.debug("Found boost-maven-plugin in the pom.xml");
-                                        parentPom = new BuildFile(true, LIBERTY_MAVEN_PROJECT);
+                                        parentPom = new BuildFileImpl(true, LIBERTY_MAVEN_PROJECT);
                                         return;
                                     }
                                 }
@@ -48,7 +59,7 @@ export function validParentPom(xmlString: string): BuildFile {
         }
 
         if (err) {
-            console.error("Error parsing the pom " + err);
+            console.error(localize("error.parsing.pom","Error parsing the pom " + err, err));
         }
     });
     return parentPom;
@@ -63,9 +74,9 @@ export function validParentPom(xmlString: string): BuildFile {
  * @param xmlString string representation of the pom.xml
  * @param childrenMap map of all the children pom.xml identified
  */
-export function validPom(xmlString: string, childrenMap: Map<string, string[]>): BuildFile {
+export function validPom(xmlString: string, childrenMap: Map<string, string[]>): BuildFileImpl {
     const parseString = require("xml2js").parseString;
-    let mavenPOM: BuildFile = new BuildFile(false, "");
+    let mavenPOM: BuildFileImpl = new BuildFileImpl(false, "");
     parseString(xmlString, (err: any, result: any) => {
 
         // check if the artifactId matches one of the modules found in a parent pom
@@ -79,7 +90,7 @@ export function validPom(xmlString: string, childrenMap: Map<string, string[]>):
                             // TODO: add ability to detect version of LMP once multi-module project scenarios are defined
                             // @see https://github.com/OpenLiberty/open-liberty-tools-vscode/issues/61
                             // @see https://github.com/OpenLiberty/open-liberty-tools-vscode/issues/26 
-                            mavenPOM = new BuildFile(true, LIBERTY_MAVEN_PROJECT);
+                            mavenPOM = new BuildFileImpl(true, LIBERTY_MAVEN_PROJECT);
                             return;
                         }
                     }
@@ -93,7 +104,7 @@ export function validPom(xmlString: string, childrenMap: Map<string, string[]>):
                 const profile = result.project.profiles[i].profile;
                 if (profile !== undefined) {
                     for (let j = 0; j < profile.length; j++) {
-                        const validPom: BuildFile = mavenPluginDetected(profile[j].build);
+                        const validPom: BuildFileImpl = mavenPluginDetected(profile[j].build);
                         if (validPom.isValidBuildFile()) {
                             mavenPOM = validPom;
                             return;
@@ -104,14 +115,14 @@ export function validPom(xmlString: string, childrenMap: Map<string, string[]>):
         }
 
         // check for liberty maven plugin in plugins
-        const validPom: BuildFile = mavenPluginDetected(result.project.build);
+        const validPom: BuildFileImpl = mavenPluginDetected(result.project.build);
         if (validPom.isValidBuildFile()) {
             mavenPOM = validPom;
             return;
         }
 
         if (err) {
-            console.error("Error parsing the pom " + err);
+            console.error(localize("error.parsing.pom", "Error parsing the pom " + err, err));
             return;
         }
     });
@@ -124,7 +135,7 @@ export function validPom(xmlString: string, childrenMap: Map<string, string[]>):
  * 
  * @param build JS object of the build section in a pom.xml
  */
-export function mavenPluginDetected(build: Array<{ plugins: Array<{ plugin: any }> }> | undefined): BuildFile {
+export function mavenPluginDetected(build: Array<{ plugins: Array<{ plugin: any }> }> | undefined): BuildFileImpl {
     if (build !== undefined) {
         for (let i = 0; i < build.length; i++) {
             const plugins = build[i].plugins;
@@ -135,14 +146,14 @@ export function mavenPluginDetected(build: Array<{ plugins: Array<{ plugin: any 
                         for (let k = 0; k < plugin.length; k++) {
                             if (plugin[k].artifactId[0] === "liberty-maven-plugin" && plugin[k].groupId[0] === "io.openliberty.tools") {
                                 if (containerVersion(plugin[k])) {
-                                    return (new BuildFile(true, LIBERTY_MAVEN_PROJECT_CONTAINER));
+                                    return (new BuildFileImpl(true, LIBERTY_MAVEN_PROJECT_CONTAINER));
                                 } else {
-                                    return (new BuildFile(true, LIBERTY_MAVEN_PROJECT));
+                                    return (new BuildFileImpl(true, LIBERTY_MAVEN_PROJECT));
                                 }
                             }
                             if (plugin[k].artifactId[0] === "boost-maven-plugin" && plugin[k].groupId[0] === "org.microshed.boost") {
                                 console.debug("Found boost-maven-plugin in the pom.xml");
-                                return (new BuildFile(true, LIBERTY_MAVEN_PROJECT));
+                                return (new BuildFileImpl(true, LIBERTY_MAVEN_PROJECT));
                             }
                         }
                     }
@@ -150,7 +161,7 @@ export function mavenPluginDetected(build: Array<{ plugins: Array<{ plugin: any 
             }
         }
     }
-    return (new BuildFile(false, ""));
+    return (new BuildFileImpl(false, ""));
 }
 
 /**
@@ -183,7 +194,7 @@ export function findChildMavenModules(xmlString: string): Map<string, string[]> 
         }
 
         if (err) {
-            console.error("Error parsing the pom " + err);
+            console.error(localize("error.parsing.pom", err));
         }
     });
     return childrenMap;
@@ -196,13 +207,12 @@ export function findChildMavenModules(xmlString: string): Map<string, string[]> 
  * @param plugin JS object for liberty-maven-plugin
  */
 function containerVersion(plugin: any): boolean {
-    const semver = require('semver')
     if (plugin.version === undefined) {
         return true;
     }
     if (plugin.version[0] !== undefined) {
-        let version = semver.coerce(plugin.version[0]);
-        if (version != null) {
+        const version = semver.coerce(plugin.version[0]);
+        if (version !== null) {
             return semver.gte(version, LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION);
         }
     }

@@ -1,6 +1,10 @@
 # Change Log
 
-All notable changes to the Open Liberty Tools extension will be documented below.
+All notable changes to the Liberty Tools extension will be documented below.
+
+## 0.1.11
+- Rename extension to Liberty Tools for VS Code
+- Rename Liberty Dev Dashboard to Liberty Dashboard
 
 ## 0.1.10
 - Honour Maven and Gradle wrapper settings when running dev mode
