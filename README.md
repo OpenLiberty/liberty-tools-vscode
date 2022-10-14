@@ -1,4 +1,4 @@
-# Open Liberty Tools for VS Code
+# Liberty Tools for VS Code
 
 ## Building the Liberty Language Server Prototype
 
@@ -41,15 +41,15 @@ Feature diagnostics for invalid features:
 [![Marketplace Version](https://vsmarketplacebadge.apphb.com/version/Open-Liberty.open-liberty-tools-vscode.svg "Current Release")](https://marketplace.visualstudio.com/items?itemName=Open-Liberty.open-liberty-tools-vscode)
 [![License](https://img.shields.io/badge/License-EPL%202.0-red.svg?label=license&logo=eclipse)](https://www.eclipse.org/legal/epl-2.0/)
 
-A VS Code extension for Open Liberty. The extension will detect your Liberty Maven or Liberty Gradle project if it detects the `io.openliberty.tools:liberty-maven-plugin` in the `pom.xml` or `io.openliberty.tools:liberty-gradle-plugin` in the `build.gradle`. Through the Liberty Dev Dashboard, you can start, stop, or interact with Liberty dev mode on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace.
+A VS Code extension for Open Liberty. The extension will detect your Liberty Maven or Liberty Gradle project if it detects the `io.openliberty.tools:liberty-maven-plugin` in the `pom.xml` or `io.openliberty.tools:liberty-gradle-plugin` in the `build.gradle`. Through the Liberty Dashboard, you can start, stop, or interact with Liberty dev mode on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace.
 
-![Open Liberty Tools Extension](images/open-liberty-tools.png)
+![Liberty Tools Extension](images/open-liberty-tools.png)
 
 ## Quick Start
 
 - Install the extension
-- Open Liberty supported projects will appear in the Liberty Dev Dashboard on the side bar
-- Right-click a project in the Liberty Dev Dashboard to view the available commands
+- Liberty supported projects will appear in the Liberty Dashboard on the side bar
+- Right-click a project in the Liberty Dashboard to view the available commands
 
 ## Features
 
@@ -94,7 +94,7 @@ The following settings provided by external extensions will be honoured when exe
 
 ## Contributing
 
-Contributions to the Open Liberty Tools extension are welcome!
+Contributions to the Liberty Tools extension are welcome!
 
 Our [CONTRIBUTING](CONTRIBUTING.md) document contains details for submitting pull requests.
 
@@ -111,6 +111,33 @@ To build the extension locally:
    - Install the extension to VS Code by `View/Command Palette`
    - Select `Extensions: Install from VSIX...` and choose the generated `open-liberty-tools-vscode-xxx.vsix` file
 
+### Localization
+
+#### package.json
+This follows vscode extenstion standard: add localized strings in `package.nls.{locale}.json`.
+The default nls message file is `package.nls.json`.
+
+#### Source code
+
+1. Add new messages in `locales/{locale}.json` file.  If message has parameters, use curly brackets to enclose them: `{0}`, `{1}`... 
+
+
+2. Add the following import statement in your source code:
+   
+   ```ts
+   import { localize } from "../util/i18nUtil";
+   ```
+
+3. Call method `localize` to return localized message.
+
+   Example without parameters:
+   ```ts
+   const message = localize("my.message.key");
+   ```
+   Example with parameters:
+   ```ts
+   const message = localize("my.message.key.with.params", param1, param2);
+   ```
 ## Issues
 
-Please report bugs, issues and feature requests by creating a [GitHub issue](https://github.com/OpenLiberty/open-liberty-tools-vscode/issues).
+Please report bugs, issues and feature requests by creating a [GitHub issue](https://github.com/OpenLiberty/liberty-tools-vscode/issues).

@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2020, 2022 IBM Corporation.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
 import * as path from "path";
@@ -77,6 +86,12 @@ function registerCommands(context: ExtensionContext) {
         vscode.commands.registerCommand("liberty.dev.open.gradle.test.report", (libProject?: LibertyProject) => devCommands.openReport("gradle", libProject)),
     );
     context.subscriptions.push(
+		vscode.commands.registerCommand("liberty.dev.add.project", (uri: vscode.Uri) => devCommands.addProject(uri)),
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand("liberty.dev.remove.project", (uri: vscode.Uri) => devCommands.removeProject(uri)),
+	);
+    context.subscriptions.push(
         vscode.window.onDidCloseTerminal((closedTerminal: vscode.Terminal) => {
             devCommands.deleteTerminal(closedTerminal);
         })
@@ -93,16 +108,16 @@ export function deactivate(): void {
  * @param projectProvider Liberty Dev projects
  */
 export function registerFileWatcher(projectProvider: ProjectProvider): void {
-    const watcher: vscode.FileSystemWatcher = workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle}");
-    watcher.onDidCreate(async () => {
-        projectProvider.refresh();
-    });
-    watcher.onDidChange(async () => {
-        projectProvider.refresh();
-    });
-    watcher.onDidDelete(async () => {
-        projectProvider.refresh();
-    });
+	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
+	watcher.onDidCreate(async () => {
+		projectProvider.refresh();
+	});
+	watcher.onDidChange(async () => {
+		projectProvider.refresh();
+	});
+	watcher.onDidDelete(async () => {
+		projectProvider.refresh();
+	});
 }
 
 function startupLanguageServer(context: ExtensionContext) {
