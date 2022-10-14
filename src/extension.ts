@@ -45,7 +45,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 function registerCommands(context: ExtensionContext) {
-    const projectProvider = new ProjectProvider(context);
+    let projectProvider = ProjectProvider.getInstance();
+	if ( !projectProvider ) {
+		projectProvider = new ProjectProvider(context);
+		ProjectProvider.setInstance(projectProvider);
+	}
 
     if (vscode.workspace.workspaceFolders !== undefined) {
         registerFileWatcher(projectProvider);
