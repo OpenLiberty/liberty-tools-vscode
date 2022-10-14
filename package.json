@@ -47,9 +47,9 @@
 		"redhat.vscode-microprofile"
 	],
 	"contributes": {
-    "xml.javaExtensions": [
-      "./jars/liberty-langserver-lemminx-1.0-SNAPSHOT-jar-with-dependencies.jar"
-    ],
+		"xml.javaExtensions": [
+			"./jars/liberty-langserver-lemminx-1.0-SNAPSHOT-jar-with-dependencies.jar"
+		],
 		"views": {
 			"explorer": [
 				{
@@ -199,8 +199,8 @@
 		"compile": "webpack --mode none",
 		"watch": "webpack --mode development --watch --info-verbosity verbose",
 		"test-compile": "tsc -p ./",
-    "build": "gulp downloadLibertyLSJars",
-    "buildLocal": "gulp buildLemminxLiberty buildLibertyServer"
+		"build": "gulp downloadLibertyLSJars",
+		"buildLocal": "gulp buildLemminxLiberty buildLibertyServer"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
@@ -223,10 +223,10 @@
 		"@types/xml2js": "^0.4.5",
 		"fs-extra": "^9.0.0",
 		"gradle-to-js": "^2.0.0",
-    "gulp": "^4.0.2",
-    "gulp-download2": "^1.1.0",
+		"gulp": "^4.0.2",
+		"gulp-download2": "^1.1.0",
 		"@types/semver": "^7.3.2",
-    "vscode-languageclient": "^4.4.0",
+		"vscode-languageclient": "^4.4.0",
 		"xml2js": "^0.4.23",
 		"jsonpath-plus": "^7.0.0"
 	}
