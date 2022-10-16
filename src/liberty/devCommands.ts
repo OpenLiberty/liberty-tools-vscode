@@ -10,6 +10,7 @@
 import * as fs from "fs";
 import * as Path from "path";
 import * as vscode from "vscode";
+import * as helperUtil from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
 import { QuickPickItem } from "vscode";
 import { LibertyProject, ProjectProvider } from "./libertyProject";
@@ -17,9 +18,10 @@ import { getReport, filterProjects } from "../util/helperUtil";
 import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { pathExists } from "fs-extra";
+import { DashboardData } from "./dashboard";
+import { ProjectStartCmdParam } from "./projectStartCmdParam";
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
-let _customParameters = "";
 
 class LibertyProjectQuickPickItem implements QuickPickItem {
     
@@ -239,10 +241,52 @@ export async function stopDevMode(libProject?: LibertyProject | undefined): Prom
     }
 }
 
-// custom start dev mode command
-export async function customDevMode(libProject?: LibertyProject | undefined): Promise<void> {
+// custom start dev mode command with history list
+export async function customDevModeWithHistory(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log(localize("starting.liberty.dev.with.custom.param",libProject.getLabel()));
+        // check if we have history for the select project.
+        const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+        const dashboardData: DashboardData = helperUtil.getStorageData(projectProvider.getContext());
+        const history = dashboardData.lastUsedStartParams.filter(element => element.path === libProject.getPath());
+        if ( history.length === 0 ) {
+            //no history, show input.
+            await customDevMode(libProject);
+        } else {
+            // show history
+            // first item is the default custom command with no params
+            const items: LibertyProjectQuickPickItem[] = [];
+            const qpItem = new LibertyProjectQuickPickItem(" ",
+            history[0].path, libProject);
+            items.push(qpItem);
+            
+            for (let index = 0; index < history.length; index++) {
+                const item = history[index];
+                const qpItem = new LibertyProjectQuickPickItem(item.param,
+                    item.path, libProject);
+                items.push(qpItem);
+            }
+            vscode.window.showQuickPick(items).then(selection => {
+                if (!selection) {
+                    return;
+                }
+                customDevMode(selection.project, selection.label);
+            });
+        }
+
+    } else if ( ProjectProvider.getInstance() ) {
+        showProjects("liberty.dev.custom", customDevModeWithHistory);
+        
+    }  else {
+        const message = localize("cannot.custom.start.liberty.dev");
+        console.error(message);
+        vscode.window.showInformationMessage(message);
+    }
+}
+
+// custom start dev mode command
+export async function customDevMode(libProject?: LibertyProject | undefined, params?: string | undefined): Promise<void> {
+    const _customParameters = (params === undefined) ? "" : params;
+    if (libProject !== undefined) {
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             terminal = libProject.createTerminal();
@@ -278,7 +322,13 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
                 },
             ));
             if (customCommand !== undefined) {
-                _customParameters = customCommand;
+                // save command
+                const projectStartCmdParam: ProjectStartCmdParam = new ProjectStartCmdParam(libProject.getPath(), customCommand);
+                const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+                const dashboardData: DashboardData = helperUtil.getStorageData(projectProvider.getContext());
+                dashboardData.addStartCmdParams(projectStartCmdParam);
+                await helperUtil.saveStorageData(projectProvider.getContext(), dashboardData);
+
                 if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                     const mvnCmdStart = await mvnCmd(libProject.getPath());
                     const cmd = `${mvnCmdStart} io.openliberty.tools:liberty-maven-plugin:dev ${customCommand} -f "${libProject.getPath()}"`;
@@ -291,7 +341,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined): Pr
             }
         }
     } else if ( ProjectProvider.getInstance() ) {
-        showProjects("liberty.dev.custom", customDevMode);
+        showProjects("liberty.dev.custom", customDevModeWithHistory);
         
     }  else {
         const message = localize("cannot.custom.start.liberty.dev");

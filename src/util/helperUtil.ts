@@ -59,8 +59,8 @@ export function filterProjects(projects: LibertyProject[], command: string): Lib
  * @returns 
  */
 export function getStorageData(context: vscode.ExtensionContext): DashboardData {
-	let data = context.workspaceState.get<DashboardData>(LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY, new DashboardData([]));
-	data = new DashboardData(data.projects);
+	let data = context.workspaceState.get<DashboardData>(LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY, new DashboardData([], []));
+	data = new DashboardData(data.projects, data.lastUsedStartParams);
 	return data;
 }
 /**
