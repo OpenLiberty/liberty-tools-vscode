@@ -28,7 +28,7 @@ export class DashboardData {
     }
   }
 
-
+  // add last used custom parameters to the top of the list
   public addStartCmdParams(cmdParam: ProjectStartCmdParam): void {
     const index = this.lastUsedStartParams.findIndex(
       element => element.path === cmdParam.path && element.param === cmdParam.param);
