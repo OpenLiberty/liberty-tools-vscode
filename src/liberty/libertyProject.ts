@@ -39,6 +39,9 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		this.refresh();
 	}
 
+	public getContext(): vscode.ExtensionContext {
+		return this._context;
+	}
 	public static getInstance(): ProjectProvider {
 		return ProjectProvider.instance;
 	}
