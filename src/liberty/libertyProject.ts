@@ -469,6 +469,7 @@ export class LibertyProject extends vscode.TreeItem {
 export async function createProject(context: vscode.ExtensionContext, buildFile: string, contextValue: string, xmlString?: string): Promise<LibertyProject> {
 	let label = "";
 	if (xmlString !== undefined) {
+		// eslint-disable-next-line @typescript-eslint/no-var-requires
 		const parseString = require("xml2js").parseString;
 		parseString(xmlString, (err: any, result: any) => {
 			if (result.project.artifactId[0] !== undefined) {

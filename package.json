@@ -72,6 +72,11 @@
 				"title": "%commands.title.start%"
 			},
 			{
+				"command": "liberty.dev.debug",
+				"category": "Liberty",
+				"title": "%commands.title.debug%"
+			},
+			{
 				"command": "liberty.dev.add.project",
 				"category": "Liberty",
 				"title": "%commands.title.add.project%"
@@ -140,6 +145,11 @@
 			"view/item/context": [
 				{
 					"command": "liberty.dev.start",
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+					"group": "libertyCore@1"
+				},
+				{
+					"command": "liberty.dev.debug",
 					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
 					"group": "libertyCore@1"
 				},
