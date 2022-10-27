@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * Referenced:
- * https://github.com/redhat-developer/vscode-microprofile/blob/master/src/util/javaServerMode.ts
  */
 
 import { window, commands } from "vscode";
@@ -32,6 +30,9 @@ export enum ServerMode {
  * Waits for the java language server to launch in standard mode
  * Before activating Tools for MicroProfile.
  * If java ls was started in lightweight mode, It will prompt user to switch
+ * 
+ * Referenced:
+ * https://github.com/redhat-developer/vscode-microprofile/blob/master/src/util/javaServerMode.ts
  */
 export async function waitForStandardMode(api: JavaExtensionAPI): Promise<void> {
     // If hybrid, standard mode is being launched. Wait for standard mode then resolve.
