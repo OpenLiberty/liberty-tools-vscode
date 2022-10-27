@@ -16,6 +16,7 @@ import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
 import { LanguageClient, LanguageClientOptions, Executable, ServerOptions } from "vscode-languageclient";
 import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor } from "vscode";
 import { JAVA_EXTENSION_ID, waitForStandardMode } from "./util/javaServerMode";
+import { localize } from "./util/i18nUtil";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
@@ -40,15 +41,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     const item = window.createStatusBarItem(StatusBarAlignment.Right, Number.MIN_VALUE);
     // item.name = "Liberty Language Server";
-    item.text = "Liberty LS";
-    item.tooltip = "Language Server for Liberty is starting...";
+    item.text = localize("liberty.ls");
+    item.tooltip = localize("liberty.ls.starting");
     toggleItem(window.activeTextEditor, item);
 
     startupLibertyLanguageServer(context).then(() => {
         console.log("Liberty client ready, registering commands");
 
-        item.text = "Liberty LS $(thumbsup)";
-        item.tooltip = "Language Server for Liberty started";
+        item.text = localize("liberty.ls.thumbs.up");
+        item.tooltip = localize("liberty.ls.started");
         toggleItem(window.activeTextEditor, item);
 
         registerCommands(context);
@@ -56,8 +57,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         console.log("Liberty client was not ready. Did not initialize");
         console.log(error);
 
-        item.text = "Liberty LS $(thumbsdown)";
-        item.tooltip = "Language Server for Liberty failed to start";
+        item.text = localize("liberty.ls.thumbs.down");
+        item.tooltip = localize("liberty.ls.failedstart");
     });
 
     // const documentSelector = getDocumentSelector();
@@ -69,8 +70,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         bindRequest(lsp4jakartaLS.JAVA_CODEACTION_REQUEST);
         bindRequest(lsp4jakartaLS.JAVA_DIAGNOSTICS_REQUEST);
 
-        item.text = "LSP4Jakarta $(thumbsup)";
-        item.tooltip = "Language Server for Jakarta started";
+        item.text = localize("jakarta.ls.thumbs.up");
+        item.tooltip = localize("jakarta.ls.started");
         toggleItem(window.activeTextEditor, item);
     });
 }
