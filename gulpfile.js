@@ -8,7 +8,7 @@ var releaseLevel = "snapshots"; //snapshots or releases
 
 const libertyLemminxName = "liberty-langserver-lemminx-" + version + "-jar-with-dependencies.jar";
 const libertyLemminxDir = "../liberty-language-server/lemminx-liberty";
-const libertyLSName = "liberty-langserver-1.0-SNAPSHOT-jar-with-dependencies.jar";
+const libertyLSName = "liberty-langserver-" + version + "-jar-with-dependencies.jar";
 const libertyLSDir = "../liberty-language-server/liberty-ls";
 const lsp4jakartaName = "org.eclipse.lsp4jakarta.jdt.core-0.0.1-SNAPSHOT.jar";
 const lsp4jakartaJdt = "../lsp4jakarta/jakarta.jdt/org.eclipse.lsp4jakarta.jdt.core";

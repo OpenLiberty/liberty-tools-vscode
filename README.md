@@ -69,11 +69,13 @@ Our [CONTRIBUTING](CONTRIBUTING.md) document contains details for submitting pul
 To build the extension locally:
 
 1. `git clone https://github.com/OpenLiberty/liberty-tools-vscode`
-2. `cd liberty-tools-vscode`
-3. Run `npm install`
-4. Run `npm run build`
-5. Run `npm run compile`
-4. Run the extension in Debug and Run mode by selecting `Run Extension` or `F5`
+2. `git clone https://github.com/eclipse/lsp4jakarta.git`
+3. `cd liberty-tools-vscode`
+4. Run `npm install`
+5. Run `npm run build`
+6. Run `npm run buildJakarta`
+7. Run `npm run compile`
+8. Run the extension in Debug and Run mode by selecting `Run Extension` or `F5`
 
    Alternatively, build a `.vsix` file:
 
