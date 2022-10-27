@@ -62,25 +62,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // const documentSelector = getDocumentSelector();
     startupJakartaLangServer(context).then(() => {
-        console.log("Jakarta LS is ready, binding requests...");
+        console.log("LSP4Jakarta is ready, binding requests...");
 
         // Delegate requests from Jakarta LS to the Jakarta JDT core
         bindRequest(lsp4jakartaLS.JAVA_CLASSPATH_REQUEST);
         bindRequest(lsp4jakartaLS.JAVA_CODEACTION_REQUEST);
         bindRequest(lsp4jakartaLS.JAVA_DIAGNOSTICS_REQUEST);
 
-        item.text = "Jakarta LS $(thumbsup)";
+        item.text = "LSP4Jakarta $(thumbsup)";
         item.tooltip = "Language Server for Jakarta started";
         toggleItem(window.activeTextEditor, item);
     });
-    /**, error => {;
-        console.log("Jakarta language client was not ready. Did not initialize");
-        console.log(error);
-
-        item.text = "Jakarta LS $(thumbsdown)";
-        item.tooltip = "Language Server for Jakarta failed to start";
-    });
-    **/
 }
 
 function bindRequest(request: string) {
@@ -173,7 +165,6 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
 function startupLibertyLanguageServer(context: ExtensionContext) {
     //Start up Liberty Language Server
     const languageServerPath = context.asAbsolutePath(path.join("jars", LIBERTY_LS_JAR));
-    // const debugArgs = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:1074";
     // Language server options 
     const serverOptions: ServerOptions = {
         run: <Executable> { 
@@ -185,6 +176,7 @@ function startupLibertyLanguageServer(context: ExtensionContext) {
             command: "java",
             // TODO: using the debug arguments seems to still run the language server and open the debug port,
             // but, the extension doesn't seem to work properly nor does it run the .onReady.then() commands
+            // const debugArgs = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:1074";
             // args: [debugArgs, "-jar", languageServerPath],
             args: ["-jar", languageServerPath],
             options: {stdio:"pipe"}
@@ -214,7 +206,6 @@ function startupLibertyLanguageServer(context: ExtensionContext) {
 
 function startupJakartaLangServer(context: ExtensionContext) {
     const jakartaLsPath = context.asAbsolutePath(path.join("jars", JAKARTA_LS_JAR));
-    // const debugArgs = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1054";
     // Language server options 
     const serverOptions: ServerOptions = {
         run: <Executable> { 
@@ -226,6 +217,7 @@ function startupJakartaLangServer(context: ExtensionContext) {
             command: "java",
             // TODO: using the debug arguments seems to still run the language server and open the debug port,
             // but, the extension doesn't seem to work properly nor does it run the .onReady.then() commands
+            // const debugArgs = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1054";
             // args: [debugArgs, "-jar", jakartaLsPath],
             args: ["-jar", jakartaLsPath],
             options: {stdio:"pipe"}
