@@ -69,7 +69,7 @@ Our [CONTRIBUTING](CONTRIBUTING.md) document contains details for submitting pul
 To build the extension locally:
 
 1. `git clone https://github.com/OpenLiberty/liberty-tools-vscode`
-2. `git clone https://github.com/eclipse/lsp4jakarta.git`
+2. `git clone https://github.com/eclipse/lsp4jakarta.git` - Make sure the `lsp4jakarta` and `liberty-tools-vscode` projects are located in the same directory.
 3. `cd liberty-tools-vscode`
 4. Run `npm install`
 5. Run `npm run build`
