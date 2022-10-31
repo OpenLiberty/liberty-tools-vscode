@@ -44,7 +44,8 @@
 	],
 	"main": "./dist/extension",
 	"extensionDependencies": [
-		"redhat.vscode-microprofile"
+		"redhat.vscode-microprofile",
+		"redhat.vscode-xml"
 	],
 	"contributes": {
 		"xml.javaExtensions": [
@@ -210,7 +211,8 @@
 		"watch": "webpack --mode development --watch --info-verbosity verbose",
 		"test-compile": "tsc -p ./",
 		"build": "gulp downloadLibertyLSJars",
-		"buildLocal": "gulp buildLemminxLiberty buildLibertyServer"
+		"buildLocal": "gulp buildLemminxLiberty buildLibertyServer",
+		"buildJakarta": "gulp buildJakartaJdt buildJakartaLs"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.1",

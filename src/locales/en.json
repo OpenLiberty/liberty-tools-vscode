@@ -1,4 +1,13 @@
 {
+    "liberty.ls": "Liberty LS",
+    "liberty.ls.thumbs.up": "Liberty LS $(thumbsup)",
+    "liberty.ls.thumbs.down": "Liberty LS $(thumbsdown)",
+    "liberty.ls.starting": "Language Server for Liberty is starting...",
+    "liberty.ls.started": "Language Server for Liberty started",
+    "liberty.ls.failstart": "Language Server for Liberty failed to start",
+    "jakarta.ls": "LSP4Jakarta",
+    "jakarta.ls.thumbs.up": "LSP4Jakarta $(thumbsup)",
+    "jakarta.ls.started": "Language Server for Jakarta started",
     "no.liberty.projects.found": "No liberty projects found.",
     "starting.liberty.dev.on": "Starting liberty dev on {0}",
     "cannot.start.liberty.dev": "Cannot start liberty dev on an undefined project",

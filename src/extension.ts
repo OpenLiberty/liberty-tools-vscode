@@ -9,38 +9,77 @@
  */
 import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
+import * as lsp4jakartaLS from "./definitions/lsp4jakartaLSRequestNames";
 import * as path from "path";
 
 import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
 import { LanguageClient, LanguageClientOptions, Executable, ServerOptions } from "vscode-languageclient";
-import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor, languages } from "vscode";
+import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor } from "vscode";
+import { JAVA_EXTENSION_ID, waitForStandardMode } from "./util/javaServerMode";
+import { localize } from "./util/i18nUtil";
 
-const LANGUAGE_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
+const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
+const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
+const LIBERTY_LS_JAR = "liberty-langserver-1.0-SNAPSHOT-jar-with-dependencies.jar";
+const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
 
-let languageClient: LanguageClient;
+let libertyClient: LanguageClient;
+let jakartaClient: LanguageClient;
+
+export type JavaExtensionAPI = any;
+
 const SUPPORTED_LANGUAGE_IDS = ["properties", "plaintext"];
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    
-    let item = window.createStatusBarItem(StatusBarAlignment.Right, Number.MIN_VALUE);
+
+    /**
+     * Waits for the java language server to launch in standard mode
+     * Before activating Tools for MicroProfile.
+     * If java ls was started in lightweight mode, It will prompt user to switch
+     */
+    const api: JavaExtensionAPI = await getJavaExtensionAPI();
+    await waitForStandardMode(api);
+
+    const item = window.createStatusBarItem(StatusBarAlignment.Right, Number.MIN_VALUE);
     // item.name = "Liberty Language Server";
-    item.text = "Liberty LS";
-    item.tooltip = "Language Server for Liberty is starting...";
+    item.text = localize("liberty.ls");
+    item.tooltip = localize("liberty.ls.starting");
     toggleItem(window.activeTextEditor, item);
 
-    startupLanguageServer(context).then(() => {
-        console.log("Language client ready, registering commands");
-        
-        item.text = "Liberty LS $(thumbsup)";
-        item.tooltip = "Language Server for Liberty started";
+    startupLibertyLanguageServer(context).then(() => {
+        console.log("Liberty client ready, registering commands");
+
+        item.text = localize("liberty.ls.thumbs.up");
+        item.tooltip = localize("liberty.ls.started");
         toggleItem(window.activeTextEditor, item);
 
         registerCommands(context);
-    }, error => {
-        console.log("Language client was not ready. Did not initialize");
+    }, (error: any) => {
+        console.log("Liberty client was not ready. Did not initialize");
         console.log(error);
-        
-        item.text = "Liberty LS $(thumbsdown)";
-        item.tooltip = "Language Server for Liberty failed to start";
+
+        item.text = localize("liberty.ls.thumbs.down");
+        item.tooltip = localize("liberty.ls.failedstart");
+    });
+
+    // const documentSelector = getDocumentSelector();
+    startupJakartaLangServer(context).then(() => {
+        console.log("LSP4Jakarta is ready, binding requests...");
+
+        // Delegate requests from Jakarta LS to the Jakarta JDT core
+        bindRequest(lsp4jakartaLS.JAVA_CLASSPATH_REQUEST);
+        bindRequest(lsp4jakartaLS.JAVA_CODEACTION_REQUEST);
+        bindRequest(lsp4jakartaLS.JAVA_DIAGNOSTICS_REQUEST);
+
+        item.text = localize("jakarta.ls.thumbs.up");
+        item.tooltip = localize("jakarta.ls.started");
+        toggleItem(window.activeTextEditor, item);
+    });
+}
+
+function bindRequest(request: string) {
+    jakartaClient.onRequest(request, async (params: any) => {
+        // handled by jdt.DelegateCommandHandler
+        return <any>await commands.executeCommand("java.execute.workspaceCommand", request, params);
     });
 }
 
@@ -127,10 +166,9 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
 	});
 }
 
-function startupLanguageServer(context: ExtensionContext) {
+function startupLibertyLanguageServer(context: ExtensionContext) {
     //Start up Liberty Language Server
-    const languageServerPath = context.asAbsolutePath(path.join("jars","liberty-langserver-1.0-SNAPSHOT-jar-with-dependencies.jar"));
-    const debugArgs = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:1074";
+    const languageServerPath = context.asAbsolutePath(path.join("jars", LIBERTY_LS_JAR));
     // Language server options 
     const serverOptions: ServerOptions = {
         run: <Executable> { 
@@ -142,6 +180,7 @@ function startupLanguageServer(context: ExtensionContext) {
             command: "java",
             // TODO: using the debug arguments seems to still run the language server and open the debug port,
             // but, the extension doesn't seem to work properly nor does it run the .onReady.then() commands
+            // const debugArgs = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:1074";
             // args: [debugArgs, "-jar", languageServerPath],
             args: ["-jar", languageServerPath],
             options: {stdio:"pipe"}
@@ -160,13 +199,50 @@ function startupLanguageServer(context: ExtensionContext) {
         }
     };
 
-    console.log("Creating new language client");
-    languageClient = new LanguageClient(LANGUAGE_CLIENT_ID, "Language Support for Liberty", serverOptions, clientOptions);
-
-    const disposable = languageClient.start();
+    console.log("Creating new language client for Liberty Language Server");
+    libertyClient = new LanguageClient(LIBERTY_CLIENT_ID, "Language Support for Liberty", serverOptions, clientOptions);
+    
+    const disposable = libertyClient.start();
     context.subscriptions.push(disposable);
 
-    return languageClient.onReady();
+    return libertyClient.onReady();
+}
+
+function startupJakartaLangServer(context: ExtensionContext) {
+    const jakartaLsPath = context.asAbsolutePath(path.join("jars", JAKARTA_LS_JAR));
+    // Language server options 
+    const serverOptions: ServerOptions = {
+        run: <Executable> { 
+            command: "java",
+            args: ["-jar", jakartaLsPath],
+            options: {stdio:"pipe"}
+        },
+        debug: <Executable> {
+            command: "java",
+            // TODO: using the debug arguments seems to still run the language server and open the debug port,
+            // but, the extension doesn't seem to work properly nor does it run the .onReady.then() commands
+            // const debugArgs = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1054";
+            // args: [debugArgs, "-jar", jakartaLsPath],
+            args: ["-jar", jakartaLsPath],
+            options: {stdio:"pipe"}
+        }
+    }
+
+    // Options to control the language client
+    const clientOptions: LanguageClientOptions = {
+        documentSelector: [{ scheme: "file", language: "java" }],
+        synchronize: {
+            configurationSection: ["java", "[java]"],
+            fileEvents: [
+                workspace.createFileSystemWatcher("**/*.java")
+            ],
+        }
+    };
+    console.log("Creating new language client for Jakarta Language Server")
+    jakartaClient = new LanguageClient(JAKARTA_CLIENT_ID, "Language Support for Jakarta", serverOptions, clientOptions);
+
+    context.subscriptions.push(jakartaClient.start());
+    return jakartaClient.onReady();
 }
 
 function toggleItem(editor: TextEditor | undefined, item: vscode.StatusBarItem) {
@@ -175,4 +251,18 @@ function toggleItem(editor: TextEditor | undefined, item: vscode.StatusBarItem) 
     } else{
         item.hide();
     }
+}
+
+async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
+    const vscodeJava = extensions.getExtension(JAVA_EXTENSION_ID);
+    if (!vscodeJava) {
+        throw new Error("VSCode java is not installed");
+    }
+
+    const api = await vscodeJava.activate();
+    if (!api) {
+        throw new Error("VSCode java api not found");
+    }
+
+    return Promise.resolve(api);
 }

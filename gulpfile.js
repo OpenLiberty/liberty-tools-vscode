@@ -9,7 +9,11 @@ var releaseLevel = "snapshots"; //snapshots or releases
 const libertyLemminxName = "liberty-langserver-lemminx-" + version + "-jar-with-dependencies.jar";
 const libertyLemminxDir = "../liberty-language-server/lemminx-liberty";
 const libertyLSName = "liberty-langserver-" + version + "-jar-with-dependencies.jar";
-const libertyLSDir = "../liberty-language-server/liberty-ls"
+const libertyLSDir = "../liberty-language-server/liberty-ls";
+const lsp4jakartaName = "org.eclipse.lsp4jakarta.jdt.core-0.0.1-SNAPSHOT.jar";
+const lsp4jakartaJdt = "../lsp4jakarta/jakarta.jdt/org.eclipse.lsp4jakarta.jdt.core";
+const jakartaLSName = "org.eclipse.lsp4jakarta.ls-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+const jakartaLSDir = "../lsp4jakarta/jakarta.ls";
 
 gulp.task("buildLemminxLiberty", (done) => {
   cp.execSync(mvnw() + " clean install -DskipTests -Dinvoker.skip=true", {
@@ -26,6 +30,24 @@ gulp.task("buildLibertyServer", (done) => {
     stdio: "inherit",
   });
   gulp.src(libertyLSDir + "/target/" + libertyLSName).pipe(gulp.dest("./jars"));
+  done();
+});
+
+gulp.task("buildJakartaJdt", (done) => {
+  cp.execSync("mvn clean install", {
+    cwd: lsp4jakartaJdt,
+    stdio: "inherit",
+  });
+  gulp.src(lsp4jakartaJdt + "/target/" + lsp4jakartaName).pipe(gulp.dest("./jars"));
+  done();
+});
+
+gulp.task("buildJakartaLs", (done) => {
+  cp.execSync("mvn clean install", {
+    cwd: jakartaLSDir,
+    stdio: "inherit",
+  });
+  gulp.src(jakartaLSDir + "/target/" + jakartaLSName).pipe(gulp.dest("./jars"));
   done();
 });
 
