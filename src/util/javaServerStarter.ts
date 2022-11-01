@@ -1,3 +1,20 @@
+/**
+ * Copyright 2019 Red Hat, Inc. and others.
+
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+
+ *     http://www.apache.org/licenses/LICENSE-2.0
+
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ */
+
 import * as os from 'os';
 import * as path from 'path';
 import { workspace } from 'vscode';
@@ -5,60 +22,38 @@ import { Executable, ExecutableOptions } from 'vscode-languageclient';
 import { RequirementsData } from './requirements';
 import * as glob from 'glob';
 
-const DEBUG = startedInDebugMode();
-const DEBUG_PORT = 1064;
-const MICROPROFILE_SERVER_NAME = 'org.eclipse.lsp4mp.ls-uber.jar';
-const MICROPROFILE_SERVER_MAIN_CLASS = 'org.eclipse.lsp4mp.ls.MicroProfileServerLauncher';
+// const DEBUG = startedInDebugMode();
+// const DEBUG_PORT = 1064;
 
-export function prepareExecutable(requirements: RequirementsData, microprofileJavaExtensions: string[]): Executable {
+// Referenced:
+// https://github.com/redhat-developer/vscode-microprofile/blob/master/src/languageServer/javaServerStarter.ts
+
+export function prepareExecutable(jarName: string, requirements: RequirementsData): Executable {
   const executable: Executable = Object.create(null);
   const options: ExecutableOptions = Object.create(null);
   options.env = process.env;
   executable.options = options;
   executable.command = path.resolve(requirements.tooling_jre + '/bin/java');
-  executable.args = prepareParams(microprofileJavaExtensions);
+  executable.args = prepareParams(jarName);
   return executable;
 }
 
-function prepareParams(microprofileJavaExtensions: string[]): string[] {
+function prepareParams(jarName: string): string[] {
   const params: string[] = [];
-  if (DEBUG) {
-    if (process.env.SUSPEND_SERVER === 'true') {
-      params.push(`-agentlib:jdwp=transport=dt_socket,server=y,address=${DEBUG_PORT}`);
-    } else {
-      params.push(`-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${DEBUG_PORT},quiet=y`);
-    }
-  }
 
-  const vmargs = workspace.getConfiguration("microprofile.tools").get("server.vmargs", '');
-  if (os.platform() === 'win32') {
-    const watchParentProcess = '-DwatchParentProcess=';
-    if (vmargs.indexOf(watchParentProcess) < 0) {
-      params.push(watchParentProcess + 'false');
-    }
-  }
-  // Disable logging unless the user specifically sets it to a different value.
-  // Logging can cause issues, since sometimes it writes to standard out.
-  // See https://github.com/redhat-developer/vscode-java/issues/2577.
-  if (vmargs.indexOf("-Xlog:") < 0) {
-    params.push("-Xlog:disable");
-  }
-  parseVMargs(params, vmargs);
-  const serverHome: string = path.resolve(__dirname, '../server');
-  const microprofileServerFound: Array<string> = glob.sync(`**/${MICROPROFILE_SERVER_NAME}`, { cwd: serverHome });
-  if (microprofileServerFound.length) {
-    let mpJavaExtensionsClasspath = '';
-    if (microprofileJavaExtensions.length > 0) {
-      const classpathSeperator = os.platform() === 'win32' ? ';' : ':';
-      mpJavaExtensionsClasspath = classpathSeperator + microprofileJavaExtensions.join(classpathSeperator);
-    }
+    // TODO: debug doesn't work yet
+//   if (DEBUG) {
+//     if (process.env.SUSPEND_SERVER === 'true') {
+//       params.push(`-agentlib:jdwp=transport=dt_socket,server=y,address=${DEBUG_PORT}`);
+//     } else {
+//       params.push(`-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${DEBUG_PORT},quiet=y`);
+//     }
+//   }
 
-    params.push('-cp');
-    params.push(`${serverHome}/*` + mpJavaExtensionsClasspath);
-    params.push(MICROPROFILE_SERVER_MAIN_CLASS);
-  } else {
-    throw new Error('Unable to find required Language Server JARs');
-  }
+  const jarHome = path.resolve(__dirname, "../jars");
+  params.push('-jar');
+  params.push(path.join(jarHome, jarName));
+
   return params;
 }
 
@@ -73,24 +68,4 @@ function hasDebugFlag(args: string[]): boolean {
 function startedInDebugMode(): boolean {
   const args: string[] = process.execArgv;
   return hasDebugFlag(args);
-}
-
-// exported for tests
-export function parseVMargs(params: string[], vmargsLine: string): void {
-  if (!vmargsLine) {
-    return;
-  }
-  const vmargs = vmargsLine.match(/(?:[^\s"]+|"[^"]*")+/g);
-  if (vmargs === null) {
-    return;
-  }
-  vmargs.forEach(arg => {
-    // remove all standalone double quotes
-    arg = arg.replace(/(\\)?"/g, ($0, $1) => { return ($1 ? $0 : ''); });
-    // unescape all escaped double quotes
-    arg = arg.replace(/(\\)"/g, '"');
-    if (params.indexOf(arg) < 0) {
-      params.push(arg);
-    }
-  });
 }
