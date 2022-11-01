@@ -48,6 +48,9 @@
 		"redhat.vscode-xml"
 	],
 	"contributes": {
+		"javaExtensions": [
+			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.0.1-SNAPSHOT.jar"
+		],
 		"xml.javaExtensions": [
 			"./jars/liberty-langserver-lemminx-1.0-SNAPSHOT-jar-with-dependencies.jar"
 		],
