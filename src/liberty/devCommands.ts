@@ -308,9 +308,10 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
             // prompt for custom command
             const customCommand: string | undefined = await vscode.window.showInputBox(Object.assign({
                 validateInput: (value: string) => {
-                    if (value && !value.startsWith("-")) {
-                        return localize("params.must.start.with.dash");
-                    }
+                    // TODO: improve error check, or fix whitespace, #157, #162
+                    // if (value && !value.startsWith("-")) {
+                    //     return localize("params.must.start.with.dash");
+                    // }
                     return null;
                 },
             },
