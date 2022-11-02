@@ -287,11 +287,11 @@
                    vscode.window.showErrorMessage(localize("liberty.dev.attach.debugger.failed.with.error", err.message));
                });        
            } else {
-               const message = localize("liberty.dev.attach.debugger.failed",libProject.getLabel());
+               const message = localize("liberty.dev.attach.debugger.failed.no.port.in.server.env", file);
                vscode.window.showErrorMessage(message);
            }
         } else {
-            const message = localize("liberty.dev.attach.debugger.failed",libProject.getLabel());
+            const message = localize("liberty.dev.attach.debugger.failed");
             vscode.window.showErrorMessage(message);
         }
 

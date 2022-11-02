@@ -152,7 +152,7 @@
 				{
 					"command": "liberty.dev.debug",
 					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
-					"group": "libertyCore@1"
+					"group": "libertyCore@3"
 				},
 				{
 					"command": "liberty.dev.stop",
