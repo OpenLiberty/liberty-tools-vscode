@@ -270,15 +270,17 @@
                 if ((match = LIBERTY_SERVER_ENV_PORT_REGEX.exec(line)) !== null) {
                     port = match[1];
                 }
-            }
-           
-           if (port !== "") {              
-               vscode.debug.startDebugging(undefined, {
+            }  
+           if (port !== "") {   
+               const path = Path.dirname(libProject.getPath()); 
+               const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(libProject.getPath()));       
+               vscode.debug.startDebugging(workspaceFolder, {
                    "type": "java",
                    "name": localize("liberty.dev.debug.label", Path.dirname(libProject.getPath())),
                    "request": "attach",
                    "hostName": "localhost",
-                   "port": port
+                   "port": port,
+                   "cwd": path
                }).then(() => {
                    // do not show any message
                }, err => {
