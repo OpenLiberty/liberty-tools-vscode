@@ -375,9 +375,9 @@
              // prompt for custom command
              const customCommand: string | undefined = await vscode.window.showInputBox(Object.assign({
                  validateInput: (value: string) => {
-                     if (value && !value.startsWith("-")) {
-                         return localize("params.must.start.with.dash");
-                     }
+                    //  if (value && !value.startsWith("-")) {
+                    //      return localize("params.must.start.with.dash");
+                    //  }
                      return null;
                  },
              },
