@@ -45,7 +45,8 @@
 	"main": "./dist/extension",
 	"extensionDependencies": [
 		"redhat.vscode-microprofile",
-		"redhat.vscode-xml"
+		"redhat.vscode-xml",
+		"vscjava.vscode-java-debug"
 	],
 	"contributes": {
 		"xml.javaExtensions": [
