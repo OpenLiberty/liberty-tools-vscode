@@ -444,7 +444,7 @@ export class LibertyProject extends vscode.TreeItem {
 		this.terminal = terminal;
 	}
 
-	public createTerminal(): vscode.Terminal | undefined {
+	public createTerminal(projectHome: string): vscode.Terminal | undefined {
 		if (this.terminal === undefined) {
 			// configure terminal to use java.home if liberty.terminal.useJavaHome is true
 			const useJavaHome: any = util.getConfiguration("terminal.useJavaHome");
@@ -455,7 +455,7 @@ export class LibertyProject extends vscode.TreeItem {
 					env = { JAVA_HOME: javaHome };
 				}
 			}
-			const terminal = vscode.window.createTerminal({ name: this.label + " (liberty dev)", env });
+			const terminal = vscode.window.createTerminal({cwd: projectHome, name: this.label + " (liberty dev)", env:env });
 			return terminal;
 		}
 		return undefined;
