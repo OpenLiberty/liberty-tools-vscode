@@ -272,7 +272,7 @@
                     port = match[1];
                 }
             }
-           if (port !== "") {              
+           if (port !== "") {
                const path = Path.dirname(libProject.getPath()); 
                const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(libProject.getPath()));       
                vscode.debug.startDebugging(workspaceFolder, {
