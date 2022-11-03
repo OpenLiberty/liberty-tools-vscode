@@ -2,6 +2,7 @@
     "views.explorer.name": "Liberty Dashboard",
     "commands.title.refresh": "Refresh projects",
     "commands.title.start": "Start",
+    "commands.title.debug": "Attach debugger",
     "commands.title.stop": "Stop",
     "commands.title.start.custom": "Start...",
     "commands.title.start.in.container": "Start in container",

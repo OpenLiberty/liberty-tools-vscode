@@ -108,6 +108,9 @@ function registerCommands(context: ExtensionContext) {
         vscode.commands.registerCommand("liberty.dev.start", (libProject?: LibertyProject) => devCommands.startDevMode(libProject)),
     );
     context.subscriptions.push(
+        vscode.commands.registerCommand("liberty.dev.debug", (libProject?: LibertyProject) => devCommands.attachDebugger(libProject)),
+    );
+    context.subscriptions.push(
         vscode.commands.registerCommand("liberty.dev.stop", (libProject?: LibertyProject) => devCommands.stopDevMode(libProject)),
     );
     context.subscriptions.push(

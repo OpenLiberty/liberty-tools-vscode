@@ -45,12 +45,10 @@
 	"main": "./dist/extension",
 	"extensionDependencies": [
 		"redhat.vscode-microprofile",
-		"redhat.vscode-xml"
+		"redhat.vscode-xml",
+		"vscjava.vscode-java-debug"
 	],
 	"contributes": {
-		"javaExtensions": [
-			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.0.1-SNAPSHOT.jar"
-		],
 		"xml.javaExtensions": [
 			"./jars/liberty-langserver-lemminx-1.0-SNAPSHOT-jar-with-dependencies.jar"
 		],
@@ -74,6 +72,11 @@
 				"command": "liberty.dev.start",
 				"category": "Liberty",
 				"title": "%commands.title.start%"
+			},
+			{
+				"command": "liberty.dev.debug",
+				"category": "Liberty",
+				"title": "%commands.title.debug%"
 			},
 			{
 				"command": "liberty.dev.add.project",
@@ -146,6 +149,11 @@
 					"command": "liberty.dev.start",
 					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
 					"group": "libertyCore@1"
+				},
+				{
+					"command": "liberty.dev.debug",
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+					"group": "libertyCore@3"
 				},
 				{
 					"command": "liberty.dev.stop",
