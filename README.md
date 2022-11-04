@@ -1,9 +1,9 @@
-# Liberty Tools for VS Code
+# Liberty Tools for Visual Studio Code
 
 [![Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/Open-Liberty.liberty-dev-vscode-ext?style=for-the-badge&label=VS%20Market "Current Release")](https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext)
 [![License](https://img.shields.io/github/license/OpenLiberty/liberty-tools-vscode?style=for-the-badge&logo=eclipse)](https://www.eclipse.org/legal/epl-2.0/)
 
-A VS Code extension for Open Liberty. The extension will detect your Liberty Maven or Liberty Gradle project if it detects the `io.openliberty.tools:liberty-maven-plugin` in the `pom.xml` or `io.openliberty.tools:liberty-gradle-plugin` in the `build.gradle`. Through the Liberty Dashboard, you can start, stop, or interact with Liberty dev mode on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace.
+A Visual Studio Code extension for Open Liberty. The extension will detect your Liberty Maven or Liberty Gradle project if it detects the `io.openliberty.tools:liberty-maven-plugin` in the `pom.xml` or `io.openliberty.tools:liberty-gradle-plugin` in the `build.gradle`. Through the Liberty Dashboard, you can start, stop, or interact with Liberty dev mode on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace.
 
 ![Liberty Tools Extension](images/open-liberty-tools.png)
 
@@ -21,7 +21,7 @@ A VS Code extension for Open Liberty. The extension will detect your Liberty Mav
 - Run tests
 - View unit and integration test reports
 
-Liberty Tools for VS Code consumes the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) providing language server features for Liberty server configuration files:
+Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) providing language server features for Liberty server configuration files:
 - server.env
 - bootstrap.properties
 - server.xml
@@ -80,13 +80,13 @@ To build the extension locally:
    Alternatively, build a `.vsix` file:
 
    - `vsce package` to generate the `liberty-tools-vscode-xxx.vsix` file
-   - Install the extension to VS Code by `View/Command Palette`
+   - Install the extension to Visual Studio Code by `View/Command Palette`
    - Select `Extensions: Install from VSIX...` and choose the generated `liberty-tools-vscode-xxx.vsix` file
 
 ### Localization
 
 #### package.json
-This follows vscode extension standard: add localized strings in `package.nls.{locale}.json`.
+This follows Visual Studio Code extension standard: add localized strings in `package.nls.{locale}.json`.
 The default nls message file is `package.nls.json`.
 
 #### Source code
