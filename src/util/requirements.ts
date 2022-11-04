@@ -25,6 +25,7 @@ import { Uri, workspace } from 'vscode';
 const expandHomeDir = require('expand-home-dir');
 import * as findJavaHome from 'find-java-home';
 import { JavaExtensionAPI } from '../extension';
+import { localize } from './i18nUtil';
 const isWindows = process.platform.indexOf('win') === 0;
 const JAVA_FILENAME = 'java' + (isWindows?'.exe': '');
 
@@ -64,30 +65,30 @@ function checkJavaRuntime(): Promise<string> {
         let javaHome: string|undefined = readJavaHomeConfig();
 
         if (javaHome) {
-            source = 'The java.home variable defined in VS Code settings';
+            source = localize("check.java.runtime.vscode.java.home");
         } else {
             javaHome = process.env['JDK_HOME'];
             if (javaHome) {
-                source = 'The JDK_HOME environment variable';
+                source = localize("check.java.runtime.env.jdk.home");
             } else {
                 javaHome = process.env['JAVA_HOME'];
-                source = 'The JAVA_HOME environment variable';
+                source = localize("check.java.runtime.env.java.home");
             }
         }
 
         if (javaHome) {
             javaHome = expandHomeDir(javaHome);
             if (!fs.existsSync(javaHome!)) {
-                openJDKDownload(reject, source+' points to a missing folder');
+                openJDKDownload(reject, source + localize("open.jdk.download.part.missing.folder"));
             } else if (!fs.existsSync(path.resolve(javaHome as string, 'bin', JAVA_FILENAME))) {
-                openJDKDownload(reject, source+ ' does not point to a Java runtime.');
+                openJDKDownload(reject, source + localize("open.jdk.download.part.no.runtime"));
             }
             return resolve(javaHome!);
         }
         // No settings, let's try to detect as last resort.
         findJavaHome({ allowJre: true }, (err: any, home: any) => {
             if (err) {
-                openJDKDownload(reject, 'Java runtime could not be located.');
+                openJDKDownload(reject, localize("check.java.runtime.failed.locate"));
             }
             else {
                 resolve(home);
@@ -107,7 +108,7 @@ function checkJavaVersion(javaHome: string): Promise<number> {
         cp.execFile(javaHome + '/bin/java', ['-version'], {}, (error, stdout, stderr) => {
             const javaVersion = parseMajorVersion(stderr);
             if (javaVersion < 17) {
-                openJDKDownload(reject, `Java 17 or more recent is required to run 'Liberty Tools for VS Code'. Please download and install a recent JDK.`);
+                openJDKDownload(reject, localize("check.java.runtime.version.outdated"));
             } else {
                 resolve(javaVersion);
             }
@@ -144,7 +145,7 @@ function openJDKDownload(reject: any, cause: string) {
     }
     reject({
         message: cause,
-        label: 'Get the Java Development Kit',
+        label: localize("open.jdk.download.label"),
         openUrl: Uri.parse(jdkUrl),
         replaceClose: false
     });

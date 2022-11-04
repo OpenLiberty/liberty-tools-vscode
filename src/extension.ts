@@ -187,7 +187,7 @@ function startupLibertyLanguageServer(context: ExtensionContext, api: JavaExtens
         const serverOptions = prepareExecutable(LIBERTY_LS_JAR, requirements)
 
         console.log("Creating new language client for Liberty Language Server");
-        libertyClient = new LanguageClient(LIBERTY_CLIENT_ID, "Language Support for Liberty", serverOptions, clientOptions);
+        libertyClient = new LanguageClient(LIBERTY_CLIENT_ID, localize("liberty.ls.output.dropdown"), serverOptions, clientOptions);
         
         const disposable = libertyClient.start();
         context.subscriptions.push(disposable);
@@ -210,8 +210,8 @@ function startupJakartaLangServer(context: ExtensionContext, api: JavaExtensionA
         };
         const serverOptions = prepareExecutable(JAKARTA_LS_JAR, requirements);
 
-        console.log("Creating new language client for Jakarta Language Server")
-        jakartaClient = new LanguageClient(JAKARTA_CLIENT_ID, "Language Support for Jakarta", serverOptions, clientOptions);
+        console.log("Creating new language client for Jakarta EE Language Server")
+        jakartaClient = new LanguageClient(JAKARTA_CLIENT_ID, localize("jakarta.ls.output.dropdown"), serverOptions, clientOptions);
     
         context.subscriptions.push(jakartaClient.start());
         return jakartaClient.onReady();
