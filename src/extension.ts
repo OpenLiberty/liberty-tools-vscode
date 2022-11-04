@@ -190,8 +190,8 @@ function startupLibertyLanguageServer(context: ExtensionContext) {
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
         // Filter to files within `src/main/liberty/config` or `usr/servers`
-        documentSelector: [{ scheme: "file", pattern: "**/src/main/liberty/config/**" }, 
-                            { scheme: "file", pattern: "**/usr/servers/**"}],
+        documentSelector: [{ scheme: "file", 
+                             pattern: "**/{src/main/liberty/config,usr/servers}/{bootstrap.properties,server.env}" }],
         synchronize: {
             configurationSection: SUPPORTED_LANGUAGE_IDS,
             fileEvents: [
