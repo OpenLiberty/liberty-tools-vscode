@@ -79,7 +79,8 @@
          console.log(localize("starting.liberty.dev.on",libProject.getLabel()));
          let terminal = libProject.getTerminal();
          if (terminal === undefined) {
-             terminal = libProject.createTerminal();
+             const path = Path.dirname(libProject.getPath());
+             terminal = libProject.createTerminal(path);
              if (terminal !== undefined) {
                  terminals[Number(terminal.processId)] = libProject;
              }
@@ -270,8 +271,8 @@
                 if ((match = LIBERTY_SERVER_ENV_PORT_REGEX.exec(line)) !== null) {
                     port = match[1];
                 }
-            }  
-           if (port !== "") {   
+            }
+           if (port !== "") {
                const path = Path.dirname(libProject.getPath()); 
                const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(libProject.getPath()));       
                vscode.debug.startDebugging(workspaceFolder, {
@@ -356,7 +357,8 @@
      if (libProject !== undefined) {
          let terminal = libProject.getTerminal();
          if (terminal === undefined) {
-             terminal = libProject.createTerminal();
+             const path = Path.dirname(libProject.getPath());
+             terminal = libProject.createTerminal(path);
              if (terminal !== undefined) {
                  terminals[Number(terminal.processId)] = libProject;
              }
@@ -366,12 +368,16 @@
              libProject.setTerminal(terminal);
  
              let placeHolderStr = "";
+             let promptString = localize("specify.custom.parms.maven");
              if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                  placeHolderStr = "e.g. -DhotTests=true";
              } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
                  placeHolderStr = "e.g. --hotTests";
+                 promptString = localize("specify.custom.parms.gradle");
              }
  
+             
+             
              // prompt for custom command
              const customCommand: string | undefined = await vscode.window.showInputBox(Object.assign({
                  validateInput: (value: string) => {
@@ -383,7 +389,7 @@
              },
                  {
                      placeHolder: placeHolderStr,
-                     prompt: localize("specify.custom.parms"),
+                     prompt: promptString,
                      ignoreFocusOut: true,
                      value: _customParameters
                  },
@@ -422,7 +428,8 @@
      if (libProject !== undefined) {
          let terminal = libProject.getTerminal();
          if (terminal === undefined) {
-             terminal = libProject.createTerminal();
+             const path = Path.dirname(libProject.getPath());
+             terminal = libProject.createTerminal(path);
              if (terminal !== undefined) {
                  terminals[Number(terminal.processId)] = libProject;
              }
