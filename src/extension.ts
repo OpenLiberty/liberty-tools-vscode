@@ -210,7 +210,7 @@ function startupJakartaLangServer(context: ExtensionContext, api: JavaExtensionA
         };
         const serverOptions = prepareExecutable(JAKARTA_LS_JAR, requirements);
 
-        console.log("Creating new language client for Jakarta EE Language Server")
+        console.log("Creating new language client for Language Server for Jakarta EE")
         jakartaClient = new LanguageClient(JAKARTA_CLIENT_ID, localize("jakarta.ls.output.dropdown"), serverOptions, clientOptions);
     
         context.subscriptions.push(jakartaClient.start());
