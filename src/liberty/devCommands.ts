@@ -323,7 +323,7 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
             // show history
             // first item is the default custom command with no params
             const items: LibertyProjectQuickPickItem[] = [];
-            const qpItem = new LibertyProjectQuickPickItem(" ",
+            const qpItem = new LibertyProjectQuickPickItem("",
                 history[0].path, libProject);
             items.push(qpItem);
 
@@ -381,9 +381,9 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
             // prompt for custom command
             const customCommand: string | undefined = await vscode.window.showInputBox(Object.assign({
                 validateInput: (value: string) => {
-                    //  if (value && !value.startsWith("-")) {
-                    //      return localize("params.must.start.with.dash");
-                    //  }
+                    if (value && !value.startsWith("-")) {
+                        return localize("params.must.start.with.dash");
+                    }
                     return null;
                 },
             },
