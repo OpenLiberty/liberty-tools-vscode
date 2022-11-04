@@ -1,0 +1,30 @@
+name: Build VSCode extension
+
+on:
+  push:
+    branches: '**'
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Liberty Tools for VSCode
+        run: |
+            npm install
+            npm install -g vsce
+            npm run build
+            npm run compile
+            vsce package
+      - uses: actions/upload-artifact@v3
+        with:
+          name: liberty-tools-vscode-extension
+          path: ./**/*.vsix
+          if-no-files-found: warn
+          retention-days: 7
