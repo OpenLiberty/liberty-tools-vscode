@@ -24,7 +24,7 @@ jobs:
             vsce package
       - uses: actions/upload-artifact@v3
         with:
-          name: liberty-tools-vscode-extension
+          name: liberty-tools-vscode-${{ github.sha }}
           path: ./**/*.vsix
           if-no-files-found: warn
           retention-days: 7
