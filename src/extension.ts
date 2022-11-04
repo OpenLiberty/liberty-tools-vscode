@@ -28,7 +28,7 @@ let jakartaClient: LanguageClient;
 
 export type JavaExtensionAPI = any;
 
-const SUPPORTED_LANGUAGE_IDS = ["properties", "plaintext"];
+const SUPPORTED_LANGUAGE_IDS = ["java-properties", "properties", "plaintext"];
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 
     /**
@@ -189,9 +189,11 @@ function startupLibertyLanguageServer(context: ExtensionContext) {
 
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
-        documentSelector: SUPPORTED_LANGUAGE_IDS,
+        // Filter to files within `src/main/liberty/config` or `usr/servers`
+        documentSelector: [{ scheme: "file", pattern: "**/src/main/liberty/config/**" }, 
+                            { scheme: "file", pattern: "**/usr/servers/**"}],
         synchronize: {
-            configurationSection: ["properties", "plaintext"],
+            configurationSection: SUPPORTED_LANGUAGE_IDS,
             fileEvents: [
                 workspace.createFileSystemWatcher("**/bootstrap.properties"),
                 workspace.createFileSystemWatcher("**/server.env")
