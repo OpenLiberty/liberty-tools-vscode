@@ -1,4 +1,4 @@
-# Contributing to Liberty Dev Extension for VS Code
+# Contributing to Liberty Dev Extension for Visual Studio Code
 
 We welcome contributions, and request you follow these guidelines.
 
