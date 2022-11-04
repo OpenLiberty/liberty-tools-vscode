@@ -22,7 +22,9 @@ jobs:
             npm run build
             npm run compile
             vsce package
-      - uses: actions/upload-artifact@v3
+      - name: Archive artifacts
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v3        
         with:
           name: liberty-tools-vscode-${{ github.sha }}
           path: ./**/*.vsix
