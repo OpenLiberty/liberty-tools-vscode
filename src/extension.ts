@@ -174,6 +174,7 @@ function startupLibertyLanguageServer(context: ExtensionContext, api: JavaExtens
 
         // Options to control the language client
         const clientOptions: LanguageClientOptions = {
+            // Filter to `bootstrap.properties` and `server.env` files within `src/main/liberty/config` or `usr/servers`
             documentSelector: [{ scheme: "file", 
                                 pattern: "**/{src/main/liberty/config,usr/servers}/{bootstrap.properties,server.env}" }],
             synchronize: {
