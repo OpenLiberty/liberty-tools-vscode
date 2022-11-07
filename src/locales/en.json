@@ -1,11 +1,13 @@
 {
     "liberty.ls": "Liberty LS",
+    "liberty.ls.output.dropdown": "Language Support for Liberty",
     "liberty.ls.thumbs.up": "Liberty LS $(thumbsup)",
     "liberty.ls.thumbs.down": "Liberty LS $(thumbsdown)",
     "liberty.ls.starting": "Language Server for Liberty is starting...",
     "liberty.ls.started": "Language Server for Liberty started",
     "liberty.ls.failstart": "Language Server for Liberty failed to start",
     "jakarta.ls": "LSP4Jakarta",
+    "jakarta.ls.output.dropdown": "Language Support for Jakarta EE",
     "jakarta.ls.thumbs.up": "LSP4Jakarta $(thumbsup)",
     "jakarta.ls.started": "Language Server for Jakarta started",
     "no.liberty.projects.found": "No liberty projects found.",
@@ -46,5 +48,13 @@
     "liberty.dev.attach.debugger.failed": "The Liberty server may not have been started. Please start the Liberty server using the 'Start' or 'Start...' command in the Liberty dashboard.  If you have started the Liberty server, please wait until you see the dev mode start up message and try attaching the debugger again.",
     "liberty.dev.attach.debugger.failed.with.error": "Failed to attach debugger to selected project.  The error is: {0}",
     "liberty.dev.debug.label": "Debug {0}",
-    "liberty.dev.attach.debugger.failed.no.port.in.server.env": "Failed to detect remote debug port in {0}."
+    "liberty.dev.attach.debugger.failed.no.port.in.server.env": "Failed to detect remote debug port in {0}.",
+    "check.java.runtime.version.outdated": "Java 17 or more recent is required to run 'Liberty Tools for VS Code'. Please download and install a recent JDK.",
+    "check.java.runtime.vscode.java.home": "The java.home variable defined in VS Code settings",
+    "check.java.runtime.env.jdk.home": "The JDK_HOME environment variable",
+    "check.java.runtime.env.java.home": "The JAVA_HOME environment variable",
+    "open.jdk.download.part.missing.folder": " points to a missing folder",
+    "open.jdk.download.part.no.runtime": " does not point to a Java runtime.",
+    "open.jdk.download.label": "Get the Java Development Kit",
+    "check.java.runtime.failed.locate": "Java runtime could not be located."
 }
