@@ -60,6 +60,7 @@
 				{
 					"id": "liberty-dev",
 					"category": "Liberty",
+					"icon": "images/ol_logo2.png",
 					"name": "%views.explorer.name%"
 				}
 			]
