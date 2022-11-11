@@ -14,10 +14,14 @@ import * as gradleUtil from "../util/gradleUtil";
 import * as mavenUtil from "../util/mavenUtil";
 import * as util from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
-import { LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT } from "../definitions/constants";
+import { LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER } from "../definitions/constants";
 import { BuildFileImpl, GradleBuildFile } from "../util/buildFile";
 import { DashboardData } from "./dashboard";
 import { BaseLibertyProject } from "./baseLibertyProject";
+
+const MAVEN_ICON = "M.png";
+const GRADLE_ICON = "G.png";
+const OL_LOGO_ICON = "ol_logo.png";
 
 export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> {
 	public readonly onDidChangeTreeData: vscode.Event<LibertyProject | undefined>;
@@ -408,9 +412,12 @@ export class LibertyProject extends vscode.TreeItem {
 		super(label, collapsibleState);
 	}
 
+	private EXPLORER_ICON = (LIBERTY_MAVEN_PROJECT === this.contextValue || LIBERTY_MAVEN_PROJECT_CONTAINER === this.contextValue) ? MAVEN_ICON : 
+							(LIBERTY_GRADLE_PROJECT === this.contextValue || LIBERTY_GRADLE_PROJECT_CONTAINER === this.contextValue) ? GRADLE_ICON : OL_LOGO_ICON;
+
 	iconPath = {
-		light: vscodePath.join(this._context.extensionPath, "images", "ol_logo.png"),
-		dark: vscodePath.join(this._context.extensionPath, "images", "ol_logo.png")
+		light: vscodePath.join(this._context.extensionPath, "images", this.EXPLORER_ICON),
+		dark: vscodePath.join(this._context.extensionPath, "images", this.EXPLORER_ICON)
 	};
 
 	public getLabel(): string {
