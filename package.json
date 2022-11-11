@@ -66,6 +66,11 @@
 		},
 		"commands": [
 			{
+				"command": "liberty.dev.show.commands",
+				"category": "Liberty",
+				"title": "%commands.title.show.commands%"
+			},
+			{
 				"command": "liberty.explorer.refresh",
 				"title": "%commands.title.refresh%",
 				"category": "Liberty",
@@ -206,6 +211,15 @@
 						"scope": "window"
 					}
 				}
+			}
+		],
+		"keybindings": [
+			{
+				"mac": "shift+alt+l",
+                "win": "shift+alt+l",
+                "linux": "shift+alt+l",
+                "key": "shift+alt+l",
+				"command": "liberty.dev.show.commands"
 			}
 		]
 	},

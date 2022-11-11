@@ -16,7 +16,7 @@ import { localize } from "../util/i18nUtil";
 import { QuickPickItem } from "vscode";
 import { LibertyProject, ProjectProvider } from "./libertyProject";
 import { getReport, filterProjects } from "../util/helperUtil";
-import { LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_SERVER_ENV_PORT_REGEX } from "../definitions/constants";
+import { COMMAND_TITLES, LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_SERVER_ENV_PORT_REGEX } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { pathExists } from "fs-extra";
 import { DashboardData } from "./dashboard";
@@ -72,6 +72,26 @@ function showProjects(command: string, callback: Function, reportType?: string):
 export async function openProject(pomPath: string): Promise<void> {
     vscode.commands.executeCommand("vscode.open", vscode.Uri.file(pomPath));
 }
+
+// List all liberty dev commands, triggerred by hotkey only (Shift+Cmd+L)
+export async function listAllCommands(): Promise<void> {
+    const libertyCommands = Array.from(COMMAND_TITLES.keys());
+    vscode.window.showQuickPick(libertyCommands).then(selection => {
+            if (!selection) {
+                return;
+            }
+            const command = COMMAND_TITLES.get(selection);
+            if ( command !== undefined )
+            {
+                vscode.commands.executeCommand(command);
+            } else {
+                // should never happen
+                console.error("Unable to find corresponding command for " + selection);
+            }
+                
+    });
+}
+
 
 // start dev mode
 export async function startDevMode(libProject?: LibertyProject | undefined): Promise<void> {

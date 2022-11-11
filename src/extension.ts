@@ -10,10 +10,9 @@
 import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
 import * as lsp4jakartaLS from "./definitions/lsp4jakartaLSRequestNames";
-import * as path from "path";
 
 import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
-import { LanguageClient, LanguageClientOptions, Executable, ServerOptions } from "vscode-languageclient";
+import { LanguageClient, LanguageClientOptions } from "vscode-languageclient";
 import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor } from "vscode";
 import { JAVA_EXTENSION_ID, waitForStandardMode } from "./util/javaServerMode";
 import { localize } from "./util/i18nUtil";
@@ -105,6 +104,9 @@ function registerCommands(context: ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand("extension.open.project", (pomPath) => devCommands.openProject(pomPath)),
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand("liberty.dev.show.commands", () => devCommands.listAllCommands()),
     );
     context.subscriptions.push(
         vscode.commands.registerCommand("liberty.dev.start", (libProject?: LibertyProject) => devCommands.startDevMode(libProject)),

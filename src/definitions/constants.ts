@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
+import { localize } from "../util/i18nUtil";
 export const LIBERTY_MAVEN_PROJECT = "libertyMavenProject";
 export const LIBERTY_GRADLE_PROJECT = "libertyGradleProject";
 export const TEST_REPORT_STRING = "Test Summary";
@@ -31,3 +32,22 @@ export const COMMAND_AND_PROJECT_TYPE_MAP: { [command: string]: string[] } = {
     "gradle":[ LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER],
     "liberty.dev.debug": [LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
 };
+
+export const COMMAND_TITLES = new Map();
+COMMAND_TITLES.set(localize("commands.title.refresh"), "liberty.explorer.refresh");
+
+COMMAND_TITLES.set(localize("commands.title.start"), "liberty.dev.start");
+COMMAND_TITLES.set(localize("commands.title.start.custom"), "liberty.dev.custom");
+COMMAND_TITLES.set(localize("commands.title.start.in.container"), "liberty.dev.start.container");
+
+COMMAND_TITLES.set(localize("commands.title.debug"), "liberty.dev.debug");
+
+COMMAND_TITLES.set(localize("commands.title.stop"), "liberty.dev.stop");
+
+COMMAND_TITLES.set(localize("commands.title.add.project"), "liberty.dev.add.project");
+COMMAND_TITLES.set(localize("commands.title.remove.project"), "liberty.dev.remove.project");
+
+COMMAND_TITLES.set(localize("commands.title.run.tests"), "liberty.dev.run.tests");
+COMMAND_TITLES.set(localize("commands.title.view.integration.test.report"), "liberty.dev.open.failsafe.report");
+COMMAND_TITLES.set(localize("commands.title.view.unit.test.report"), "liberty.dev.open.surefire.report");
+COMMAND_TITLES.set(localize("commands.title.view.test.report"), "liberty.dev.open.gradle.test.report");

@@ -11,5 +11,6 @@
     "commands.title.view.unit.test.report": "View unit test report",
     "commands.title.view.test.report": "View test report",
     "commands.title.add.project": "Add Project to Liberty Dashboard",
-    "commands.title.remove.project": "Remove Project from Liberty Dashboard"
+    "commands.title.remove.project": "Remove Project from Liberty Dashboard",
+    "commands.title.show.commands": "Show Liberty commands"
 }
