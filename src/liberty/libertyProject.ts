@@ -412,8 +412,7 @@ export class LibertyProject extends vscode.TreeItem {
 		super(label, collapsibleState);
 	}
 
-	private EXPLORER_ICON = (LIBERTY_MAVEN_PROJECT === this.contextValue || LIBERTY_MAVEN_PROJECT_CONTAINER === this.contextValue) ? MAVEN_ICON : 
-							(LIBERTY_GRADLE_PROJECT === this.contextValue || LIBERTY_GRADLE_PROJECT_CONTAINER === this.contextValue) ? GRADLE_ICON : OL_LOGO_ICON;
+	private EXPLORER_ICON = this.setExplorerIcon();
 
 	iconPath = {
 		light: vscodePath.join(this._context.extensionPath, "images", this.EXPLORER_ICON),
@@ -470,6 +469,16 @@ export class LibertyProject extends vscode.TreeItem {
 
 	public deleteTerminal(): void {
 		delete this.terminal;
+	}
+
+	public setExplorerIcon() {
+		const iconRecord: Record<string, string> = {};
+		iconRecord[LIBERTY_MAVEN_PROJECT] = MAVEN_ICON;
+		iconRecord[LIBERTY_MAVEN_PROJECT_CONTAINER] = MAVEN_ICON;
+		iconRecord[LIBERTY_GRADLE_PROJECT] = GRADLE_ICON;
+		iconRecord[LIBERTY_GRADLE_PROJECT_CONTAINER] = GRADLE_ICON;
+		
+		return (this.contextValue in iconRecord) ? iconRecord[this.contextValue] : OL_LOGO_ICON;
 	}
 }
 
