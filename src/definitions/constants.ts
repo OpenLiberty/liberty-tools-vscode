@@ -44,10 +44,10 @@ COMMAND_TITLES.set(localize("commands.title.debug"), "liberty.dev.debug");
 
 COMMAND_TITLES.set(localize("commands.title.stop"), "liberty.dev.stop");
 
-COMMAND_TITLES.set(localize("commands.title.add.project"), "liberty.dev.add.project");
-COMMAND_TITLES.set(localize("commands.title.remove.project"), "liberty.dev.remove.project");
-
 COMMAND_TITLES.set(localize("commands.title.run.tests"), "liberty.dev.run.tests");
 COMMAND_TITLES.set(localize("commands.title.view.integration.test.report"), "liberty.dev.open.failsafe.report");
 COMMAND_TITLES.set(localize("commands.title.view.unit.test.report"), "liberty.dev.open.surefire.report");
 COMMAND_TITLES.set(localize("commands.title.view.test.report"), "liberty.dev.open.gradle.test.report");
+
+COMMAND_TITLES.set(localize("commands.title.add.project"), "liberty.dev.add.project");
+COMMAND_TITLES.set(localize("commands.title.remove.project"), "liberty.dev.remove.project");
