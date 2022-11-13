@@ -56,5 +56,18 @@
     "open.jdk.download.part.missing.folder": " points to a missing folder",
     "open.jdk.download.part.no.runtime": " does not point to a Java runtime.",
     "open.jdk.download.label": "Get the Java Development Kit",
-    "check.java.runtime.failed.locate": "Java runtime could not be located."
+    "check.java.runtime.failed.locate": "Java runtime could not be located.",
+    "hotkey.commands.title.refresh": "Liberty: Refresh projects",
+    "hotkey.commands.title.start": "Liberty: Start",
+    "hotkey.commands.title.debug": "Liberty: Attach debugger",
+    "hotkey.commands.title.stop": "Liberty: Stop",
+    "hotkey.commands.title.start.custom": "Liberty: Start...",
+    "hotkey.commands.title.start.in.container": "Liberty: Start in container",
+    "hotkey.commands.title.run.tests": "Liberty: Run tests",
+    "hotkey.commands.title.view.integration.test.report": "Liberty: View integration test report",
+    "hotkey.commands.title.view.unit.test.report": "Liberty: View unit test report",
+    "hotkey.commands.title.view.test.report": "Liberty: View test report",
+    "hotkey.commands.title.add.project": "Liberty: Add Project to Liberty Dashboard",
+    "hotkey.commands.title.remove.project": "Liberty: Remove Project from Liberty Dashboard",
+    "hotkey.commands.title.show.commands": "Liberty: Show Liberty commands"
 }
