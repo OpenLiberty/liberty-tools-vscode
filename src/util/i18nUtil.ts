@@ -7,10 +7,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-
+ import * as fs from "fs";
+ 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const nlsConfig = JSON.parse(process.env.VSCODE_NLS_CONFIG!);
 let messages: any = undefined;
+let commandTranslations: any = undefined;
 /**
  * Returns the localized string.
  * 
@@ -21,15 +23,36 @@ let messages: any = undefined;
 export function localize(key: string, ...args: any[]): string {
     if ( messages === undefined ) {
         try {
-          const fileName = nlsConfig["locale"] + ".json";
-            messages = require("../locales/" + fileName);
+            const fileName = "../locales/" + nlsConfig["locale"] + ".json";
+            if (fs.existsSync(fileName)) {
+              messages = require(fileName);
+            } else {
+              messages = require("../locales/en.json");
+            }
           } catch (e) {
             console.error(`Localized messages for language ${nlsConfig["locale"]} does not exist.  Use en.`);
             messages = require("../locales/en.json");
           }
     }
+
+    if ( commandTranslations === undefined ) {
+      try {
+          const fileName = "../../" +  "package.nls." + nlsConfig["locale"] + ".json";
+          if (fs.existsSync(fileName)) {
+            commandTranslations = require(fileName);
+          } else {
+            commandTranslations = require("../../package.nls.json");
+          }
+        } catch (e) {
+          console.error(`Localized messages for language ${nlsConfig["locale"]} does not exist for package.json.  Use en.`);
+          commandTranslations = require("../../package.nls.json");
+        }
+    }
     
     let message = messages[key];
+    if ( message === undefined ) {
+      message = commandTranslations[key];
+    }
     for (let i = 0; i < args.length; i++) {
         message = message.replace(new RegExp("\\{ *" + i + " *\\}", "g"), args[i]);
     }
