@@ -19,8 +19,8 @@ import { BuildFileImpl, GradleBuildFile } from "../util/buildFile";
 import { DashboardData } from "./dashboard";
 import { BaseLibertyProject } from "./baseLibertyProject";
 
-const MAVEN_ICON = "M.png";
-const GRADLE_ICON = "G.png";
+const MAVEN_ICON = "maven-tag.png";
+const GRADLE_ICON = "gradle-tag-1.png";
 const OL_LOGO_ICON = "ol_logo.png";
 
 export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> {
