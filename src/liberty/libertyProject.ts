@@ -14,7 +14,7 @@ import * as gradleUtil from "../util/gradleUtil";
 import * as mavenUtil from "../util/mavenUtil";
 import * as util from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
-import { LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER } from "../definitions/constants";
+import { EXCLUDED_DIR_PATTERN, LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER } from "../definitions/constants";
 import { BuildFileImpl, GradleBuildFile } from "../util/buildFile";
 import { DashboardData } from "./dashboard";
 import { BaseLibertyProject } from "./baseLibertyProject";
@@ -78,6 +78,28 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		}
 		return project;
 	}
+
+	/*
+	 * Scan the specified folder, get a list of paths that contains pom.xml and gradle.build file.  Excludes these folders already
+	 * exists in the given existingProjects map.
+	 */
+	public async getListOfMavenAndGradleFolders(path: string): Promise<string[]>{
+		let uris: string[] = [];
+		const pomPattern = new vscode.RelativePattern(path, "**/pom.xml");
+		const gradelPattern = new vscode.RelativePattern(path, "**/gradel.build");
+		let paths = (await vscode.workspace.findFiles(pomPattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
+		uris = uris.concat(paths);
+		paths = (await vscode.workspace.findFiles(gradelPattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
+		uris = uris.concat(paths);
+		const result: string[] = [];
+		uris.forEach((uri)=> {
+			if ( this.projects.has(uri) === false ) {
+				result.push(vscodePath.dirname(uri));
+			}
+		});
+		return result;
+	}
+
 
 	/**
 	 * Adds the user selected project path to the project map.
@@ -325,7 +347,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 	private async updateProjects(): Promise<void> {
 		// find all build files in the open workspace and find all the ones that are valid for dev-mode
-		const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target}/**";
+		
 		const pomPaths = (await vscode.workspace.findFiles("**/pom.xml", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
 		const gradlePaths = (await vscode.workspace.findFiles("**/build.gradle", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
 		const validPoms: BuildFileImpl[] = await this.findValidPOMs(pomPaths);
