@@ -48,14 +48,19 @@ export interface RequirementsData {
  */
 export async function resolveRequirements(api: JavaExtensionAPI): Promise<RequirementsData> {
 
+    console.log("Resolving requirements...");
+
     // Use the embedded JRE from 'redhat.java' if it exists
-    const requirementsData = api.javaRequirement;
-    if (requirementsData) {
-        return Promise.resolve(requirementsData);
-    }
+    // const requirementsData = api.javaRequirement;
+    // if (requirementsData) {
+    //     console.log("Promise should resolve");
+    //     console.log("requirementsData: " + requirementsData);
+    //     return Promise.resolve(requirementsData);
+    // }
 
     const javaHome = await checkJavaRuntime();
     const javaVersion = await checkJavaVersion(javaHome);
+    console.log("javaHome: " + javaHome + "; javaVersion: " + javaVersion);
     return Promise.resolve({tooling_jre: javaHome, tooling_jre_version: javaVersion, java_home: javaHome, java_version: javaVersion});
 }
 
