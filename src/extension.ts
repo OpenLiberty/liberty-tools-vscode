@@ -197,7 +197,13 @@ function startupLibertyLanguageServer(context: ExtensionContext, api: JavaExtens
         context.subscriptions.push(disposable);
 
         return libertyClient.onReady();
-    })
+    }).catch((error) => {
+        window.showErrorMessage(error.message, error.label).then((selection) => {
+            if (error.label && error.label === selection && error.openUrl) {
+                commands.executeCommand('vscode.open', error.openUrl);
+            }
+        });
+    });
 }
 
 function startupJakartaLangServer(context: ExtensionContext, api: JavaExtensionAPI) {
@@ -219,7 +225,13 @@ function startupJakartaLangServer(context: ExtensionContext, api: JavaExtensionA
     
         context.subscriptions.push(jakartaClient.start());
         return jakartaClient.onReady();
-    })
+    }).catch((error) => {
+        window.showErrorMessage(error.message, error.label).then((selection) => {
+            if (error.label && error.label === selection && error.openUrl) {
+                commands.executeCommand('vscode.open', error.openUrl);
+            }
+        });
+    });
 }
 
 function toggleItem(editor: TextEditor | undefined, item: vscode.StatusBarItem) {
