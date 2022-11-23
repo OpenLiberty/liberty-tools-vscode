@@ -32,12 +32,9 @@ jobs:
       - name: Build Liberty Tools for VSCode
         working-directory: ./liberty-tools-vscode
         run: |
-            npm install
-            npm install -g vsce
-            npm run build
-            npm run buildJakarta
-            npm run compile
-            vsce package
+            openssl version
+            node -v
+            npm -v
       - name: Archive artifacts
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v3        
