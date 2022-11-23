@@ -47,6 +47,13 @@ export interface RequirementsData {
  *
  */
 export async function resolveRequirements(api: JavaExtensionAPI): Promise<RequirementsData> {
+
+    // Use the embedded JRE from 'redhat.java' if it exists
+    const requirementsData = api.javaRequirement;
+    if (requirementsData && api.javaRequirement.tooling_jre_version >= 17) {
+        return Promise.resolve(requirementsData);
+    }
+
     const javaHome = await checkJavaRuntime();
     const javaVersion = await checkJavaVersion(javaHome);
     return Promise.resolve({tooling_jre: javaHome, tooling_jre_version: javaVersion, java_home: javaHome, java_version: javaVersion});
