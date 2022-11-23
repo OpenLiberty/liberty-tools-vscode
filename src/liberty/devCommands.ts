@@ -133,7 +133,7 @@ export async function removeProject(): Promise<void> {
     
     // clicked on the empty space and workspace has more than one folders, or
     // from command palette
-    // Display the list of current cusomer added project for user to select.
+    // Display the list of current user added projects for user to select.
     const items: LibertyProjectQuickPickItem[] = [];
     projectProvider.getUserAddedProjects().forEach(function (item) {
         const qpItem = new LibertyProjectQuickPickItem(item.label,
@@ -189,7 +189,7 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
         // 2. Project has build files (pom.xml or build.gradle)
         // 
         // Once added, presist the data in workspace storage.
-        console.error("porjects " + JSON.stringify(projectProvider.getProjects()));
+        console.error("projects " + JSON.stringify(projectProvider.getProjects()));
         // scan the folder and get a list of folders with pom.xml and build.gradle
         const uris: string[] = await projectProvider.getListOfMavenAndGradleFolders(uri.fsPath);
         console.log(JSON.stringify(uris));

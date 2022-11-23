@@ -80,16 +80,16 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 
 	/*
-	 * Scan the specified folder, get a list of paths that contains pom.xml and gradle.build file.  Excludes these folders already
-	 * exists in the given existingProjects map.
-	 */
+	 * Scan the specified folder, get a list of paths that contain a pom.xml or build.gradle file. Exclude the folders that already
+	 * exist in the ProjectProvider class "projects" map.
+	 * */
 	public async getListOfMavenAndGradleFolders(path: string): Promise<string[]>{
 		let uris: string[] = [];
 		const pomPattern = new vscode.RelativePattern(path, "**/pom.xml");
-		const gradelPattern = new vscode.RelativePattern(path, "**/gradel.build");
+		const gradlePattern = new vscode.RelativePattern(path, "**/gradle.build");
 		let paths = (await vscode.workspace.findFiles(pomPattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
 		uris = uris.concat(paths);
-		paths = (await vscode.workspace.findFiles(gradelPattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
+		paths = (await vscode.workspace.findFiles(gradlePattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
 		uris = uris.concat(paths);
 		const result: string[] = [];
 		uris.forEach((uri)=> {
