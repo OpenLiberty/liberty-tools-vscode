@@ -50,7 +50,7 @@ export async function resolveRequirements(api: JavaExtensionAPI): Promise<Requir
 
     // Use the embedded JRE from 'redhat.java' if it exists
     const requirementsData = api.javaRequirement;
-    if (requirementsData) {
+    if (requirementsData && api.javaRequirement.tooling_jre_version >= 17) {
         return Promise.resolve(requirementsData);
     }
 
