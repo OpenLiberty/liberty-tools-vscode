@@ -128,70 +128,56 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
 }
 
 
-export async function removeProject(uri: vscode.Uri): Promise<void> {
+export async function removeProject(): Promise<void> {
     const projectProvider: ProjectProvider = ProjectProvider.getInstance();
-    if (undefined !== uri && undefined !== uri.fsPath) {
-        // Right mouse clicked on a root folder, or on empty space with only one folder in workspace.
-        // Add project if:
-        // 1. Project has build files (pom.xml or build.gradle)
-        // 2. Not in liberty dashboard
-        // Once added, presist the data in workspace storage.\
-        // check if the path is in current list
-        const file = projectProvider.isPathExistsInPersistedProjects(uri.fsPath);
-        if (undefined !== file) {
+    
+    // clicked on the empty space and workspace has more than one folders, or
+    // from command palette
+    // Display the list of current user added projects for user to select.
+    const items: LibertyProjectQuickPickItem[] = [];
+    projectProvider.getUserAddedProjects().forEach(function (item) {
+        const qpItem = new LibertyProjectQuickPickItem(item.label,
+            item.path);
+        items.push(qpItem);
+    });
+    if (items.length === 0) {
+        const message = localize("remove.custom.project.empty.list");
+        console.error(message);
+        vscode.window.showInformationMessage(message);
+    } else {
+        vscode.window.showQuickPick(items).then(selection => {
+            if (!selection) {
+                return;
+            }
             const yes = localize("confirmation.button.label.yes");
             const no = localize("confirmation.button.label.no");
             vscode.window
-                .showInformationMessage(localize("remove.custom.project.confirmation", uri.fsPath), yes, no)
+                .showInformationMessage(localize("remove.custom.project.confirmation", Path.dirname(selection.detail)), yes, no)
                 .then(answer => {
                     if (answer === yes) {
                         // delete and save
-                        projectProvider.removeInPersistedProjects(file);
+                        projectProvider.removeInPersistedProjects(selection.detail);
                         vscode.window
                             .showInformationMessage(localize("remove.custom.project.successful"));
                         projectProvider.fireChangeEvent();
                     }
                 });
-        } else {
-            const message = localize("remove.custom.project.not.in.list");
-            console.error(message);
-            vscode.window.showInformationMessage(message);
-        }
-    } else {
-        // clicked on the empty space and workspace has more than one folders, or
-        // from command palette
-        // Display the list of current cusomer added project for user to select.
-        const items: LibertyProjectQuickPickItem[] = [];
-        projectProvider.getUserAddedProjects().forEach(function (item) {
-            const qpItem = new LibertyProjectQuickPickItem(item.label,
-                item.path);
-            items.push(qpItem);
         });
-        if (items.length === 0) {
-            const message = localize("remove.custom.project.empty.list");
-            console.error(message);
-            vscode.window.showInformationMessage(message);
-        } else {
-            vscode.window.showQuickPick(items).then(selection => {
-                if (!selection) {
-                    return;
-                }
-                const yes = localize("confirmation.button.label.yes");
-                const no = localize("confirmation.button.label.no");
-                vscode.window
-                    .showInformationMessage(localize("remove.custom.project.confirmation", Path.dirname(selection.detail)), yes, no)
-                    .then(answer => {
-                        if (answer === yes) {
-                            // delete and save
-                            projectProvider.removeInPersistedProjects(selection.detail);
-                            vscode.window
-                                .showInformationMessage(localize("remove.custom.project.successful"));
-                            projectProvider.fireChangeEvent();
-                        }
-                    });
-            });
-        }
+        
     }
+}
+
+function showListOfPathsToAdd(uris: string[]) {
+    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    vscode.window.showQuickPick(uris).then(async selection => {
+        if (!selection) {
+            return;
+        }
+        const result = await projectProvider.addUserSelectedPath(selection, projectProvider.getProjects());
+        const message = localize(`add.project.manually.message.${result}`, selection);
+        (result !== 0) ? console.error(message) : console.info(message); projectProvider.fireChangeEvent();
+        vscode.window.showInformationMessage(message);
+    });
 }
 
 export async function addProject(uri: vscode.Uri): Promise<void> {
@@ -203,24 +189,27 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
         // 2. Project has build files (pom.xml or build.gradle)
         // 
         // Once added, presist the data in workspace storage.
-        const result: number = await projectProvider.addUserSelectedPath(uri.fsPath, projectProvider.getProjects());
-        const message = localize(`add.project.manually.message.${result}`, uri.fsPath);
-        (result !== 0) ? console.error(message) : console.info(message); projectProvider.fireChangeEvent();
-        vscode.window.showInformationMessage(message);
+        console.error("projects " + JSON.stringify(projectProvider.getProjects()));
+        // scan the folder and get a list of folders with pom.xml and build.gradle
+        const uris: string[] = await projectProvider.getListOfMavenAndGradleFolders(uri.fsPath);
+        console.log(JSON.stringify(uris));
+        if ( uris.length > 0) {
+            // present the list to add
+            showListOfPathsToAdd(uris);
+        }
+        
 
     } else {
         // clicked on the empty space and workspace has more than one folders, or
         // from command palette
         // Display the list of workspace folders for user to select.
         // The list should not contain any existing projects
-        const uris: string[] = [];
+        let uris: string[] = [];
         const wsFolders = vscode.workspace.workspaceFolders;
         if (wsFolders) {
             for (const folder of wsFolders) {
                 const path = folder.uri.fsPath;
-                if (projectProvider.projectRootPathExists(path, projectProvider.getProjects().keys()) === false) {
-                    uris.push(folder.uri.fsPath);
-                }
+                uris = uris.concat(await projectProvider.getListOfMavenAndGradleFolders(path));
             }
         }
         if (uris.length === 0) {
@@ -230,15 +219,7 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
             vscode.window.showInformationMessage(message);
         } else {
             // present the list
-            vscode.window.showQuickPick(uris).then(async selection => {
-                if (!selection) {
-                    return;
-                }
-                const result = await projectProvider.addUserSelectedPath(selection, projectProvider.getProjects());
-                const message = localize(`add.project.manually.message.${result}`, selection);
-                (result !== 0) ? console.error(message) : console.info(message); projectProvider.fireChangeEvent();
-                vscode.window.showInformationMessage(message);
-            });
+            showListOfPathsToAdd(uris);
         }
     }
 }

@@ -139,7 +139,7 @@ function registerCommands(context: ExtensionContext) {
 		vscode.commands.registerCommand("liberty.dev.add.project", (uri: vscode.Uri) => devCommands.addProject(uri)),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand("liberty.dev.remove.project", (uri: vscode.Uri) => devCommands.removeProject(uri)),
+		vscode.commands.registerCommand("liberty.dev.remove.project", () => devCommands.removeProject()),
 	);
     context.subscriptions.push(
         vscode.window.onDidCloseTerminal((closedTerminal: vscode.Terminal) => {
