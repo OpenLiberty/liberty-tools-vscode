@@ -354,7 +354,7 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
 
 // custom start dev mode command
 export async function customDevMode(libProject?: LibertyProject | undefined, params?: string | undefined): Promise<void> {
-    const _customParameters = (params === undefined) ? "" : params;
+    const _customParameters = (params === undefined) ? "" : params.trim();
     if (libProject !== undefined) {
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
@@ -380,11 +380,11 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
 
 
             // prompt for custom command
-            const customCommand: string | undefined = await vscode.window.showInputBox(Object.assign({
+            let customCommand: string | undefined = await vscode.window.showInputBox(Object.assign({
                 validateInput: (value: string) => {
-                    //  if (value && !value.startsWith("-")) {
-                    //      return localize("params.must.start.with.dash");
-                    //  }
+                    if (value && value.trim().length > 0 && !value.trim().startsWith("-")) {
+                        return localize("params.must.start.with.dash");
+                    }
                     return null;
                 },
             },
@@ -397,11 +397,14 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
             ));
             if (customCommand !== undefined) {
                 // save command
-                const projectStartCmdParam: ProjectStartCmdParam = new ProjectStartCmdParam(libProject.getPath(), customCommand);
-                const projectProvider: ProjectProvider = ProjectProvider.getInstance();
-                const dashboardData: DashboardData = helperUtil.getStorageData(projectProvider.getContext());
-                dashboardData.addStartCmdParams(projectStartCmdParam);
-                await helperUtil.saveStorageData(projectProvider.getContext(), dashboardData);
+                customCommand = customCommand.trim();
+                if ( customCommand.length > 0 ) {
+                    const projectStartCmdParam: ProjectStartCmdParam = new ProjectStartCmdParam(libProject.getPath(), customCommand);
+                    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+                    const dashboardData: DashboardData = helperUtil.getStorageData(projectProvider.getContext());
+                    dashboardData.addStartCmdParams(projectStartCmdParam);
+                    await helperUtil.saveStorageData(projectProvider.getContext(), dashboardData);
+                }
 
                 if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                     const mvnCmdStart = await mvnCmd(libProject.getPath());
