@@ -9,7 +9,6 @@
  */
 import * as fse from "fs-extra";
 import * as path from "path";
-import * as vscode from "vscode";
 import * as semver from "semver";
 import { JSONPath } from "jsonpath-plus";
 import { localize } from "../util/i18nUtil";
@@ -140,9 +139,9 @@ export function findChildGradleProjects(buildFile: any, settingsFile: any): Grad
 /**
  * Given a build.gradle, resolve test report locations
  * @param gradlePath build.gradle file
- * @param workspaceFolder workspace of current project
+ * @param projectRootPath Path of current project
  */
-export async function getGradleTestReport(gradlePath: any, workspaceFolder: string): Promise<string> {
+export async function getGradleTestReport(gradlePath: any, projectRootPath: string): Promise<string> {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const g2js = require("gradle-to-js/lib/parser");
     let testReport = await g2js.parseFile(gradlePath).then(async (buildFile: any) => {
@@ -155,10 +154,10 @@ export async function getGradleTestReport(gradlePath: any, workspaceFolder: stri
         return dest;
     }).catch((err: any) => console.error(localize("unable.to.parse.build.gradle", gradlePath, err)));
     if (testReport === undefined) {
-        testReport = path.join(workspaceFolder, "build", "reports", "tests", "test", "index.html");
+        testReport = path.join(projectRootPath, "build", "reports", "tests", "test", "index.html");
     } else {
         if (!fse.existsSync(testReport)) {
-            testReport = findCustomTestReport(workspaceFolder, testReport);
+            testReport = findCustomTestReport(projectRootPath, testReport);
         }
     }
     return testReport;
@@ -192,9 +191,9 @@ function containerVersion(pluginVersion: string): boolean {
     return false;
 }
 
-async function findCustomTestReport(workspaceFolder: string, testReport: string): Promise<string> {
+async function findCustomTestReport(projectRootPath: string, testReport: string): Promise<string> {
     const testReports: string[] = [];
-    const paths = await getAllPaths(workspaceFolder, "**/index.html");
+    const paths = await getAllPaths(projectRootPath, "**/index.html");
     for (let i = 0; i < paths.length; i++) {
         const report = getReport(paths[i]);
         if (report.includes(TEST_REPORT_STRING)) {
