@@ -15,7 +15,7 @@ import { LibertyProject } from "./../liberty/libertyProject";
 import { COMMAND_AND_PROJECT_TYPE_MAP, LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY } from "../definitions/constants";
 
 
-export async function getAllPaths(workspaceFolder: vscode.WorkspaceFolder, pattern: string): Promise<string[]> {
+export async function getAllPaths(workspaceFolder: string, pattern: string): Promise<string[]> {
 	const fileUris: vscode.Uri[] = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder, pattern), "**/{bin,classes,target}/**");
 	return fileUris.map((uri) => uri.fsPath);
 }
