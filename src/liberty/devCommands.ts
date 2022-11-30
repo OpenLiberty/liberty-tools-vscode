@@ -485,13 +485,13 @@ export async function runTests(libProject?: LibertyProject | undefined): Promise
 // open surefire, failsafe, or gradle test report
 export async function openReport(reportType: string, libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(libProject.getPath()));
-        if (workspaceFolder !== undefined) {
+        const path = Path.dirname(libProject.getPath());
+        if (path !== undefined) {
             let report: any;
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                report = Path.join(workspaceFolder.uri.fsPath, "target", "site", reportType + "-report.html");
+                report = Path.join(path, "target", "site", reportType + "-report.html");
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                report = await getGradleTestReport(libProject.path, workspaceFolder);
+                report = await getGradleTestReport(libProject.path, path);
             }
             let reportTypeLabel = reportType;
             if (reportType === "gradle") {
