@@ -23,7 +23,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
-          cache: 'maven'
       - name: Build Liberty Tools for VSCode
         working-directory: ./liberty-tools-vscode
         run: |
