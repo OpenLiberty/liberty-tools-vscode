@@ -50,7 +50,7 @@ export async function resolveRequirements(api: JavaExtensionAPI): Promise<Requir
 
     // Use the embedded JRE from 'redhat.java' if it exists
     const requirementsData = api.javaRequirement;
-    if (requirementsData && api.javaRequirement.tooling_jre_version >= 17) {
+    if (requirementsData && api.javaRequirement.java_version >= 17 && api.javaRequirement.tooling_jre_version >= 17) {
         return Promise.resolve(requirementsData);
     }
 
@@ -99,8 +99,14 @@ function checkJavaRuntime(): Promise<string> {
 
 function readJavaHomeConfig(): string|undefined {
     const config = workspace.getConfiguration();
-    const javaJdtLsHome = config.get<string>('java.jdt.ls.java.home');
-    return javaJdtLsHome === null ? javaJdtLsHome : config.get<string>('java.home');
+    let javaHome = config.get<string>('xml.java.home');
+    if (javaHome === null) {
+        javaHome = config.get<string>('java.jdt.ls.java.home');
+    }
+    if (javaHome === null) {
+        javaHome = config.get<string>('java.home');
+    }
+    return javaHome;
 }
 
 function checkJavaVersion(javaHome: string): Promise<number> {
