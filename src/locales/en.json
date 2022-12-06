@@ -53,7 +53,7 @@
     "check.java.runtime.vscode.java.home": "The java.home variable defined in VS Code settings",
     "check.java.runtime.env.jdk.home": "The JDK_HOME environment variable",
     "check.java.runtime.env.java.home": "The JAVA_HOME environment variable",
-    "define.xml.java.home.message": "The Liberty Config Language Server requires Java 17 for functionality. Please set 'xml.java.home' to point to Java 17 in VS Code settings or set JAVA_HOME to point to Java 17.",
+    "define.xml.java.home.message": "The Liberty Config Language Server requires Java 17 for functionality. Please set 'xml.java.home' to point to Java 17 in VS Code settings or set the system JAVA_HOME environment variable to point to Java 17.",
     "check.java.runtime.dismiss.label": "Dismiss",
     "open.jdk.download.part.missing.folder": " points to a missing folder",
     "open.jdk.download.part.no.runtime": " does not point to a Java runtime.",
