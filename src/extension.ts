@@ -16,7 +16,7 @@ import { LanguageClient, LanguageClientOptions } from "vscode-languageclient";
 import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor } from "vscode";
 import { JAVA_EXTENSION_ID, waitForStandardMode } from "./util/javaServerMode";
 import { localize } from "./util/i18nUtil";
-import { resolveRequirements } from "./util/requirements";
+import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "./util/requirements";
 import { prepareExecutable } from "./util/javaServerStarter";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
@@ -24,7 +24,7 @@ const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
 const LIBERTY_LS_JAR = "liberty-langserver-1.0-SNAPSHOT-jar-with-dependencies.jar";
 const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
 
-let libertyClient: LanguageClient;
+let languageClient: LanguageClient;
 let jakartaClient: LanguageClient;
 
 export type JavaExtensionAPI = any;
@@ -46,35 +46,50 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     item.tooltip = localize("liberty.ls.starting");
     toggleItem(window.activeTextEditor, item);
 
-    startupLibertyLanguageServer(context, api).then(() => {
-        console.log("Liberty client ready, registering commands");
+    resolveLclsRequirements(api).then().catch((error => {
+        window.showErrorMessage(error.message, error.label).then((selection) => {
+            if (error.label && error.label === selection && error.openUrl) {
+                commands.executeCommand('vscode.open', error.openUrl);
+            }
+        });
+    }))
 
-        item.text = localize("liberty.ls.thumbs.up");
-        item.tooltip = localize("liberty.ls.started");
-        toggleItem(window.activeTextEditor, item);
+    resolveRequirements(api).then(requirements => {
+        startLangServer(context, requirements, true).then(() => {
+            console.log("Liberty client ready, registering commands");
+    
+            item.text = localize("liberty.ls.thumbs.up");
+            item.tooltip = localize("liberty.ls.started");
+            toggleItem(window.activeTextEditor, item);
+    
+            registerCommands(context);
+        }, (error: any) => {
+            console.log("Liberty client was not ready. Did not initialize");
+            console.log(error);
+    
+            item.text = localize("liberty.ls.thumbs.down");
+            item.tooltip = localize("liberty.ls.failedstart");
+        });
 
-        registerCommands(context);
-    }, (error: any) => {
-        console.log("Liberty client was not ready. Did not initialize");
-        console.log(error);
-
-        item.text = localize("liberty.ls.thumbs.down");
-        item.tooltip = localize("liberty.ls.failedstart");
-    });
-
-    // const documentSelector = getDocumentSelector();
-    startupJakartaLangServer(context, api).then(() => {
-        console.log("LSP4Jakarta is ready, binding requests...");
-
-        // Delegate requests from Jakarta LS to the Jakarta JDT core
-        bindRequest(lsp4jakartaLS.JAVA_CLASSPATH_REQUEST);
-        bindRequest(lsp4jakartaLS.JAVA_CODEACTION_REQUEST);
-        bindRequest(lsp4jakartaLS.JAVA_DIAGNOSTICS_REQUEST);
-
-        item.text = localize("jakarta.ls.thumbs.up");
-        item.tooltip = localize("jakarta.ls.started");
-        toggleItem(window.activeTextEditor, item);
-    });
+        startLangServer(context, requirements, false).then(() => {
+            console.log("LSP4Jakarta is ready, binding requests...");
+    
+            // Delegate requests from Jakarta LS to the Jakarta JDT core
+            bindRequest(lsp4jakartaLS.JAVA_CLASSPATH_REQUEST);
+            bindRequest(lsp4jakartaLS.JAVA_CODEACTION_REQUEST);
+            bindRequest(lsp4jakartaLS.JAVA_DIAGNOSTICS_REQUEST);
+    
+            item.text = localize("jakarta.ls.thumbs.up");
+            item.tooltip = localize("jakarta.ls.started");
+            toggleItem(window.activeTextEditor, item);
+        });
+    }).catch((error) => {
+        window.showErrorMessage(error.message, error.label).then((selection) => {
+            if (error.label && error.label === selection && error.openUrl) {
+                commands.executeCommand('vscode.open', error.openUrl);
+            }
+        });
+    })
 }
 
 function bindRequest(request: string) {
@@ -170,12 +185,27 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
 	});
 }
 
-function startupLibertyLanguageServer(context: ExtensionContext, api: JavaExtensionAPI) {
-    return resolveRequirements(api).then(requirements => {
-        //Start up Liberty Language Server
+function startLangServer(context: ExtensionContext, requirements: RequirementsData, isLiberty: boolean) {
+    const lsJar = isLiberty ? LIBERTY_LS_JAR : JAKARTA_LS_JAR;
+    const lsName = isLiberty ? "Liberty Language Server" : "Language Server for Jakarta EE";
+    const clientId = isLiberty ? LIBERTY_CLIENT_ID : JAKARTA_CLIENT_ID;
+    const localName = isLiberty ? localize("liberty.ls.output.dropdown") : localize("jakarta.ls.output.dropdown");
 
-        // Options to control the language client
-        const clientOptions: LanguageClientOptions = {
+    // Options to control the language client
+    const clientOptions: LanguageClientOptions = prepareClientOptions(isLiberty);
+    const serverOptions = prepareExecutable(lsJar, requirements)
+
+    console.log("Creating new language client for " + lsName);
+    languageClient = new LanguageClient(clientId, localName, serverOptions, clientOptions);
+    if (!isLiberty) jakartaClient = languageClient;
+
+    context.subscriptions.push(languageClient.start());
+    return languageClient.onReady();
+}
+
+function prepareClientOptions(Liberty_LS :boolean) {
+    if (Liberty_LS) {
+        return {
             // Filter to `bootstrap.properties` and `server.env` files within `src/main/liberty/config` or `usr/servers`
             documentSelector: [{ scheme: "file", 
                                 pattern: "**/{src/main/liberty/config,usr/servers/**}/{bootstrap.properties,server.env}" }],
@@ -187,29 +217,8 @@ function startupLibertyLanguageServer(context: ExtensionContext, api: JavaExtens
                 ],
             }
         };
-
-        const serverOptions = prepareExecutable(LIBERTY_LS_JAR, requirements)
-
-        console.log("Creating new language client for Liberty Language Server");
-        libertyClient = new LanguageClient(LIBERTY_CLIENT_ID, localize("liberty.ls.output.dropdown"), serverOptions, clientOptions);
-        
-        const disposable = libertyClient.start();
-        context.subscriptions.push(disposable);
-
-        return libertyClient.onReady();
-    }).catch((error) => {
-        window.showErrorMessage(error.message, error.label).then((selection) => {
-            if (error.label && error.label === selection && error.openUrl) {
-                commands.executeCommand('vscode.open', error.openUrl);
-            }
-        });
-    });
-}
-
-function startupJakartaLangServer(context: ExtensionContext, api: JavaExtensionAPI) {
-    return resolveRequirements(api).then(requirements => {    
-        // Options to control the language client
-        const clientOptions: LanguageClientOptions = {
+    } else {
+        return {
             documentSelector: [{ scheme: "file", language: "java" }],
             synchronize: {
                 configurationSection: ["java", "[java]"],
@@ -218,20 +227,7 @@ function startupJakartaLangServer(context: ExtensionContext, api: JavaExtensionA
                 ],
             }
         };
-        const serverOptions = prepareExecutable(JAKARTA_LS_JAR, requirements);
-
-        console.log("Creating new language client for Language Server for Jakarta EE")
-        jakartaClient = new LanguageClient(JAKARTA_CLIENT_ID, localize("jakarta.ls.output.dropdown"), serverOptions, clientOptions);
-    
-        context.subscriptions.push(jakartaClient.start());
-        return jakartaClient.onReady();
-    }).catch((error) => {
-        window.showErrorMessage(error.message, error.label).then((selection) => {
-            if (error.label && error.label === selection && error.openUrl) {
-                commands.executeCommand('vscode.open', error.openUrl);
-            }
-        });
-    });
+    }
 }
 
 function toggleItem(editor: TextEditor | undefined, item: vscode.StatusBarItem) {
@@ -247,11 +243,9 @@ async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
     if (!vscodeJava) {
         throw new Error("VSCode java is not installed");
     }
-
     const api = await vscodeJava.activate();
     if (!api) {
         throw new Error("VSCode java api not found");
     }
-
     return Promise.resolve(api);
 }
