@@ -86,8 +86,8 @@ const jakartaGroupIdString = "&g=" + jakartaGroupId;
 const jakartaVersionString = "&v=" + jakartaVersion;
 const jakartaClassifierString = "&c=jar-with-dependencies";
 
-const jakartaJDTURL = sonatypeURL + jakartaReleaseLevelString + jakartaGroupIdString + "&a=org.eclipse.lsp4jakarta.jdt.core" + jakartaVersionString;
-const jakartaLSURL = sonatypeURL + jakartaReleaseLevelString + jakartaGroupIdString + "&a=org.eclipse.lsp4jakarta.ls" + jakartaClassifierString + jakartaVersionString;
+const jakartaJDTURL = eclipseRepoURL + jakartaReleaseLevelString + jakartaGroupIdString + "&a=org.eclipse.lsp4jakarta.jdt.core" + jakartaVersionString;
+const jakartaLSURL = eclipseRepoURL + jakartaReleaseLevelString + jakartaGroupIdString + "&a=org.eclipse.lsp4jakarta.ls" + jakartaClassifierString + jakartaVersionString;
 
 gulp.task("downloadLSP4JakartaJars", (done) => {
   download({
