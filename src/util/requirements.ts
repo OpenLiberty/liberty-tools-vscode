@@ -43,26 +43,31 @@ export interface RequirementsData {
  * Resolves the requirements needed to run the extension.
  * Returns a promise that will resolve to a RequirementsData if
  * all requirements are resolved, it will reject with ErrorData if
- * if any of the requirements fails to resolve.
+ * if any of the requirements fail to resolve.
  *
  */
 export async function resolveRequirements(api: JavaExtensionAPI): Promise<RequirementsData> {
-
-    // Use the embedded JRE from 'redhat.java' if it exists
     const requirementsData = api.javaRequirement;
-    if (requirementsData && api.javaRequirement.tooling_jre_version >= 17) {
+    // Java check for LSP4Jakarta and LCLS support
+    // Reuse the embedded JRE from 'redhat.java' if it exists and passes check
+    if (requirementsData && requirementsData.tooling_jre_version >= 17) {
         return Promise.resolve(requirementsData);
     }
 
-    const javaHome = await checkJavaRuntime();
-    const javaVersion = await checkJavaVersion(javaHome);
+    const javaHome = await checkJavaRuntime('java.jdt.ls.java.home');
+    const javaVersion = await checkJavaVersion(javaHome, true);
     return Promise.resolve({tooling_jre: javaHome, tooling_jre_version: javaVersion, java_home: javaHome, java_version: javaVersion});
 }
 
-function checkJavaRuntime(): Promise<string> {
+export async function resolveLclsRequirements(api:JavaExtensionAPI) {
+    const javaHome = await checkJavaRuntime('xml.java.home');
+    return checkJavaVersion(javaHome, false);
+}
+
+function checkJavaRuntime(property: string): Promise<string> {
     return new Promise((resolve, reject) => {
         let source: string;
-        let javaHome: string|undefined = readJavaHomeConfig();
+        let javaHome: string|undefined = readJavaHomeConfig(property);
 
         if (javaHome) {
             source = localize("check.java.runtime.vscode.java.home");
@@ -97,18 +102,23 @@ function checkJavaRuntime(): Promise<string> {
     });
 }
 
-function readJavaHomeConfig(): string|undefined {
+function readJavaHomeConfig(property: string): string|undefined {
     const config = workspace.getConfiguration();
-    const javaJdtLsHome = config.get<string>('java.jdt.ls.java.home');
-    return javaJdtLsHome === null ? javaJdtLsHome : config.get<string>('java.home');
+    let javaHome = config.get<string>(property);
+    return (javaHome != null) ? javaHome : config.get<string>('java.home');
 }
 
-function checkJavaVersion(javaHome: string): Promise<number> {
+// Provided javaHome, parse major version and reject sub Java17
+function checkJavaVersion(javaHome: string, promptDownload: boolean): Promise<number> {
     return new Promise((resolve, reject) => {
         cp.execFile(javaHome + '/bin/java', ['-version'], {}, (error, stdout, stderr) => {
             const javaVersion = parseMajorVersion(stderr);
             if (javaVersion < 17) {
-                openJDKDownload(reject, localize("check.java.runtime.version.outdated"));
+                if (promptDownload) {
+                    openJDKDownload(reject, localize("check.java.runtime.version.outdated"));
+                } else {
+                    defineXmlJavaHome(reject, localize("define.xml.java.home.message"));
+                }
             } else {
                 resolve(javaVersion);
             }
@@ -136,6 +146,14 @@ export function parseMajorVersion(content: string): number {
         javaVersion = parseInt(match[0]);
     }
     return javaVersion;
+}
+
+function defineXmlJavaHome(reject: any, cause: string) {
+    reject({
+        message: cause,
+        label: localize("check.java.runtime.dismiss.label"),
+        replaceClose: false
+    })
 }
 
 function openJDKDownload(reject: any, cause: string) {
