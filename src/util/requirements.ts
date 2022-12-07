@@ -47,7 +47,6 @@ export interface RequirementsData {
  *
  */
 export async function resolveRequirements(api: JavaExtensionAPI): Promise<RequirementsData> {
-
     const requirementsData = api.javaRequirement;
     // Java check for LSP4Jakarta and LCLS support
     // Reuse the embedded JRE from 'redhat.java' if it exists and passes check
@@ -61,10 +60,8 @@ export async function resolveRequirements(api: JavaExtensionAPI): Promise<Requir
 }
 
 export async function resolveLclsRequirements(api:JavaExtensionAPI) {
-    if (api.javaRequirement === null || api.javaRequirement.java_version < 17) {
-        const javaHome = await checkJavaRuntime('xml.java.home');
-        return checkJavaVersion(javaHome, false);
-    }
+    const javaHome = await checkJavaRuntime('xml.java.home');
+    return checkJavaVersion(javaHome, false);
 }
 
 function checkJavaRuntime(property: string): Promise<string> {
