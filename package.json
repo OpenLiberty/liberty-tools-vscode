@@ -50,10 +50,10 @@
 	],
 	"contributes": {
 		"javaExtensions": [
-			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.0.1-SNAPSHOT.jar"
+			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.1.0-SNAPSHOT.jar"
 		],
 		"xml.javaExtensions": [
-			"./jars/liberty-langserver-lemminx-1.0-SNAPSHOT-jar-with-dependencies.jar"
+			"./jars/liberty-langserver-lemminx-1.0-M1-SNAPSHOT-jar-with-dependencies.jar"
 		],
 		"views": {
 			"explorer": [
@@ -217,9 +217,9 @@
 		"keybindings": [
 			{
 				"mac": "shift+alt+l",
-                "win": "shift+alt+l",
-                "linux": "shift+alt+l",
-                "key": "shift+alt+l",
+				"win": "shift+alt+l",
+				"linux": "shift+alt+l",
+				"key": "shift+alt+l",
 				"command": "liberty.dev.show.commands"
 			}
 		]

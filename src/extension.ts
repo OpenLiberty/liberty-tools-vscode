@@ -21,8 +21,8 @@ import { prepareExecutable } from "./util/javaServerStarter";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
-const LIBERTY_LS_JAR = "liberty-langserver-1.0-SNAPSHOT-jar-with-dependencies.jar";
-const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+const LIBERTY_LS_JAR = "liberty-langserver-1.0-M1-SNAPSHOT-jar-with-dependencies.jar";
+const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.1.0-SNAPSHOT-jar-with-dependencies.jar";
 
 let languageClient: LanguageClient;
 let jakartaClient: LanguageClient;
