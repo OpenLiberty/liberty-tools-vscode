@@ -1,6 +1,17 @@
-# Development setup for Liberty Language VS Code
+# Developmenting Liberty Tools for Visual Studio Code
 
-## Build the VS Code client extension locally
+[Build Liberty Tools for Visual Studio Code](#build-liberty-tools-for-visual-studio-code)
+[Language Servers](#language-servers)
+
+- [Build Liberty Config Language Server locally](#build-liberty-config-language-server-locally)
+- [Build Eclipse LSP4Jakarta locally](#build-eclipse-lsp4jakarta-locally)
+
+[Localization](#localization)
+
+- [package.json](#packagejson)
+- [Source code](#source-code)
+
+## Build Liberty Tools for Visual Studio Code
 
 1. `git clone https://github.com/OpenLiberty/liberty-tools-vscode`
 2. `cd liberty-tools-vscode`
@@ -17,6 +28,8 @@
 
 `npm run build` downloads the jars for Liberty Config Language Server and Eclipse LSP4Jakarta consumed by the VS Code client.
 See below for instructions on building these jars locally.
+
+## Language Servers
 
 ### Build Liberty Config Language Server locally
 
