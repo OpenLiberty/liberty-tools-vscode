@@ -1,6 +1,7 @@
 # Developmenting Liberty Tools for Visual Studio Code
 
 [Build Liberty Tools for Visual Studio Code](#build-liberty-tools-for-visual-studio-code)
+
 [Language Servers](#language-servers)
 
 - [Build Liberty Config Language Server locally](#build-liberty-config-language-server-locally)
