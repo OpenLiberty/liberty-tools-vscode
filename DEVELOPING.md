@@ -1,4 +1,4 @@
-# Developmenting Liberty Tools for Visual Studio Code
+# Developing Liberty Tools for Visual Studio Code
 
 - [Build Liberty Tools for Visual Studio Code](#build-liberty-tools-for-visual-studio-code)
 - [Language Servers](#language-servers)
