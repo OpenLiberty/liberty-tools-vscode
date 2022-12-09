@@ -5,7 +5,7 @@ const cp = require("child_process");
 const libertyGroupId = "io.openliberty.tools";
 const libertyVersion = "1.0-M1-SNAPSHOT";
 const jakartaGroupId = "org.eclipse.lsp4jakarta";
-const jakartaVersion = "0.0.1-SNAPSHOT";
+const jakartaVersion = "0.1.0-SNAPSHOT";
 var releaseLevel = "snapshots"; //snapshots or releases
 
 const libertyLemminxName = "liberty-langserver-lemminx-" + libertyVersion + "-jar-with-dependencies.jar";
