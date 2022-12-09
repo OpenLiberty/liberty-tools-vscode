@@ -6,7 +6,6 @@ We welcome contributions, and request you follow these guidelines.
  - [Legal](#legal)
  - [Coding Standards](#coding-standards)
 
-
 ## Raising issues
 
 Please raise any bug reports on the [issue tracker](https://github.com/OpenLiberty/open-liberty-tools-vscode/issues). Be sure to search the list to see if your issue has already been raised.
@@ -41,3 +40,8 @@ This project follows standard TypeScript language [coding conventions](https://g
 Please note:
  - all PRs must pass TypeScript linting checks
  - all PRs must have passing builds
+
+
+### Language Server development
+
+To learn how to setup, run, and test your development environment, follow the provided [development instructions](DEVELOPING.md).
