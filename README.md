@@ -7,7 +7,6 @@ Liberty Tools for Visual Studio Code offers features for developing cloud-native
 
 **Note:** This is an early release.
 
-
 ![Liberty Tools Extension](images/open-liberty-tools.png)
 
 ## Quick Start
@@ -27,6 +26,7 @@ A Visual Studio Code extension for Open Liberty. The extension will detect your 
 - View unit and integration test reports
 
 Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) providing language server features for Liberty server configuration files:
+
 - server.env
 - bootstrap.properties
 - server.xml
@@ -52,6 +52,7 @@ Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Serve
 | liberty.terminal.useJavaHome | If this value is true, and if the setting `java.home` has a value, then the environment variable `JAVA_HOME` will be set to the value of `java.home` when a new terminal window is created. | False         |
 
 ### External Settings
+
 The following settings provided by external extensions will be honoured when executing dev mode commands.
 
 | Setting                      | Description                                                                                                                                                                                 | Provided By |
