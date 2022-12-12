@@ -3,11 +3,12 @@
 [![Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/Open-Liberty.liberty-dev-vscode-ext?style=for-the-badge&label=VS%20Market "Current Release")](https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext)
 [![License](https://img.shields.io/github/license/OpenLiberty/liberty-tools-vscode?style=for-the-badge&logo=eclipse)](https://www.eclipse.org/legal/epl-2.0/)
 
-Liberty Tools for Visual Studio Code offers features for developing cloud-native Java applications with Liberty. Iterate fast with Liberty dev mode, code with assistance for MicroProfile & Jakarta EE APIs, and easily edit Liberty configuration files.
+Liberty Tools for Visual Studio Code offers features for developing cloud-native Java applications with [Open Liberty](https://openliberty.io/) and [WebSphere Liberty](https://www.ibm.com/products/websphere-liberty). Iterate fast with Liberty dev mode, code with assistance for MicroProfile & Jakarta EE APIs, and easily edit Liberty configuration files.
 
 **Note:** This is an early release.
 
-![Liberty Tools Extension](images/open-liberty-tools.png)
+![liberty dashboard screenshot](images/liberty_dashboard.png)
+
 
 ## Quick Start
 
@@ -25,11 +26,22 @@ A Visual Studio Code extension for Open Liberty. The extension will detect your 
 - Run tests
 - View unit and integration test reports
 
+Liberty Tools for Visual Studio Code consumes the [LSP4Jakarta Language Server]() to provide language server features for Java files:
+
+![lsp4jakarta completion screenshot](images/lsp4jakarta_completion.png)
+
 Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) providing language server features for Liberty server configuration files:
 
 - server.env
 - bootstrap.properties
 - server.xml
+
+**Hover support**
+![lcls server.xml hover screenshot](images/lcls_hover.png)
+**Completion support**
+![lcls bootstrap.properties completion screenshot](images/lcls_completion.png)
+**Diagnostics support**
+![lcls server.env diagnostics screenshot](images/lcls_diagnostics.png)
 
 ## Commands
 
@@ -50,6 +62,7 @@ Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Serve
 | Setting                      | Description                                                                                                                                                                                 | Default Value |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | liberty.terminal.useJavaHome | If this value is true, and if the setting `java.home` has a value, then the environment variable `JAVA_HOME` will be set to the value of `java.home` when a new terminal window is created. | False         |
+| xml.java.home | This property allows a user to define their LemminX language server runtime without altering the `JAVA_HOME` environment variable.  | Not set |
 
 ### External Settings
 
