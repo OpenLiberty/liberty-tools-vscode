@@ -36,11 +36,16 @@ Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Serve
 - bootstrap.properties
 - server.xml
 
-**Hover support**
+**Hover support**  
+
 ![lcls server.xml hover screenshot](images/lcls_hover.png)
+
 **Completion support**
+
 ![lcls bootstrap.properties completion screenshot](images/lcls_completion.png)
+
 **Diagnostics support**
+
 ![lcls server.env diagnostics screenshot](images/lcls_diagnostics.png)
 
 ## Commands
