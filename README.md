@@ -21,7 +21,7 @@ This plugin allows you to run your Liberty Maven or Liberty Gradle projects thro
 - Run tests.
 - View unit and integration test reports.
 
-Liberty Tools for Visual Studio Code consumes the [Eclipse LSP4Jakarta Language Server](https://github.com/eclipse/lsp4jakarta) to provide language server features for Java files.
+Liberty Tools for Visual Studio Code consumes the [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta), Language Server for Jakarta EE, to provide editing assistance for Jakarta EE APIs in Java files.
 
 ![lsp4jakarta completion screenshot](images/docs/lcls_hover.png)
 
