@@ -31,7 +31,7 @@ Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Serve
 - bootstrap.properties
 - server.xml
 
-Liberty Tools for Visual Studio Code consumes [Eclipse LSP4MP](https://github.com/eclipse/lsp4mp), the Language Server for MicroProfile, to provide editing assistance for Jakarta EE APIs in Java and microprofile-config.properties files. For more information, see the [project documentation in GitHub](https://github.com/eclipse/lsp4mp#eclipse-lsp4mp---language-server-for-microprofile).
+Liberty Tools for Visual Studio Code consumes [Eclipse LSP4MP](https://github.com/eclipse/lsp4mp), the Language Server for MicroProfile, to provide editing assistance for MicroProfile APIs in Java and microprofile-config.properties files. For more information, see the [project documentation in GitHub](https://github.com/eclipse/lsp4mp#eclipse-lsp4mp---language-server-for-microprofile).
 
 Eclipse LSP4Jakarta Snippets | Eclipse LSP4MP Snippets
 :-------------------------:|:-------------------------:
