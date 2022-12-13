@@ -21,17 +21,17 @@ This plugin allows you to run your Liberty Maven or Liberty Gradle projects thro
 - Run tests.
 - View unit and integration test reports.
 
-Liberty Tools for Visual Studio Code consumes the [Eclipse LSP4Jakarta Language Server](https://github.com/eclipse/lsp4jakarta) to provide language server features for Java files.
+Liberty Tools for Visual Studio Code consumes the [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta), Language Server for Jakarta EE, to provide editing assistance for Jakarta EE APIs in Java files.
 
 ![lsp4jakarta completion screenshot](images/docs/lcls_hover.png)
 
-Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) providing [language server features](https://github.com/OpenLiberty/liberty-language-server#features) for Liberty server configuration files:
+Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) providing [editing assistance](https://github.com/OpenLiberty/liberty-language-server#features) for Liberty configuration files:
 
 - server.env
 - bootstrap.properties
 - server.xml
 
-Liberty Tools for Visual Studio Code consumes [Eclipse LSP4MP](https://github.com/eclipse/lsp4mp), the Language Server for MicroProfile, to provide editing assistance for Jakarta EE APIs in Java and microprofile-config.properties files. For more information, see the [project documentation in GitHub](https://github.com/eclipse/lsp4mp#eclipse-lsp4mp---language-server-for-microprofile).
+Liberty Tools for Visual Studio Code consumes [Eclipse LSP4MP](https://github.com/eclipse/lsp4mp), the Language Server for MicroProfile, to provide editing assistance for MicroProfile APIs in Java and microprofile-config.properties files. For more information, see the [project documentation in GitHub](https://github.com/eclipse/lsp4mp#eclipse-lsp4mp---language-server-for-microprofile).
 
 Eclipse LSP4Jakarta Snippets | Eclipse LSP4MP Snippets
 :-------------------------:|:-------------------------:
@@ -49,7 +49,7 @@ Eclipse LSP4Jakarta Snippets | Eclipse LSP4MP Snippets
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Start  | Starts dev mode. |
 | Start…​ | Starts dev mode with custom parameters. Supported parameters can be found in the documentation for the [dev goal of the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) and the [libertyDev task of the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#command-line-parameters). |
-| Start in container | Starts dev mode with the server in a container. The `liberty-maven-plugin` must be version `3.3-M1` or higher. The `liberty-gradle-plugin` must be version `3.1-M1` or higher. |
+| Start in a container | Starts dev mode with Liberty running in a container. The `liberty-maven-plugin` must be version `3.3-M1` or higher. The `liberty-gradle-plugin` must be version `3.1-M1` or higher. |
 | Stop | Stops dev mode. |
 | Run tests | Runs the unit tests and integration tests that are configured for your project. This command requires dev mode to be already started. |
 | View integration test report (Maven) | Views the integration test report file it exists at `/target/site/failsafe-report.html`. |
