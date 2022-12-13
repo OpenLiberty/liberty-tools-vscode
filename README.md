@@ -25,7 +25,7 @@ Liberty Tools for Visual Studio Code consumes the [Eclipse LSP4Jakarta Language 
 
 ![lsp4jakarta completion screenshot](images/docs/lcls_hover.png)
 
-Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) providing [language server features](https://github.com/OpenLiberty/liberty-language-server#features) for Liberty server configuration files:
+Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) providing [editing assistance](https://github.com/OpenLiberty/liberty-language-server#features) for Liberty configuration files:
 
 - server.env
 - bootstrap.properties
