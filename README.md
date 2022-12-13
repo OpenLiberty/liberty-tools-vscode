@@ -7,7 +7,7 @@ Liberty Tools for Visual Studio Code offers features for developing cloud-native
 
 **Note:** This is an early release.
 
-![liberty dashboard screenshot](images/liberty_dashboard.png)
+![liberty dashboard screenshot](images/docs/liberty_dashboard.png)
 
 This plugin allows you to run your Liberty Maven or Liberty Gradle projects through the Liberty dashboard or the VS Code command palette. You can start, stop, or interact with [Liberty dev mode](https://openliberty.io/docs/latest/development-mode.html) on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace. Liberty Tools help you quickly and easily edit your application and configuration files by providing language support features for MicroProfile, Jakarta EE, and Liberty configuration and Java files.
 
@@ -23,7 +23,7 @@ This plugin allows you to run your Liberty Maven or Liberty Gradle projects thro
 
 Liberty Tools for Visual Studio Code consumes the [Eclipse LSP4Jakarta Language Server](https://github.com/eclipse/lsp4jakarta) to provide language server features for Java files.
 
-![lsp4jakarta completion screenshot](images/lsp4jakarta_completion.png)
+![lsp4jakarta completion screenshot](images/docs/lcls_hover.png)
 
 Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) providing [language server features](https://github.com/OpenLiberty/liberty-language-server#features) for Liberty server configuration files:
 
@@ -32,6 +32,10 @@ Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Serve
 - server.xml
 
 Liberty Tools for Visual Studio Code consumes [Eclipse LSP4MP](https://github.com/eclipse/lsp4mp), the Language Server for MicroProfile, to provide editing assistance for Jakarta EE APIs in Java and microprofile-config.properties files. For more information, see the [project documentation in GitHub](https://github.com/eclipse/lsp4mp#eclipse-lsp4mp---language-server-for-microprofile).
+
+Eclipse LSP4Jakarta Snippets | Eclipse LSP4MP Snippets
+:-------------------------:|:-------------------------:
+![LSP4Jakarta](images/docs/lsp4jakarta_completion.png) | ![LSP4MP](images/docs/lsp4mp_completion.png)
 
 ## Quick Start
 
@@ -70,6 +74,8 @@ The following settings provided by external extensions will be honoured when exe
 | java.import.gradle.wrapper.enabled | Gradle commands executed by dev mode will honour this setting. If true, it tries to use `gradlew` if a Gradle wrapper file can be found. Otherwise it will use `gradle`. | [Language support for Java extension](https://marketplace.visualstudio.com/items?itemName=redhat.java)        |
 
 ## Requirements
+
+These requirements are bundled with Liberty Tools for Visual Studio Code during installation and are provided here for additional information.
 
 - [Tools for MicroProfile extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-microprofile)
 - [XML extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml)
