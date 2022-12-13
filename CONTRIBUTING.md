@@ -10,11 +10,11 @@ We welcome contributions, and request you follow these guidelines.
 
 Please raise any bug reports on the [issue tracker](https://github.com/OpenLiberty/open-liberty-tools-vscode/issues). Be sure to search the list to see if your issue has already been raised.
 
-A good bug report is one that make it easy for us to understand what you were trying to do and what went wrong. Provide as much context as possible so we can try to recreate the issue.
+A good bug report makes it easy for us to understand what you were trying to do and what went wrong.
 
 ### Legal
 
-In order to make contribution as easy as possible, we follow the same approach as the [Developer's Certificate of Origin 1.1 (DCO)](https://developercertificate.org/) - that the Linux® Kernel [community](https://elinux.org/Developer_Certificate_Of_Origin) uses to manage code contributions.
+In order to make contribution as easy as possible, we follow the same approach that the Linux® Kernel [community](https://elinux.org/Developer_Certificate_Of_Origin) uses to manage code contributions: the [Developer's Certificate of Origin 1.1 (DCO)](https://developercertificate.org/).
 
 We simply ask that when submitting a pull request for review, the developer
 must include a sign-off statement in the commit message.
