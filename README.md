@@ -13,7 +13,7 @@ This plugin allows you to run your Liberty Maven or Liberty Gradle projects thro
 
 ## Features
 
-- View [supported](FAQ.md#supported-liberty-and-maven-plugins) Liberty projects in the Liberty dashboard.
+- View supported Liberty projects in the Liberty dashboard.
 - Start/Stop dev mode.
 - Start dev mode with custom parameters.
 - Start dev mode in a container.
