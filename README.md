@@ -49,7 +49,7 @@ Eclipse LSP4Jakarta Snippets | Eclipse LSP4MP Snippets
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Start  | Starts dev mode. |
 | Start…​ | Starts dev mode with custom parameters. Supported parameters can be found in the documentation for the [dev goal of the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) and the [libertyDev task of the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#command-line-parameters). |
-| Start in container | Starts dev mode with the server in a container. The `liberty-maven-plugin` must be version `3.3-M1` or higher. The `liberty-gradle-plugin` must be version `3.1-M1` or higher. |
+| Start in a container | Starts dev mode with Liberty running in a container. The `liberty-maven-plugin` must be version `3.3-M1` or higher. The `liberty-gradle-plugin` must be version `3.1-M1` or higher. |
 | Stop | Stops dev mode. |
 | Run tests | Runs the unit tests and integration tests that are configured for your project. This command requires dev mode to be already started. |
 | View integration test report (Maven) | Views the integration test report file it exists at `/target/site/failsafe-report.html`. |
