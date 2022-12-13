@@ -2,9 +2,9 @@
 
 We welcome contributions, and request you follow these guidelines.
 
- - [Raising issues](#raising-issues)
- - [Legal](#legal)
- - [Coding Standards](#coding-standards)
+- [Raising issues](#raising-issues)
+- [Legal](#legal)
+- [Coding Standards](#coding-standards)
 
 ## Raising issues
 
@@ -38,9 +38,9 @@ git commit -s
 This project follows standard TypeScript language [coding conventions](https://github.com/Microsoft/TypeScript/wiki/Coding-guidelines).
 
 Please note:
- - all PRs must pass TypeScript linting checks
- - all PRs must have passing builds
 
+- all PRs must pass TypeScript linting checks
+- all PRs must have passing builds
 
 ### Language Server development
 

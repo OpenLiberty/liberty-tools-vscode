@@ -9,6 +9,29 @@ Liberty Tools for Visual Studio Code offers features for developing cloud-native
 
 ![liberty dashboard screenshot](images/liberty_dashboard.png)
 
+This plugin allows you to run your Liberty Maven or Liberty Gradle projects through the Liberty dashboard or the VS Code command palette. You can start, stop, or interact with [Liberty dev mode](https://openliberty.io/docs/latest/development-mode.html) on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace. Liberty Tools help you quickly and easily edit your application and configuration files by providing language support features for MicroProfile, Jakarta EE, and Liberty configuration and Java files.
+
+## Features
+
+- View [supported](FAQ.md#supported-liberty-and-maven-plugins) Liberty projects in the Liberty dashboard.
+- Start/Stop dev mode.
+- Start dev mode with custom parameters.
+- Start dev mode in a container.
+- Start dev mode with the debugger attached.
+- Run tests.
+- View unit and integration test reports.
+
+Liberty Tools for Visual Studio Code consumes the [Eclipse LSP4Jakarta Language Server](https://github.com/eclipse/lsp4jakarta) to provide language server features for Java files.
+
+![lsp4jakarta completion screenshot](images/lsp4jakarta_completion.png)
+
+Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) providing [language server features](https://github.com/OpenLiberty/liberty-language-server#features) for Liberty server configuration files:
+
+- server.env
+- bootstrap.properties
+- server.xml
+
+Liberty Tools for Visual Studio Code consumes [Eclipse LSP4MP](https://github.com/eclipse/lsp4mp), the Language Server for MicroProfile, to provide editing assistance for Jakarta EE APIs in Java and microprofile-config.properties files. For more information, see the [project documentation in GitHub](https://github.com/eclipse/lsp4mp#eclipse-lsp4mp---language-server-for-microprofile).
 
 ## Quick Start
 
@@ -16,51 +39,18 @@ Liberty Tools for Visual Studio Code offers features for developing cloud-native
 - Liberty supported projects will appear in the Liberty Dashboard on the side bar
 - Right-click a project in the Liberty Dashboard to view the available commands
 
-## Features
+## Action Commands
 
-A Visual Studio Code extension for Open Liberty. The extension will detect your Liberty Maven or Liberty Gradle project if it detects the `io.openliberty.tools:liberty-maven-plugin` in the `pom.xml` or `io.openliberty.tools:liberty-gradle-plugin` in the `build.gradle`. Through the Liberty Dashboard, you can start, stop, or interact with Liberty dev mode on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace.
-
-- View supported `liberty-maven-plugin`(version `3.1` or higher) or `liberty-gradle-plugin`(version `3.0` or higher) projects in the workspace
-- Start/Stop dev mode
-- Start dev mode with custom parameters
-- Run tests
-- View unit and integration test reports
-
-Liberty Tools for Visual Studio Code consumes the [LSP4Jakarta Language Server]() to provide language server features for Java files:
-
-![lsp4jakarta completion screenshot](images/lsp4jakarta_completion.png)
-
-Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) providing language server features for Liberty server configuration files:
-
-- server.env
-- bootstrap.properties
-- server.xml
-
-**Hover support**  
-
-![lcls server.xml hover screenshot](images/lcls_hover.png)
-
-**Completion support**
-
-![lcls bootstrap.properties completion screenshot](images/lcls_completion.png)
-
-**Diagnostics support**
-
-![lcls server.env diagnostics screenshot](images/lcls_diagnostics.png)
-
-## Commands
-
-| Command                      | Description                                                                                                                                                                                                                                                                                                                  |
+| Command | Description |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Start                        | Starts dev mode.                                                                                                                                                                                                                                                                                                             |
-| Start…​                      | Starts dev mode with custom parameters. Supported parameters can be found in the documentation for the [dev goal of the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) and the [libertyDev task of the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#command-line-parameters). |
-| Start in container                    | Starts dev mode with the server in a container. The `liberty-maven-plugin` must be version `3.3-M1` or higher. The `liberty-gradle-plugin` must be version `3.1-M1` or higher. |
-| Stop                         | Stops dev mode.                                                                                                                                                                                                                                                                                                              |
-| Run tests                    | Runs the unit tests and integration tests that are configured for your project. This command requires dev mode to be already started.                                                                                                                                                                                        |
-| View integration test report | Views the integration test report file.                                                                                                                                                                                                                                                                                      |
-| View unit test report        | Views the unit test report file.                                                                                                                                                                                                                                                                                             |
-
-**Note:** Gradle projects only have a single `View test report` command.
+| Start  | Starts dev mode. |
+| Start…​ | Starts dev mode with custom parameters. Supported parameters can be found in the documentation for the [dev goal of the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) and the [libertyDev task of the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#command-line-parameters). |
+| Start in container | Starts dev mode with the server in a container. The `liberty-maven-plugin` must be version `3.3-M1` or higher. The `liberty-gradle-plugin` must be version `3.1-M1` or higher. |
+| Stop | Stops dev mode. |
+| Run tests | Runs the unit tests and integration tests that are configured for your project. This command requires dev mode to be already started. |
+| View integration test report (Maven) | Views the integration test report file it exists at `/target/site/failsafe-report.html`. |
+| View unit test report (Maven) | Views the unit test report file if it exists at `/target/site/surefire-report.html`. |
+| View test report (Gradle) | Opens the test report file if it exists at the default location `build/reports/tests/test/index.html`. This action command is only available to Gradle projects. Gradle projects only have a single action command for test result reporting. |
 
 ## Configurable User Settings
 
