@@ -7,7 +7,7 @@ Liberty Tools for Visual Studio Code offers features for developing cloud-native
 
 **Note: This is an early release.**
 
-![liberty dashboard screenshot](images/docs/liberty_dashboard.png)
+![liberty dashboard screenshot](/docs/screenshots/liberty_dashboard.png)
 
 ---
 - [Features](#features)
@@ -37,19 +37,19 @@ Use Liberty Tools to run your Liberty Maven or Liberty Gradle projects through t
 
 Feature completion in bootstrap.properties files helps you quickly edit your Liberty runtime configuration.
 
-![Liberty Config Language Server completion](images/docs/lcls_completion.png)
+![Liberty Config Language Server completion](/docs/screenshots/lcls_completion.png)
 
 Hover in server.xml files provides more detailed descriptions.
 
-![Liberty Config Language Server hover](images/docs/lcls_hover.png)
+![Liberty Config Language Server hover](/docs/screenshots/lcls_hover.png)
 
 Diagnostics in server.env files helps you quickly correct your Liberty runtime configuration.
 
-![Liberty Config Language Server diagnostic](images/docs/lcls_diagnostics.png)
+![Liberty Config Language Server diagnostic](/docs/screenshots/lcls_diagnostics.png)
 
 Helpful code snippets are provided for Jakarta EE APIs in Java files, such as Jakarta RESTful Web Services.
 
-![Eclipse LSP4Jakarta completion](images/docs/lsp4jakarta_completion.png)
+![Eclipse LSP4Jakarta completion](/docs/screenshots/lsp4jakarta_completion.png)
 
 Editing assistance for configuration and application files is provided through the following language server projects, which this project consumes. For more information, see the documentation for these projects.
 
