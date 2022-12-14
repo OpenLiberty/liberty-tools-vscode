@@ -5,11 +5,21 @@
 
 Liberty Tools for Visual Studio Code offers features for developing cloud-native Java applications with [Open Liberty](https://openliberty.io/) and [WebSphere Liberty](https://www.ibm.com/products/websphere-liberty). Iterate fast with Liberty dev mode, code with assistance for MicroProfile & Jakarta EE APIs, and easily edit Liberty configuration files.
 
-**Note:** This is an early release.
+**Note: This is an early release.**
 
 ![liberty dashboard screenshot](images/docs/liberty_dashboard.png)
 
-This plugin allows you to run your Liberty Maven or Liberty Gradle projects through the Liberty dashboard or the VS Code command palette. You can start, stop, or interact with [Liberty dev mode](https://openliberty.io/docs/latest/development-mode.html) on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace. Liberty Tools help you quickly and easily edit your application and configuration files by providing language support features for MicroProfile, Jakarta EE, and Liberty configuration and Java files.
+---
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Commands](#commands)
+- [Configurable User Settings](#configurable-user-settings)
+- [External Settings](#external-settings)
+- [Requirements](#requirements)
+- [Contributing](#contributing)
+- [Issues](#issues)
+
+Use Liberty Tools to run your Liberty Maven or Liberty Gradle projects through the Liberty dashboard or the VS Code command palette. You can start, stop, or interact with [Liberty dev mode](https://openliberty.io/docs/latest/development-mode.html) on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace. Liberty Tools also helps you quickly and easily edit your application and configuration files by providing language support features for MicroProfile, Jakarta EE, and Liberty configuration and Java files.
 
 ## Features
 
@@ -17,41 +27,56 @@ This plugin allows you to run your Liberty Maven or Liberty Gradle projects thro
 - Start/Stop dev mode.
 - Start dev mode with custom parameters.
 - Start dev mode in a container.
-- Start dev mode with the debugger attached.
+- Attach the debugger.
 - Run tests.
-- View unit and integration test reports.
+- View test reports.
+- Code with language assistance in the following configuration and application files:
+    - server.xml, server.env, bootstrap.properties Liberty configuration files
+    - Jakarta EE 9.x APIs in Java files
+    - MicroProfile APIs in microprofile-config.properties and Java files
 
-Liberty Tools for Visual Studio Code consumes the [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta), Language Server for Jakarta EE, to provide editing assistance for Jakarta EE APIs in Java files.
+Feature completion in bootstrap.properties files helps you quickly edit your Liberty runtime configuration.
 
-![lsp4jakarta completion screenshot](images/docs/lcls_hover.png)
+![Liberty Config Language Server completion](images/docs/lcls_completion.png)
 
-Liberty Tools for Visual Studio Code consumes the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) providing [editing assistance](https://github.com/OpenLiberty/liberty-language-server#features) for Liberty configuration files:
+Hover in server.xml files provides more detailed descriptions.
 
-- server.env
-- bootstrap.properties
-- server.xml
+![Liberty Config Language Server hover](images/docs/lcls_hover.png)
 
-Liberty Tools for Visual Studio Code consumes [Eclipse LSP4MP](https://github.com/eclipse/lsp4mp), the Language Server for MicroProfile, to provide editing assistance for MicroProfile APIs in Java and microprofile-config.properties files. For more information, see the [project documentation in GitHub](https://github.com/eclipse/lsp4mp#eclipse-lsp4mp---language-server-for-microprofile).
+Diagnostics in server.env files helps you quickly correct your Liberty runtime configuration.
 
-Eclipse LSP4Jakarta Snippets | Eclipse LSP4MP Snippets
-:-------------------------:|:-------------------------:
-![LSP4Jakarta](images/docs/lsp4jakarta_completion.png) | ![LSP4MP](images/docs/lsp4mp_completion.png)
+![Liberty Config Language Server diagnostic](images/docs/lcls_diagnostics.png)
+
+Helpful code snippets are provided for Jakarta EE APIs in Java files, such as Jakarta RESTful Web Services.
+
+![Eclipse LSP4Jakarta completion](images/docs/lsp4jakarta_completion.png)
+
+Editing assistance for configuration and application files is provided through the following language server projects, which this project consumes. For more information, see the documentation for these projects.
+
+- Liberty configuration files: [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server#liberty-config-language-server)
+- Jakarta EE APIs in Java files:  [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta#eclipse-lsp4jakarta), the Language Server for Jakarta EE.
+
+Liberty Tools for Visual Studio Code depends on the [Tools for MicroProfile](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-microprofile) Visual Studio Code extension. This extension provides editing assistance for MicroProfile APIs in Java and microprofile-config.properties files.
 
 ## Quick Start
 
-- Install the extension
-- Liberty supported projects will appear in the Liberty Dashboard on the side bar
-- Right-click a project in the Liberty Dashboard to view the available commands
+- Install the extension.
+- Liberty supported projects will appear in the Liberty Dashboard on the side bar.
+- Right-click a project in the Liberty Dashboard to view the available commands.
 
-## Action Commands
+For minimum requirements information and detailed instructions on how to use the Liberty actions, check out the [Liberty Tools for Visual Studio Code user guide](docs/user-guide.md) page.
+
+## Commands
+
+The following commands are available when you select a project in the Liberty Dashboard.
 
 | Command | Description |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Start  | Starts dev mode. |
 | Start…​ | Starts dev mode with custom parameters. Supported parameters can be found in the documentation for the [dev goal of the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) and the [libertyDev task of the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#command-line-parameters). |
 | Start in a container | Starts dev mode with Liberty running in a container. The `liberty-maven-plugin` must be version `3.3-M1` or higher. The `liberty-gradle-plugin` must be version `3.1-M1` or higher. |
-| Stop | Stops dev mode. |
-| Run tests | Runs the unit tests and integration tests that are configured for your project. This command requires dev mode to be already started. |
+| Stop | Stops dev mode. Liberty must be running in dev mode to use this command. |
+| Run tests | Runs the unit tests and integration tests that are configured for your project. Liberty must be running in dev mode to use this command. |
 | View integration test report (Maven) | Views the integration test report file it exists at `/target/site/failsafe-report.html`. |
 | View unit test report (Maven) | Views the unit test report file if it exists at `/target/site/surefire-report.html`. |
 | View test report (Gradle) | Opens the test report file if it exists at the default location `build/reports/tests/test/index.html`. This action command is only available to Gradle projects. Gradle projects only have a single action command for test result reporting. |
@@ -61,7 +86,7 @@ Eclipse LSP4Jakarta Snippets | Eclipse LSP4MP Snippets
 | Setting                      | Description                                                                                                                                                                                 | Default Value |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | liberty.terminal.useJavaHome | If this value is true, and if the setting `java.home` has a value, then the environment variable `JAVA_HOME` will be set to the value of `java.home` when a new terminal window is created. | False         |
-| xml.java.home | This property allows a user to define their LemminX language server runtime without altering the `JAVA_HOME` environment variable.  | Not set |
+| xml.java.home | This property allows a user to define their LemMinX language server runtime without altering the `JAVA_HOME` environment variable.  | Not set |
 
 ### External Settings
 
@@ -76,7 +101,6 @@ The following settings provided by external extensions will be honoured when exe
 ## Requirements
 
 These requirements are bundled with Liberty Tools for Visual Studio Code during installation and are provided here for additional information.
-
 - [Tools for MicroProfile extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-microprofile)
 - [XML extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml)
 

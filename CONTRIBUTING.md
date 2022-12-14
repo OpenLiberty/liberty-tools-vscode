@@ -5,8 +5,9 @@ We welcome contributions, and request you follow these guidelines.
 - [Raising issues](#raising-issues)
 - [Legal](#legal)
 - [Coding Standards](#coding-standards)
+- [Developing](#developing)
 
-## Raising issues
+### Raising issues
 
 Please raise any bug reports on the [issue tracker](https://github.com/OpenLiberty/open-liberty-tools-vscode/issues). Be sure to search the list to see if your issue has already been raised.
 
@@ -42,6 +43,6 @@ Please note:
 - all PRs must pass TypeScript linting checks
 - all PRs must have passing builds
 
-### Language Server development
+### Developing
 
 To learn how to setup, run, and test your development environment, follow the provided [development instructions](DEVELOPING.md).
