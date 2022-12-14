@@ -45,4 +45,4 @@ Please note:
 
 ### Developing
 
-To learn how to setup, run, and test your development environment, follow the provided [development instructions](DEVELOPING.md).
+To learn how to set up, run, and test your development environment, follow the provided [development instructions](DEVELOPING.md).

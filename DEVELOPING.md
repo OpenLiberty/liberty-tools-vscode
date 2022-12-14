@@ -10,27 +10,29 @@
 
 ## Building Liberty Tools for Visual Studio Code
 
-1. `git clone https://github.com/OpenLiberty/liberty-tools-vscode`
-2. `cd liberty-tools-vscode`
+1. Clone this repository: `git clone https://github.com/OpenLiberty/liberty-tools-vscode`
+2. Change to the `liberty-tools-vscode` directory: `cd liberty-tools-vscode`
 3. Run `npm install`
 4. Run `npm run build`
 5. Run `npm run compile`
-6. Run the extension in Debug and Run mode by selecting `Run Extension` or `F5`
+6. Run the extension in Debug and Run mode by selecting `Run Extension` or pressing `F5`
 
-   Alternatively, build a `.vsix` file:
+   Alternatively, build a `.vsix` file and install the extension to Visual Studio Code with the command palette or Extensions activity bar.
+   - Run `vsce package` to generate the `liberty-tools-vscode-xxx.vsix` file
+   - Install the extension with the [command palette](https://docs.github.com/en/codespaces/codespaces-reference/using-the-vs-code-command-palette-in-codespaces#accessing-the-vs-code-command-palette):
+     - Select `Extensions: Install from VSIX...` and choose the generated `liberty-tools-vscode-xxx.vsix` file
+   - Install the extension with the Extensions activity bar:
+     - Navigate to the Extensions activity bar, or use the shortcut `Ctrl`-`Shift`-`X`
+     - Click the `...` dropdown menu and select `Install from VSIX` and choose the generated `liberty-tools-vscode-xxx.vsix` file
 
-   - `vsce package` to generate the `liberty-tools-vscode-xxx.vsix` file
-   - Install the extension to Visual Studio Code by `View/Command Palette`
-   - Select `Extensions: Install from VSIX...` and choose the generated `liberty-tools-vscode-xxx.vsix` file
-
-`npm run build` downloads the jars for Liberty Config Language Server and Eclipse LSP4Jakarta consumed by the VS Code client.
-See below for instructions on building these jars locally.
+Run `npm run build` to download the JARs for Liberty Config Language Server and Eclipse LSP4Jakarta that are consumed by the VS Code client.
+The following instructions explain how to build these JARs locally.
 
 ## Language Servers
 
 ### Build Liberty Config Language Server locally
 
-1. `git clone`
+1. Run `git clone`
     Make sure the cloned repo is in the same parent dir as `liberty-tools-vscode`
 2. Run `npm run buildLocal`
 
