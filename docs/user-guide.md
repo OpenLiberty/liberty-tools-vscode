@@ -1,5 +1,23 @@
 # Liberty Tools for Visual Studio Code User Guide
 
+1. [Before you begin](#before-you-begin)
+    - [Application requirements](#application-requirements)
+    - [Settings](#settings)
+2. [Opening the Liberty dashboard](#opening-the-liberty-dashboard)
+3. [Running your application on Liberty using dev mode](#running-your-application-on-liberty-using-dev-mode)
+    - [Using the Liberty dashboard view](#using-the-liberty-dashboard-view)
+    - [Using the Command Palette](#using-the-command-palette)
+    - [Start](#start)
+    - [Start with configuration](#start-with-configuration)
+    - [Start in container](#start-in-container)
+4. [Running your application's tests](#running-your-applications-tests)
+5. [Viewing your application's test reports](#viewing-your-applications-test-reports)
+6. [Stopping your application](#stopping-your-application)
+7. [Debugging your application](#debugging-your-application)
+8. [Manually adding your Liberty project to the tool window](#manually-adding-the-liberty-nature-to-a-project)
+9. [Configuring a Liberty server](#configuring-a-liberty-server)
+10. [Developing with Jakarta EE and MicroProfile APIs](#developing-microprofile-applications)
+
 ## Before you begin
 
 ### Application requirements
