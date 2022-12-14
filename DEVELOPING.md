@@ -8,7 +8,7 @@
   - [package.json](#packagejson)
   - [Source code](#source-code)
 
-## Build Liberty Tools for Visual Studio Code
+## Building Liberty Tools for Visual Studio Code
 
 1. `git clone https://github.com/OpenLiberty/liberty-tools-vscode`
 2. `cd liberty-tools-vscode`
