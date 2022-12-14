@@ -70,7 +70,7 @@ For minimum requirements information and detailed instructions on how to use the
 The following commands are available when you select a project in the Liberty Dashboard.
 
 | Command | Description |
-| --- | --- | --- |
+| --- | --- |
 | Start  | Starts dev mode. |
 | Start…​ | Starts dev mode with custom parameters. Supported parameters can be found in the documentation for the [dev goal of the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) and the [libertyDev task of the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#command-line-parameters). |
 | Start in a container | Starts dev mode with Liberty running in a container. The `liberty-maven-plugin` must be version `3.3-M1` or higher. The `liberty-gradle-plugin` must be version `3.1-M1` or higher. |
