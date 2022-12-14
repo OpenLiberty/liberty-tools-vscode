@@ -15,7 +15,7 @@
 3. Run `npm install`
 4. Run `npm run build`
 5. Run `npm run compile`
-6. Run the extension in Debug and Run mode by selecting `Run Extension` or pressing `F5`
+6. Run the extension in Debug and Run mode by selecting `Run Extension` or pressing `F5` in Visual Studio Code.
 
    Alternatively, build a `.vsix` file and install the extension to Visual Studio Code with the command palette or Extensions activity bar.
    - Run `vsce package` to generate the `liberty-tools-vscode-xxx.vsix` file
@@ -25,14 +25,14 @@
      - Navigate to the Extensions activity bar, or use the shortcut `Ctrl`-`Shift`-`X`
      - Click the `...` dropdown menu and select `Install from VSIX` and choose the generated `liberty-tools-vscode-xxx.vsix` file
 
-Run `npm run build` to download the JARs for Liberty Config Language Server and Eclipse LSP4Jakarta that are consumed by the VS Code client.
+Step 4 downloads the JARs for Liberty Config Language Server and Eclipse LSP4Jakarta that are consumed by the VS Code client.
 The following instructions explain how to build these JARs locally.
 
 ## Language Servers
 
 ### Build Liberty Config Language Server locally
 
-1. Run `git clone`
+1. Run `git clone https://github.com/OpenLiberty/liberty-language-server.git`
     Make sure the cloned repo is in the same parent dir as `liberty-tools-vscode`
 2. Run `npm run buildLocal`
 
@@ -40,7 +40,7 @@ For more information on building Liberty Config Language Server, see the project
 
 ### Build Eclipse LSP4Jakarta locally
 
-1. `git clone https://github.com/eclipse/lsp4jakarta.git`
+1. Run `git clone https://github.com/eclipse/lsp4jakarta.git`
     Make sure the cloned repo is in the same parent dir as `liberty-tools-vscode`
 2. Run `npm run buildJakarta`
 
