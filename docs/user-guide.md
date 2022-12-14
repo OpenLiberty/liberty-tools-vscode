@@ -185,3 +185,5 @@ Editing assistance for configuration and application files for Jakarta EE and Mi
 Open a Java or microprofile-config.properties file. Proceed to use Jakarta EE and MicroProfile specific editing support: completion by typing `Ctrl`/`Cmd` + `Space` at a given point within the document.
 
 ![Eclipse LSP4Jakarta RESTful WS completion](/images/docs/lsp4jakarta_completion.png)
+
+![Eclipse LSP4MP microprofile-config.properties completion](/images/docs/mp_completion.png)
