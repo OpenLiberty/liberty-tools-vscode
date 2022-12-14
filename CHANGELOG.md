@@ -8,7 +8,7 @@ Version 0.1.12 of Liberty Tools for Visual Studio Code is an **early release** t
 
 Notable enhancements:
 - Editing assistance (completion, hover, diagnostics and quick-fixes) when editing server.xml, server.env, and bootstrap.properties files via the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server).
-- Editing assistance (completion, diagnostics and quick-fixes) for Jakarta EE 9.x Web Profile APIs when editing Java files via the [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta), Language Server for Jakarta EE.
+- Editing assistance (code snippets, diagnostics and quick-fixes) for Jakarta EE 9.x Web Profile APIs when editing Java files via the [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta), Language Server for Jakarta EE.
 - Liberty projects are now automatically detected via the presence of a “src/main/liberty/config/server.xml” file.
 - New “Liberty: Attach Debugger” Liberty action, accessible through the Liberty Dashboard or Visual Studio Code Command Palette. Requires “Liberty: Start” to have been run first.
 - Ability to run Liberty actions through the Visual Studio Code Command Palette or the keyboard shortcut: Shift + Alt + L.
