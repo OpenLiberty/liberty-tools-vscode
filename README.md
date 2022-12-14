@@ -9,7 +9,6 @@ Liberty Tools for Visual Studio Code offers features for developing cloud-native
 
 ![liberty dashboard screenshot](/docs/screenshots/liberty_dashboard.png)
 
----
 - [Features](#features)
 - [Quick Start](#quick-start)
 - [Commands](#commands)
@@ -31,19 +30,19 @@ Use Liberty Tools to run your Liberty Maven or Liberty Gradle projects through t
 - Run tests.
 - View test reports.
 - Code with language assistance in the following configuration and application files:
-    - server.xml, server.env, bootstrap.properties Liberty configuration files
-    - Jakarta EE 9.x APIs in Java files
-    - MicroProfile APIs in microprofile-config.properties and Java files
+  - `server.xml`, `server.env`, `bootstrap.properties` Liberty configuration files
+  - Jakarta EE 9.x APIs in Java files
+  - MicroProfile APIs in `microprofile-config.properties` and Java files
 
-Feature completion in bootstrap.properties files helps you quickly edit your Liberty runtime configuration.
+Feature completion in `bootstrap.properties` files helps you quickly edit your Liberty runtime configuration.
 
 ![Liberty Config Language Server completion](/docs/screenshots/lcls_completion.png)
 
-Hover in server.xml files provides more detailed descriptions.
+Hover in `server.xml` files provides more detailed descriptions.
 
 ![Liberty Config Language Server hover](/docs/screenshots/lcls_hover.png)
 
-Diagnostics in server.env files helps you quickly correct your Liberty runtime configuration.
+Diagnostics in `server.env` files helps you quickly correct your Liberty runtime configuration.
 
 ![Liberty Config Language Server diagnostic](/docs/screenshots/lcls_diagnostics.png)
 
@@ -64,7 +63,6 @@ Liberty Tools for Visual Studio Code depends on the [Tools for MicroProfile](htt
 - Liberty supported projects will appear in the Liberty Dashboard on the side bar.
 - Right-click a project in the Liberty Dashboard to view the available commands.
 
-
 For minimum requirements information and detailed instructions on how to use the Liberty actions, check out the [Liberty Tools for Visual Studio Code user guide](docs/user-guide.md) page.
 
 ## Commands
@@ -72,7 +70,7 @@ For minimum requirements information and detailed instructions on how to use the
 The following commands are available when you select a project in the Liberty Dashboard.
 
 | Command | Description |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| --- | --- | --- |
 | Start  | Starts dev mode. |
 | Start…​ | Starts dev mode with custom parameters. Supported parameters can be found in the documentation for the [dev goal of the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) and the [libertyDev task of the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#command-line-parameters). |
 | Start in a container | Starts dev mode with Liberty running in a container. The `liberty-maven-plugin` must be version `3.3-M1` or higher. The `liberty-gradle-plugin` must be version `3.1-M1` or higher. |
@@ -80,12 +78,12 @@ The following commands are available when you select a project in the Liberty Da
 | Run tests | Runs the unit tests and integration tests that are configured for your project. Liberty must be running in dev mode to use this command. |
 | View integration test report (Maven) | Views the integration test report file it exists at `/target/site/failsafe-report.html`. |
 | View unit test report (Maven) | Views the unit test report file if it exists at `/target/site/surefire-report.html`. |
-| View test report (Gradle) | Opens the test report file if it exists at the default location `build/reports/tests/test/index.html`. This action command is only available to Gradle projects. Gradle projects only have a single action command for test result reporting. |
+| View test report (Gradle) | Opens the test report file, if it exists at the `build/reports/tests/test/index.html` default location. This action command is available only to Gradle projects. Gradle projects have only a single action command for test result reporting. |
 
 ## Configurable User Settings
 
-| Setting                      | Description                                                                                                                                                                                 | Default Value |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| Setting | Description | Default Value |
+| --- | --- | --- |
 | liberty.terminal.useJavaHome | If this value is true, and if the setting `java.home` has a value, then the environment variable `JAVA_HOME` will be set to the value of `java.home` when a new terminal window is created. | False         |
 | xml.java.home | This property allows a user to define their LemMinX language server runtime without altering the `JAVA_HOME` environment variable.  | Not set |
 
@@ -93,15 +91,16 @@ The following commands are available when you select a project in the Liberty Da
 
 The following settings provided by external extensions will be honoured when executing dev mode commands.
 
-| Setting                      | Description                                                                                                                                                                                 | Provided By |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| maven.executable.path | Maven commands executed by dev mode will honour this setting. When this value is empty, it tries to use `mvn` or `mvnw` according to the value of `maven.executable.preferMavenWrapper`. | [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven)         |
-| maven.executable.preferMavenWrapper | Maven commands executed by dev mode will honour this setting. If true, it tries to use `mvnw` if a Maven wrapper file can be found. Otherwise it will use `mvn`. | [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven)         |
-| java.import.gradle.wrapper.enabled | Gradle commands executed by dev mode will honour this setting. If true, it tries to use `gradlew` if a Gradle wrapper file can be found. Otherwise it will use `gradle`. | [Language support for Java extension](https://marketplace.visualstudio.com/items?itemName=redhat.java)        |
+| Setting | Description | Provided By |
+| --- | --- | --- |
+| maven.executable.path | Maven commands executed by dev mode will honour this setting. When this value is empty, it tries to use `mvn` or `mvnw` according to the value of `maven.executable.preferMavenWrapper`. | [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven) |
+| maven.executable.preferMavenWrapper | Maven commands executed by dev mode will honour this setting. If true, it tries to use `mvnw` if a Maven wrapper file can be found. Otherwise it will use `mvn`. | [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven) |
+| java.import.gradle.wrapper.enabled | Gradle commands executed by dev mode will honour this setting. If true, it tries to use `gradlew` if a Gradle wrapper file can be found. Otherwise it will use `gradle`. | [Language support for Java extension](https://marketplace.visualstudio.com/items?itemName=redhat.java) |
 
 ## Requirements
 
 These requirements are bundled with Liberty Tools for Visual Studio Code during installation and are provided here for additional information.
+
 - [Tools for MicroProfile extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-microprofile)
 - [XML extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml)
 

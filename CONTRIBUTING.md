@@ -15,7 +15,7 @@ A good bug report makes it easy for us to understand what you were trying to do 
 
 ### Legal
 
-In order to make contribution as easy as possible, we follow the [Developer's Certificate of Origin 1.1 (DCO)](https://developercertificate.org/) process for code contributions. Simply certify your contributions by signing off in your pull requests.
+In order to make contribution as easy as possible, we follow the same approach that the Linux® Kernel [community](https://elinux.org/Developer_Certificate_Of_Origin) uses to manage code contributions: the [Developer's Certificate of Origin 1.1 (DCO)](https://developercertificate.org/).
 
 We simply ask that when submitting a pull request for review, the developer
 must include a sign-off statement in the commit message.
