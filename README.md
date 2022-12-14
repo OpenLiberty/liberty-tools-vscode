@@ -64,8 +64,6 @@ Liberty Tools for Visual Studio Code depends on the [Tools for MicroProfile](htt
 - Liberty supported projects will appear in the Liberty Dashboard on the side bar.
 - Right-click a project in the Liberty Dashboard to view the available commands.
 
-For minimum requirements information and detailed instructions on how to use the Liberty actions, check out the [Liberty Tools for Visual Studio Code user guide](docs/user-guide.md) page.
-
 ## Commands
 
 The following commands are available when you select a project in the Liberty Dashboard.
