@@ -12,9 +12,9 @@ Notable enhancements:
 - Liberty projects are now automatically detected via the presence of a “src/main/liberty/config/server.xml” file.
 - New “Liberty: Attach Debugger” Liberty action, accessible through the Liberty Dashboard or Visual Studio Code Command Palette. Requires “Liberty: Start” to have been run first.
 - Ability to run Liberty actions through the Visual Studio Code Command Palette or the keyboard shortcut: Shift + Alt + L.
+- “Liberty: Start…” saves command history.
 - Ability to manually add projects to the Liberty Dashboard.
 - New icons for Maven and Gradle projects in the Liberty Dashboard.
-- “Liberty: Start…” saves command history.
 
 See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/0.1.12...main) for the full set of changes since the previous early release.
 
