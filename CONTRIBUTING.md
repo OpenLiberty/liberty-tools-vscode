@@ -15,12 +15,12 @@ A good bug report makes it easy for us to understand what you were trying to do 
 
 ### Legal
 
-In order to make contribution as easy as possible, we follow the same approach that the Linux® Kernel [community](https://elinux.org/Developer_Certificate_Of_Origin) uses to manage code contributions: the [Developer's Certificate of Origin 1.1 (DCO)](https://developercertificate.org/).
+In order to make contribution as easy as possible, we follow the [Developer's Certificate of Origin 1.1 (DCO)](https://developercertificate.org/) process for code contributions. We ask you to certify your contributions by signing off in your pull requests.
 
-We simply ask that when submitting a pull request for review, the developer
+When you submit a pull request for review, you
 must include a sign-off statement in the commit message.
 
-Here is an example Signed-off-by line, which indicates that the
+The following example includes a `Signed-off-by` line, which indicates that the
 submitter accepts the DCO:
 
 ```text
@@ -45,4 +45,4 @@ Please note:
 
 ### Developing
 
-To learn how to set up, run, and test your development environment, follow the provided [development instructions](DEVELOPING.md).
+To learn how to set up, run, and test your development environment, see [Developing Liberty Tools for Visual Studio Code](DEVELOPING.md).
