@@ -10,8 +10,8 @@
     - [Start](#start)
     - [Start with configuration](#start-with-configuration)
     - [Start in container](#start-in-container)
-4. [Running your application's tests](#running-your-applications-tests)
-5. [Viewing your application's test reports](#viewing-your-applications-test-reports)
+4. [Running your application tests](#running-your-application-tests)
+5. [Viewing your application test reports](#viewing-your-application-test-reports)
 6. [Stopping your application](#stopping-your-application)
 7. [Debugging your application](#debugging-your-application)
 8. [Manually adding your Liberty project to the tool window](#manually-adding-the-liberty-nature-to-a-project)
@@ -49,7 +49,7 @@ If you add new projects or make changes, and you need the dashboard to be refres
 
 ## Running your application on Liberty using dev mode
 
-There are three options ([Start](#start), [Start...](#start-with-configuration), [Start in container](#start-in-container)) for starting your Liberty application in dev mode by using the menu actions provided through the Liberty dashboard.
+There are three options ([Start](#start), [Start...](#start-with-configuration), [Start in container](#start-in-container)) for starting your Liberty application in dev mode by using the menu commands provided through the Liberty dashboard.
 
 ### Using the Liberty dashboard view
 
@@ -59,28 +59,28 @@ The Liberty dashboard provides a context menu to the Liberty projects in it. Use
 
 ### Using the Command Palette
 
-The Liberty Tools plugin provides a set of actions to the [command palette](https://docs.github.com/en/codespaces/codespaces-reference/using-the-vs-code-command-palette-in-codespaces). The command palette is accessible a [number of ways](https://docs.github.com/en/codespaces/codespaces-reference/using-the-vs-code-command-palette-in-codespaces#accessing-the-vs-code-command-palette). Additionally, the `Shift` + `Alt` + `L` shortcut shows a similar menu with only Liberty commands.
+The Liberty Tools plugin provides a set of commands to the [command palette](https://docs.github.com/en/codespaces/codespaces-reference/using-the-vs-code-command-palette-in-codespaces). The command palette is accessible a [number of ways](https://docs.github.com/en/codespaces/codespaces-reference/using-the-vs-code-command-palette-in-codespaces#accessing-the-vs-code-command-palette). Additionally, the `Shift` + `Alt` + `L` shortcut shows a similar menu with only Liberty commands.
 
 ![Liberty Command Palette](/docs/user-guide-screenshots/liberty_command_palette.png)
 
 ### Start
 
-If you want to start your application in dev mode, you can either right-click on the application listed in the Liberty dashboard and click on the `Start` action, or select the `Liberty: Start` action in the command palette followed by your desired application.
+If you want to start your application in dev mode, select the **Start** command for your application in the Liberty dashboard or select the `Liberty: Start` command in the command palette followed by your desired application.
 
-A new terminal tab will open to run the application in dev mode.
+A new terminal tab opens to run the application in dev mode.
 
-![Start action started](/docs/user-guide-screenshots/devModeStarted.png)
+![Start command started](/docs/user-guide-screenshots/devModeStarted.png)
 
 ### Start with Configuration
 
-If you want to start your application in dev mode with custom configuration, you can either right-click on the application listed in the Liberty tool window, and click on the `Start...` action or select the `Liberty: Start...` action in the command palette followed by your desired application.
+If you want to start your application in dev mode with custom configuration, select the **Start...** command for your application in the Liberty dashboard or select the `Liberty: Start...` command in the command palette followed by your desired application.
 You can specify parameters for the [Liberty Maven dev goal](https://github.com/OpenLiberty/ci.maven/blob/main/docs/dev.md#additional-parameters) or [Liberty Gradle dev task](https://github.com/OpenLiberty/ci.gradle/blob/main/docs/libertyDev.md#command-line-parameters).
 
-![Liberty Start... action](/docs/user-guide-screenshots/devModeStartCustom.png)
+![Liberty Start... command](/docs/user-guide-screenshots/devModeStartCustom.png)
 
-A new terminal tab will open to run the application in dev mode.
+A new terminal tab opens to run the application in dev mode.
 
-![Liberty Start... action running in terminal](/docs/user-guide-screenshots/devModeStartCustomStarted.png)
+![Liberty Start... command running in terminal](/docs/user-guide-screenshots/devModeStartCustomStarted.png)
 
 The next time you choose to start with configuration again the menu will provide a history of previous used configurations.
 
@@ -88,55 +88,55 @@ The next time you choose to start with configuration again the menu will provide
 
 ### Start in container
 
-If you want to make use of dev mode for containers, you can either right-click on the application listed in the Liberty tool window, and click on the `Start in container` action or select the `Liberty: Start in container` action in the command palette followed by your desired application.
+If you want to make use of dev mode for containers, select the **Start in container** command for your application in the Liberty dashboard or select the `Liberty: Start in container` command in the command palette followed by your desired application.
 
 For more information on dev mode for containers, check out the [Liberty Maven devc goal](https://github.com/OpenLiberty/ci.maven/blob/main/docs/dev.md#devc-container-mode) or the [Liberty Gradle libertyDevc task](https://github.com/OpenLiberty/ci.gradle/blob/main/docs/libertyDev.md#libertydevc-task-container-mode).
 
-![Liberty Start in container action](/docs/user-guide-screenshots/devModeStartContainer.png)
+![Liberty Start in container command](/docs/user-guide-screenshots/devModeStartContainer.png)
 
-## Running your application's tests
+## Running your application tests
 
 Once your application is running on Liberty using dev mode, you can easily run the tests provided by your application.
 
-To do this, you can either right-click on the application listed in the Liberty tool window, and click on the `Run tests` action or select the `Liberty: Run tests` action in the command palette followed by your desired application.
+To do this, select the **Run tests** command for your application in the Liberty dashboard or select the `Liberty: Run tests` command in the command palette followed by your desired application.
 
 The tests are run in the corresponding terminal.
 
-![Liberty run tests action](/docs/user-guide-screenshots/run_tests_action.png)
+![Liberty run tests command](/docs/user-guide-screenshots/run_tests_command.png)
 
-## Viewing your application's test reports
+## Viewing your application test reports
 
-Once you are done running your application's tests, you can access the produced test reports.
+After you finish running your application tests, you can access the produced test reports.
 
 ![Liberty show test results](/docs/user-guide-screenshots/show_test_report.png)
 
 ### Maven built application
 
-To view the integration test report for Maven built applications, you can either right-click on the application listed in the Liberty tool window, and click on the `View integration test report` action or select the `Liberty: View integration test report` action in the command palette followed by your desired application.
+To view the integration test report for Maven built applications, select the **View integration test report** command for your application in the Liberty dashboard or select the `Liberty: View integration test report` command in the command palette followed by your desired application.
 
-Note that this action will look for the integration test report at the default location `/target/site/failsafe-report.html`.
+Note that this command will look for the integration test report at the default location `/target/site/failsafe-report.html`.
 
-To view the unit test report for Maven built applications, you can either right-click on the application listed in the Liberty tool window, and click on the `View unit test report` action or select the `Liberty: View unit test report` action in the command palette followed by your desired application.
+To view the unit test report for Maven built applications, select the **View unit test report** command for your application in the Liberty dashboard or select the `Liberty: View unit test report` command in the command palette followed by your desired application.
 
-Note that this action will look for the unit test report at the default location `/target/site/surefire-report.html`.
+Note that this command will look for the unit test report at the default location `/target/site/surefire-report.html`.
 
 ### Gradle built application
 
-To view the test report for Gradle built applications, you can either right-click on the application listed in the Liberty tool window, and click on the `View test report` action or select the `Liberty: View test report` action in the command palette followed by your desired application.
+To view the test report for Gradle built applications, select the **View test report** command for your application in the Liberty dashboard or select the `Liberty: View test report` command in the command palette followed by your desired application.
 
-Note that this action will look for the test report at the default location `build/reports/tests/test/index.html`.
+Note that this command will look for the test report at the default location `build/reports/tests/test/index.html`.
 
 ## Stopping your application
 
-To stop your application, you can either right-click on the application listed in the Liberty tool window, and click on the `Stop` action or select the `Liberty: Stop` action in the command palette followed by your desired application.
+To stop your application, select the **Stop** command for your application in the Liberty dashboard or select the `Liberty: Stop` command in the command palette followed by your desired application.
 
-![Stop action](/docs/user-guide-screenshots/devModeStop.png)
+![Stop command](/docs/user-guide-screenshots/devModeStop.png)
 
 Once the project is stopped, the terminal in which it ran is closed.
 
 ## Debugging your application
 
-To attach the debugger, you must have a [running server](#running-your-application-on-liberty-using-dev-mode). Once running, click on the `Attach debugger` action or select the `Liberty: Attach debugger` action in the command palette followed by your desired application.
+To attach the debugger, you must have a [running server](#running-your-application-on-liberty-using-dev-mode). Once running, click on the `Attach debugger` command or select the `Liberty: Attach debugger` command in the command palette followed by your desired application.
 
 ![Attach Debugger](/docs/user-guide-screenshots/attach_debugger.png)
 
@@ -146,15 +146,15 @@ When attached, Visual Studio Code's [debug options](https://code.visualstudio.co
 
 ## Manually adding the Liberty nature to a project
 
-To manually add your Liberty project to the Liberty tool window, right click into an empty space in the project explorer and select `Add project to Liberty Dashboard` or select the `Liberty: Add project to the tool window` action in the command palette followed by your desired application.
+To manually add your Liberty project to the in the Liberty dashboard, right click into an empty space in the project explorer and select **Add project to Liberty Dashboard** or select the `Liberty: Add project to the tool window` command in the command palette followed by your desired application.
 
 ![Liberty add project to tool window](/docs/user-guide-screenshots/add_liberty_project.png)
 
-You will be prompted with a list of available projects that are not already displayed in the Liberty tool window.
+You will be prompted with a list of available projects that are not already displayed in the in the Liberty dashboard.
 
 ![Liberty add project to tool window selection](/docs/user-guide-screenshots/add_liberty_project_2.png)
 
-You can remove manually added Liberty projects from the Liberty tool window right clicking into an empty space in the project explorer and selecting `Remove project from Liberty Dashboard` or by selecting the `Liberty: Remove project from the tool window` action in the command palette followed by your desired application.
+You can remove manually added Liberty projects from the in the Liberty dashboard right clicking into an empty space in the project explorer and selecting `Remove project from Liberty Dashboard` or by selecting the `Liberty: Remove project from the tool window` command in the command palette followed by your desired application.
 
 ![Liberty Remove Project](/docs/user-guide-screenshots/removeLibertyProject.png)
 
@@ -162,7 +162,7 @@ You can remove manually added Liberty projects from the Liberty tool window righ
 
 Liberty configuration assistance is offered through the Liberty Config Language Server. For more information, see the [project documentation in GitHub](https://github.com/OpenLiberty/liberty-language-server#liberty-config-language-server).
 
-1. Start the project in dev mode, using one of the previously described Liberty dashboard or command palette commands. Dev mode installs the Liberty features that are required for your application.
+1. Start the project in dev mode by using one of the previously described Liberty dashboard or command palette commands. Dev mode installs the Liberty features that are required for your application.
 2. Open any of the supported Liberty configuration files.
 3. To use Liberty-specific code completion, press `Ctrl`/`Cmd` + `Space` anywhere within the document. A drop-down list of completion suggestions appears.
 
