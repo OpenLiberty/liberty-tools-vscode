@@ -20,6 +20,8 @@ Liberty Tools for Visual Studio Code offers features for developing cloud-native
 
 Use Liberty Tools to run your Liberty Maven or Liberty Gradle projects through the Liberty dashboard or the VS Code command palette. You can start, stop, or interact with [Liberty dev mode](https://openliberty.io/docs/latest/development-mode.html) on all available [Liberty Maven](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) or [Liberty Gradle](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md) projects in your workspace. Liberty Tools also helps you quickly and easily edit your application and configuration files by providing language support features for MicroProfile, Jakarta EE, and Liberty configuration and Java files.
 
+For minimum requirements information and detailed instructions on how to use Liberty tools, check out the [Liberty Tools for Visual Studio Code user guide](docs/user-guide.md) page.
+
 ## Features
 
 - View supported Liberty projects in the Liberty dashboard.
@@ -46,7 +48,7 @@ Diagnostics in `server.env` files helps you quickly spot errors in your Liberty 
 
 ![Liberty Config Language Server diagnostic](/docs/screenshots/lcls_diagnostics.png)
 
-Helpful code snippets are provided for Jakarta EE APIs in Java files, such as Jakarta RESTful Web Services.
+Helpful code snippets are provided in Java files for Jakarta EE APIs such as Jakarta RESTful Web Services.
 
 ![Eclipse LSP4Jakarta completion](/docs/screenshots/lsp4jakarta_completion.png)
 
@@ -64,7 +66,7 @@ Liberty Tools for Visual Studio Code depends on the [Tools for MicroProfile](htt
 
 Projects with the Liberty Maven Plugin or Liberty Gradle Plugin configured will appear in the Liberty Dashboard on the sidebar.
 
-For minimum requirements information and detailed instructions on how to use the Liberty actions, check out the [Liberty Tools for Visual Studio Code user guide](docs/user-guide.md) page.
+For minimum requirements information and detailed instructions on how to use the Liberty commands, check out the [Liberty Tools for Visual Studio Code user guide](docs/user-guide.md) page.
 
 ## Commands
 
@@ -72,14 +74,14 @@ The following commands are available when you select a project in the Liberty Da
 
 | Command | Description |
 | --- | --- |
-| Start  | Starts dev mode. |
-| Start…​ | Starts dev mode with custom parameters. Supported parameters can be found in the documentation for the [dev goal of the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) and the [libertyDev task of the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#command-line-parameters). |
-| Start in a container | Starts dev mode with Liberty running in a container. The `liberty-maven-plugin` must be version `3.3-M1` or higher. The `liberty-gradle-plugin` must be version `3.1-M1` or higher. |
-| Stop | Stops dev mode. Liberty must be running in dev mode to use this command. |
-| Run tests | Runs the unit tests and integration tests that are configured for your project. Liberty must be running in dev mode to use this command. |
-| View integration test report (Maven) | Views the integration test report file, if it exists at the  `/target/site/failsafe-report.html` default location.  |
-| View unit test report (Maven) | Views the unit test report file, if it exists at the `/target/site/surefire-report.html` default location. |
-| View test report (Gradle) | Opens the test report file, if it exists at the `build/reports/tests/test/index.html` default location. This action command is available only to Gradle projects. Gradle projects have only a single action command for test result reporting. |
+| Start  | Start dev mode. |
+| Start…​ | Start dev mode with custom parameters. Supported parameters can be found in the documentation for the [dev goal of the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) and the [libertyDev task of the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#command-line-parameters). |
+| Start in a container | Start dev mode with Liberty running in a container. The `liberty-maven-plugin` must be version `3.3-M1` or higher. The `liberty-gradle-plugin` must be version `3.1-M1` or higher. |
+| Stop | Stop dev mode. Liberty must be running in dev mode to use this command. |
+| Run tests | Run the unit tests and integration tests that are configured for your project. Liberty must be running in dev mode to use this command. |
+| View integration test report (Maven) | View the integration test report file, if it exists at the  `/target/site/failsafe-report.html` default location.  |
+| View unit test report (Maven) | View the unit test report file, if it exists at the `/target/site/surefire-report.html` default location. |
+| View test report (Gradle) | Open the test report file, if it exists at the `build/reports/tests/test/index.html` default location. This action command is available only to Gradle projects. Gradle projects have only a single action command for test result reporting. |
 
 ## Configurable user settings
 
@@ -111,4 +113,5 @@ See the [DEVELOPING](DEVELOPING.md) and [CONTRIBUTING](CONTRIBUTING.md) document
 
 ## Issues
 
-Please report bugs, issues and feature requests by creating a [GitHub issue](https://github.com/OpenLiberty/liberty-tools-vscode/issues).
+Please report bugs, issues and feature requests by creating
+a [GitHub issue](https://github.com/OpenLiberty/liberty-tools-vscode/issues).
