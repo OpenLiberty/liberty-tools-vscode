@@ -60,7 +60,9 @@ Liberty Tools for Visual Studio Code depends on the [Tools for MicroProfile](htt
 ## Quick start
 
 - Install [Liberty Tools for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext)
-- Supported Liberty projects will appear in the Liberty Dashboard on the sidebar. Right-click a project in the Liberty Dashboard to view the available commands.
+- Select a project in the Liberty dashboard to view the available commands.
+
+Projects with the Liberty Maven Plugin or Liberty Gradle Plugin configured will appear in the Liberty Dashboard on the sidebar.
 
 For minimum requirements information and detailed instructions on how to use the Liberty actions, check out the [Liberty Tools for Visual Studio Code user guide](docs/user-guide.md) page.
 
