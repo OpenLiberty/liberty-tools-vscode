@@ -16,7 +16,7 @@ Notable enhancements:
 - Ability to manually add projects to the Liberty Dashboard.
 - New icons for Maven and Gradle projects in the Liberty Dashboard.
 
-See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/0.1.12...main) for the full set of changes since the previous early release.
+See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/0.0.11...0.1.12) for the full set of changes since the previous early release.
 
 ## 0.1.11
 - Rename extension to Liberty Tools for VS Code
