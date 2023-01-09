@@ -176,13 +176,13 @@ Liberty configuration assistance provides editing assistance, such as [code comp
 2. Open any of the supported Liberty configuration files.
 3. To use Liberty-specific code completion, press <kbd>Ctrl</kbd> + <kbd>Space</kbd> / <kbd>Cmd</kbd> + <kbd>Space</kbd> anywhere within the document. A drop-down list of completion suggestions appears.
 
-Liberty configuration assistance is offered through the Liberty Config Language Server. For more information, see the [project documentation in GitHub](https://github.com/OpenLiberty/liberty-language-server#liberty-config-language-server).
-
 ![LCLS server.xml completion](/docs/user-guide-screenshots/serverXmlCompletion.png)
+
+Liberty configuration assistance is offered through the Liberty Config Language Server. For more information, see the [project documentation in GitHub](https://github.com/OpenLiberty/liberty-language-server#liberty-config-language-server).
 
 ## Develop with Jakarta EE and MicroProfile APIs
 
-Liberty Tools editing assistance provides code completion in configuration and application files for Jakarta EE and MicroProfile APIs.
+Liberty Tools editing assistance provides code completion, diagnostics, and quick-fixes in configuration and application files for Jakarta EE and MicroProfile APIs.
 
 1. Open a Java or microprofile-config.properties file.
 2. To use Jakarta EE-specific and MicroProfile-specific code completion, press <kbd>Ctrl</kbd> + <kbd>Space</kbd> / <kbd>Cmd</kbd> + <kbd>Space</kbd> anywhere within the document. A drop-down list of completion suggestions appears.
