@@ -2,37 +2,41 @@
 
 This guide provides detailed instructions on how to configure your Liberty project to use the Liberty Tools for Visual Studio Code extension.
 
-1. [Before you begin](#before-you-begin)
-    - [Application requirements](#application-requirements)
-    - [Settings](#settings)
-2. [Open the Liberty dashboard](#open-the-liberty-dashboard)
-3. [Run your application on Liberty using dev mode](#run-your-application-on-liberty-using-dev-mode)
-    - [Use the Liberty dashboard](#use-the-liberty-dashboard)
-    - [Use the Visual Studio Code Command Palette](#use-the-visual-studio-code-command-palette)
-    - [Start your application in dev mode](#start-your-application-in-dev-mode)
-    - [Start your application in dev mode with configuration](#start-your-application-in-dev-mode-with-configuration)
-    - [Start your application in dev mode in a container](#start-your-application-in-dev-mode-in-a-container)
-4. [Run your application's tests](#run-your-applications-tests)
-5. [View your application test reports](#view-your-application-test-reports)
-6. [Stop your application](#stop-your-application)
-7. [Debug your application](#debug-your-application)
-8. [Manually add your liberty project to the dashboard](#manually-add-your-liberty-project-to-the-dashboard)
-9. [Configure a Liberty server](#configure-a-liberty-server)
-10. [Develop with Jakarta EE and MicroProfile APIs](#develop-with-jakarta-ee-and-microprofile-apis)
+- [Before you begin](#before-you-begin)
+  - [Application requirements](#application-requirements)
+  - [Settings](#settings)
+- [Open the Liberty dashboard](#open-the-liberty-dashboard)
+- [Run your application on Liberty using dev mode](#run-your-application-on-liberty-using-dev-mode)
+  - [Use the Liberty dashboard](#use-the-liberty-dashboard)
+  - [Use the Visual Studio Code Command Palette](#use-the-visual-studio-code-command-palette)
+  - [Start your application in dev mode](#start-your-application-in-dev-mode)
+  - [Start your application in dev mode in a container](#start-your-application-in-dev-mode-in-a-container)
+  - [Start your application in dev mode with configuration](#start-your-application-in-dev-mode-with-configuration)
+- [Run your application tests](#run-your-application-tests)
+- [View your application test reports](#view-your-application-test-reports)
+- [Stop your application](#stop-your-application)
+- [Debug your application](#debug-your-application)
+- [Manually add your liberty project to the dashboard](#manually-add-your-liberty-project-to-the-dashboard)
+- [Configure a Liberty server](#configure-a-liberty-server)
+- [Develop with Jakarta EE and MicroProfile APIs](#develop-with-jakarta-ee-and-microprofile-apis)
 
 ## Before you begin
 
+### Software requirements
+
+- Java 17 is required by Liberty Tools for Visual Studio Code.
+
 ### Application requirements
 
-- Define a Liberty `server.xml` configuration file at location `src/main/liberty/config`.
-- Configure the [Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven#configuration) or [Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle#adding-the-plugin-to-the-build-script). We recommend using newer versions of the plugins as several important bug fixes have been included in recent versions.
-  - Recommended minimum versions of:
-    - Liberty Maven Plugin -> 3.7.1
-    - Liberty Gradle Plugin -> 3.5.1
+- Define a Liberty `server.xml` configuration file in the `src/main/liberty/config` location.
+- Configure the [Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven#configuration) or [Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle#adding-the-plugin-to-the-build-script). We recommend using recent versions of the plugins as they include several important bug fixes.
+
+  The following versions are recommended at minimum:
+  - Liberty Maven Plugin -> 3.7.1
+  - Liberty Gradle Plugin -> 3.5.1
 
 ### Settings
 
-Liberty Tools for Visual Studio Code requires Java 17.
 To ensure that the Liberty Config Language Server starts properly, define the `xml.java.home` property in your VS Code settings or set the system `JAVA_HOME` environment variable to point to Java 17 .
 
 ## Open the Liberty dashboard
@@ -53,7 +57,7 @@ If you add new projects or make changes, use the refresh icon in the Liberty das
 
 The following three menu actions are available to start your Liberty application in dev mode through the Liberty dashboard or the Visual Studio Code command palette:
 
-- [Start your application in dev mode](#start-your-application-in-dev-mode) 
+- [Start your application in dev mode](#start-your-application-in-dev-mode)
 - [Start your application in dev mode with configuration](#start-your-application-in-dev-mode-with-configuration)
 - [Start your application in dev mode in a container](#start-your-application-in-dev-mode-in-a-container)
 
@@ -177,13 +181,17 @@ Liberty configuration assistance is offered through the Liberty Config Language 
 
 ## Develop with Jakarta EE and MicroProfile APIs
 
-Editing assistance for configuration and application files for Jakarta EE and MicroProfile APIs is provided through the following language server projects, which this project consumes. For more information, see the documentation for these projects:
+Liberty Tools editing assistance provides code completion in configuration and application files for Jakarta EE and MicroProfile APIs.
 
-- Jakarta EE APIs in Java files: [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta#eclipse-lsp4jakarta), the Language Server for Jakarta EE.
-- MicroProfile APIs in microprofile-config.properties and Java files: [Eclipse LSP4MP](https://github.com/eclipse/lsp4mp#eclipse-lsp4mp---language-server-for-microprofile), the Language Server for MicroProfile.
+1. Open a Java or microprofile-config.properties file.
+2. To use Jakarta EE-specific and MicroProfile-specific code completion, press <kbd>Ctrl</kbd> + <kbd>Space</kbd> / <kbd>Cmd</kbd> + <kbd>Space</kbd> anywhere within the document. A drop-down list of completion suggestions appears.
 
 Open a Java or microprofile-config.properties file. Proceed to use Jakarta EE and MicroProfile specific editing support: completion by typing `Ctrl`/`Cmd` + `Space` at a given point within the document.
 
 ![Eclipse LSP4Jakarta RESTful completion](/docs/screenshots/lsp4jakarta_completion.png)
 
 ![Eclipse LSP4MP microprofile-config.properties completion](/docs/user-guide-screenshots/mp_completion.png)
+
+Jakarta EE API configuration assistance is offered through Eclipse LSP4Jakarta, the Language Server for Jakarta EE. For more information, see the [project documentation in GitHub](https://github.com/eclipse/lsp4jakarta#eclipse-lsp4jakarta).
+
+MicroProfile EE API configuration assistance is offered through Eclipse LSP4MP, the Language Server for MicroProfile. For more information, see the [project documentation in GitHub](https://github.com/eclipse/lsp4mp#eclipse-lsp4mp---language-server-for-microprofile).
