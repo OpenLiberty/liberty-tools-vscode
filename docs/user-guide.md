@@ -3,6 +3,7 @@
 This guide provides detailed instructions on how to configure your Liberty project to use the Liberty Tools for Visual Studio Code extension.
 
 - [Before you begin](#before-you-begin)
+  - [Software requirements](#software-requirements)
   - [Application requirements](#application-requirements)
   - [Settings](#settings)
 - [Open the Liberty dashboard](#open-the-liberty-dashboard)
