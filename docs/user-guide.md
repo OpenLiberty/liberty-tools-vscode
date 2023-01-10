@@ -3,6 +3,7 @@
 This guide provides detailed instructions on how to configure your Liberty project to use the Liberty Tools for Visual Studio Code extension.
 
 - [Before you begin](#before-you-begin)
+  - [Software requirements](#software-requirements)
   - [Application requirements](#application-requirements)
   - [Settings](#settings)
 - [Open the Liberty dashboard](#open-the-liberty-dashboard)
@@ -173,20 +174,18 @@ Liberty configuration assistance provides editing assistance, such as [code comp
 
 1. Start the project in dev mode by using one of the previously described Liberty dashboard or command palette commands. Dev mode installs the Liberty features that are required for your application.
 2. Open any of the supported Liberty configuration files.
-3. To use Liberty-specific code completion, press <kbd>Ctrl/Cmd</kbd> + <kbd>Space</kbd> anywhere within the document. A drop-down list of completion suggestions appears.
-
-Liberty configuration assistance is offered through the Liberty Config Language Server. For more information, see the [project documentation in GitHub](https://github.com/OpenLiberty/liberty-language-server#liberty-config-language-server).
+3. To use Liberty-specific code completion, press <kbd>Ctrl</kbd> + <kbd>Space</kbd> / <kbd>Cmd</kbd> + <kbd>Space</kbd> anywhere within the document. A drop-down list of completion suggestions appears.
 
 ![LCLS server.xml completion](/docs/user-guide-screenshots/serverXmlCompletion.png)
 
+Liberty configuration assistance is offered through the Liberty Config Language Server. For more information, see the [project documentation in GitHub](https://github.com/OpenLiberty/liberty-language-server#liberty-config-language-server).
+
 ## Develop with Jakarta EE and MicroProfile APIs
 
-Liberty Tools editing assistance provides code completion in configuration and application files for Jakarta EE and MicroProfile APIs.
+Liberty Tools editing assistance provides code completion, diagnostics, and quick-fixes in configuration and application files for Jakarta EE and MicroProfile APIs.
 
 1. Open a Java or microprofile-config.properties file.
 2. To use Jakarta EE-specific and MicroProfile-specific code completion, press <kbd>Ctrl</kbd> + <kbd>Space</kbd> / <kbd>Cmd</kbd> + <kbd>Space</kbd> anywhere within the document. A drop-down list of completion suggestions appears.
-
-Open a Java or microprofile-config.properties file. Proceed to use Jakarta EE and MicroProfile specific editing support: completion by typing `Ctrl`/`Cmd` + `Space` at a given point within the document.
 
 ![Eclipse LSP4Jakarta RESTful completion](/docs/screenshots/lsp4jakarta_completion.png)
 
