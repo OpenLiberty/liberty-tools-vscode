@@ -2,6 +2,8 @@
 
 We welcome contributions, and request you follow these guidelines.
 
+> Note: Starting with the [0.1.12 early release](https://github.com/OpenLiberty/liberty-tools-vscode/releases/tag/0.1.12), Java 17 is required to run Liberty Tools for Visual Studio Code.
+
 - [Raising issues](#raising-issues)
 - [Legal](#legal)
 - [Coding Standards](#coding-standards)
