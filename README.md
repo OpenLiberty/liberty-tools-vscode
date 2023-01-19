@@ -1,6 +1,6 @@
 # Liberty Tools for Visual Studio Code
 
-> Note: Starting with the [0.1.12 early release](https://github.com/OpenLiberty/liberty-tools-vscode/releases/tag/0.1.12), Java 17 is required.
+> Note: Starting with the [0.1.12 early release](https://github.com/OpenLiberty/liberty-tools-vscode/releases/tag/0.1.12), Java 17 is required to run Liberty Tools for Visual Studio Code.
 
 [![Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/Open-Liberty.liberty-dev-vscode-ext?style=for-the-badge&label=VS%20Market "Current Release")](https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext)
 [![License](https://img.shields.io/github/license/OpenLiberty/liberty-tools-vscode?style=for-the-badge&logo=eclipse)](https://www.eclipse.org/legal/epl-2.0/)
@@ -104,7 +104,7 @@ The following settings, which are provided by external extensions, are honoured 
 
 ## Requirements
 
-Starting with the [0.1.12 early release](https://github.com/OpenLiberty/liberty-tools-vscode/releases/tag/0.1.12), Java 17 is required.
+> Note: Starting with the [0.1.12 early release](https://github.com/OpenLiberty/liberty-tools-vscode/releases/tag/0.1.12), Java 17 is required to run Liberty Tools for Visual Studio Code.
 
 The following extensions are bundled with Liberty Tools for Visual Studio Code during installation and are provided here for additional information.
 
