@@ -21,9 +21,10 @@ import { workspace } from 'vscode';
 import { Executable, ExecutableOptions } from 'vscode-languageclient';
 import { RequirementsData } from './requirements';
 import * as glob from 'glob';
+import {LIBERTY_LS_JAR} from '../extension'
 
 // const DEBUG = startedInDebugMode();
-// const DEBUG_PORT = 1064;
+const LIBERTY_LS_DEBUG_PORT = 1064;
 
 // Referenced:
 // https://github.com/redhat-developer/vscode-microprofile/blob/master/src/languageServer/javaServerStarter.ts
@@ -49,6 +50,11 @@ function prepareParams(jarName: string): string[] {
 //       params.push(`-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${DEBUG_PORT},quiet=y`);
 //     }
 //   }
+
+  // uncomment to debug the Liberty Config Language Server
+  // if (jarName === LIBERTY_LS_JAR) {
+  //   params.push(`-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${LIBERTY_LS_DEBUG_PORT}`);
+  // }
 
   const jarHome = path.resolve(__dirname, "../jars");
   params.push('-jar');
