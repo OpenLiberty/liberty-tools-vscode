@@ -12,12 +12,13 @@
 
 ## Building Liberty Tools for Visual Studio Code
 
-1. Clone this repository: `git clone https://github.com/OpenLiberty/liberty-tools-vscode`
-2. Change to the `liberty-tools-vscode` directory: `cd liberty-tools-vscode`
-3. Run `npm install`
-4. Run `npm run build`
-5. Run `npm run compile`
-6. Run the extension in Debug and Run mode by selecting `Run Extension` or pressing `F5` in Visual Studio Code.
+1. [Fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) this repository
+2. Clone your fork of this repository: `git clone https://github.com/OpenLiberty/liberty-tools-vscode`
+3. Change to the `liberty-tools-vscode` directory: `cd liberty-tools-vscode`
+4. Run `npm install`
+5. Run `npm run build`
+6. Run `npm run compile`
+7. Run the extension in Debug and Run mode by selecting `Run Extension` or pressing `F5` in Visual Studio Code.
 
    Alternatively, build a `.vsix` file and install the extension to Visual Studio Code with the command palette or Extensions activity bar.
    - Run `vsce package` to generate the `liberty-tools-vscode-xxx.vsix` file
