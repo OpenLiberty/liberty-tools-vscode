@@ -30,7 +30,7 @@ Ensure you have [Node.js and npm](https://docs.npmjs.com/downloading-and-install
      - Navigate to the Extensions activity bar, or use the shortcut `Ctrl`-`Shift`-`X`
      - Click the `...` dropdown menu and select `Install from VSIX` and choose the generated `liberty-tools-vscode-xxx.vsix` file
 
-Step 4 downloads the JARs for Liberty Config Language Server and Eclipse LSP4Jakarta that are consumed by the VS Code client.
+Step 5 downloads the JARs for Liberty Config Language Server and Eclipse LSP4Jakarta that are consumed by the VS Code client.
 The following instructions explain how to build these JARs locally.
 
 ## Language Servers
