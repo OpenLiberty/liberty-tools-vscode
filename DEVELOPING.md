@@ -12,12 +12,15 @@
 
 ## Building Liberty Tools for Visual Studio Code
 
-1. Clone this repository: `git clone https://github.com/OpenLiberty/liberty-tools-vscode`
-2. Change to the `liberty-tools-vscode` directory: `cd liberty-tools-vscode`
-3. Run `npm install`
-4. Run `npm run build`
-5. Run `npm run compile`
-6. Run the extension in Debug and Run mode by selecting `Run Extension` or pressing `F5` in Visual Studio Code.
+Ensure you have [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) installed.
+
+1. [Fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) this repository
+2. Clone your fork of this repository: `git clone https://github.com/<your GitHub id>/liberty-tools-vscode`
+3. Change to the `liberty-tools-vscode` directory: `cd liberty-tools-vscode`
+4. Run `npm install`
+5. Run `npm run build`
+6. Run `npm run compile`
+7. Run the extension in Debug and Run mode by selecting `Run Extension` or pressing `F5` in Visual Studio Code.
 
    Alternatively, build a `.vsix` file and install the extension to Visual Studio Code with the command palette or Extensions activity bar.
    - Run `vsce package` to generate the `liberty-tools-vscode-xxx.vsix` file
@@ -27,8 +30,8 @@
      - Navigate to the Extensions activity bar, or use the shortcut `Ctrl`-`Shift`-`X`
      - Click the `...` dropdown menu and select `Install from VSIX` and choose the generated `liberty-tools-vscode-xxx.vsix` file
 
-Step 4 downloads the JARs for Liberty Config Language Server and Eclipse LSP4Jakarta that are consumed by the VS Code client.
-The following instructions explain how to build these JARs locally.
+Step 5 downloads the JARs for Liberty Config Language Server and Eclipse LSP4Jakarta that are consumed by the VS Code client.
+If you would like a different version of the language servers other than what is available to download, the following instructions explain how to build these JARs locally.
 
 ## Language Servers
 
