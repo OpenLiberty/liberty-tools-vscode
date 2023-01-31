@@ -12,6 +12,8 @@
 
 ## Building Liberty Tools for Visual Studio Code
 
+Ensure you have [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) installed.
+
 1. [Fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) this repository
 2. Clone your fork of this repository: `git clone https://github.com/OpenLiberty/liberty-tools-vscode`
 3. Change to the `liberty-tools-vscode` directory: `cd liberty-tools-vscode`
