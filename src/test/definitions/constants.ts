@@ -10,6 +10,6 @@
 
 export const MAVEN_PROJECT = "inventory";
 export const START_DASHBOARD_ACTION= "Start";
-export const STOP_DASHBORAD_ACTION= "Stop";
+export const STOP_DASHBOARD_ACTION= "Stop";
 
 

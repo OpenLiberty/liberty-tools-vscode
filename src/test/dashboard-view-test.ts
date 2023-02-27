@@ -36,27 +36,7 @@ it('openDasboard shows items', async () => {
     
 }).timeout(75000);
 
-it('check if server already running', async () => {
 
-  const mvnProjectLogPath = utils.getMvnProjectLogPath();
-  if (fs.existsSync(mvnProjectLogPath)) {
-    console.log("file exists");
-    
-    fs.unlink(mvnProjectLogPath, async(err) => {
-      if (err) {
-        console.log(err.message);
-        await utils.launchStopServer(section);
-        const serverStopStatus= await utils.validateIfServerStopped();
-        if(!serverStopStatus){ 
-          console.error("Message CWWKE0036I not found in "+ utils.getMvnProjectLogPath());
-        }
-        else
-          console.log("Server stopped successfully"); 
-        }
-        console.log( mvnProjectLogPath +" was deleted");
-        });
-  };        
-}).timeout(10000);
 
 
 it('start sample project from liberty dashboard', async () => {      
@@ -76,9 +56,9 @@ it('start sample project from liberty dashboard', async () => {
     }
     else
       console.log("Server stopped successfully");
-    expect (serverStopStatus,"Could not stop server").to.be.true;
+    expect (serverStopStatus).to.be.true;
 }
- expect (serverStartStatus, "Could not start server").to.be.true;
+ expect (serverStartStatus).to.be.true;
     
 }).timeout(350000);
 
