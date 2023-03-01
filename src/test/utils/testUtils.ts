@@ -1,20 +1,36 @@
 import path = require('path');
-import { BottomBarPanel, TerminalView, ViewItem, ViewSection } from 'vscode-extension-tester';
+import { BottomBarPanel,ContextMenu, TerminalView, ViewItem, ViewSection,
+  InputBox,
+  DefaultTreeItem,
+  Locator,
+  SideBarView,
+  WebView,
+  Workbench,
+  By,
+  ExtensionsViewItem,
+  ViewContent,
+  TextEditor,
+  OutputView,
+  WebDriver
+ } from 'vscode-extension-tester';
 import * as fs from 'fs';
-import { MAVEN_PROJECT,STOP_DASHBOARD_ACTION,START_DASHBOARD_ACTION } from '../definitions/constants';
+import { MAVEN_PROJECT,STOP_DASHBOARD_ACTION,START_DASHBOARD_ACTION, START_DASHBOARD_MAC_ACTION, STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
 import { expect } from "chai";
+import { MapContextMenuforMac } from './macUtils';
 
 export function delay(millisec: number) {
     return new Promise( resolve => setTimeout(resolve, millisec) );
 }
 
 export function getMvnProjectPath(): string {
-    const mvnProjectPath = path.join(__dirname, "\\..\\..\\..\\src", "test\\resources", "mavenProject");    
+    const mvnProjectPath = path.join(__dirname, "..","..","..","src", "test","resources", "mavenProject");  
+    console.log("Path is : "+mvnProjectPath)  ;
     return mvnProjectPath; 
   }
 
   export function getMvnProjectLogPath(): string {
-    const mvnProjectLogPath = path.join(getMvnProjectPath()+"\\target\\liberty\\wlp\\usr\\servers\\defaultServer\\logs\\messages.log");    
+    const mvnProjectLogPath = path.join(getMvnProjectPath(),"target","liberty","wlp","usr","servers","defaultServer","logs","messages.log");  
+    console.log ("Liberty log looked up from : "+ mvnProjectLogPath)  ;
     return mvnProjectLogPath; 
   }
  
@@ -23,20 +39,40 @@ export function getMvnProjectPath(): string {
   export async function launchStopServer(sectionName: ViewSection) {
     
     console.log("Launching Stop Server action");
-    const item = await sectionName.findItem(MAVEN_PROJECT);    
+    console.log("constant MAVVEN_PROJECT is "+ MAVEN_PROJECT);
+    const item = await sectionName.findItem(MAVEN_PROJECT) as DefaultTreeItem;   
     expect(item).not.undefined;   
+  
+  if (process.platform === 'darwin') {//Only for MAC platform
+    console.log("For Stop action here for only MAC system");
+    await MapContextMenuforMac( item,STOP_DASHBOARD_MAC_ACTION);
+    console.log("after workaround call to select Stop");
+    return true;
+} else {  // NON MAC platforms
     const menuItem = await item?.openContextMenu();  
     await menuItem?.select(STOP_DASHBOARD_ACTION);
+}
   
   }
-
   export async function launchStartServer(sectionName: ViewSection) {
 
-    console.log("Launching Start Server action");
-    const item = await sectionName.findItem(MAVEN_PROJECT);
+    console.log("Launching Start Server action with MAVEN_PROJECT val : "+ MAVEN_PROJECT);
+    await sectionName.expand();
+
+    const item = await sectionName.findItem(MAVEN_PROJECT) as DefaultTreeItem;
     expect(item).not.undefined;   
+
+  if (process.platform === 'darwin') {//Only for MAC platform
+    console.log("here for only MAC system");
+    await MapContextMenuforMac( item,START_DASHBOARD_MAC_ACTION);
+    console.log("after workaround call to select start");
+    return true;
+} else { // NON MAC platforms
+  console.log("For Non Mac platforms ");
     const menuItem = await item?.openContextMenu();  
     await menuItem?.select(START_DASHBOARD_ACTION);
+  
+}
   
   }
 
@@ -113,4 +149,5 @@ export function getMvnProjectPath(): string {
     }
     return foundStartedMsg;
 }   
+
   

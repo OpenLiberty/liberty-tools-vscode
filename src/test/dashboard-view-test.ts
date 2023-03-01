@@ -1,8 +1,27 @@
 import { expect } from 'chai';
 import { time } from 'console';
 import * as fs from 'fs';
-import { BottomBarPanel,SideBarView, ActivityBar, ViewItem, ViewSection, ViewControl, VSBrowser } from 'vscode-extension-tester';
+import { WebDriver, BottomBarPanel,SideBarView, ActivityBar, ViewItem, ViewSection, ViewControl, VSBrowser } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
+
+
+describe('Open Project', () => {
+
+  let driver: WebDriver;  
+  
+
+  before(() => {
+      driver = VSBrowser.instance.driver;
+      
+  });
+
+  it('Open Sample Project', async () => {       
+      await VSBrowser.instance.openResources(utils.getMvnProjectPath());
+
+  }).timeout(5000);
+
+  
+});
 
 describe('Section', () => {
     let sidebar: SideBarView;
@@ -22,7 +41,7 @@ it('getViewControl works with the correct label',  async() => {
    console.log("Found Liberty Dashboard....");
    expect(section).not.undefined; 
  
-}).timeout(10000);
+}).timeout(5000);
 
 
 it('openDasboard shows items', async () => {
@@ -30,18 +49,18 @@ it('openDasboard shows items', async () => {
     
     await utils.delay(60000);
     const menu = await section.getVisibleItems();  
+ await section.expand();
     console.log("after getvisibleitems");         
     expect(menu).not.empty; 
    
     
-}).timeout(75000);
+}).timeout(100000); 
 
 
 
 
 it('start sample project from liberty dashboard', async () => {      
     
-  
   await utils.launchStartServer(section);
   const serverStartStatus= await utils.validateIfServerStarted();
   if(!serverStartStatus)
