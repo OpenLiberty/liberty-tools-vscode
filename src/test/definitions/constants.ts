@@ -13,4 +13,7 @@ export const START_DASHBOARD_ACTION = "Start";
 export const STOP_DASHBOARD_ACTION = "Stop";
 export const START_DASHBOARD_MAC_ACTION = "Liberty: Start";
 export const STOP_DASHBOARD_MAC_ACTION = "Liberty: Stop";
+export const START_DASHBOARD_ACTION_WITH_PARAM = "Start...";
+export const SERVER_START_STRING = "The defaultServer server is ready to run a smarter planet";
+export const SERVER_STOP_STRING = "Server defaultServer stopped";
 

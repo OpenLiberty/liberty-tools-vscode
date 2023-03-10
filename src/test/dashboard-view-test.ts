@@ -1,27 +1,9 @@
-import { expect } from 'chai';
+import { assert, expect } from 'chai';
 import { time } from 'console';
 import * as fs from 'fs';
-import { WebDriver, BottomBarPanel,SideBarView, ActivityBar, ViewItem, ViewSection, ViewControl, VSBrowser } from 'vscode-extension-tester';
+import { BottomBarPanel,SideBarView, ActivityBar, ViewItem, ViewSection, ViewControl, VSBrowser } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
-
-
-describe('Open Project', () => {
-
-  let driver: WebDriver;  
-  
-
-  before(() => {
-      driver = VSBrowser.instance.driver;
-      
-  });
-
-  it('Open Sample Project', async () => {       
-      await VSBrowser.instance.openResources(utils.getMvnProjectPath());
-
-  }).timeout(5000);
-
-  
-});
+import { SERVER_START_STRING, SERVER_STOP_STRING } from './definitions/constants';
 
 describe('Section', () => {
     let sidebar: SideBarView;
@@ -41,7 +23,7 @@ it('getViewControl works with the correct label',  async() => {
    console.log("Found Liberty Dashboard....");
    expect(section).not.undefined; 
  
-}).timeout(5000);
+}).timeout(10000);
 
 
 it('openDasboard shows items', async () => {
@@ -49,29 +31,66 @@ it('openDasboard shows items', async () => {
     
     await utils.delay(60000);
     const menu = await section.getVisibleItems();  
- await section.expand();
     console.log("after getvisibleitems");         
     expect(menu).not.empty; 
    
     
-}).timeout(100000); 
+}).timeout(75000);
 
 
 
 
 it('start sample project from liberty dashboard', async () => {      
     
+  
   await utils.launchStartServer(section);
-  const serverStartStatus= await utils.validateIfServerStarted();
+  await utils.delay(60000);
+  const serverStartStatus = await utils.checkTerminalforServerState(SERVER_START_STRING);
+ // const serverStartStatus= await utils.validateIfServerStarted();
   if(!serverStartStatus)
-    console.log("Message CWWKZ0001I not found in "+ utils.getMvnProjectLogPath());
+    console.log("Server started message not found in the logs");
   else
   {
     console.log("Server succuessfully started");  
     await utils.launchStopServer(section);
-    const serverStopStatus= await utils.validateIfServerStopped();
+    const serverStopStatus= await utils.checkTerminalforServerState(SERVER_STOP_STRING);
+   // const serverStopStatus= await utils.validateIfServerStopped();
     if(!serverStopStatus){ 
-    console.error("Message CWWKE0036I not found in "+ utils.getMvnProjectLogPath());
+    console.error("Server stopped message not found in the logs");
+    }
+    else
+      console.log("Server stopped successfully");
+    expect (serverStopStatus).to.be.true;
+}
+ expect (serverStartStatus).to.be.true; 
+ 
+    
+}).timeout(350000);
+
+
+//========================================
+
+
+it('start with options from liberty dashboard', async () => {      
+    
+  
+  await utils.launchStartServerWithParam(section);
+  await utils.setCustomParameter("-DhotTests=true");
+  console.log("after setting custom parameter");
+  // const serverStartStatus= await utils.validateIfServerStarted();
+  const serverStartStatus = await utils.checkTerminalforServerState("The defaultServer server is ready to run a smarter planet");
+  if(!serverStartStatus)
+    console.log("Server started with params message not found in logs ");
+  else
+  {
+    console.log("Server succuessfully started");  
+    let checkFile = await utils.checkIfTestFileExists();
+    expect (checkFile).to.be.true;
+    await utils.launchStopServer(section);
+    //const serverStopStatus= await utils.validateIfServerStopped();
+    const serverStopStatus= await utils.checkTerminalforServerState("Server defaultServer stopped");
+    if(!serverStopStatus){ 
+    console.error("Server stopped message not found in logs");
     }
     else
       console.log("Server stopped successfully");
@@ -80,5 +99,38 @@ it('start sample project from liberty dashboard', async () => {
  expect (serverStartStatus).to.be.true;
     
 }).timeout(350000);
+
+
+it('start with history from liberty dashboard', async () => {      
+    
+  
+  await utils.launchStartServerWithParam(section);
+  const foundCommand = await utils.chooseCmdFromHistory();
+  expect (foundCommand).to.be.true;
+  console.log("after choosing command from history");
+  // const serverStartStatus= await utils.validateIfServerStarted();
+  const serverStartStatus = await utils.checkTerminalforServerState("The defaultServer server is ready to run a smarter planet");
+  if(!serverStartStatus)
+    console.log("Server started with params message not found in logs ");
+  else
+  {
+    console.log("Server succuessfully started");  
+    let checkFile = await utils.checkIfTestFileExists();
+    expect (checkFile).to.be.true;
+    await utils.launchStopServer(section);
+    //const serverStopStatus= await utils.validateIfServerStopped();
+    const serverStopStatus= await utils.checkTerminalforServerState("Server defaultServer stopped");
+    if(!serverStopStatus){ 
+    console.error("Server stopped message not found in logs");
+    }
+    else
+      console.log("Server stopped successfully");
+    expect (serverStopStatus).to.be.true;
+}
+ expect (serverStartStatus).to.be.true;
+    
+}).timeout(350000);
+
+
 
 });

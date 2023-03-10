@@ -17,7 +17,7 @@ describe('Open Project', () => {
     it('Open Sample Project', async () => {       
         await VSBrowser.instance.openResources(utils.getMvnProjectPath());
 
-    }).timeout(5000);
+    }).timeout(10000);
 
     
 });
