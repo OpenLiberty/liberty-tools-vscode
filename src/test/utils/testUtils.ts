@@ -1,7 +1,7 @@
 import path = require('path');
 import { Workbench, ViewSection,InputBox, DefaultTreeItem } from 'vscode-extension-tester';
 import * as fs from 'fs';
-import { MAVEN_PROJECT,STOP_DASHBOARD_ACTION,START_DASHBOARD_ACTION, START_DASHBOARD_MAC_ACTION, STOP_DASHBOARD_MAC_ACTION,START_DASHBOARD_ACTION_WITH_PARAM } from '../definitions/constants';
+import { MAVEN_PROJECT,STOP_DASHBOARD_ACTION,START_DASHBOARD_ACTION, START_DASHBOARD_MAC_ACTION, STOP_DASHBOARD_MAC_ACTION,START_DASHBOARD_ACTION_WITH_PARAM, START_DASHBOARD_MAC_ACTION_WITH_PARAM, START_DASHBOARD_ACTION_WITHDOCKER, START_DASHBOARD_MAC_ACTION_WITHDOCKER } from '../definitions/constants';
 import { expect } from "chai";
 import { MapContextMenuforMac } from './macUtils';
 import * as clipboard from 'clipboardy';
@@ -54,17 +54,39 @@ export function getMvnProjectPath(): string {
       await menuItem?.select(START_DASHBOARD_ACTION);
     
   }
+}
+  export async function launchStartServerWithDocker(sectionName: ViewSection) {
+
+    console.log("Launching Start Server action");
+    await sectionName.expand();
+    const item = await sectionName.findItem(MAVEN_PROJECT) as DefaultTreeItem;
+    expect(item).not.undefined;   
+
+    if (process.platform === 'darwin') {//Only for MAC platform      
+      await MapContextMenuforMac( item,START_DASHBOARD_MAC_ACTION_WITHDOCKER);      
+      return true;
+    } else { // NON MAC platforms      
+      const menuItem = await item?.openContextMenu();  
+      await menuItem?.select(START_DASHBOARD_ACTION_WITHDOCKER);
+    
+  }
   
   }
 
   export async function launchStartServerWithParam(sectionName: ViewSection) {
 
     console.log("Launching Start Server action");
-    const item = await sectionName.findItem(MAVEN_PROJECT);
-    expect(item).not.undefined;   
-    const menuItem = await item?.openContextMenu();  
-    await menuItem?.select(START_DASHBOARD_ACTION_WITH_PARAM); 
+    const item = await sectionName.findItem(MAVEN_PROJECT) as DefaultTreeItem;
+    expect(item).not.undefined;  
+    if (process.platform === 'darwin') {//Only for MAC platform 
+      
+      await MapContextMenuforMac( item,START_DASHBOARD_MAC_ACTION_WITH_PARAM);      
+      return true;
+    } else { // NON MAC platforms      
+      const menuItem = await item?.openContextMenu();  
+      await menuItem?.select(START_DASHBOARD_ACTION_WITH_PARAM);
     
+  } 
   
   }
 
@@ -73,7 +95,7 @@ export function getMvnProjectPath(): string {
     console.log("Setting custom Parameter");
     const input = new InputBox();
     await input.setText(customParam);      
-    await input.confirm();      
+    await input.confirm();     
   
   }
 
@@ -93,7 +115,7 @@ export function getMvnProjectPath(): string {
 
   export async function checkIfTestFileExists() : Promise<Boolean> {
 
-    if (fs.existsSync(path.join(getMvnProjectPath()+"\\target\\site\\surefire-report.html"))) 
+    if (fs.existsSync(path.join(getMvnProjectPath(),"target","site","surefire-report.html"))) 
       return true;   
     else
       return false;   
