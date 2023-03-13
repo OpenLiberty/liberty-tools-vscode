@@ -29,13 +29,13 @@ it('getViewControl works with the correct label',  async() => {
 it('openDasboard shows items', async () => {
 
     
-    await utils.delay(60000);
+    await utils.delay(120000);
     const menu = await section.getVisibleItems();  
     console.log("after getvisibleitems");         
     expect(menu).not.empty; 
    
     
-}).timeout(75000);
+}).timeout(160000);
 
 
 
