@@ -29,7 +29,8 @@ it('getViewControl works with the correct label',  async() => {
 it('openDasboard shows items', async () => {
 
     
-    await utils.delay(120000);
+    await utils.delay(60000);
+    console.log("before getVisibleItems");
     const menu = await section.getVisibleItems();  
     console.log("after getvisibleitems");         
     expect(menu).not.empty; 
@@ -42,10 +43,12 @@ it('openDasboard shows items', async () => {
 
 it('start sample project from liberty dashboard', async () => {      
     
-  
+  console.log("before launchStartServer");
   await utils.launchStartServer(section);
+  console.log("after launchStartServer");
   await utils.delay(60000);
   const serverStartStatus = await utils.checkTerminalforServerState(SERVER_START_STRING);
+  console.log("after checkTerminalforServerState");
  // const serverStartStatus= await utils.validateIfServerStarted();
   if(!serverStartStatus)
     console.log("Server started message not found in the logs");
