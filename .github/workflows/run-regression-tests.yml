@@ -11,10 +11,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runtime: [ linux, windows ]
+        runtime: [ linux, mac, windows ]
         include:
         - runtime: linux
           os: ubuntu-latest
+          setupCmd: ./src/test/resources/ci/scripts/setup.sh
+          execCmd: ./src/test/resources/ci/scripts/exec.sh
+
+        - runtime: mac
+          os: macOS-latest
           setupCmd: ./src/test/resources/ci/scripts/setup.sh
           execCmd: ./src/test/resources/ci/scripts/exec.sh
 
