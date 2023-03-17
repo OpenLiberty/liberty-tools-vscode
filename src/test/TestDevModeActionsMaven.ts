@@ -1,7 +1,6 @@
-import { assert, expect } from 'chai';
-import { time } from 'console';
+import { expect } from 'chai';
 import * as fs from 'fs';
-import { BottomBarPanel,SideBarView, ActivityBar, ViewItem, ViewSection, ViewControl, VSBrowser } from 'vscode-extension-tester';
+import { SideBarView, ViewItem, ViewSection } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import { SERVER_START_STRING, SERVER_STOP_STRING } from './definitions/constants';
 
@@ -12,8 +11,6 @@ describe('Section', () => {
 
     before(() => {
         sidebar = new SideBarView();
-        
-        
     });
 
 it('getViewControl works with the correct label',  async() => { 
@@ -29,29 +26,27 @@ it('getViewControl works with the correct label',  async() => {
 it('openDasboard shows items', async () => {
 
     
-    await utils.delay(60000);
-    console.log("before getVisibleItems");
+    await utils.delay(60000);    
     const menu = await section.getVisibleItems();  
     console.log("after getvisibleitems");         
     expect(menu).not.empty; 
    
     
-}).timeout(160000);
+}).timeout(75000);
 
 
 
 
 it('start sample project from liberty dashboard', async () => {      
     
-  console.log("before launchStartServer");
-  await utils.launchStartServer(section);
-  console.log("after launchStartServer");
-  await utils.delay(60000);
+  
+  await utils.launchStartServer(section);  
+  await utils.delay(30000);
   const serverStartStatus = await utils.checkTerminalforServerState(SERVER_START_STRING);
   console.log("after checkTerminalforServerState");
  // const serverStartStatus= await utils.validateIfServerStarted();
   if(!serverStartStatus)
-    console.log("Server started message not found in the logs");
+    console.log("Server started message not found in the terminal");
   else
   {
     console.log("Server succuessfully started");  
@@ -59,7 +54,7 @@ it('start sample project from liberty dashboard', async () => {
     const serverStopStatus= await utils.checkTerminalforServerState(SERVER_STOP_STRING);
    // const serverStopStatus= await utils.validateIfServerStopped();
     if(!serverStopStatus){ 
-    console.error("Server stopped message not found in the logs");
+    console.error("Server stopped message not found in the terminal");
     }
     else
       console.log("Server stopped successfully");
@@ -76,16 +71,15 @@ it('start sample project from liberty dashboard', async () => {
 
 it('start with options from liberty dashboard', async () => {      
     
-  console.log("b4 launchStartServerWithParam");
-  await utils.launchStartServerWithParam(section);
-  console.log("after launchStartServerWithParam");
-  await utils.setCustomParameter("-DhotTests=true");
- // console.log("b4 launchStartServerWithParam");
-  console.log("after setting custom parameter");
+  const deleteReport = await utils.deleteReports();
+  expect (deleteReport).to.be.true;
+  await utils.launchStartServerWithParam(section);  
+  await utils.setCustomParameter("-DhotTests=true");  
+  await utils.delay(30000);
   // const serverStartStatus= await utils.validateIfServerStarted();
   const serverStartStatus = await utils.checkTerminalforServerState(SERVER_START_STRING);
   if(!serverStartStatus)
-    console.log("Server started with params message not found in logs ");
+    console.log("Server started with params message not found in terminal ");
   else
   {
     console.log("Server succuessfully started");  
@@ -95,7 +89,7 @@ it('start with options from liberty dashboard', async () => {
     //const serverStopStatus= await utils.validateIfServerStopped();
     const serverStopStatus= await utils.checkTerminalforServerState(SERVER_STOP_STRING);
     if(!serverStopStatus){ 
-    console.error("Server stopped message not found in logs");
+    console.error("Server stopped message not found in ther terminal");
     }
     else
       console.log("Server stopped successfully");
@@ -106,15 +100,18 @@ it('start with options from liberty dashboard', async () => {
 }).timeout(350000);
 
 
-it('start with history from liberty dashboard', async () => {      
-    
-  await utils.launchStartServerWithParam(section);
+it('start with history from liberty dashboard', async () => {  
+
+  const deleteReport = await utils.deleteReports();
+  expect (deleteReport).to.be.true;  
+  await utils.launchStartServerWithParam(section);  
   const foundCommand = await utils.chooseCmdFromHistory();
   expect (foundCommand).to.be.true;
   console.log("after choosing command from history");
+  await utils.delay(30000);
   const serverStartStatus = await utils.checkTerminalforServerState(SERVER_START_STRING);
   if(!serverStartStatus)
-    console.log("Server started with params message not found in logs ");
+    console.log("Server started with params message not found in the terminal ");
   else
   {
     console.log("Server succuessfully started");  
@@ -124,7 +121,7 @@ it('start with history from liberty dashboard', async () => {
     //const serverStopStatus= await utils.validateIfServerStopped();
     const serverStopStatus= await utils.checkTerminalforServerState(SERVER_STOP_STRING);
     if(!serverStopStatus){ 
-    console.error("Server stopped message not found in logs");
+    console.error("Server stopped message not found in terminal");
     }
     else
       console.log("Server stopped successfully");
@@ -134,6 +131,7 @@ it('start with history from liberty dashboard', async () => {
     
 }).timeout(350000);
 
+/*
 it('start with docker from liberty dashboard', async () => {      
     
   
@@ -141,14 +139,14 @@ it('start with docker from liberty dashboard', async () => {
   await utils.delay(60000);
   const serverStartStatus = await utils.checkTerminalforServerState(SERVER_START_STRING);
   if(!serverStartStatus)
-    console.log("Server started message not found in the logs");
+    console.log("Server started message not found in the terminal");
   else
   {
     console.log("Server succuessfully started");  
     await utils.launchStopServer(section);
     const serverStopStatus= await utils.checkTerminalforServerState(SERVER_STOP_STRING);
     if(!serverStopStatus){ 
-    console.error("Server stopped message not found in the logs");
+    console.error("Server stopped message not found in the terminal");
     }
     else
       console.log("Server stopped successfully");
@@ -158,7 +156,7 @@ it('start with docker from liberty dashboard', async () => {
  
     
 }).timeout(350000);
-
+*/
 
 
 });

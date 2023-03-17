@@ -42,23 +42,16 @@ export function getMvnProjectPath(): string {
   export async function launchStartServer(sectionName: ViewSection) {
 
     console.log("Launching Start Server action");
-    await sectionName.expand();
-    console.log("after sectionName.expand");
-    const item = await sectionName.findItem(MAVEN_PROJECT) as DefaultTreeItem;
-    console.log("after sectionname.finditem");
+    await sectionName.expand();    
+    const item = await sectionName.findItem(MAVEN_PROJECT) as DefaultTreeItem;    
     expect(item).not.undefined;   
 
-    if (process.platform === 'darwin') {//Only for MAC platform  
-      console.log("Inside MAC b4 MapContextMenuForMac")   ; 
-      await MapContextMenuforMac( item,START_DASHBOARD_MAC_ACTION);   
-      console.log("Inside MAC after MapContextMenuForMac")   ;   
+    if (process.platform === 'darwin') {//Only for MAC platform        
+      await MapContextMenuforMac( item,START_DASHBOARD_MAC_ACTION);            
       return true;
-    } else { // NON MAC platforms      
-      console.log("Inside NONMAC b4 OpenContextMenu") ;
-      const menuItem = await item?.openContextMenu();  
-      console.log("Inside NONMAC after OpenContextMenu") ;
-      await menuItem?.select(START_DASHBOARD_ACTION);
-      console.log("Inside NONMAC after select") ;
+    } else { // NON MAC platforms            
+      const menuItem = await item?.openContextMenu();       
+      await menuItem?.select(START_DASHBOARD_ACTION);     
     
   }
 }
@@ -66,6 +59,7 @@ export function getMvnProjectPath(): string {
 
     console.log("Launching Start Server action");
     await sectionName.expand();
+    console.log("after section");
     const item = await sectionName.findItem(MAVEN_PROJECT) as DefaultTreeItem;
     expect(item).not.undefined;   
 
@@ -120,12 +114,48 @@ export function getMvnProjectPath(): string {
       return false; 
   }
 
-  export async function checkIfTestFileExists() : Promise<Boolean> {
+  export async function deleteReports() : Promise<Boolean> {
 
-    if (fs.existsSync(path.join(getMvnProjectPath(),"target","site","surefire-report.html"))) 
+    const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
+    if (fs.existsSync(reportPath) )
+    {
+      fs.unlink(reportPath, (err) => {
+        if (err) 
+        return false; 
+        else{
+        console.log(reportPath+ ' was deleted');
+        return true;
+        }
+        });               
+    }    
       return true;   
-    else
-      return false;   
+    }
+
+  export async function checkIfTestFileExists() : Promise<Boolean> {
+    const maxAttempts = 10;
+    let foundReport = false;
+    const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+                
+          if (fs.existsSync(reportPath)) 
+          {
+            foundReport = true;
+            break;
+          }
+          else{
+            await delay(5000);
+            foundReport = false;
+            continue;
+          }      
+      }
+      catch(e)
+      {
+        console.error("Caught exception when checking for test report", e);
+
+      }
+    }
+    return foundReport;
     }
   
     
@@ -219,7 +249,7 @@ export function getMvnProjectPath(): string {
         else {
           await delay(10000);
           foundStartedMsg = false;
-          console.log("file doesnt exists");
+          console.log("file doesnt exist");
           continue;
         }
       }
