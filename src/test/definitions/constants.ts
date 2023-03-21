@@ -20,3 +20,10 @@ export const START_DASHBOARD_MAC_ACTION_WITHDOCKER = "Liberty: Start in containe
 export const SERVER_START_STRING = "The defaultServer server is ready to run a smarter planet";
 export const SERVER_STOP_STRING = "defaultServer stopped";
 
+export const ATTACH_DEBUGGER_DASHBOARD_ACTION = "Liberty: Attach debugger";
+export const ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION = "Liberty: Attach debugger";
+/** Maven: Dev mode debug port argument key. */
+export const  MAVEN_DEVMODE_DEBUG_PORT_PARM = "-DdebugPort";
+
+/** Gradle: Dev mode debug port argument key. */
+export const GRADLE_DEVMODE_DEBUG_PORT_PARM = "--libertyDebugPort";

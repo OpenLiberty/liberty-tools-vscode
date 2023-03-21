@@ -1,7 +1,7 @@
 import path = require('path');
 import { Workbench, ViewSection,InputBox, DefaultTreeItem } from 'vscode-extension-tester';
 import * as fs from 'fs';
-import { MAVEN_PROJECT,STOP_DASHBOARD_ACTION,START_DASHBOARD_ACTION, START_DASHBOARD_MAC_ACTION, STOP_DASHBOARD_MAC_ACTION,START_DASHBOARD_ACTION_WITH_PARAM, START_DASHBOARD_MAC_ACTION_WITH_PARAM, START_DASHBOARD_ACTION_WITHDOCKER, START_DASHBOARD_MAC_ACTION_WITHDOCKER } from '../definitions/constants';
+import { MAVEN_PROJECT,STOP_DASHBOARD_ACTION,START_DASHBOARD_ACTION, START_DASHBOARD_MAC_ACTION, STOP_DASHBOARD_MAC_ACTION,START_DASHBOARD_ACTION_WITH_PARAM, START_DASHBOARD_MAC_ACTION_WITH_PARAM, START_DASHBOARD_ACTION_WITHDOCKER, START_DASHBOARD_MAC_ACTION_WITHDOCKER, ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION, ATTACH_DEBUGGER_DASHBOARD_ACTION } from '../definitions/constants';
 import { expect } from "chai";
 import { MapContextMenuforMac } from './macUtils';
 import * as clipboard from 'clipboardy';
@@ -90,6 +90,7 @@ export function getMvnProjectPath(): string {
   } 
   
   }
+
 
   export async function setCustomParameter(customParam: string) {
 
@@ -262,4 +263,40 @@ export function getMvnProjectPath(): string {
     return foundStartedMsg;
 }   
 
-  
+
+/* Liberty Attach Debugger*/
+export async function attachDebugger(sectionName: ViewSection) {
+
+  console.log("Attach Debugger action with Project  : " + MAVEN_PROJECT);
+  await sectionName.expand();
+
+  const item = await sectionName.findItem(MAVEN_PROJECT) as DefaultTreeItem;
+  expect(item).not.undefined;
+
+  if (process.platform === 'darwin') {//Only for MAC platform
+    console.log("For Mac platforms ");
+    await MapContextMenuforMac(item, ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION);
+    await delay(5000);
+    console.log("Attach Debugger action for MAC done");
+    return true;
+  } else { // NON MAC platforms
+    console.log("For Non Mac platforms ");
+    const menuItem = await item?.openContextMenu();
+    await menuItem?.select(ATTACH_DEBUGGER_DASHBOARD_ACTION);
+    console.log("Attach Debugger action for Windows done");
+  }
+
+}
+
+/* Stop Server Liberty dashboard post Attach Debugger*/
+export async function stopLibertyserver() {
+  console.log("Stop Server action for MAVEN_PROJECT : " + MAVEN_PROJECT);
+  const workbench = new Workbench();
+  await workbench.executeCommand(STOP_DASHBOARD_MAC_ACTION);
+  const input = InputBox.create();
+  (await input).setText(MAVEN_PROJECT);
+  (await input).confirm();
+  (await input).click();
+  await delay(35000);
+
+}

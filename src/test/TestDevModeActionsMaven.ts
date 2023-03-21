@@ -158,5 +158,60 @@ it('start with docker from liberty dashboard', async () => {
 }).timeout(350000);
 */
 
+/*
+This is attach debugger for start with custom parameter - debugPort)
+*/
+
+it('attach debugger for start with custom parameter event', async () => {
+  console.log("start attach debugger");
+  let isServerRunning: Boolean = true;
+  let isServerStopped: Boolean = true;
+  let attachStatus: boolean = false;
+  try {
+    await utils.launchStartServerWithParam(section);
+    await utils.setCustomParameter("-DdebugPort=7777");
+    await utils.delay(55000);
+
+    isServerRunning = await utils.checkTerminalforServerState(SERVER_START_STRING);
+    if (!isServerRunning)
+      console.log("Server started with params message not found in terminal");
+    else {
+      console.log("Server succuessfully started");
+    }
+    await utils.attachDebugger(section);
+    console.log("**** Attach Debugger done - for launchStartServerWithParam instance ");
+    const contentPart = sidebar.getContent();
+    
+    //************************** iterate*/
+    let mysecarry: Promise<ViewSection[]> = contentPart.getSections();
+    //let mysec: IterableIterator<ViewSection> =(await mysecarry).values();
+
+    let mysecmap: IterableIterator<[number, ViewSection]> = (await mysecarry).entries();
+    for (const [key, value] of (mysecmap)) {
+      /** valueOf() prints all contents from sidebar */
+      //console.log("******** mysecmap  getEnclosingElement " +  (await value.getEnclosingElement().getText()).valueOf());
+      console.log("********** getEnclosingElement includes BREAKPOINTS ===" + (await value.getEnclosingElement().getText()).includes("BREAKPOINTS"));
+      if ((await value.getEnclosingElement().getText()).includes("BREAKPOINTS")) {
+        attachStatus = true;
+        break;
+      }
+    }
+    await utils.stopLibertyserver();
+    isServerStopped = await utils.checkTerminalforServerState(SERVER_STOP_STRING);
+    if (isServerStopped)
+      console.log("Server stopped successfully ");
+
+  } catch (e) {
+    console.error("error - ", e)
+  } finally {
+    console.log("defaulServer running status in finally block: ", isServerRunning);
+    if (isServerRunning) {
+      utils.stopLibertyserver();
+    }
+    else
+      console.log("good to close test - Attach Debugger for start with custom parameter(-DdebugPort=7777) event");
+  }
+  expect(attachStatus).to.be.true;
+}).timeout(750000);
 
 });
