@@ -177,7 +177,7 @@ it('attach debugger for start with custom parameter event', async () => {
       console.log("Server started with params message not found in terminal");
     else {
       console.log("Server succuessfully started");
-    }
+    
     await utils.attachDebugger(section);
     console.log("**** Attach Debugger done - for launchStartServerWithParam instance ");
     const contentPart = sidebar.getContent();
@@ -188,9 +188,6 @@ it('attach debugger for start with custom parameter event', async () => {
 
     let mysecmap: IterableIterator<[number, ViewSection]> = (await mysecarry).entries();
     for (const [key, value] of (mysecmap)) {
-      /** valueOf() prints all contents from sidebar */
-      //console.log("******** mysecmap  getEnclosingElement " +  (await value.getEnclosingElement().getText()).valueOf());
-      console.log("********** getEnclosingElement includes BREAKPOINTS ===" + (await value.getEnclosingElement().getText()).includes("BREAKPOINTS"));
       if ((await value.getEnclosingElement().getText()).includes("BREAKPOINTS")) {
         attachStatus = true;
         break;
@@ -200,7 +197,7 @@ it('attach debugger for start with custom parameter event', async () => {
     isServerStopped = await utils.checkTerminalforServerState(SERVER_STOP_STRING);
     if (isServerStopped)
       console.log("Server stopped successfully ");
-
+  }
   } catch (e) {
     console.error("error - ", e)
   } finally {
