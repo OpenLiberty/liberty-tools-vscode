@@ -195,7 +195,7 @@ it('attach debugger for start event', async () => {
         break;
       }
     }
-    await utils.launchStopServer(section);
+    await utils.stopLibertyserver();
     isServerStopped = await utils.checkTerminalforServerState(SERVER_STOP_STRING);
     if (isServerStopped)
       console.log("Server stopped successfully ");
@@ -203,9 +203,9 @@ it('attach debugger for start event', async () => {
   } catch (e) {
     console.error("error - ", e)
   } finally {
-    console.log("defaulServer running status in finally block: ", isServerRunning);
-    if (isServerRunning) {
-      utils.launchStopServer(section);
+    console.log("finally block -  is server stopped: ", isServerStopped);
+    if (!isServerStopped) {
+      utils.stopLibertyserver();
     }
     else
       console.log("good to close test - Attach Debugger for start with custom parameter(-DdebugPort=7777) event");

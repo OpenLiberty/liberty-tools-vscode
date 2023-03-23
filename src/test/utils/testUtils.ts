@@ -286,3 +286,15 @@ export async function attachDebugger(sectionName: ViewSection) {
   }
 
 }
+
+/* Stop Server Liberty dashboard post Attach Debugger*/
+export async function stopLibertyserver() {
+  console.log("Stop Server action for project");
+  const workbench = new Workbench();
+  await workbench.executeCommand(STOP_DASHBOARD_MAC_ACTION);
+  const input = InputBox.create();
+  (await input).setText(MAVEN_PROJECT);
+  (await input).confirm();
+  (await input).click();
+  await delay(15000);
+}
