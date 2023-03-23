@@ -159,17 +159,19 @@ it('start with docker from liberty dashboard', async () => {
 */
 
 /*
-This is attach debugger for start with custom parameter - debugPort)
+This is attach debugger for start)
 */
 
-it('attach debugger for start with custom parameter event', async () => {
-  console.log("start attach debugger");
+it('attach debugger for start event', async () => {
+  console.log("***********************");
+  console.log("debugPort has to be set in server.env as part of init script");
+  console.log("***********************");
   let isServerRunning: Boolean = true;
   let isServerStopped: Boolean = true;
   let attachStatus: boolean = false;
   try {
-    await utils.launchStartServerWithParam(section);
-    await utils.setCustomParameter("-DdebugPort=7777");
+    utils.delay(5000);
+    await utils.launchStartServer(section);
     await utils.delay(55000);
 
     isServerRunning = await utils.checkTerminalforServerState(SERVER_START_STRING);
@@ -179,7 +181,7 @@ it('attach debugger for start with custom parameter event', async () => {
       console.log("Server succuessfully started");
     
     await utils.attachDebugger(section);
-    console.log("**** Attach Debugger done - for launchStartServerWithParam instance ");
+    console.log("**** Attach Debugger done ");
     const contentPart = sidebar.getContent();
     
     //************************** iterate*/
@@ -193,7 +195,7 @@ it('attach debugger for start with custom parameter event', async () => {
         break;
       }
     }
-    await utils.stopLibertyserver();
+    await utils.launchStopServer(section);
     isServerStopped = await utils.checkTerminalforServerState(SERVER_STOP_STRING);
     if (isServerStopped)
       console.log("Server stopped successfully ");
@@ -203,7 +205,7 @@ it('attach debugger for start with custom parameter event', async () => {
   } finally {
     console.log("defaulServer running status in finally block: ", isServerRunning);
     if (isServerRunning) {
-      utils.stopLibertyserver();
+      utils.launchStopServer(section);
     }
     else
       console.log("good to close test - Attach Debugger for start with custom parameter(-DdebugPort=7777) event");

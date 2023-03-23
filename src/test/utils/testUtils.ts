@@ -277,7 +277,6 @@ export async function attachDebugger(sectionName: ViewSection) {
     console.log("For Mac platforms ");
     await MapContextMenuforMac(item, ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION);
     await delay(5000);
-    console.log("Attach Debugger action for MAC done");
     return true;
   } else { // NON MAC platforms
     console.log("For Non Mac platforms ");
@@ -285,18 +284,5 @@ export async function attachDebugger(sectionName: ViewSection) {
     await menuItem?.select(ATTACH_DEBUGGER_DASHBOARD_ACTION);
     console.log("Attach Debugger action for Windows done");
   }
-
-}
-
-/* Stop Server Liberty dashboard post Attach Debugger*/
-export async function stopLibertyserver() {
-  console.log("Stop Server action for MAVEN_PROJECT : " + MAVEN_PROJECT);
-  const workbench = new Workbench();
-  await workbench.executeCommand(STOP_DASHBOARD_MAC_ACTION);
-  const input = InputBox.create();
-  (await input).setText(MAVEN_PROJECT);
-  (await input).confirm();
-  (await input).click();
-  await delay(35000);
 
 }
