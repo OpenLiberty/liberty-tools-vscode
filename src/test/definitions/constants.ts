@@ -19,11 +19,18 @@ export const START_DASHBOARD_ACTION_WITHDOCKER = "Start in container";
 export const START_DASHBOARD_MAC_ACTION_WITHDOCKER = "Liberty: Start in container";
 export const SERVER_START_STRING = "The defaultServer server is ready to run a smarter planet";
 export const SERVER_STOP_STRING = "defaultServer stopped";
-
-export const ATTACH_DEBUGGER_DASHBOARD_ACTION = "Liberty: Attach debugger";
+export const RUN_TESTS_STRING = "Integration tests finished";
+export const RUNTEST_DASHBOARD_ACTION = "Run tests";
+export const RUNTEST_DASHBOARD_MAC_ACTION = "Liberty: Run tests";
+export const UTR_DASHABOARD_ACTION = "View unit test report";
+export const UTR_DASHABOARD_MAC_ACTION = "Liberty: View unit test report";
+export const ITR_DASHBOARD_ACTION = "View integration test report";
+export const ITR_DASHBOARD_MAC_ACTION = "Liberty: View integration test report";
+export const SUREFIRE_REPORT_TITLE = "liberty.maven.test.app surefire report";
+export const FAILSAFE_REPORT_TITLE = "liberty.maven.test.app failsafe report";
+export const ATTACH_DEBUGGER_DASHBOARD_ACTION = "Attach debugger";
 export const ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION = "Liberty: Attach debugger";
 /** Maven: Dev mode debug port argument key. */
 export const  MAVEN_DEVMODE_DEBUG_PORT_PARM = "-DdebugPort";
-
 /** Gradle: Dev mode debug port argument key. */
 export const GRADLE_DEVMODE_DEBUG_PORT_PARM = "--libertyDebugPort";

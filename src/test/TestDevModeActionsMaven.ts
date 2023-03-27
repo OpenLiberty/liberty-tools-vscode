@@ -1,16 +1,15 @@
 import { expect } from 'chai';
-import * as fs from 'fs';
-import { SideBarView, ViewItem, ViewSection } from 'vscode-extension-tester';
+import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
-import { SERVER_START_STRING, SERVER_STOP_STRING } from './definitions/constants';
-
+import * as constants from './definitions/constants';
 describe('Section', () => {
     let sidebar: SideBarView;
     let section: ViewSection;
-    let menu: ViewItem[];
+    let menu: ViewItem[];    
+    let tabs: string[];
 
     before(() => {
-        sidebar = new SideBarView();
+        sidebar = new SideBarView();        
     });
 
 it('getViewControl works with the correct label',  async() => { 
@@ -26,33 +25,27 @@ it('getViewControl works with the correct label',  async() => {
 it('openDasboard shows items', async () => {
 
     
-    await utils.delay(60000);    
-    const menu = await section.getVisibleItems();  
-    console.log("after getvisibleitems");         
+    await utils.delay(65000);    
+    const menu = await section.getVisibleItems();            
     expect(menu).not.empty; 
    
     
 }).timeout(75000);
 
 
-
-
 it('start sample project from liberty dashboard', async () => {      
     
   
-  await utils.launchStartServer(section);  
+  await utils.launchDashboardAction(section,constants.START_DASHBOARD_ACTION,constants.START_DASHBOARD_MAC_ACTION);  
   await utils.delay(30000);
-  const serverStartStatus = await utils.checkTerminalforServerState(SERVER_START_STRING);
-  console.log("after checkTerminalforServerState");
- // const serverStartStatus= await utils.validateIfServerStarted();
+  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
   if(!serverStartStatus)
     console.log("Server started message not found in the terminal");
   else
   {
     console.log("Server succuessfully started");  
-    await utils.launchStopServer(section);
-    const serverStopStatus= await utils.checkTerminalforServerState(SERVER_STOP_STRING);
-   // const serverStopStatus= await utils.validateIfServerStopped();
+    await utils.launchDashboardAction(section, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);   
     if(!serverStopStatus){ 
     console.error("Server stopped message not found in the terminal");
     }
@@ -66,18 +59,15 @@ it('start sample project from liberty dashboard', async () => {
 }).timeout(350000);
 
 
-//========================================
-
 
 it('start with options from liberty dashboard', async () => {      
     
   const deleteReport = await utils.deleteReports();
   expect (deleteReport).to.be.true;
-  await utils.launchStartServerWithParam(section);  
+  await utils.launchDashboardAction(section, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
   await utils.setCustomParameter("-DhotTests=true");  
-  await utils.delay(30000);
-  // const serverStartStatus= await utils.validateIfServerStarted();
-  const serverStartStatus = await utils.checkTerminalforServerState(SERVER_START_STRING);
+  await utils.delay(30000);  
+  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
   if(!serverStartStatus)
     console.log("Server started with params message not found in terminal ");
   else
@@ -85,9 +75,8 @@ it('start with options from liberty dashboard', async () => {
     console.log("Server succuessfully started");  
     let checkFile = await utils.checkIfTestFileExists();
     expect (checkFile).to.be.true;
-    await utils.launchStopServer(section);
-    //const serverStopStatus= await utils.validateIfServerStopped();
-    const serverStopStatus= await utils.checkTerminalforServerState(SERVER_STOP_STRING);
+    await utils.launchDashboardAction(section, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
+    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
     if(!serverStopStatus){ 
     console.error("Server stopped message not found in ther terminal");
     }
@@ -104,12 +93,11 @@ it('start with history from liberty dashboard', async () => {
 
   const deleteReport = await utils.deleteReports();
   expect (deleteReport).to.be.true;  
-  await utils.launchStartServerWithParam(section);  
+  await utils.launchDashboardAction(section, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);  
   const foundCommand = await utils.chooseCmdFromHistory();
-  expect (foundCommand).to.be.true;
-  console.log("after choosing command from history");
+  expect (foundCommand).to.be.true;  
   await utils.delay(30000);
-  const serverStartStatus = await utils.checkTerminalforServerState(SERVER_START_STRING);
+  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
   if(!serverStartStatus)
     console.log("Server started with params message not found in the terminal ");
   else
@@ -117,9 +105,8 @@ it('start with history from liberty dashboard', async () => {
     console.log("Server succuessfully started");  
     let checkFile = await utils.checkIfTestFileExists();
     expect (checkFile).to.be.true;
-    await utils.launchStopServer(section);
-    //const serverStopStatus= await utils.validateIfServerStopped();
-    const serverStopStatus= await utils.checkTerminalforServerState(SERVER_STOP_STRING);
+    await utils.launchDashboardAction(section, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
+    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
     if(!serverStopStatus){ 
     console.error("Server stopped message not found in terminal");
     }
@@ -131,20 +118,22 @@ it('start with history from liberty dashboard', async () => {
     
 }).timeout(350000);
 
+
 /*
+
 it('start with docker from liberty dashboard', async () => {      
     
   
-  await utils.launchStartServerWithDocker(section);
+  await utils.launchDashboardAction(section, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);  
   await utils.delay(60000);
-  const serverStartStatus = await utils.checkTerminalforServerState(SERVER_START_STRING);
+  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
   if(!serverStartStatus)
     console.log("Server started message not found in the terminal");
   else
   {
     console.log("Server succuessfully started");  
-    await utils.launchStopServer(section);
-    const serverStopStatus= await utils.checkTerminalforServerState(SERVER_STOP_STRING);
+    await utils.launchDashboardAction(section, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
+    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
     if(!serverStopStatus){ 
     console.error("Server stopped message not found in the terminal");
     }
@@ -156,54 +145,91 @@ it('start with docker from liberty dashboard', async () => {
  
     
 }).timeout(350000);
+
 */
 
-/*
-This is attach debugger for start)
-*/
+it('Run tests for sample project', async () => {  
+  
+  await utils.launchDashboardAction(section, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
+  await utils.delay(30000);
+  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
+  console.log("after checkTerminalforServerState"); 
+  if(!serverStartStatus)
+    console.log("Server started message not found in the terminal");
+  else
+  {
+    console.log("Server succuessfully started");  
+    await utils.launchDashboardAction(section,constants.RUNTEST_DASHBOARD_ACTION,constants.RUNTEST_DASHBOARD_MAC_ACTION);
+    const testStatus = await utils.checkTestStatus();
+    expect (testStatus).to.be.true;    
+    await utils.launchDashboardAction(section, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
+    if(!serverStopStatus){ 
+    console.error("Server stopped message not found in the terminal");
+    }
+    else
+      console.log("Server stopped successfully");
+    expect (serverStopStatus).to.be.true;
+}
+ expect (serverStartStatus).to.be.true; 
+ 
+    
+}).timeout(350000);
 
-it('attach debugger for start event', async () => {
-  console.log("***********************");
-  console.log("debugPort has to be set in server.env as part of init script");
-  console.log("***********************");
+
+it('View Unit test report for sample project', async () => {      
+    
+  await utils.launchDashboardAction(section,constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);   
+  tabs = await new EditorView().getOpenEditorTitles();
+  expect (tabs[1], "Unit test report not found").to.equal(constants.SUREFIRE_REPORT_TITLE);
+    
+}).timeout(10000);
+
+it('View Integration test report for sample project', async () => {      
+    
+  await utils.launchDashboardAction(section, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);   
+  tabs = await new EditorView().getOpenEditorTitles();
+  expect (tabs[2], "Integration test report not found").to.equal(constants.FAILSAFE_REPORT_TITLE);
+    
+}).timeout(10000);
+
+
+it('attach debugger for start with custom parameter event', async () => {
+  console.log("start attach debugger");
   let isServerRunning: Boolean = true;
   let isServerStopped: Boolean = true;
-  let attachStatus: boolean = false;
+  let attachStatus: Boolean = false;
   try {
-    utils.delay(5000);
-    await utils.launchStartServer(section);
-    await utils.delay(55000);
-
-    isServerRunning = await utils.checkTerminalforServerState(SERVER_START_STRING);
+    await utils.launchDashboardAction(section,constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
+    await utils.setCustomParameter("-DdebugPort=7777");   
+    await utils.delay(30000);
+    
+    isServerRunning = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
     if (!isServerRunning)
       console.log("Server started with params message not found in terminal");
     else {
       console.log("Server succuessfully started");
     
-    await utils.attachDebugger(section);
-    console.log("**** Attach Debugger done ");
-    const contentPart = sidebar.getContent();
-    
-    //************************** iterate*/
-    let mysecarry: Promise<ViewSection[]> = contentPart.getSections();
-    //let mysec: IterableIterator<ViewSection> =(await mysecarry).values();
-
+    await utils.launchDashboardAction(section,constants.ATTACH_DEBUGGER_DASHBOARD_ACTION, constants.ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION);    
+    const contentPart = sidebar.getContent();     
+    let mysecarry: Promise<ViewSection[]> = contentPart.getSections();    
     let mysecmap: IterableIterator<[number, ViewSection]> = (await mysecarry).entries();
     for (const [key, value] of (mysecmap)) {
       if ((await value.getEnclosingElement().getText()).includes("BREAKPOINTS")) {
+        console.log("Found Breakpoints");
         attachStatus = true;
         break;
       }
     }
     await utils.stopLibertyserver();
-    isServerStopped = await utils.checkTerminalforServerState(SERVER_STOP_STRING);
+    isServerStopped = await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
     if (isServerStopped)
       console.log("Server stopped successfully ");
   }
   } catch (e) {
     console.error("error - ", e)
   } finally {
-    console.log("finally block -  is server stopped: ", isServerStopped);
+    console.log("defaulServer running status in finally block: ", isServerRunning);
     if (!isServerStopped) {
       utils.stopLibertyserver();
     }
@@ -211,6 +237,7 @@ it('attach debugger for start event', async () => {
       console.log("good to close test - Attach Debugger for start with custom parameter(-DdebugPort=7777) event");
   }
   expect(attachStatus).to.be.true;
-}).timeout(750000);
+}).timeout(350000);
 
 });
+
