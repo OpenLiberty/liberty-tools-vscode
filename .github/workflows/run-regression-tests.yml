@@ -12,21 +12,16 @@ jobs:
       fail-fast: false
       matrix:
         runtime: [ linux, mac, windows ]
+        targetVSCode: [ 1.74.0, 1.75.0, latest]
         include:
         - runtime: linux
           os: ubuntu-latest
-          setupCmd: ./src/test/resources/ci/scripts/setup.sh
-          execCmd: ./src/test/resources/ci/scripts/exec.sh
 
         - runtime: mac
           os: macOS-latest
-          setupCmd: ./src/test/resources/ci/scripts/setup.sh
-          execCmd: ./src/test/resources/ci/scripts/exec.sh
 
         - runtime: windows
           os: windows-latest
-          setupCmd: bash ./src/test/resources/ci/scripts/setup.sh
-          execCmd: bash ./src/test/resources/ci/scripts/exec.sh
 
     name: Build Plugin
     runs-on: ${{ matrix.os }}
@@ -38,19 +33,22 @@ jobs:
 
       # Install the required software.
       - name: 'Setup: Install required software'
-        run: ${{ matrix.setupCmd }}
+        run: bash ./src/test/resources/ci/scripts/setup.sh
 
       # Build the plugin.
-      - name: 'Build: Build-Package-RunTests'
-        continue-on-error: true
-        run: ${{ matrix.execCmd }}
+      - name: 'Build: Build-Package'
+        run: bash ./src/test/resources/ci/scripts/exec.sh BUILD
 
       # Archive artifacts
       - name: Archive artifacts
-        if: runner.os == 'linux'
+        if: runner.os == 'linux' && matrix.targetVSCode == 'latest'
         uses: actions/upload-artifact@v3
         with:
           name: liberty-tools-vscode-${{ github.sha }}
           path: ./**/*.vsix
           if-no-files-found: warn
           retention-days: 7
+
+      # Build the plugin.
+      - name: 'Test: RunTests'
+        run: bash ./src/test/resources/ci/scripts/exec.sh TEST ${{ matrix.targetVSCode }}

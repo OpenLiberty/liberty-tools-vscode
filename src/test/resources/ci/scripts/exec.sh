@@ -14,6 +14,12 @@
 ############################################################################
 set -Ex
 
+#BUILD OR TEST TO EXECUTE
+TYPE=$1
+
+#IF TEST TTYPE HEN RUN WITH VERSION OF VSCODE TO RUN TESTS 1.74.0, LATEST
+VSCODE_VERSION_TO_RUN=$2
+
 # Current time.
 currentTime=(date +"%Y/%m/%d-%H:%M:%S:%3N")
 
@@ -21,8 +27,61 @@ currentTime=(date +"%Y/%m/%d-%H:%M:%S:%3N")
 OS=$(uname -s)
 
 main() {
-    echo -e "\n> $(${currentTime[@]}): Build: Building the plugin"
 
+    if [ $TYPE == "BUILD" ]; then
+        echo -e "\n> $(${currentTime[@]}): Build: Building the plugin"
+
+        # Build VSE package
+        npm install
+        npm install -g vsce
+        npm run build
+        npm run compile
+        vsce package
+    else
+
+        #Start Display and Docker-Daemon
+        startDisplayAndDocker
+
+        #Initialisation step
+        npm run test-compile
+        cd src/test/resources/mavenProject
+        mvn liberty:start
+        mvn liberty:stop
+
+        #Docker test initialisation step
+        mvn package
+        docker build --pull -f ./Dockerfile -t inventory-dev-mode .
+
+        cd -
+
+        if [ $VSCODE_VERSION_TO_RUN == "latest" ]; then
+            # Run the plugin's install goal against the latest vscode version
+            npm run test -- -u
+        else
+            # Run the plugin's install goal against the target vscode version
+            npm run test -- -u -c $VSCODE_VERSION_TO_RUN
+        fi
+    fi
+
+    # If there were any errors, gather some debug data before exiting.
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        echo "ERROR: Failure while driving npm install on plugin. rc: ${rc}."
+
+        if [ $TYPE = "TEST" ]; then
+            echo "DEBUG: Liberty messages.log:\n"
+            cat src/test/resources/mavenProject/target/liberty/wlp/usr/servers/defaultServer/logs/messages.log
+        fi
+
+        echo "DEBUG: Environment variables:\n"
+        env
+
+        exit -1
+    fi
+}
+
+#start docker and display
+startDisplayAndDocker() {
     # Tell the terminal session to use display port 88.
     export DISPLAY=:88.0
 
@@ -33,36 +92,19 @@ main() {
 
         #  Start the window manager.
         metacity --sm-disable --replace 2> metacity.err &
-    fi
 
-    # Build VSE package
-    npm install
-    npm install -g vsce
-    npm run build
-    npm run compile
-    vsce package
-    npm run test-compile
-
-    # Run the plugin's install goal against the 1.74
-    npm run test -- -u -c 1.74.0
-    # Run the plugin's install goal against the 1.75
-    npm run test -- -u -c 1.75.0
-    # Run the plugin's install goal against the latest    
-    npm run test -- -u
-
-    # If there were any errors, gather some debug data before exiting.
-    rc=$?
-    if [ "$rc" -ne 0 ]; then
-        echo "ERROR: Failure while driving npm install on plugin. rc: ${rc}."
-
-        echo "DEBUG: Liberty messages.log:\n"
-        cat src/test/resources/applications/maven/mavenProject/target/liberty/wlp/usr/servers/defaultServer/logs/messages.log
-
-        echo "DEBUG: Environment variables:\n"
-        env
-
-        exit -1
+        #start docker deamon
+        sudo service docker start &
+        sleep 30
+        docker ps
+    elif [[ $OS == "Darwin" ]]; then
+        docker ps
+    else
+        sudo dockerd
+        sleep 30
+        docker ps
     fi
 }
+
 
 main "$@"
