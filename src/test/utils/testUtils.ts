@@ -163,10 +163,9 @@ export async function stopLibertyserver() {
   const workbench = new Workbench();
   await workbench.executeCommand(STOP_DASHBOARD_MAC_ACTION);
   const input = InputBox.create();
+  (await input).clear();
   (await input).setText(MAVEN_PROJECT);
   (await input).confirm();
   (await input).click();
   await delay(10000);
-
 }
-  
