@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2022, 2023 IBM Corporation and others.
+* Copyright (c) 2022 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -12,11 +12,13 @@
 *******************************************************************************/
 package test.maven.liberty.web.app.it;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 public class EndpointIT {
     private String URL = "http://localhost:9080/liberty.maven.test.app/servlet";

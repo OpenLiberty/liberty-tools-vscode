@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-export const MAVEN_PROJECT = "liberty.maven.test.app";
+export const MAVEN_PROJECT = "liberty.maven.test.wrapper.app";
 export const START_DASHBOARD_ACTION = "Start";
 export const STOP_DASHBOARD_ACTION = "Stop";
 export const START_DASHBOARD_MAC_ACTION = "Liberty: Start";
