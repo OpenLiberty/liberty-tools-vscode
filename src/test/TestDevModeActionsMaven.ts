@@ -182,7 +182,7 @@ it('View Unit test report for sample project', async () => {
     
   await utils.launchDashboardAction(section,constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
-  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Integration test report not found").to.equal(true); 
+  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found").to.equal(true);
     
 }).timeout(10000);
 
@@ -190,7 +190,7 @@ it('View Integration test report for sample project', async () => {
     
   await utils.launchDashboardAction(section, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
-  expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Unit test report not found").to.equal(true);
+  expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found").to.equal(true);
     
 }).timeout(10000);
 
