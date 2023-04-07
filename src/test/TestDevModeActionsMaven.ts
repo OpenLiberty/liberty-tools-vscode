@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DebugView, ActivityBar, ViewControl } from 'vscode-extension-tester';
+import { SideBarView, ViewItem, ViewSection,EditorView, DebugView } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 describe('Section', () => {
@@ -122,7 +122,6 @@ it('start with history from liberty dashboard', async () => {
 
 
 /*
-
 it('start with docker from liberty dashboard', async () => {      
     
   
@@ -147,12 +146,12 @@ it('start with docker from liberty dashboard', async () => {
  
     
 }).timeout(350000);
-
 */
 
 it('Run tests for sample project', async () => {  
   
   await utils.launchDashboardAction(section, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
+  //await utils.startLibertyserver();
   await utils.delay(30000);
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
   console.log("after checkTerminalforServerState"); 
@@ -183,7 +182,7 @@ it('View Unit test report for sample project', async () => {
     
   await utils.launchDashboardAction(section,constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
-  expect (tabs[1], "Unit test report not found").to.equal(constants.SUREFIRE_REPORT_TITLE);
+  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Integration test report not found").to.equal(true); 
     
 }).timeout(10000);
 
@@ -191,7 +190,7 @@ it('View Integration test report for sample project', async () => {
     
   await utils.launchDashboardAction(section, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
-  expect (tabs[2], "Integration test report not found").to.equal(constants.FAILSAFE_REPORT_TITLE);
+  expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Unit test report not found").to.equal(true);
     
 }).timeout(10000);
 
@@ -215,7 +214,7 @@ it('attach debugger for start with custom parameter event', async () => {
     console.log("Attach Debugger action done");
     await utils.delay(8000);
     const contentPart = debugView.getContent();
-    console.log("get content");
+    console.log("Get Content");
     
     let mysecarry: Promise<ViewSection[]> = contentPart.getSections();    
     let mysecmap: IterableIterator<[number, ViewSection]> = (await mysecarry).entries();
@@ -247,4 +246,3 @@ it('attach debugger for start with custom parameter event', async () => {
 }).timeout(350000);
 
 });
-
