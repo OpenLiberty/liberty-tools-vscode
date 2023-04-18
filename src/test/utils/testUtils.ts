@@ -1,5 +1,5 @@
 import path = require('path');
-import { Workbench, ViewSection,InputBox, DefaultTreeItem } from 'vscode-extension-tester';
+import { Workbench, ViewSection,InputBox, DefaultTreeItem, EditorView } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { MAVEN_PROJECT, RUN_TESTS_STRING,STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { expect } from "chai";
@@ -14,6 +14,33 @@ export function getMvnProjectPath(): string {
     const mvnProjectPath = path.join(__dirname, "..","..","..","src", "test","resources", "mavenProject");  
     console.log("Path is : "+mvnProjectPath)  ;
     return mvnProjectPath; 
+  }
+
+  export  function getServerxmlPath(): string{
+    const ServerxmlPath = path.join(getMvnProjectPath(),"src","main","liberty","config","server.xml");
+    let foundServerXML = false;
+
+    try {
+                
+      if (fs.existsSync(ServerxmlPath)) 
+      {
+        foundServerXML = true;
+       // new EditorView().openEditor(ServerxmlPath);
+         return ServerxmlPath;
+     //   break;
+      }
+      else{
+       // await delay(5000);
+        foundServerXML = false;
+        return "";
+      //  continue;
+      }      
+  }
+  catch(e)
+  {
+    console.error("Caught exception when checking for test report", e);
+    return "";
+  }
   }
 
  
