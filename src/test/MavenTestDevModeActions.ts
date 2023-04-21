@@ -128,7 +128,7 @@ it('start maven with history from liberty dashboard', async () => {
 }).timeout(350000);
 
 
-/*
+
 
 it('start maven with docker from liberty dashboard', async () => {      
     
@@ -155,7 +155,7 @@ it('start maven with docker from liberty dashboard', async () => {
     
 }).timeout(350000);
 
-*/
+
 
 it('Run tests for sample maven project', async () => {  
   

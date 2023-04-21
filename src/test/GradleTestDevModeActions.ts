@@ -126,7 +126,7 @@ it('start gradle with history from liberty dashboard', async () => {
 
 
 
-/*
+
 it('start gradle with docker from liberty dashboard', async () => {      
     
   
@@ -152,7 +152,7 @@ it('start gradle with docker from liberty dashboard', async () => {
     
 }).timeout(350000);
 
-*/
+
 
 it('Run tests for gradle project', async () => {  
   
