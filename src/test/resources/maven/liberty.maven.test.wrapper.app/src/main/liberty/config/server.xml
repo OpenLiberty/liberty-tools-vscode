@@ -18,5 +18,5 @@
     
     <httpEndpoint  host="*" httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint" />
     
-    <webApplication id="liberty.maven.test.app" location="liberty.maven.test.app.war" name="liberty.maven.test.app"/>
+    <webApplication id="liberty.maven.test.wrapper.app" location="liberty.maven.test.wrapper.app.war" name="liberty.maven.test.wrapper.app"/>
 </server>

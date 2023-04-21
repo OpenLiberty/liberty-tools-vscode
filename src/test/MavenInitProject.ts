@@ -1,10 +1,10 @@
 
 import {  WebDriver, VSBrowser } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
-import { expect } from "chai";
 
 
-describe('Open Project', () => {
+
+describe('Open Maven Project', () => {
 
     let driver: WebDriver;  
     
@@ -14,10 +14,10 @@ describe('Open Project', () => {
         
     });
 
-    it('Open Sample Project', async () => {       
+    it('Open Sample Maven Project', async () => {       
         await VSBrowser.instance.openResources(utils.getMvnProjectPath());
 
-    }).timeout(7000);
+    }).timeout(15000);
 
     
 });

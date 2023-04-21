@@ -1,17 +1,20 @@
 import { expect } from 'chai';
-import { SideBarView, ViewItem, ViewSection,EditorView, DebugView } from 'vscode-extension-tester';
+import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView, ActivityBar, ViewControl} from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
-describe('Section', () => {
+import path = require('path');
+
+describe('Devmode action tests for Maven Project', () => {
     let sidebar: SideBarView;
     let debugView: DebugView;
     let section: ViewSection;
-    let menu: ViewItem[];    
+    let menu: ViewItem[];  
+    let item: DefaultTreeItem;  
     let tabs: string[];
 
     before(() => {
-        sidebar = new SideBarView();
-        debugView = new DebugView();          
+        sidebar = new SideBarView(); 
+        debugView = new DebugView();        
     });
 
 it('getViewControl works with the correct label',  async() => { 
@@ -24,21 +27,23 @@ it('getViewControl works with the correct label',  async() => {
 }).timeout(10000);
 
 
-it('openDasboard shows items', async () => {
+it('Open dasboard shows items - Maven', async () => {
 
     
-    await utils.delay(65000);    
-    const menu = await section.getVisibleItems();            
-    expect(menu).not.empty; 
+  await utils.delay(65000);    
+  const menu = await section.getVisibleItems();            
+  expect(menu).not.empty;     
+  item = await section.findItem(constants.MAVEN_PROJECT) as DefaultTreeItem;   
+  expect(item).not.undefined;   
    
     
 }).timeout(75000);
 
 
-it('start sample project from liberty dashboard', async () => {      
+it('Start maven project from liberty dashboard', async () => {      
     
   
-  await utils.launchDashboardAction(section,constants.START_DASHBOARD_ACTION,constants.START_DASHBOARD_MAC_ACTION);  
+  await utils.launchDashboardAction(item,constants.START_DASHBOARD_ACTION,constants.START_DASHBOARD_MAC_ACTION);  
   await utils.delay(30000);
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
   if(!serverStartStatus)
@@ -46,7 +51,7 @@ it('start sample project from liberty dashboard', async () => {
   else
   {
     console.log("Server succuessfully started");  
-    await utils.launchDashboardAction(section, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
     const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);   
     if(!serverStopStatus){ 
     console.error("Server stopped message not found in the terminal");
@@ -62,11 +67,12 @@ it('start sample project from liberty dashboard', async () => {
 
 
 
-it('start with options from liberty dashboard', async () => {      
+it('start maven with options from liberty dashboard', async () => {      
     
-  const deleteReport = await utils.deleteReports();
+  const reportPath = path.join(utils.getMvnProjectPath(),"target","site","failsafe-report.html");
+  const deleteReport = await utils.deleteReports(reportPath);
   expect (deleteReport).to.be.true;
-  await utils.launchDashboardAction(section, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
+  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
   await utils.setCustomParameter("-DhotTests=true");  
   await utils.delay(30000);  
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
@@ -75,9 +81,9 @@ it('start with options from liberty dashboard', async () => {
   else
   {
     console.log("Server succuessfully started");  
-    let checkFile = await utils.checkIfTestFileExists();
+    let checkFile = await utils.checkIfTestReportExists(reportPath);
     expect (checkFile).to.be.true;
-    await utils.launchDashboardAction(section, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
+    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
     const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
     if(!serverStopStatus){ 
     console.error("Server stopped message not found in ther terminal");
@@ -91,12 +97,13 @@ it('start with options from liberty dashboard', async () => {
 }).timeout(350000);
 
 
-it('start with history from liberty dashboard', async () => {  
+it('start maven with history from liberty dashboard', async () => {  
 
-  const deleteReport = await utils.deleteReports();
+  const reportPath = path.join(utils.getMvnProjectPath(),"target","site","failsafe-report.html");
+  const deleteReport = await utils.deleteReports(reportPath);
   expect (deleteReport).to.be.true;  
-  await utils.launchDashboardAction(section, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);  
-  const foundCommand = await utils.chooseCmdFromHistory();
+  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);  
+  const foundCommand = await utils.chooseCmdFromHistory("-DhotTests=true");
   expect (foundCommand).to.be.true;  
   await utils.delay(30000);
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
@@ -105,9 +112,9 @@ it('start with history from liberty dashboard', async () => {
   else
   {
     console.log("Server succuessfully started");  
-    let checkFile = await utils.checkIfTestFileExists();
+    let checkFile = await utils.checkIfTestReportExists(reportPath);
     expect (checkFile).to.be.true;
-    await utils.launchDashboardAction(section, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
+    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
     const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
     if(!serverStopStatus){ 
     console.error("Server stopped message not found in terminal");
@@ -122,7 +129,8 @@ it('start with history from liberty dashboard', async () => {
 
 
 /*
-it('start with docker from liberty dashboard', async () => {      
+
+it('start maven with docker from liberty dashboard', async () => {      
     
   
   await utils.launchDashboardAction(section, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);  
@@ -146,12 +154,12 @@ it('start with docker from liberty dashboard', async () => {
  
     
 }).timeout(350000);
+
 */
 
-it('Run tests for sample project', async () => {  
+it('Run tests for sample maven project', async () => {  
   
-  await utils.launchDashboardAction(section, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
-  //await utils.startLibertyserver();
+  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
   await utils.delay(30000);
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
   console.log("after checkTerminalforServerState"); 
@@ -160,10 +168,10 @@ it('Run tests for sample project', async () => {
   else
   {
     console.log("Server succuessfully started");  
-    await utils.launchDashboardAction(section,constants.RUNTEST_DASHBOARD_ACTION,constants.RUNTEST_DASHBOARD_MAC_ACTION);
-    const testStatus = await utils.checkTestStatus();
+    await utils.launchDashboardAction(item,constants.RUNTEST_DASHBOARD_ACTION,constants.RUNTEST_DASHBOARD_MAC_ACTION);
+    const testStatus = await utils.checkTestStatus(constants.MAVEN_RUN_TESTS_STRING);
     expect (testStatus).to.be.true;    
-    await utils.launchDashboardAction(section, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
     const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
     if(!serverStopStatus){ 
     console.error("Server stopped message not found in the terminal");
@@ -178,29 +186,30 @@ it('Run tests for sample project', async () => {
 }).timeout(350000);
 
 
-it('View Unit test report for sample project', async () => {      
+it('View Unit test report for maven project', async () => {      
     
-  await utils.launchDashboardAction(section,constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);   
+  await utils.launchDashboardAction(item,constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
-  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found").to.equal(true);
+  //expect (tabs[1], "Unit test report not found").to.equal(constants.SUREFIRE_REPORT_TITLE);
+  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found").to.equal(true); 
     
 }).timeout(10000);
 
-it('View Integration test report for sample project', async () => {      
+it('View Integration test report for maven project', async () => {      
     
-  await utils.launchDashboardAction(section, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);   
+  await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
+  //expect (tabs[2], "Integration test report not found").to.equal(constants.FAILSAFE_REPORT_TITLE);
   expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found").to.equal(true);
     
 }).timeout(10000);
-
 
 it('attach debugger for start with custom parameter event', async () => {
   console.log("start attach debugger");
   let isServerRunning: Boolean = true;
   let attachStatus: Boolean = false;
   try {
-    await utils.launchDashboardAction(section,constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
+    await utils.launchDashboardAction(item,constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
     await utils.setCustomParameter("-DdebugPort=7777");   
     await utils.delay(30000);
     
@@ -210,7 +219,7 @@ it('attach debugger for start with custom parameter event', async () => {
     else {
       console.log("Server succuessfully started");
       
-    await utils.launchDashboardAction(section,constants.ATTACH_DEBUGGER_DASHBOARD_ACTION, constants.ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION);    
+    await utils.launchDashboardAction(item,constants.ATTACH_DEBUGGER_DASHBOARD_ACTION, constants.ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION);    
     console.log("Attach Debugger action done");
     await utils.delay(8000);
     const contentPart = debugView.getContent();
@@ -246,3 +255,4 @@ it('attach debugger for start with custom parameter event', async () => {
 }).timeout(350000);
 
 });
+

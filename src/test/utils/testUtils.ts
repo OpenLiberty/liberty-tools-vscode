@@ -1,7 +1,7 @@
 import path = require('path');
-import { Workbench, ViewSection,InputBox, DefaultTreeItem } from 'vscode-extension-tester';
+import { Workbench, ViewSection,InputBox, DefaultTreeItem, ViewItem } from 'vscode-extension-tester';
 import * as fs from 'fs';
-import { MAVEN_PROJECT, RUN_TESTS_STRING,STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
+import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { expect } from "chai";
 import { MapContextMenuforMac } from './macUtils';
 import * as clipboard from 'clipboardy';
@@ -11,24 +11,29 @@ export function delay(millisec: number) {
 }
 
 export function getMvnProjectPath(): string {
-    const mvnProjectPath = path.join(__dirname, "..","..","..","src", "test","resources", "mavenProject");  
+    const mvnProjectPath = path.join(__dirname, "..","..","..","src", "test","resources", "maven","liberty.maven.test.wrapper.app");  
     console.log("Path is : "+mvnProjectPath)  ;
     return mvnProjectPath; 
   }
 
- 
- 
-  export async function launchDashboardAction(sectionName: ViewSection, action: string, actionMac: string) {
+  export function getGradleProjectPath(): string {
+    const gradleProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","gradle", "liberty.gradle.test.wrapper.app");  
+    console.log("Path is : "+gradleProjectPath)  ;
+    return gradleProjectPath; 
+  }
 
-    console.log("Launching action:" + action);    
-    const item = await sectionName.findItem(MAVEN_PROJECT) as DefaultTreeItem;   
-    expect(item).not.undefined;   
-  
+ 
+ 
+  export async function launchDashboardAction(item: DefaultTreeItem, action: string, actionMac: string) {
+
+    console.log("Launching action:" + action);  
     if (process.platform === 'darwin') {//Only for MAC platform      
       await MapContextMenuforMac( item,actionMac);            
-    } else {  // NON MAC platforms
-      const menuItem = await item?.openContextMenu();  
-      await menuItem?.select(action);
+    } else {  // NON MAC platforms    
+      console.log("before contextmenu")  ;
+      const menuItem = await item.openContextMenu(); 
+      console.log("before select")  ; 
+      await menuItem.select(action);
     }
 
   }
@@ -44,23 +49,23 @@ export function getMvnProjectPath(): string {
   
   }
 
-  export async function chooseCmdFromHistory(): Promise<Boolean> {
+  export async function chooseCmdFromHistory(command: string): Promise<Boolean> {
 
     console.log("Choosing command from history");    
-    const input = new InputBox(); 
-    const pick = await input.findQuickPick('-DhotTests=true'); 
+    const input = new InputBox();     
+    const pick = await input.findQuickPick(command);    
     if (pick){
       await pick.select();    
-      await input.confirm(); 
+      await input.confirm();       
       return true;
     }
     else     
       return false; 
   }
 
-  export async function deleteReports() : Promise<Boolean> {
+  export async function deleteReports(reportPath:  string) : Promise<Boolean> {
 
-    const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
+    //const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
     if (fs.existsSync(reportPath) )
     {
       fs.unlink(reportPath, (err) => {
@@ -75,10 +80,10 @@ export function getMvnProjectPath(): string {
       return true;   
     }
 
-  export async function checkIfTestFileExists() : Promise<Boolean> {
+  export async function checkIfTestReportExists(reportPath: string) : Promise<Boolean> {
     const maxAttempts = 10;
     let foundReport = false;
-    const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
+    //const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
     for (let i = 0; i < maxAttempts; i++) {
       try {
                 
@@ -109,9 +114,9 @@ export function getMvnProjectPath(): string {
     let  foundText = false;
     let count=0;    
     do{
-      clipboard.writeSync('');//clean slate for clipboard
-      await workbench.executeCommand('terminal select all');      
-      const text = clipboard.readSync();         
+      clipboard.writeSync('');//clean slate for clipboard      
+      await workbench.executeCommand('terminal select all');       
+      const text = clipboard.readSync();        
       if( text.includes(serverStatusCode)){
         foundText = true;
         console.log("Found text "+ serverStatusCode);
@@ -119,6 +124,7 @@ export function getMvnProjectPath(): string {
       }
       else if(text.includes("FAILURE"))
       {     
+        console.log("Found failure "+ text);
         foundText = false;             
         break;      
       }
@@ -132,7 +138,7 @@ export function getMvnProjectPath(): string {
   }
   
 
-  export async function checkTestStatus(): Promise <Boolean>{
+  export async function checkTestStatus(testStatus: string): Promise <Boolean>{
     const workbench = new Workbench();
     let  foundText = false;
     let count=0;    
@@ -140,9 +146,9 @@ export function getMvnProjectPath(): string {
       clipboard.writeSync('');
       await workbench.executeCommand('terminal select all');      
       const text = clipboard.readSync();         
-      if( text.includes(RUN_TESTS_STRING)){
+      if( text.includes(testStatus)){
         foundText = true;
-        console.log("Found text "+ RUN_TESTS_STRING);
+        console.log("Found text "+ testStatus);
         break;
       }      
       else
@@ -169,3 +175,4 @@ export async function stopLibertyserver() {
   (await input).click();
   await delay(10000);
 }
+  
