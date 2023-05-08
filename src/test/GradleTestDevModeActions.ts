@@ -1,18 +1,20 @@
 import { expect } from 'chai';
-import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView,DefaultTreeItem } from 'vscode-extension-tester';
+import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView,DefaultTreeItem, DebugView } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
 
 describe('Devmode action tests for Gradle Project', () => {
     let sidebar: SideBarView;
+    let debugView: DebugView;
     let section: ViewSection;
     let item: DefaultTreeItem;
     let menu: ViewItem[];    
     let tabs: string[];
 
     before(() => {
-        sidebar = new SideBarView();        
+        sidebar = new SideBarView();
+        debugView = new DebugView();      
     });
 
 it('getViewControl works with the correct label',  async() => { 
@@ -196,7 +198,6 @@ it('View test report for gradle project', async () => {
 it('attach debugger for gradle with custom parameter event', async () => {
   console.log("start attach debugger");
   let isServerRunning: Boolean = true;
-  let isServerStopped: Boolean = true;
   let attachStatus: Boolean = false;
   try {
     await utils.launchDashboardAction(item,constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
@@ -208,28 +209,33 @@ it('attach debugger for gradle with custom parameter event', async () => {
       console.log("Server started with params message not found in terminal");
     else {
       console.log("Server succuessfully started");
-    
     await utils.launchDashboardAction(item,constants.ATTACH_DEBUGGER_DASHBOARD_ACTION, constants.ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION);    
-    const contentPart = sidebar.getContent();     
+    console.log("Attach Debugger action done");
+    await utils.delay(8000);
+    const contentPart = debugView.getContent();
+    //console.log("Get Content");
+    
     let mysecarry: Promise<ViewSection[]> = contentPart.getSections();    
     let mysecmap: IterableIterator<[number, ViewSection]> = (await mysecarry).entries();
     for (const [key, value] of (mysecmap)) {
       if ((await value.getEnclosingElement().getText()).includes("BREAKPOINTS")) {
+        //console.log("******** mysecmap getEnclosingElement " + (await value.getEnclosingElement().getText()).valueOf());
         console.log("Found Breakpoints");
         attachStatus = true;
         break;
       }
     }
+
     await utils.stopLibertyserver();
-    isServerStopped = await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
-    if (isServerStopped)
+    isServerRunning = !await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING); //negate isServerRunning
+    if (!isServerRunning)
       console.log("Server stopped successfully ");
   }
   } catch (e) {
     console.error("error - ", e)
   } finally {
-    console.log("defaulServer running status in finally block: ", isServerRunning);
-    if (!isServerStopped) {
+    console.log("finally block: is server running -  ", isServerRunning);
+    if (isServerRunning) {
       utils.stopLibertyserver();
     }
     else
