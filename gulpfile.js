@@ -86,8 +86,7 @@ const jakartaGroupIdString = "&g=" + jakartaGroupId;
 const jakartaVersionString = "&v=" + jakartaVersion;
 const jakartaClassifierString = "&c=jar-with-dependencies";
 
-// const jakartaJDTURL = eclipseRepoURL + jakartaReleaseLevelString + jakartaGroupIdString + "&a=org.eclipse.lsp4jakarta.jdt.core" + jakartaVersionString;
-const jakartaJDTURL = "https://download.eclipse.org/lsp4jakarta/releases/0.1.0/repository/plugins/org.eclipse.lsp4jakarta.jdt.core_0.1.0.20221213-2246.jar";
+const jakartaJDTURL = eclipseRepoURL + jakartaReleaseLevelString + jakartaGroupIdString + "&a=org.eclipse.lsp4jakarta.jdt.core" + jakartaVersionString;
 const jakartaLSURL = eclipseRepoURL + jakartaReleaseLevelString + jakartaGroupIdString + "&a=org.eclipse.lsp4jakarta.ls" + jakartaClassifierString + jakartaVersionString;
 
 gulp.task("downloadLSP4JakartaJars", (done) => {
