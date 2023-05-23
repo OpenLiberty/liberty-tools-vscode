@@ -44,7 +44,7 @@ main() {
 
         #Initialisation step
         npm run test-compile
-        cd src/test/resources/mavenProject
+        cd src/test/resources/maven/liberty.maven.test.wrapper.app
         mvn liberty:start
         mvn liberty:stop
 
@@ -70,7 +70,7 @@ main() {
 
         if [ $TYPE = "TEST" ]; then
             echo "DEBUG: Liberty messages.log:\n"
-            cat src/test/resources/mavenProject/target/liberty/wlp/usr/servers/defaultServer/logs/messages.log
+            cat src/test/resources/maven/liberty.maven.test.wrapper.app/target/liberty/wlp/usr/servers/defaultServer/logs/messages.log
         fi
 
         echo "DEBUG: Environment variables:\n"
