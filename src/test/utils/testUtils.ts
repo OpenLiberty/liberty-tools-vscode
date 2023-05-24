@@ -117,6 +117,7 @@ export function getMvnProjectPath(): string {
       clipboard.writeSync('');//clean slate for clipboard      
       await workbench.executeCommand('terminal select all');       
       const text = clipboard.readSync();        
+      console.log("debug:" + text)      ;
       if( text.includes(serverStatusCode)){
         foundText = true;
         console.log("Found text "+ serverStatusCode);
