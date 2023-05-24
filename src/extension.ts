@@ -78,6 +78,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             bindRequest(lsp4jakartaLS.JAVA_CLASSPATH_REQUEST);
             bindRequest(lsp4jakartaLS.JAVA_CODEACTION_REQUEST);
             bindRequest(lsp4jakartaLS.JAVA_DIAGNOSTICS_REQUEST);
+            bindRequest(lsp4jakartaLS.JAVA_CURSORCONTEXT_REQUEST);
     
             item.text = localize("jakarta.ls.thumbs.up");
             item.tooltip = localize("jakarta.ls.started");
