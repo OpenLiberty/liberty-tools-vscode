@@ -69,8 +69,11 @@ main() {
         echo "ERROR: Failure while driving npm install on plugin. rc: ${rc}."
 
         if [ $TYPE = "TEST" ]; then
-            echo "DEBUG: Liberty messages.log:\n"
+            echo "DEBUG: Maven Liberty messages.log:\n"
             cat src/test/resources/maven/liberty.maven.test.wrapper.app/target/liberty/wlp/usr/servers/defaultServer/logs/messages.log
+
+            echo "DEBUG: Gradle Liberty messages.log:\n"
+            cat src/test/resources/gradle/liberty.gradle.test.wrapper.app/build/wlp/usr/servers/defaultServer/logs/messages.log
         fi
 
         echo "DEBUG: Environment variables:\n"
