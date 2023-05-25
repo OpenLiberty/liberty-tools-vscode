@@ -28,6 +28,8 @@ OS=$(uname -s)
 
 main() {
 
+    chmod -R 755 src/test/resources/maven
+    chmod -R 755 src/test/resources/gradle
     if [ $TYPE == "BUILD" ]; then
         echo -e "\n> $(${currentTime[@]}): Build: Building the plugin"
 
