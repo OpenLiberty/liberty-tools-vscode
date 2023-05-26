@@ -4,8 +4,8 @@ apply plugin: 'war'
 version '1.0'
 group 'liberty.gradle.test.wrapper.app'
 
-sourceCompatibility = 11
-targetCompatibility = 11
+sourceCompatibility = 17
+targetCompatibility = 17
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
