@@ -12,7 +12,8 @@ import * as devCommands from "./liberty/devCommands";
 import * as lsp4jakartaLS from "./definitions/lsp4jakartaLSRequestNames";
 
 import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
-import { LanguageClient, LanguageClientOptions } from "vscode-languageclient";
+import { LanguageClientOptions } from "vscode-languageclient";
+import { LanguageClient } from "vscode-languageclient/node";
 import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor } from "vscode";
 import { JAVA_EXTENSION_ID, waitForStandardMode } from "./util/javaServerMode";
 import { localize } from "./util/i18nUtil";
@@ -200,8 +201,7 @@ function startLangServer(context: ExtensionContext, requirements: RequirementsDa
     languageClient = new LanguageClient(clientId, localName, serverOptions, clientOptions);
     if (!isLiberty) jakartaClient = languageClient;
 
-    context.subscriptions.push(languageClient.start());
-    return languageClient.onReady();
+    return languageClient.start();
 }
 
 function prepareClientOptions(Liberty_LS :boolean) {
