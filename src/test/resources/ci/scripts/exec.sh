@@ -105,6 +105,8 @@ startDisplayAndDocker() {
     elif [[ $OS == "Darwin" ]]; then
         docker ps
         sudo chsh -s /bin/zsh
+        chsh -s /bin/zsh
+        echo $SHELL 
     else
         sudo dockerd
         sleep 30
