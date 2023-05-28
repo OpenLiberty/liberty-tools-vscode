@@ -58,10 +58,22 @@ main() {
 
         if [ $VSCODE_VERSION_TO_RUN == "latest" ]; then
             # Run the plugin's install goal against the latest vscode version
-            npm run test -- -u
+             if [ $OS = "Darwin" ]; then
+                chown -R runner src/test/resources/maven
+              chown -R runner  src/test/resources/gradle
+                npm run test-mac -- -u
+            else
+                npm run test -- -u
+            fi
         else
             # Run the plugin's install goal against the target vscode version
+            if [ $OS = "Darwin" ]; then
+              chown -R runner src/test/resources/maven
+              chown -R runner  src/test/resources/gradle
+              npm run test-mac -- -u -c $VSCODE_VERSION_TO_RUN
+            else
             npm run test -- -u -c $VSCODE_VERSION_TO_RUN
+            fi
         fi
     fi
 

@@ -232,7 +232,8 @@
 		"build": "gulp downloadLibertyLSJars downloadLSP4JakartaJars",
 		"buildLocal": "gulp buildLemminxLiberty buildLibertyServer",
 		"buildJakarta": "gulp buildJakartaJdt buildJakartaLs",
-		"test": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/M*.js' && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js'"
+		"test": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/*.js'",
+		"test-mac":"npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/M*.js' && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js'"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.3.4",
