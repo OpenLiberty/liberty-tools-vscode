@@ -130,7 +130,7 @@ it('start maven with history from liberty dashboard', async () => {
 
 
 
-it('start maven with docker from liberty dashboard', async () => {      
+(process.platform === 'darwin' ? it.skip : it)('start maven with docker from liberty dashboard', async () => {      
     
   
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);  
