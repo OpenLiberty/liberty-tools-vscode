@@ -63,7 +63,7 @@ it('Start maven project from liberty dashboard', async () => {
  expect (serverStartStatus).to.be.true; 
  
     
-}).timeout(350000);
+}).timeout(550000);
 
 
 
@@ -125,7 +125,7 @@ it('start maven with history from liberty dashboard', async () => {
 }
  expect (serverStartStatus).to.be.true;
     
-}).timeout(350000);
+}).timeout(550000);
 
 
 

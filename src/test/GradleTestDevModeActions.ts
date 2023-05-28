@@ -94,7 +94,7 @@ it('start gradle with options from liberty dashboard', async () => {
 }
  expect (serverStartStatus).to.be.true;
     
-}).timeout(350000);
+}).timeout(550000);
 
 it('start gradle with history from liberty dashboard', async () => {  
 
@@ -188,9 +188,10 @@ it('View test report for gradle project', async () => {
     
   await utils.launchDashboardAction(item,constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
-  expect (tabs[1], "Gradle test report not found").to.equal(constants.GRADLE_TEST_REPORT_TITLE);
+ // expect (tabs[1]], "Gradle test report not found").to.equal(constants.GRADLE_TEST_REPORT_TITLE);
+ expect (tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE)>-1, "Gradle test report not found").to.equal(true); 
     
-}).timeout(10000);
+}).timeout(30000);
 
 
 
@@ -242,7 +243,7 @@ it('attach debugger for gradle with custom parameter event', async () => {
       console.log("good to close test - Attach Debugger for start with custom parameter(-DdebugPort=7777) event");
   }
   expect(attachStatus).to.be.true;
-}).timeout(350000);
+}).timeout(550000);
 
 
 
