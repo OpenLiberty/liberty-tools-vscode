@@ -28,8 +28,8 @@ OS=$(uname -s)
 
 main() {
 
-    chmod -R 755 src/test/resources/maven
-    chmod -R 755 src/test/resources/gradle
+    chmod -R 777 src/test/resources/maven
+    chmod -R 777 src/test/resources/gradle
     if [ $TYPE == "BUILD" ]; then
         echo -e "\n> $(${currentTime[@]}): Build: Building the plugin"
 
@@ -104,9 +104,7 @@ startDisplayAndDocker() {
         docker ps
     elif [[ $OS == "Darwin" ]]; then
         docker ps
-        sudo chsh -s /bin/zsh
-        chsh -s /bin/zsh
-        echo $SHELL 
+    
     else
         sudo dockerd
         sleep 30
