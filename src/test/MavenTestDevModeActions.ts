@@ -130,30 +130,6 @@ it('start maven with history from liberty dashboard', async () => {
 
 
 
-(process.platform === 'darwin' ? it.skip : it)('start maven with docker from liberty dashboard', async () => {      
-    
-  
-  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);  
-  await utils.delay(60000);
-  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
-  if(!serverStartStatus)
-    console.log("Server started message not found in the terminal");
-  else
-  {
-    console.log("Server succuessfully started");  
-    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
-    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
-    if(!serverStopStatus){ 
-    console.error("Server stopped message not found in the terminal");
-    }
-    else
-      console.log("Server stopped successfully");
-    expect (serverStopStatus).to.be.true;
-}
- expect (serverStartStatus).to.be.true; 
- 
-    
-}).timeout(350000);
 
 
 
@@ -253,6 +229,32 @@ it('attach debugger for start with custom parameter event', async () => {
   }
   expect(attachStatus).to.be.true;
 }).timeout(350000);
+
+(process.platform === 'darwin' ? it.skip : it)('start maven with docker from liberty dashboard', async () => {      
+    
+  
+  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);  
+  await utils.delay(60000);
+  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
+  if(!serverStartStatus)
+    console.log("Server started message not found in the terminal");
+  else
+  {
+    console.log("Server succuessfully started");  
+    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
+    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
+    if(!serverStopStatus){ 
+    console.error("Server stopped message not found in the terminal");
+    }
+    else
+      console.log("Server stopped successfully");
+    expect (serverStopStatus).to.be.true;
+}
+ expect (serverStartStatus).to.be.true; 
+ 
+    
+}).timeout(350000);
+
 
 });
 
