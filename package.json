@@ -2,7 +2,7 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Liberty Tools",
 	"description": "Liberty Tools for Visual Studio Code",
-	"version": "0.1.13-SNAPSHOT",
+	"version": "23.0.6-SNAPSHOT",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
@@ -11,7 +11,7 @@
 	"preview": true,
 	"license": "EPL-2.0",
 	"engines": {
-		"vscode": "^1.36.0"
+		"vscode": "^1.78.0"
 	},
 	"categories": [
 		"Programming Languages"
