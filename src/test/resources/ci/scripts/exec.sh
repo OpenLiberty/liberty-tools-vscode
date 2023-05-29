@@ -28,6 +28,7 @@ OS=$(uname -s)
 
 main() {
 
+    setVscodeVersionToTest
     chmod -R 777 src/test/resources/maven
     chmod -R 777 src/test/resources/gradle
     if [ $TYPE == "BUILD" ]; then
@@ -127,5 +128,30 @@ startDisplayAndDocker() {
     fi
 }
 
+#find current vscode version
+setVscodeVersionToTest() {
+        latest_version=$(curl -s https://code.visualstudio.com/updates)
+        current_version=$(echo $latest_version | cut -d"v" -f2 | sed 's/_/./g')
+
+        if echo "$current_version" | grep -qE '^[1-9]+\.[0-9]+$'; then
+                echo "The string is a version string."
+                previous_version=$(awk -F. '{print $1"."$2-1}' <<<$current_version)
+                previousMinusOne=$(awk -F. '{print $1"."$2-2}' <<<$current_version)
+                echo $current_version $previous_version $previousMinusOne
+        else
+                echo "The string is not a version string."
+                current_version='latest'
+                previous_version='latest'
+                previousMinusOne='latest'
+        fi
+
+        if [[ $VSCODE_VERSION_TO_RUN = 'latest' ]]; then
+                VSCODE_VERSION_TO_RUN='latest'
+        elif [[ $VSCODE_VERSION_TO_RUN = 'previous' ]]; then
+                VSCODE_VERSION_TO_RUN="$previous_version.0"
+        else
+                VSCODE_VERSION_TO_RUN="$previousMinusOne.0"
+        fi
+}
 
 main "$@"
