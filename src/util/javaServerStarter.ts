@@ -18,7 +18,7 @@
 import * as os from 'os';
 import * as path from 'path';
 import { workspace } from 'vscode';
-import { Executable, ExecutableOptions } from 'vscode-languageclient';
+import { Executable, ExecutableOptions } from 'vscode-languageclient/node';
 import { RequirementsData } from './requirements';
 import * as glob from 'glob';
 import {LIBERTY_LS_JAR} from '../extension'
