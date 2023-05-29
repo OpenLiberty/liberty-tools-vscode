@@ -25,7 +25,7 @@ const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
 export const LIBERTY_LS_JAR = "liberty-langserver-2.0-SNAPSHOT-jar-with-dependencies.jar";
 export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.1.1-SNAPSHOT-jar-with-dependencies.jar";
 
-let languageClient: LanguageClient;
+let libertyClient: LanguageClient;
 let jakartaClient: LanguageClient;
 
 export type JavaExtensionAPI = any;
@@ -166,8 +166,13 @@ function registerCommands(context: ExtensionContext) {
 }
 
 // this method is called when your extension is deactivated
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-export function deactivate(): void {
+// vscode-languageclient requires implementation of the deactivate() method to return the stop promise from each language client
+// this method is based on the deactivate() method from RedHat's Language support for Java for Visual Studio Code project (https://github.com/redhat-developer/vscode-java)
+export function deactivate(): Promise<void[]> {
+    let promiseReturn: Promise<void>[] = [];
+    promiseReturn.push(libertyClient ? libertyClient.stop() : Promise.resolve());
+    promiseReturn.push(jakartaClient ? jakartaClient.stop() : Promise.resolve());
+    return Promise.all<void>(promiseReturn);
 }
 
 /**
@@ -198,9 +203,8 @@ function startLangServer(context: ExtensionContext, requirements: RequirementsDa
     const serverOptions = prepareExecutable(lsJar, requirements)
 
     console.log("Creating new language client for " + lsName);
-    languageClient = new LanguageClient(clientId, localName, serverOptions, clientOptions);
-    if (!isLiberty) jakartaClient = languageClient;
-
+    let languageClient = new LanguageClient(clientId, localName, serverOptions, clientOptions);
+    isLiberty ? libertyClient = languageClient : jakartaClient = languageClient;
     return languageClient.start();
 }
 
