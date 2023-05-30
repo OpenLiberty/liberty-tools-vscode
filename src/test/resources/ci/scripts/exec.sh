@@ -42,18 +42,21 @@ main() {
         vsce package
     else
 
-        #Start Display and Docker-Daemon
-        startDisplayAndDocker
-
         #Initialisation step
         npm run test-compile
         cd src/test/resources/maven/liberty.maven.test.wrapper.app
         mvn liberty:start
         mvn liberty:stop
 
+
         #Docker test initialisation step
-        mvn package
-        docker build --pull -f ./Dockerfile -t inventory-dev-mode .
+        if [ $OS = "Linux" ]; then
+                #Start Display and Docker-Daemon
+                startDisplayAndDocker
+
+                mvn package
+                docker build --pull -f ./Dockerfile -t inventory-dev-mode .
+	fi
 
         cd -
 
@@ -116,13 +119,6 @@ startDisplayAndDocker() {
 
         #start docker deamon
         sudo service docker start &
-        sleep 30
-        docker ps
-    elif [[ $OS == "Darwin" ]]; then
-        docker ps
-    
-    else
-        sudo dockerd
         sleep 30
         docker ps
     fi
