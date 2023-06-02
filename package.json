@@ -230,7 +230,7 @@
 		"watch": "webpack --mode development --watch --info-verbosity verbose",
 		"test-compile": "tsc -p ./",
 		"build": "gulp downloadLibertyLSJars downloadLSP4JakartaJars",
-		"buildLocal": "gulp buildLemminxLiberty buildLibertyServer",
+		"buildLcls": "gulp buildLemminxLiberty buildLibertyServer",
 		"buildJakarta": "gulp buildJakartaJdt buildJakartaLs"
 	},
 	"devDependencies": {

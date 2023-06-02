@@ -31,7 +31,7 @@ Ensure you have [Node.js and npm](https://docs.npmjs.com/downloading-and-install
      - Click the `...` dropdown menu and select `Install from VSIX` and choose the generated `liberty-tools-vscode-xxx.vsix` file
 
 Step 5 downloads the JARs for Liberty Config Language Server and Eclipse LSP4Jakarta that are consumed by the VS Code client.
-If you would like a different version of the language servers other than what is available to download, the following instructions explain how to build these JARs locally.
+If you would like a different version of the language servers other than what is available to download, the following instructions explain how to build these JARs locally. Then rerun steps 6 and 7.
 
 ## Language Servers
 
@@ -39,7 +39,8 @@ If you would like a different version of the language servers other than what is
 
 1. Run `git clone https://github.com/OpenLiberty/liberty-language-server.git`
     Make sure the cloned repo is in the same parent dir as `liberty-tools-vscode`
-2. Run `npm run buildLocal`
+2. Run `npm run buildLcls`
+3. Run steps 6 and 7 above
 
 For more information on building Liberty Config Language Server, see the project documentation on [GitHub](https://github.com/OpenLiberty/liberty-language-server/blob/main/DEVELOPING.md). Note that there are [prerequsites](https://github.com/OpenLiberty/liberty-language-server/blob/main/DEVELOPING.md#prerequisites) to building this project locally.
 
@@ -48,6 +49,7 @@ For more information on building Liberty Config Language Server, see the project
 1. Run `git clone https://github.com/eclipse/lsp4jakarta.git`
     Make sure the cloned repo is in the same parent dir as `liberty-tools-vscode`
 2. Run `npm run buildJakarta`
+3. Run steps 6 and 7 above
 
 For more information on building Eclipse LSP4Jakarta, see the project documentation on [GitHub](https://github.com/eclipse/lsp4jakarta/blob/main/docs/BUILDING.md). Note that there are [prerequisites](https://github.com/eclipse/lsp4jakarta/blob/main/docs/BUILDING.md#prerequisites) to building this project locally.
 
