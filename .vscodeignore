@@ -10,3 +10,4 @@ webpack.config.js
 **/*.map
 node_modules
 **/gulpfile.js
+test-resources/**

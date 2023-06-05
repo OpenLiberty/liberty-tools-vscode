@@ -1,0 +1,54 @@
+name: Build and Test VSCode extension
+
+on:
+  push:
+    branches: '**'
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [ linux, mac, windows ]
+        targetVSCode: [ previousMinusOne, previous, latest ]
+        include:
+        - runtime: linux
+          os: ubuntu-latest
+
+        - runtime: mac
+          os: macOS-13
+
+        - runtime: windows
+          os: windows-latest
+
+    name: Build Plugin
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # Checkout the eclipse plugin repository.
+      - name: 'Setup: Checkout plugin'
+        uses: actions/checkout@v3
+
+      # Install the required software.
+      - name: 'Setup: Install required software'
+        run: bash ./src/test/resources/ci/scripts/setup.sh
+
+      # Build the plugin.
+      - name: 'Build: Build-Package'
+        run: bash ./src/test/resources/ci/scripts/exec.sh BUILD
+
+      # Archive artifacts
+      - name: Archive artifacts
+        if: runner.os == 'linux' && matrix.targetVSCode == 'latest'
+        uses: actions/upload-artifact@v3
+        with:
+          name: liberty-tools-vscode-${{ github.sha }}
+          path: ./**/*.vsix
+          if-no-files-found: warn
+          retention-days: 7
+
+      # Build the plugin.
+      - name: 'Test: RunTests'
+        run: bash ./src/test/resources/ci/scripts/exec.sh TEST ${{ matrix.targetVSCode }}
