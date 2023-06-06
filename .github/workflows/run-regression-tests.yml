@@ -12,7 +12,9 @@ jobs:
       fail-fast: false
       matrix:
         runtime: [ linux, mac, windows ]
-        targetVSCode: [ previousMinusOne, previous, latest ]
+        targetVSCode: [latest ]
+      # As Vscode 1.78 is the only support version for current release, running test with only latest
+      #Enable it in future for multiple releases as applicable  targetVSCode: [ previousMinusOne, previous, latest ]
         include:
         - runtime: linux
           os: ubuntu-latest
