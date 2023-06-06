@@ -218,7 +218,7 @@ it('attach debugger for gradle with custom parameter event', async () => {
 
 it('start gradle with docker from liberty dashboard', async () => {     
   
-  if(process.platform === 'darwin' ) || (process.platform === 'win32') || (process.platform == 'linux')
+  if((process.platform === 'darwin' ) || (process.platform === 'win32') || (process.platform == 'linux'))
   {
     //skip running for platforms , enable them for linux after resolving docker setup in GHA
     return true;
@@ -249,7 +249,7 @@ it('start gradle with docker from liberty dashboard', async () => {
 
 it('View test report for gradle project', async () => {      
 
-  if(process.platform === 'darwin' ) || (process.platform === 'win32') || (process.platform == 'linux')
+  if((process.platform === 'darwin' ) || (process.platform === 'win32') || (process.platform == 'linux'))
   {
     //skip running for platforms , enable them for linux after resolving docker setup in GHA
     return true;
