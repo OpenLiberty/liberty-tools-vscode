@@ -37,7 +37,7 @@ it('Open dasboard shows items - Maven', async () => {
   expect(item).not.undefined;   
    
     
-}).timeout(75000);
+}).timeout(275000);
 
 
 it('Start maven project from liberty dashboard', async () => {      

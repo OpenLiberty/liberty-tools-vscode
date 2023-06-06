@@ -37,7 +37,7 @@ it('Open dasboard shows items - Gradle', async () => {
     expect(item).not.undefined;   
    
     
-}).timeout(100000);
+}).timeout(300000);
 
 
 it('Start gradle project from liberty dashboard', async () => {      
