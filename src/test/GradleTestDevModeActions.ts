@@ -251,7 +251,7 @@ it('View test report for gradle project', async () => {
 
   if((process.platform === 'darwin' ) || (process.platform === 'win32') || (process.platform == 'linux'))
   {
-    //skip running for platforms , enable them for linux after resolving docker setup in GHA
+    //skip running for platforms , enable once https://github.com/OpenLiberty/liberty-tools-vscode/issues/266 is resolved
     return true;
   }
     
