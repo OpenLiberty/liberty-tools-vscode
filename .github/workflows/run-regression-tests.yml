@@ -13,8 +13,8 @@ jobs:
       matrix:
         runtime: [ linux, mac ]
      # Removing windows as a standard run flavor   runtime: [ linux, mac, windows ]
-        targetVSCode: [latest ]
-      # As Vscode 1.78 is the only support version for current release, running test with only latest
+        targetVSCode: [previous, latest ]
+      # As Vscode 1.79 and 1.78 are  the only support version for current release, running test with only latest,previous
       #Enable it in future for multiple releases as applicable  targetVSCode: [ previousMinusOne, previous, latest ]
         include:
         - runtime: linux
