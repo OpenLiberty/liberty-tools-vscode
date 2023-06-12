@@ -5,3 +5,8 @@ node_modules
 .DS_Store
 dist
 jars
+test-resources/
+target/
+build/
+.gradle/
+bin/
