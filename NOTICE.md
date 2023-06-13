@@ -7,18 +7,85 @@ TABLE OF CONTENTS
 
 THIS IBM NOTICES FILE CONSISTS OF THE FOLLOWING SECTIONS:
 
-Apache-2.0
 BSD-2-Clause
-ISC
-EPL-2.0
 BSD-3-Clause
-CDDL-1.1
-EPL-1.0
+Apache-2.0
+EPL-2.0
+ISC
 MIT
-CDDL-1.0
-
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+BSD-2-CLAUSE LICENSE
+
+The Program includes some or all of the following packages that IBM 
+obtained under the BSD-2-Clause License:
+
+winreg | Copyright (c) 2016, Paul Bottin All rights reserved.
+
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted provided that the following conditions are 
+met: 
+
+* Redistributions of source code must retain the above copyright notice, 
+  this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright 
+  notice, this list of conditions and the following disclaimer in the 
+  documentation and/or other materials provided with the distribution. 
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED 
+TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED 
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+END OF BSD-2-CLAUSE LICENSE NOTICES AND INFORMATION
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+BSD-3-Clause LICENSE
+
+The Program includes some or all of the following packages that IBM 
+obtained under the BSD-3-Clause License:
+
+expand-home-dir | No Copyright Found
+
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted provided that the following conditions are 
+met: 
+
+* Redistributions of source code must retain the above copyright notice, 
+  this list of conditions and the following disclaimer. 
+* Redistributions in binary form must reproduce the above copyright 
+  notice, this list of conditions and the following disclaimer in the 
+  documentation and/or other materials provided with the distribution. 
+* Neither the name of the <ORGANIZATION> nor the names of its 
+  contributors may be used to endorse or promote products derived from 
+  this software without specific prior written permission. 
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED 
+TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+
+END OF BSD 3-CLAUSE LICENSE NOTICES AND INFORMATION
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 APACHE SOFTWARE LICENSE 2.0
 
@@ -34,8 +101,6 @@ com.google.guava:listenablefuture
 com.google.j2objc:j2objc-annotations
 find-java-home
 gradle-to-js
-org.apache.commons:commons-lang3
-org.osgi:org.osgi.service.prefs
 
 Apache License
 Version 2.0, January 2004
@@ -219,37 +284,23 @@ END OF APACHE LICENSE 2.0 NOTICES AND INFORMATION
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-BSD-2-CLAUSE LICENSE
+ECLIPSE PUBLIC LICENSE, VERSION 2
 
-The Program includes some or all of the following packages that IBM 
-obtained under the BSD-2-Clause License:
+The Program includes some or all of the following that IBM obtained
+under the Eclipse Public License (source code available via the
+indicated URL):
 
-winreg | Copyright (c) 2016, Paul Bottin All rights reserved.
+ org.eclipse.lsp4j:org.eclipse.lsp4j.generator | https://mvnrepository.com/artifact/org.eclipse.lsp4j/org.eclipse.lsp4j.generator/0.17.0
+org.eclipse.lsp4j:org.eclipse.lsp4j | https://repo1.maven.org/maven2/org/eclipse/lsp4j/org.eclipse.lsp4j/0.14.0/org.eclipse.lsp4j-0.14.0-sources.jar
+org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc | https://repo1.maven.org/maven2/org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc/0.14.0/org.eclipse.lsp4j.jsonrpc-0.14.0-sources.jar
+org.eclipse.lsp4jakarta:org.eclipse.lsp4jakarta.jdt.core | https://github.com/eclipse/lsp4jakarta
+org.eclipse.lsp4mp:org.eclipse.lsp4mp.ls | https://github.com/eclipse/lsp4mp/tree/0.5.0
+org.eclipse.xtend:org.eclipse.xtend.lib | https://mvnrepository.com/artifact/org.eclipse.xtend/org.eclipse.xtend.lib/2.28.0
+org.eclipse.xtend:org.eclipse.xtend.lib.macro | https://mvnrepository.com/artifact/org.eclipse.xtend/org.eclipse.xtend.lib.macro/2.28.0
+org.eclipse.xtext:org.eclipse.xtext.xbase.lib | https://mvnrepository.com/artifact/org.eclipse.xtext/org.eclipse.xtext.xbase.lib/2.28.0
 
+END OF ECLIPSE PUBLIC LICENSE, VERSION 2 NOTICES AND INFORMATION
 
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions are 
-met: 
-
-* Redistributions of source code must retain the above copyright notice, 
-  this list of conditions and the following disclaimer.
-* Redistributions in binary form must reproduce the above copyright 
-  notice, this list of conditions and the following disclaimer in the 
-  documentation and/or other materials provided with the distribution. 
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
-IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED 
-TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
-HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED 
-TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-END OF BSD-2-CLAUSE LICENSE NOTICES AND INFORMATION
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -259,8 +310,8 @@ The Program includes some or all of the following that IBM obtained
 under the ISC License.
 
 at-least-node | Copyright (c) 2020 Ryan Zimmerman <opensrc@ryanzim.com>
-graceful-fs | Copyright (c) Isaac Z. Schlueter  Ben Noordhuis  and Contributors
-sax | Copyright (c) Isaac Z. Schlueter and Contributors    Copyright Mathias Bynens <https://mathiasbynens.be/>
+graceful-fs | Copyright (c) Isaac Z. Schlueter  Ben Noordhuis  and Contributors
+sax | Copyright (c) Isaac Z. Schlueter and Contributors Copyright Mathias Bynens <https://mathiasbynens.be/>
 which | Copyright (c) Isaac Z. Schlueter and Contributors
 
 ISC License
@@ -282,112 +333,27 @@ END OF ISC LICENSE NOTICES AND INFORMATION
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-ECLIPSE PUBLIC LICENSE, VERSION 2
-
-The Program includes some or all of the following that IBM obtained
-under the Eclipse Public License (source code available via the
-indicated URL):
-
-io.openliberty.tools:liberty-langserver | https://github.com/OpenLiberty/liberty-language-server/tree/v0.1.1
-org.eclipse.lsp4j:org.eclipse.lsp4j | https://repo1.maven.org/maven2/org/eclipse/lsp4j/org.eclipse.lsp4j/0.17.0/org.eclipse.lsp4j-0.17.0-sources.jar
-org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc | https://repo1.maven.org/maven2/org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc/0.17.0/org.eclipse.lsp4j.jsonrpc-0.17.0-sources.jar
-org.eclipse.lsp4mp:org.eclipse.lsp4mp.ls | https://github.com/eclipse/lsp4mp/tree/0.5.0
-org.junit:junit-bom | https://mvnrepository.com/artifact/org.junit/junit-bom/5.7.1
-
-END OF ECLIPSE PUBLIC LICENSE, VERSION 2 NOTICES AND INFORMATION
-
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-BSD-3-Clause LICENSE
-
-The Program includes some or all of the following packages that IBM 
-obtained under the BSD-3-Clause License:
-
-com.sun.activation:jakarta.activation | Copyright (c) 1997  2018 Oracle and/or its affiliates. All rights reserved.
-com.sun.istack:istack-commons-runtime | Copyright (c) 2017  2019 Oracle and/or its affiliates. All rights reserved.
-expand-home-dir | Copyright (c) azer
-azer
-jakarta.activation:jakarta.activation-api | Copyright (c) 2007, Eclipse Foundation, Inc
-jakarta.xml.bind:jakarta.xml.bind-api | Copyright (c) 2005  2019 Oracle and/or its affiliates. All rights reserved.
-org.glassfish.jaxb:jaxb-runtime | Copyright (c) 2017  2019 Oracle and/or its affiliates. All rights reserved.
-org.glassfish.jaxb:txw2 | Copyright (c) 2017  2018 Oracle and/or its affiliates. All rights reserved.
-
-
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions are 
-met: 
-
-* Redistributions of source code must retain the above copyright notice, 
-  this list of conditions and the following disclaimer. 
-* Redistributions in binary form must reproduce the above copyright 
-  notice, this list of conditions and the following disclaimer in the 
-  documentation and/or other materials provided with the distribution. 
-* Neither the name of the <ORGANIZATION> nor the names of its 
-  contributors may be used to endorse or promote products derived from 
-  this software without specific prior written permission. 
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
-IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED 
-TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
-
-END OF BSD 3-CLAUSE LICENSE NOTICES AND INFORMATION
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-COMMON DEVELOPMENT AND DISTRIBUTION LICENSE V1.1
-
-The Program includes some or all of the following that IBM obtained
-under the Common Development and Distribution License V1.1
-(source code available via the indicated URL):
-
-javax.xml.bind:jaxb-api | https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.1/jaxb-api-2.1-sources.jar
-
-END OF COMMON DEVELOPMENT AND DISTRIBUTION V1.1 LICENSE NOTICES AND INFORMATION
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-ECLIPSE PUBLIC LICENSE, VERSION 1
-
-The Program includes some or all of the following that IBM obtained
-under the Eclipse Public License (source code available via the
-indicated URL):
-
-io.takari.m2e.workspace:org.eclipse.m2e.workspace.cli | https://repo1.maven.org/maven2/io/takari/m2e/workspace/org.eclipse.m2e.workspace.cli/0.3.1/org.eclipse.m2e.workspace.cli-0.3.1-sources.jar
-
-END OF ECLIPSE PUBLIC LICENSE, VERSION 1 NOTICES AND INFORMATION
-
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 MIT LICENSE
 
 The Program includes some or all of the following that IBM obtained
 under the MIT License:
 
 @types/fs-extra | Copyright (c) Microsoft Corporation.
-@types/node | Copyright (c) Microsoft Corporation.
-@types/semver | Copyright (c) DefinitelyTyped Contributors
+@types/node | Copyright (c) Microsoft Corporation. All rights reserved.
+@types/semver | Copyright (c) Microsoft Corporation.
 @types/xml2js | Copyright (c) Microsoft Corporation.
 fs-extra | Copyright (c) 2011-2017 JP Richardson
-jsonfile | Copyright (c) 2012-2015  JP Richardson <jprichardson@gmail.com>
-jsonpath-plus | Copyright (c) 2011-2019 Stefan Goessner  Subbu Allamaraju  Mike Brevoort
-lodash.merge | Copyright OpenJS Foundation and other contributors <https://openjsf.org/>Copyright and related rights for sample code are waived via CC0. Sample
+jsonfile | Copyright (c) 2012-2015 JP Richardson <jprichardson@gmail.com>
+jsonpath-plus | Copyright (c) 2011-2019 Stefan Goessner, Subbu Allamaraju, Mike Brevoort,
+Robert Krahn, Brett Zamir, Richard Schneider
+lodash.merge | Copyright OpenJS Foundation and other contributors <https://openjsf.org/
 org.checkerframework:checker-qual | Copyright 2004-present by the Checker Framework developers
-universalify | Copyright (c) 2017  Ryan Zimmerman <opensrc@ryanzim.com>
+universalify | Copyright (c) 2017 Ryan Zimmerman <opensrc@ryanzim.com>
 vscode-jsonrpc | Copyright (c) Microsoft Corporation
 vscode-languageclient | Copyright (c) Microsoft Corporation
 vscode-languageserver-protocol | Copyright (c) Microsoft Corporation
 vscode-languageserver-types | Copyright (c) Microsoft Corporation
-xml2js | Copyright 2010  2011  2012  2013. All rights reserved.
+xml2js | Copyright 2010, 2011, 2012, 2013. All rights reserved.
 xmlbuilder | Copyright (c) 2013 Ozgur Ozcitak
 
 Permission is hereby granted, free of charge, to any person obtaining a 
@@ -410,20 +376,6 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
 
 END OF MIT LICENSE NOTICES AND INFORMATION
-
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-COMMON DEVELOPMENT AND DISTRIBUTION LICENSE V1
-
-The Program includes some or all of the following that IBM obtained
-under the Common Development and Distribution License V1
-(source code available via the indicated URL):
-
-javax.activation:activation | https://repo1.maven.org/maven2/javax/activation/activation/1.1/activation-1.1-sources.jar
-
-
-END OF COMMON DEVELOPMENT AND DISTRIBUTION V1 LICENSE NOTICES AND INFORMATION
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 END OF NOTICES AND INFORMATION
