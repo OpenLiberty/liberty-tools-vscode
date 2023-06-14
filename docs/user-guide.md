@@ -40,9 +40,9 @@ This guide provides detailed instructions on how to configure your Liberty proje
 
 Liberty Tools will go through a series of checks to locate Java 17 and will alert you when it fails to do so.
 
-Liberty Tools first checks the [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) from the `redhat.java` plugin. If handling multiple Java runtimes cause this requirement to be not be resolved, you can define properties in your VS Code user [settings.json](https://code.visualstudio.com/docs/getstarted/settings) file to help Liberty Tools locate your Java 17 runtime. Liberty Tools will search for `java.jdt.ls.java.home` and `java.home` before checking for environment variables `JDK_HOME` and `JAVA_HOME`.
+Liberty Tools first checks the [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) from the `redhat.java` plugin. If handling multiple Java runtimes causes this requirement to fail, you can define properties in your VS Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings) to help point Liberty Tools to your Java 17 runtime. Liberty Tools will search for `java.jdt.ls.java.home` and `java.home` before checking for the system environment variables `JDK_HOME` and `JAVA_HOME`.
 
-Liberty Config Language Server support for XML does not go through the same process, so it's recommended users define `xml.java.home` to ensure full Liberty Tools functionality.
+Liberty Config Language Server support for XML does not go through this same process, so it's recommended users define `xml.java.home` to ensure full Liberty Tools functionality.
 
 ![settings.json example](/docs/screenshots/settings.json%20path%20example.png)
 
