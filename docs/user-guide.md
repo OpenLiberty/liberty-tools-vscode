@@ -38,7 +38,17 @@ This guide provides detailed instructions on how to configure your Liberty proje
 
 ### Settings
 
-To ensure that the Liberty Config Language Server starts properly, define the `xml.java.home` property in your VS Code settings or set the system `JAVA_HOME` environment variable to point to Java 17 .
+Liberty Tools will go through a series of checks to locate Java 17 and will alert you when it fails to do so.
+
+Liberty Tools first checks the [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) from the `redhat.java` plugin, and usually having this is sufficient.
+
+If handling multiple Java runtimes cause this requirement to be not be resolved, you can define properties in your VS Code user settings.json file to help Liberty Tools locate your Java 17 runtime. Liberty Tools will search for `java.jdt.ls.java.home` and `java.home` before checking for environment variables `JDK_HOME` and `JAVA_HOME`.
+
+Liberty Config Language Server support for XML does not go through the same process, so it's recommended users define `xml.java.home` to ensure full Liberty Tools functionality.
+
+![settings.json example](/docs/screenshots/settings.json%20path%20example.png)
+
+<!-- To ensure that the Liberty Config Language Server starts properly, define the `xml.java.home` property in your VS Code settings or set the system `JAVA_HOME` environment variable to point to Java 17 . -->
 
 ## Open the Liberty dashboard
 
@@ -49,7 +59,7 @@ By default, the Liberty dashboard appears in the Project Explorer side bar. Opti
 | ![Liberty Dashboard Side Bar view](/docs/user-guide-screenshots/liberty_dashboard_side_bar.png) | ![Liberty Dashboard Activity Bar view](/docs/user-guide-screenshots/liberty_dashboard_activity_bar.png)|
 
 Projects that are already properly configured to run on Liberty and use Liberty dev mode are automatically added the Liberty dashboard when it opens. If your Liberty project does not show up in the Liberty dashboard automatically and you have the Liberty Maven or Liberty Gradle plugin configured, check out [how to manually add your project to the Liberty dashboard](#manually-add-your-liberty-project-to-the-dashboard).
-
+ 
 If you add new projects or make changes, use the refresh icon in the Liberty dashboard toolbar to refresh the dashboard view.
 
 ![Dashboard Refresh highlighted](/docs/user-guide-screenshots/dashboardToolbarRefresh.png)
