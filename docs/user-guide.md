@@ -38,13 +38,20 @@ This guide provides detailed instructions on how to configure your Liberty proje
 
 ### Settings
 
-Liberty Tools will go through a series of checks to locate Java 17 and will alert you when it fails to do so.
+Liberty Tools for Visual Studio Code requires a Java with a minimum version of 17 to ensure that the Liberty Config Language Server starts properly. A toast message will alert you if the Liberty Language Config server fails to run.
 
-Liberty Tools first checks the [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) from the `redhat.java` plugin. If handling multiple Java runtimes causes this requirement to fail, you can define properties in your VS Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings) to help point Liberty Tools to your Java 17 runtime. Liberty Tools will search for `java.jdt.ls.java.home` and `java.home` before checking for the system environment variables `JDK_HOME` and `JAVA_HOME`.
+![Java Version Outdated Toast](/docs/screenshots/java_17_toast_alert.png)
 
-Liberty Config Language Server support for XML does not go through this same process, so it's recommended users define `xml.java.home` to ensure full Liberty Tools functionality.
+To resolve this conflict, define `java.jdt.ls.java.home` and `xml.java.home` in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings) to point Liberty Tools to your Java 17 or newer runtime.
 
 ![settings.json example](/docs/screenshots/settings.json%20path%20example.png)
+
+This list provides the order of what Liberty Tools for Visual Studio Code checks:
+- The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [redhat.java plugin](https://marketplace.visualstudio.com/items?itemName=redhat.java)
+- `java.jdt.ls.java.home` in settings.json
+- `java.home` in settings.json. Note: [Deprecated!](https://github.com/redhat-developer/vscode-java#supported-vs-code-settings)
+- `JDK_HOME`
+- `JAVA_HOME`
 
 ## Open the Liberty dashboard
 
