@@ -42,11 +42,11 @@ Liberty Tools for Visual Studio Code requires Java 17 or later to ensure that th
 
 <img src="/docs/screenshots/java_17_toast_alert.png" width="50%" height="50%">
 
-To resolve this conflict, define `java.jdt.ls.java.home` and `xml.java.home` in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings) to point Liberty Tools to your Java 17 or newer runtime.
+To resolve this conflict, define `java.jdt.ls.java.home` and `xml.java.home` in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings) file to point Liberty Tools to your Java 17 or later runtime.
 
 ![settings.json example](/docs/screenshots/settings.json%20path%20example.png)
 
-This list provides the order of what Liberty Tools for Visual Studio Code checks:
+Liberty Tools for Visual Studio Code checks for the Java runtime in the following order of precedence:
 - The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [redhat.java plugin](https://marketplace.visualstudio.com/items?itemName=redhat.java)
 - `java.jdt.ls.java.home` in settings.json
 - `java.home` in settings.json. Note: [Deprecated!](https://github.com/redhat-developer/vscode-java#supported-vs-code-settings)
