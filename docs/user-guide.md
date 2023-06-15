@@ -38,7 +38,7 @@ This guide provides detailed instructions on how to configure your Liberty proje
 
 ### Settings
 
-Liberty Tools for Visual Studio Code requires a Java with a minimum version of 17 to ensure that the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) and [Eclipse Language Server for Jakarta EE](https://github.com/eclipse/lsp4jakarta) starts properly. A toast message will alert you if the Liberty Language Config server fails to run.
+Liberty Tools for Visual Studio Code requires Java 17 or later to ensure that the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) and [Eclipse Language Server for Jakarta EE](https://github.com/eclipse/lsp4jakarta) starts properly. A toast message alerts you if the Liberty Language Config server fails to run.
 
 <img src="/docs/screenshots/java_17_toast_alert.png" width="50%" height="50%">
 
