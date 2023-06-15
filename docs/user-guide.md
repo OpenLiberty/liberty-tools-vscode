@@ -49,7 +49,7 @@ To resolve this conflict, define `java.jdt.ls.java.home` and `xml.java.home` in 
 Liberty Tools for Visual Studio Code checks for the Java runtime in the following order of precedence:
 1. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [redhat.java plugin](https://marketplace.visualstudio.com/items?itemName=redhat.java)
 2. `java.jdt.ls.java.home` in settings.json
-3. `java.home` in settings.json. Note: [Deprecated!](https://github.com/redhat-developer/vscode-java#supported-vs-code-settings)
+3. `java.home` in settings.json. Note: This setting is [deprecated!](https://github.com/redhat-developer/vscode-java#supported-vs-code-settings), use 'java.jdt.ls.java.home' instead. 
 4. `JDK_HOME`
 5. `JAVA_HOME`
 
