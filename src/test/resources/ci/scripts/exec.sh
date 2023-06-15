@@ -79,6 +79,7 @@ main() {
               npm run test-mac-gradle -- -u -c $VSCODE_VERSION_TO_RUN
 
             else
+            VSCODE_VERSION_TO_RUN="1.78.2"
             npm run test -- -u -c $VSCODE_VERSION_TO_RUN
             fi
         fi
