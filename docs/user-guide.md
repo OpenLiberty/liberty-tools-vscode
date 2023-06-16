@@ -38,7 +38,20 @@ This guide provides detailed instructions on how to configure your Liberty proje
 
 ### Settings
 
-To ensure that the Liberty Config Language Server starts properly, define the `xml.java.home` property in your VS Code settings or set the system `JAVA_HOME` environment variable to point to Java 17 .
+Liberty Tools for Visual Studio Code requires Java 17 or later to ensure that the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) and the [Eclipse Language Server for Jakarta EE](https://github.com/eclipse/lsp4jakarta) start properly. A toast message alerts you if either language server fails to run.
+
+<img src="/docs/screenshots/java_17_toast_alert.png" width="50%" height="50%">
+
+To resolve this conflict, define `java.jdt.ls.java.home` and `xml.java.home` in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings) file to point Liberty Tools to your Java 17 or later runtime.
+
+![settings.json example](/docs/screenshots/settings.json%20path%20example.png)
+
+Liberty Tools for Visual Studio Code checks for the Java runtime in the following order of precedence:
+1. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [redhat.java plugin](https://marketplace.visualstudio.com/items?itemName=redhat.java)
+2. `java.jdt.ls.java.home` in settings.json
+3. `java.home` in settings.json. Note: This setting is [deprecated!](https://github.com/redhat-developer/vscode-java#supported-vs-code-settings), use 'java.jdt.ls.java.home' instead. 
+4. `JDK_HOME`
+5. `JAVA_HOME`
 
 ## Open the Liberty dashboard
 
