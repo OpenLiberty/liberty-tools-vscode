@@ -5,7 +5,8 @@ This guide provides detailed instructions on how to configure your Liberty proje
 - [Before you begin](#before-you-begin)
   - [Software requirements](#software-requirements)
   - [Application requirements](#application-requirements)
-  - [Settings](#settings)
+  - [Configure your Java](#configure-your-java)
+  - [External Settings](#external-settings)
 - [Open the Liberty dashboard](#open-the-liberty-dashboard)
 - [Run your application on Liberty using dev mode](#run-your-application-on-liberty-using-dev-mode)
   - [Use the Liberty dashboard](#use-the-liberty-dashboard)
@@ -24,34 +25,52 @@ This guide provides detailed instructions on how to configure your Liberty proje
 ## Before you begin
 
 ### Software requirements
-
-- Java 17 is required by Liberty Tools for Visual Studio Code.
+<!-- Match the VSCode and Java version with the README.md -->
+- **Visual Studio Code 1.78.0** or later.
+- **Java 17** or later is required by Liberty Tools for Visual Studio Code. To point Visual Studio Code to a specific runtime, see [Settings](#settings) for more information.
 
 ### Application requirements
 
 - Define a Liberty `server.xml` configuration file in the `src/main/liberty/config` location.
-- Configure the [Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven#configuration) or [Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle#adding-the-plugin-to-the-build-script). We recommend using recent versions of the plugins as they include several important bug fixes.
+- [Configure the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven#configuration) or [configure the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle#adding-the-plugin-to-the-build-script). We recommend using the most recent versions of the plugins as they include several important bug fixes.
 
-  The following versions are recommended at minimum:
-  - Liberty Maven Plugin -> 3.7.1
-  - Liberty Gradle Plugin -> 3.5.1
+    - [Liberty Maven Plugin latest release](https://github.com/OpenLiberty/ci.maven/releases/latest)
 
-### Settings
+    - [Liberty Gradle Plugin latest release](https://github.com/OpenLiberty/ci.gradle/releases/latest)
 
-Liberty Tools for Visual Studio Code requires Java 17 or later to ensure that the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) and the [Eclipse Language Server for Jakarta EE](https://github.com/eclipse/lsp4jakarta) start properly. A toast message alerts you if either language server fails to run.
+### Configure your Java
 
-<img src="/docs/screenshots/java_17_toast_alert.png" width="50%" height="50%">
+Liberty Tools for Visual Studio Code requires Java 17 or later to ensure that the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server), the [Eclipse Language Server for Jakarta EE](https://github.com/eclipse/lsp4jakarta), the [XML Language Server](https://github.com/eclipse/lemminx) and start properly. A toast message alerts you if any language server fails to run or if Visual Studio Code has trouble locating your Java.
 
-To resolve this conflict, define `java.jdt.ls.java.home` and `xml.java.home` in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings) file to point Liberty Tools to your Java 17 or later runtime.
+|  |  |
+| --- | --- |
+| <img src="/docs/screenshots/java_17_toast_alert.png" width="50%" height="50%"> | <img src="/docs/screenshots/update%20jdk%20toast.png" width="50%" height="50%"> |
+
+To resolve this conflict, you can define properties in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings) file to point Liberty Tools to your Java 17 or later runtime. 
+
+For both Liberty Config Language Server and Eclipse Language Server for Jakarta EE, Liberty Tools for Visual Studio Code will check for the Java runtime until satisfied in the following order of precendence:
+1. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [redhat.java plugin](https://marketplace.visualstudio.com/items?itemName=redhat.java). Staying the plugin up to date is the easiest way to ensure the language servers use the latest Java.
+2. `java.jdt.ls.java.home` in settings.json
+3. `JDK_HOME` or `JAVA_HOME` as system environment variables
+
+For the XML Language Server, or LemMinX, Liberty Tools for Visual Studio Code will check for the Java runtime until satisfied in the following order of precedence:
+
+1. `xml.java.home` in settings.json
+2. `JDK_HOME` or `JAVA_HOME` as system environment variables
 
 ![settings.json example](/docs/screenshots/settings.json%20path%20example.png)
 
-Liberty Tools for Visual Studio Code checks for the Java runtime in the following order of precedence:
-1. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [redhat.java plugin](https://marketplace.visualstudio.com/items?itemName=redhat.java)
-2. `java.jdt.ls.java.home` in settings.json
-3. `java.home` in settings.json. Note: This setting is [deprecated!](https://github.com/redhat-developer/vscode-java#supported-vs-code-settings), use 'java.jdt.ls.java.home' instead. 
-4. `JDK_HOME`
-5. `JAVA_HOME`
+
+### External settings
+
+The following settings, which are provided by external extensions, are honoured when you run dev mode commands.
+
+| Setting | Description | Provided By |
+| --- | --- | --- |
+| `maven.executable.path` | Maven commands executed by dev mode will honour this setting. When this value is empty, it tries to use `mvn` or `mvnw` according to the value of `maven.executable.preferMavenWrapper`. | [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven) |
+| `maven.executable.preferMavenWrapper` | Maven commands executed by dev mode will honour this setting. If true, it tries to use `mvnw` if a Maven wrapper file can be found. Otherwise it will use `mvn`. | [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven) |
+| `java.import.gradle.wrapper.enabled` | Gradle commands executed by dev mode will honour this setting. If true, it tries to use `gradlew` if a Gradle wrapper file can be found. Otherwise it will use `gradle`. | [Language support for Java extension](https://marketplace.visualstudio.com/items?itemName=redhat.java) |
+
 
 ## Open the Liberty dashboard
 
