@@ -42,24 +42,21 @@ This guide provides detailed instructions on how to configure your Liberty proje
 
 Liberty Tools for Visual Studio Code requires Java 17 or later to ensure that the [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server), the [Eclipse Language Server for Jakarta EE](https://github.com/eclipse/lsp4jakarta), the [XML Language Server](https://github.com/eclipse/lemminx) and start properly. A toast message alerts you if any language server fails to run or if Visual Studio Code has trouble locating your Java.
 
-|  |  |
-| --- | --- |
-| <img src="/docs/screenshots/java_17_toast_alert.png" width="50%" height="50%"> | <img src="/docs/screenshots/update%20jdk%20toast.png" width="50%" height="50%"> |
+<img src="/docs/screenshots/update%20jdk%20toast.png" width="40%"/> 
+<img src="/docs/screenshots/java_17_toast_alert.png" width="40%" />
 
-To resolve this conflict, you can define properties in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings) file to point Liberty Tools to your Java 17 or later runtime. 
+To resolve this conflict, you can define properties in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings) file to point Liberty Tools to your Java 17 or later. 
 
-For both Liberty Config Language Server and Eclipse Language Server for Jakarta EE, Liberty Tools for Visual Studio Code will check for the Java runtime until satisfied in the following order of precendence:
-1. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [redhat.java plugin](https://marketplace.visualstudio.com/items?itemName=redhat.java). Staying the plugin up to date is the easiest way to ensure the language servers use the latest Java.
+For both Liberty Config Language Server and Eclipse Language Server for Jakarta EE, Liberty Tools for Visual Studio Code will check for the Java versions in the following order:
+1. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [redhat.java plugin](https://marketplace.visualstudio.com/items?itemName=redhat.java). Using the latest plugin is the easiest way for the language servers to use the latest Java.
 2. `java.jdt.ls.java.home` in settings.json
 3. `JDK_HOME` or `JAVA_HOME` as system environment variables
 
-For the XML Language Server, or LemMinX, Liberty Tools for Visual Studio Code will check for the Java runtime until satisfied in the following order of precedence:
-
+For the XML Language Server, or LemMinX, Liberty Tools for Visual Studio Code will check for the Java versions in the following order:
 1. `xml.java.home` in settings.json
 2. `JDK_HOME` or `JAVA_HOME` as system environment variables
 
 ![settings.json example](/docs/screenshots/settings.json%20path%20example.png)
-
 
 ### External settings
 
