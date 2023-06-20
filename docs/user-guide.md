@@ -45,16 +45,16 @@ Liberty Tools for Visual Studio Code requires Java 17 or later to ensure that th
 <img src="/docs/screenshots/update%20jdk%20toast.png" width="40%"/> 
 <img src="/docs/screenshots/java_17_toast_alert.png" width="40%" />
 
-To resolve this conflict, you can define properties in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings) file to point Liberty Tools to your Java 17 or later. 
+To resolve this issue, you can define properties in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file or set system environment variables to point Liberty Tools to your Java 17 or later. 
 
 For both Liberty Config Language Server and Eclipse Language Server for Jakarta EE, Liberty Tools for Visual Studio Code will check for the Java versions in the following order:
-1. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [redhat.java plugin](https://marketplace.visualstudio.com/items?itemName=redhat.java). Using the latest plugin is the easiest way for the language servers to use the latest Java.
-2. `java.jdt.ls.java.home` in settings.json
-3. `JDK_HOME` or `JAVA_HOME` as system environment variables
+1. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [Language Support for Java(TM) by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java). 
+  - By default, Liberty Tools installs the latest version of the rehat.java plugin, which contains an embedded JRE higher than Java 17 and therefore no configuration is required. However, if using an older version of the redhat.java plugin or using the universal version without the embedded JRE, use `java.jdt.ls.java.home` to specify your new JDK path.
+2. `JDK_HOME` or `JAVA_HOME` as system environment variables. (Note: if both `JDK_HOME` and `JAVA_HOME` are set, `JDK_HOME` will take precedence)
 
 For the XML Language Server, or LemMinX, Liberty Tools for Visual Studio Code will check for the Java versions in the following order:
 1. `xml.java.home` in settings.json
-2. `JDK_HOME` or `JAVA_HOME` as system environment variables
+2. `JDK_HOME` or `JAVA_HOME` as system environment variables. (Note: if both `JDK_HOME` and `JAVA_HOME` are set, `JDK_HOME` will take precedence)
 
 ![settings.json example](/docs/screenshots/settings.json%20path%20example.png)
 
@@ -67,7 +67,8 @@ The following settings, which are provided by external extensions, are honoured 
 | `maven.executable.path` | Maven commands executed by dev mode will honour this setting. When this value is empty, it tries to use `mvn` or `mvnw` according to the value of `maven.executable.preferMavenWrapper`. | [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven) |
 | `maven.executable.preferMavenWrapper` | Maven commands executed by dev mode will honour this setting. If true, it tries to use `mvnw` if a Maven wrapper file can be found. Otherwise it will use `mvn`. | [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven) |
 | `java.import.gradle.wrapper.enabled` | Gradle commands executed by dev mode will honour this setting. If true, it tries to use `gradlew` if a Gradle wrapper file can be found. Otherwise it will use `gradle`. | [Language support for Java extension](https://marketplace.visualstudio.com/items?itemName=redhat.java) |
-
+| `xml.java.home` | This property allows a user to define their LemMinX language server runtime without altering the `JAVA_HOME` environment variable.  | Not set |
+| `java.jdt.ls.java.home` | Specifies the folder path to the JDK (17 or more recent) used to launch the Java Language Server. This setting will replace the Java extension's embedded JRE to start the Java Language Server.  | Not set |
 
 ## Open the Liberty dashboard
 

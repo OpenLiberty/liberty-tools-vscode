@@ -3,7 +3,8 @@
 <!-- Match the VSCode and Java version in #requirements, and user-guide.md -->
 > Note: Requires **Visual Studio Code 1.78.0** or later, and **Java 17** or later.
 > 
-> For more details, check the [user guide](docs/user-guide.md).
+> This page provides an overview of Liberty Tools for IntelliJ.
+> For minimum requirements information and detailed instructions on how to use Liberty Tools, check the [user-guide](docs/user-guide.md).
 
 [![Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/Open-Liberty.liberty-dev-vscode-ext?style=for-the-badge&label=VS%20Market "Current Release")](https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext)
 [![License](https://img.shields.io/github/license/OpenLiberty/liberty-tools-vscode?style=for-the-badge&logo=eclipse)](https://www.eclipse.org/legal/epl-2.0/)
@@ -15,8 +16,6 @@ Liberty Tools for Visual Studio Code offers features for developing cloud-native
 - [Features](#features)
 - [Quick start](#quick-start)
 - [Commands](#commands)
-- [Configurable user settings](#configurable-user-settings)
-- [External settings](#external-settings)
 - [Requirements](#requirements)
 - [Contributing](#contributing)
 - [Issues](#issues)
@@ -86,18 +85,12 @@ The following commands are available when you select a project in the Liberty Da
 | View unit test report (Maven) | View the unit test report file, if it exists at the `/target/site/surefire-report.html` default location. |
 | View test report (Gradle) | Open the test report file, if it exists at the `build/reports/tests/test/index.html` default location. This action command is available only to Gradle projects. Gradle projects have only a single action command for test result reporting. |
 
-## Configurable user settings
-
-| Setting | Description | Default Value |
-| --- | --- | --- |
-| `xml.java.home` | This property allows a user to define their LemMinX language server runtime without altering the `JAVA_HOME` environment variable.  | Not set |
-
 ## Requirements
 
 <!-- Match the VSCode and Java version on top of README.md, and user-guide.md  -->
 **Visual Studio Code 1.78.0** or later, and **Java 17** or later.
 
-For more information on configuring your Java runtime, consult our [user guide](/docs/user-guide.md#configure-your-java).
+Liberty Tools for Visual Studio Code will check `JAVA_HOME` and `xml.java.home` to ensure the LemMinX language server uses Java 17 or later. For further information on configuring your Java runtime, consult this [user guide section](/docs/user-guide.md#configure-your-java).
 
 The following extensions are bundled with Liberty Tools for Visual Studio Code during installation and are provided here for additional information.
 
