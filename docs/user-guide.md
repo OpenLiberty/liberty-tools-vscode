@@ -40,10 +40,10 @@ This guide provides detailed instructions on how to configure your Liberty proje
 
 ### Configure your Java
 
-Liberty Tools for Visual Studio Code requires Java 17 or later to ensure that the following underlying language servers start properly:
+Liberty Tools for Visual Studio Code requires Java 17 or later to ensure that the following language servers start properly:
 - [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server)
 - [Eclipse Language Server for Jakarta EE](https://github.com/eclipse/lsp4jakarta)
-- [XML Language Server](https://github.com/eclipse/lemminx) 
+- [XML Language Server (LemMinX)](https://github.com/eclipse/lemminx) 
 
 A toast message alerts you if any language server fails to run or if Visual Studio Code has trouble locating your Java.
 
@@ -54,10 +54,10 @@ To resolve this issue, you can define properties in your Visual Studio Code [set
 
 For both Liberty Config Language Server and Eclipse Language Server for Jakarta EE, Liberty Tools for Visual Studio Code will check for the Java versions in the following order:
 1. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [Language Support for Java(TM) by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java). 
-  - By default, Liberty Tools installs the latest version of the rehat.java plugin, which contains an embedded JRE higher than Java 17 and therefore no configuration is required. However, if using an older version of the redhat.java plugin or using the universal version without the embedded JRE, use `java.jdt.ls.java.home` to specify your new JDK path.
+  - By default, Liberty Tools installs the latest version of the Language Support for Java(TM) by Red Hat plugin. The latest version contains an embedded JRE higher than Java 17 and therefore no additional configuration is required. However, using an older version of the Language Support for Java(TM) by Red Hat plugin or using the universal version without the embedded JRE causes an issue, use `java.jdt.ls.java.home` to specify your new JDK path.
 2. `JDK_HOME` or `JAVA_HOME` as system environment variables. (Note: if both `JDK_HOME` and `JAVA_HOME` are set, `JDK_HOME` will take precedence)
 
-For the XML Language Server, or LemMinX, Liberty Tools for Visual Studio Code will check for the Java versions in the following order:
+For LemMinX, Liberty Tools for Visual Studio Code will check for the Java versions in the following order:
 1. `xml.java.home` in settings.json
 2. `JDK_HOME` or `JAVA_HOME` as system environment variables. (Note: if both `JDK_HOME` and `JAVA_HOME` are set, `JDK_HOME` takes precedence)
 
