@@ -2,6 +2,17 @@
 
 All notable changes to the Liberty Tools extension will be documented below.
 
+## 23.0.6
+
+Version 23.0.6 of Liberty Tools for Visual Studio Code contains minor enhancements and fixes. Version 23.0.6 requires Visual Studio Code version 1.78+ and requires Java 17 or later.
+
+Notable enhancements:
+
+- Update to allow context aware snippets in Java files provided by [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta), Language Server for Jakarta EE.
+- Update to latest version of `vscode-languageclient` to resolve language client failures
+
+See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/0.1.12...23.0.6) for the full set of changes since the previous release.
+
 ## 0.1.12
 
 Version 0.1.12 of Liberty Tools for Visual Studio Code is an **early release** that contains new functionality and fixes. Liberty Tools for Visual Studio Code now requires Java 17 and depends on the [XML by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml) and [Debugger for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-debug) Visual Studio Code extensions.
