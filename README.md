@@ -3,7 +3,7 @@
 <!-- Match the VSCode and Java version in #requirements, and user-guide.md -->
 > Note: Requires **Visual Studio Code 1.78.0** or later, and **Java 17** or later.
 > 
-> This page provides an overview of Liberty Tools for IntelliJ.
+> This page provides an overview of Liberty Tools for Visual Studio Code.
 > For minimum requirements information and detailed instructions on how to use Liberty Tools, check the [user-guide](docs/user-guide.md).
 
 [![Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/Open-Liberty.liberty-dev-vscode-ext?style=for-the-badge&label=VS%20Market "Current Release")](https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext)
@@ -90,7 +90,7 @@ The following commands are available when you select a project in the Liberty Da
 <!-- Match the VSCode and Java version on top of README.md, and user-guide.md  -->
 **Visual Studio Code 1.78.0** or later, and **Java 17** or later.
 
-Liberty Tools for Visual Studio Code will check `JAVA_HOME` and `xml.java.home` to ensure the LemMinX language server uses Java 17 or later. For further information on configuring your Java runtime, consult this [user guide section](/docs/user-guide.md#configure-your-java).
+Liberty Tools for Visual Studio Code will check the `xml.java.home` VS Code setting or the `JAVA_HOME` system environment variable to ensure the LemMinX language server uses Java 17 or later. For further information on configuring your Java runtime for language servers, consult this [user guide section](/docs/user-guide.md#configure-your-java).
 
 The following extensions are bundled with Liberty Tools for Visual Studio Code during installation and are provided here for additional information.
 

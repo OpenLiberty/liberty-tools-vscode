@@ -50,7 +50,7 @@ A toast message alerts you if any language server fails to run or if Visual Stud
 <img src="/docs/screenshots/update%20jdk%20toast.png" width="40%"/> 
 <img src="/docs/screenshots/java_17_toast_alert.png" width="40%" />
 
-To resolve this issue, you can define properties in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file or set system environment variables to point Liberty Tools to your Java 17 or later. 
+To resolve this issue, you can define settings in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file or set system environment variables to point Liberty Tools to Java 17 or later. 
 
 For both Liberty Config Language Server and Eclipse Language Server for Jakarta EE, Liberty Tools for Visual Studio Code will check for the Java versions in the following order:
 1. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [Language Support for Java(TM) by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java). 
