@@ -5,7 +5,7 @@ This guide provides detailed instructions on how to configure your Liberty proje
 - [Before you begin](#before-you-begin)
   - [Software requirements](#software-requirements)
   - [Application requirements](#application-requirements)
-  - [Configure your Java](#configure-your-java)
+  - [Configure your Java runtime for language servers](#configure-your-java-runtime-for-language-servers)
   - [External Settings](#external-settings)
 - [Open the Liberty dashboard](#open-the-liberty-dashboard)
 - [Run your application on Liberty using dev mode](#run-your-application-on-liberty-using-dev-mode)
@@ -38,7 +38,7 @@ This guide provides detailed instructions on how to configure your Liberty proje
 
     - [Liberty Gradle Plugin latest release](https://github.com/OpenLiberty/ci.gradle/releases/latest)
 
-### Configure your Java
+### Configure your Java runtime for language servers
 
 Liberty Tools for Visual Studio Code requires Java 17 or later to ensure that the following language servers start properly:
 - [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server)
@@ -53,9 +53,11 @@ A toast message alerts you if any language server fails to run or if Visual Stud
 To resolve this issue, you can define settings in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file or set system environment variables to point Liberty Tools to Java 17 or later. 
 
 For both Liberty Config Language Server and Eclipse Language Server for Jakarta EE, Liberty Tools for Visual Studio Code will check for the Java versions in the following order:
-1. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [Language Support for Java(TM) by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java). 
-  - By default, Liberty Tools installs the latest version of the Language Support for Java(TM) by Red Hat plugin. The latest version contains an embedded JRE higher than Java 17 and therefore no additional configuration is required. However, using an older version of the Language Support for Java(TM) by Red Hat plugin or using the universal version without the embedded JRE causes an issue, use `java.jdt.ls.java.home` to specify your new JDK path.
-2. `JDK_HOME` or `JAVA_HOME` as system environment variables. (Note: if both `JDK_HOME` and `JAVA_HOME` are set, `JDK_HOME` will take precedence)
+1. `java.jdt.ls.java.home` in settings.json
+2. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [Language Support for Java(TM) by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java). 
+3. `JDK_HOME` or `JAVA_HOME` as system environment variables. (Note: if both `JDK_HOME` and `JAVA_HOME` are set, `JDK_HOME` will take precedence)
+
+By default, Liberty Tools installs the latest version of the Language Support for Java(TM) by Red Hat extension. The latest version contains an embedded JRE higher than Java 17 and therefore no additional configuration is required. However, if using an older version of the Language Support for Java(TM) by Red Hat extension or using the universal version without the embedded JRE causes an issue, then `java.jdt.ls.java.home` or one of JDK_HOME or JAVA_HOME must be configured to use Java 17 or later.
 
 For LemMinX, Liberty Tools for Visual Studio Code will check for the Java versions in the following order:
 1. `xml.java.home` in settings.json
@@ -63,9 +65,7 @@ For LemMinX, Liberty Tools for Visual Studio Code will check for the Java versio
 
 ![settings.json example](/docs/screenshots/settings.json%20path%20example.png)
 
-### External settings
-
-The following settings, which are provided by external extensions, are honoured when you run dev mode commands.
+### External extension settings
 
 | Setting | Description | Provided By |
 | --- | --- | --- |
@@ -73,7 +73,7 @@ The following settings, which are provided by external extensions, are honoured 
 | `maven.executable.preferMavenWrapper` | Maven commands executed by dev mode honour this setting. If this setting set to `true`, dev mode tries to use `mvnw` if a Maven wrapper file can be found. Otherwise, it uses `mvn`. | [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven) |
 | `java.import.gradle.wrapper.enabled` | Gradle commands executed by dev mode honour this setting. If this setting is set to `true`, dev mode tries to use `gradlew` if a Gradle wrapper file can be found. Otherwise, it uses `gradle`. | [Language support for Java extension](https://marketplace.visualstudio.com/items?itemName=redhat.java) |
 | `xml.java.home` | This setting allows a user to define their LemMinX language server runtime without altering the `JAVA_HOME` environment variable.  | Not set |
-| `java.jdt.ls.java.home` | This setting specifies the folder path to the JDK (17 or later) that is used to launch the Java Language Server. This setting replaces the Java extension's embedded JRE to start the Java Language Server.  | Not set |
+| `java.jdt.ls.java.home` | This setting specifies the folder path to the JDK (17 or later) that is used to launch the Java Language Server. This setting replaces the Java extension's embedded JRE to start the language servers.  | Not set |
 
 ## Open the Liberty dashboard
 
