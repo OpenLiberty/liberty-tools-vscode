@@ -90,7 +90,7 @@ The following commands are available when you select a project in the Liberty Da
 <!-- Match the VSCode and Java version on top of README.md, and user-guide.md  -->
 **Visual Studio Code 1.78.0** or later, and **Java 17** or later.
 
-Liberty Tools for Visual Studio Code will check the `xml.java.home` VS Code setting or the `JAVA_HOME` system environment variable to ensure the LemMinX language server uses Java 17 or later. For further information on configuring your Java runtime for language servers, consult this [user guide section](/docs/user-guide.md#configure-your-java).
+Liberty Tools for Visual Studio Code will check the `xml.java.home` VS Code setting or the `JAVA_HOME` system environment variable to ensure the LemMinX language server uses Java 17 or later. For further information on configuring your Java runtime for language servers, consult this [user guide section](/docs/user-guide.md#configure-your-java-runtime-for-language-servers).
 
 The following extensions are bundled with Liberty Tools for Visual Studio Code during installation and are provided here for additional information.
 
