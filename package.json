@@ -2,7 +2,7 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Liberty Tools",
 	"description": "Liberty Tools for Visual Studio Code",
-	"version": "23.0.6-SNAPSHOT",
+	"version": "23.0.6",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
