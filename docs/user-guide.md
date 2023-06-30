@@ -1,6 +1,7 @@
 # Liberty Tools for Visual Studio Code User Guide
 
 This guide provides detailed instructions on how to configure your Liberty project to use the Liberty Tools for Visual Studio Code extension.
+For information regarding known issues and limitations, refer to our [Common Issues](https://github.com/OpenLiberty/liberty-tools-vscode/wiki/Common-Issues) wiki page or our [Known Problems and Limitations](https://github.com/OpenLiberty/liberty-tools-vscode/wiki/Known-Problems-and-Limitations) wiki page.
 
 - [Before you begin](#before-you-begin)
   - [Software requirements](#software-requirements)
