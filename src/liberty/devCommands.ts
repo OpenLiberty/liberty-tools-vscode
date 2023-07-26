@@ -441,11 +441,11 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
         if (terminal !== undefined) {
             terminal.show();
             libProject.setTerminal(terminal);
-            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT ) {
                 const mvnCmdStart = await mvnCmd(libProject.getPath());
                 const cmd = `${mvnCmdStart} io.openliberty.tools:liberty-maven-plugin:devc -f "${libProject.getPath()}"`;
                 terminal.sendText(cmd);
-            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT) {
                 const gradleCmdStart = await gradleCmd(libProject.getPath());
                 const cmd = `${gradleCmdStart} libertyDevc -b="${libProject.getPath()}"`;
                 terminal.sendText(cmd);
