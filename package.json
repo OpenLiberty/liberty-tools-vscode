@@ -176,7 +176,7 @@
 				},
 				{
 					"command": "liberty.dev.start.container",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+					"when": "viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
 					"group": "libertyCore@2"
 				},
 				{
