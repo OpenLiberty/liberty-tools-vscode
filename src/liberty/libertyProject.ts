@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, 2022 IBM Corporation.
+ * Copyright (c) 2020, 2022, 2023 IBM Corporation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -338,13 +338,21 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				if (project.contextValue !== projectType) {
 					project.setContextValue(projectType);
 				}
+				fse.readFile(buildFilePath, "utf8").then(value => {
+					getLabelFromBuildFile( buildFilePath , value).then(projectnew => {
+						if (project.getLabel() !==  projectnew) {
+							project.setLabel(projectnew);
+						   }
+					});
+				});
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 				projectsMap.set(buildFilePath, this.projects.get(buildFilePath)!);
 				added = true;
 			}
 		}
 		return added;
-	}
+	}	
+	
 	private async updateProjects(): Promise<void> {
 		// find all build files in the open workspace and find all the ones that are valid for dev-mode
 		
@@ -421,7 +429,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 export class LibertyProject extends vscode.TreeItem {
 	constructor(
 		private _context: vscode.ExtensionContext,
-		public readonly label: string,
+		public label: string,
 		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
 		// tslint:disable-next-line: no-shadowed-variable
 		public readonly path: string,
@@ -443,6 +451,10 @@ export class LibertyProject extends vscode.TreeItem {
 
 	public getLabel(): string {
 		return `${this.label}`;
+	}
+
+	public setLabel(label: string): void {
+		this.label = label;
 	}
 
 	public getState(): string {
@@ -505,22 +517,7 @@ export class LibertyProject extends vscode.TreeItem {
 }
 
 export async function createProject(context: vscode.ExtensionContext, buildFile: string, contextValue: string, xmlString?: string): Promise<LibertyProject> {
-	let label = "";
-	if (xmlString !== undefined) {
-		// eslint-disable-next-line @typescript-eslint/no-var-requires
-		const parseString = require("xml2js").parseString;
-		parseString(xmlString, (err: any, result: any) => {
-			if (result.project.artifactId[0] !== undefined) {
-				label = result.project.artifactId[0];
-			} else {
-				const dirName = vscodePath.dirname(buildFile);
-				label = vscodePath.basename(dirName);
-			}
-		});
-	} else {
-		label = await gradleUtil.getGradleProjectName(buildFile);
-	}
-	const project: LibertyProject = new LibertyProject(context, label, vscode.TreeItemCollapsibleState.None, buildFile, "start", contextValue, undefined, {
+	const project: LibertyProject = new LibertyProject(context, await getLabelFromBuildFile(buildFile, xmlString), vscode.TreeItemCollapsibleState.None, buildFile, "start", contextValue, undefined, {
 		command: "extension.open.project",
 		title: "",
 		arguments: [buildFile],
@@ -528,3 +525,21 @@ export async function createProject(context: vscode.ExtensionContext, buildFile:
 	return project;
 }
 
+export async function getLabelFromBuildFile( buildFile: string, xmlString?: string): Promise<string> {
+    let label = "";
+    if (xmlString !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const parseString = require("xml2js").parseString;
+        parseString(xmlString, (err: any, result: any) => {
+            if (result.project.artifactId[0] !== undefined) {
+                label = result.project.artifactId[0];
+            } else {
+                const dirName = vscodePath.dirname(buildFile);
+                label = vscodePath.basename(dirName);
+            }
+        });
+    } else {
+        label = await gradleUtil.getGradleProjectName(buildFile);
+    }
+return label;
+}
