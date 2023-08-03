@@ -408,7 +408,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				const gradleFile = vscodePath.resolve(folder, "build.gradle");
 				if (fse.existsSync(gradleFile) && !newProjectsMap.has(gradleFile)) {
 					if (!this.addExistingProjectToNewProjectsMap(gradleFile, LIBERTY_GRADLE_PROJECT, newProjectsMap)) {
-						const project = await createProject(this._context, gradleFile, LIBERTY_MAVEN_PROJECT);
+						const project = await createProject(this._context, gradleFile, LIBERTY_GRADLE_PROJECT);
 						newProjectsMap.set(gradleFile, project);
 					}
 				}
