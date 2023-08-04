@@ -338,13 +338,22 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				if (project.contextValue !== projectType) {
 					project.setContextValue(projectType);
 				}
-				fse.readFile(buildFilePath, "utf8").then(value => {
-					getLabelFromBuildFile( buildFilePath , value).then(projectnew => {
+				if(projectType == 'libertyGradleProjectContainer' || projectType == 'libertyGradleProject'){
+					getLabelFromBuildFile( buildFilePath).then(projectnew => {
 						if (project.getLabel() !==  projectnew) {
 							project.setLabel(projectnew);
 						   }
 					});
-				});
+				}
+				if(projectType == 'libertyMavenProjectContainer' || projectType == 'libertyMavenProject'){
+					fse.readFile(buildFilePath, "utf8").then(value => {
+						getLabelFromBuildFile( buildFilePath , value).then(projectnew => {
+							if (project.getLabel() !==  projectnew) {
+								project.setLabel(projectnew);
+							}
+						});
+					});
+				}
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 				projectsMap.set(buildFilePath, this.projects.get(buildFilePath)!);
 				added = true;
