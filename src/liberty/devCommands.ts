@@ -378,7 +378,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
             }
 
             // set focus on the Inputbox
-            await vscode.commands.executeCommand( 'workbench.action.focusNextGroup')
+            await vscode.commands.executeCommand('workbench.action.focusNextGroup');
 
             // prompt for custom command
             let customCommand: string | undefined = await vscode.window.showInputBox(Object.assign({
