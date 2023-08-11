@@ -208,6 +208,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 
 	public getTreeItem(element: LibertyProject): vscode.TreeItem {
+		element.tooltip = element.path;
 		return element;
 	}
 
