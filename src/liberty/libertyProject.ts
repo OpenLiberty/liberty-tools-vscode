@@ -409,22 +409,22 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		for (const serverXML of serverXMLPaths) {
 			const folder = vscodePath.parse(vscodePath.resolve(serverXML, "../../../../")).dir;
 			const pomFile = vscodePath.resolve(folder, "pom.xml");
-			
-			if ( fse.existsSync(pomFile)) {
-				if ( !await this.addExistingProjectToNewProjectsMap(pomFile, LIBERTY_MAVEN_PROJECT, newProjectsMap) ) {
+
+			if (fse.existsSync(pomFile) && !newProjectsMap.has(pomFile)) {
+				if (!this.addExistingProjectToNewProjectsMap(pomFile, LIBERTY_MAVEN_PROJECT, newProjectsMap)) {
 					const xmlString = await fse.readFile(pomFile, "utf8");
 					const project = await createProject(this._context, pomFile, LIBERTY_MAVEN_PROJECT, xmlString);
-					newProjectsMap.set(pomFile, project); 
+					newProjectsMap.set(pomFile, project);
 				}
 			} else {
 				const gradleFile = vscodePath.resolve(folder, "build.gradle");
-				if ( fse.existsSync (gradleFile) ) {
-					if ( !await this.addExistingProjectToNewProjectsMap(gradleFile, LIBERTY_GRADLE_PROJECT, newProjectsMap) ) {
+				if (fse.existsSync(gradleFile) && !newProjectsMap.has(gradleFile)) {
+					if (!this.addExistingProjectToNewProjectsMap(gradleFile, LIBERTY_GRADLE_PROJECT, newProjectsMap)) {
 						const project = await createProject(this._context, gradleFile, LIBERTY_GRADLE_PROJECT);
 						newProjectsMap.set(gradleFile, project);
 					}
 				}
-			}			
+			}
 		}
 		this.projects = newProjectsMap;
 	}
