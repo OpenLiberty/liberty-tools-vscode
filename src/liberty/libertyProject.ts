@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, 2022 IBM Corporation.
+ * Copyright (c) 2020, 2023 IBM Corporation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -46,6 +46,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	public getContext(): vscode.ExtensionContext {
 		return this._context;
 	}
+
 	public static getInstance(): ProjectProvider {
 		return ProjectProvider.instance;
 	}
@@ -99,7 +100,6 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		});
 		return result;
 	}
-
 
 	/**
 	 * Adds the user selected project path to the project map.
@@ -330,7 +330,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	 * @param projectsMap Existing projects.
 	 * @returns 
 	 */
-	private addExistingProjectToNewProjectsMap (buildFilePath: string, projectType: string, projectsMap: Map<string, LibertyProject> ): boolean {
+	private async addExistingProjectToNewProjectsMap (buildFilePath: string, projectType: string, projectsMap: Map<string, LibertyProject> ): Promise<boolean> {
 		let added = false;
 		if (this.projects.has(buildFilePath)) {
 			const project = this.projects.get(buildFilePath);
@@ -338,13 +338,25 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				if (project.contextValue !== projectType) {
 					project.setContextValue(projectType);
 				}
+				let newLabel = undefined;
+				// checking the projectType for a gradle project first, then checking for a maven project
+				if ( projectType == LIBERTY_GRADLE_PROJECT || projectType == LIBERTY_GRADLE_PROJECT_CONTAINER ) {
+					newLabel = await getLabelFromBuildFile(buildFilePath);
+				} else if ( projectType == LIBERTY_MAVEN_PROJECT || projectType == LIBERTY_MAVEN_PROJECT_CONTAINER ) {
+					const xmlString = await fse.readFile(buildFilePath, "utf8");
+					newLabel = await getLabelFromBuildFile(buildFilePath, xmlString);
+				}
+				if ( newLabel !== undefined && project.getLabel() !==  newLabel ) {
+					project.setLabel(newLabel);
+				}
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 				projectsMap.set(buildFilePath, this.projects.get(buildFilePath)!);
 				added = true;
 			}
 		}
 		return added;
-	}
+	}	
+	
 	private async updateProjects(): Promise<void> {
 		// find all build files in the open workspace and find all the ones that are valid for dev-mode
 		
@@ -359,7 +371,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		for (const pom of validPoms) {
 			// if a LibertyProject for this pom has already been created
 			// we want to re-use it since it stores state such as the terminal being used for dev-mode
-			if ( !this.addExistingProjectToNewProjectsMap(pom.getBuildFilePath(), pom.getProjectType(),
+			if ( !await this.addExistingProjectToNewProjectsMap(pom.getBuildFilePath(), pom.getProjectType(),
 					newProjectsMap) ) {
 				const xmlString = await fse.readFile(pom.getBuildFilePath(), "utf8");
 				const project = await createProject(this._context, pom.getBuildFilePath(), pom.getProjectType(), xmlString);
@@ -370,7 +382,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		for (const gradleBuild of validGradleBuilds) {
 			// if a LibertyProject for this build.gradle has already been created
 			// we want to re-use it
-			if ( !this.addExistingProjectToNewProjectsMap(gradleBuild.getBuildFilePath(), gradleBuild.getProjectType(),
+			if ( !await this.addExistingProjectToNewProjectsMap(gradleBuild.getBuildFilePath(), gradleBuild.getProjectType(),
 					newProjectsMap) ) {
 				const project = await createProject(this._context, gradleBuild.getBuildFilePath(), gradleBuild.getProjectType());
 				newProjectsMap.set(gradleBuild.getBuildFilePath(), project);
@@ -399,7 +411,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			const pomFile = vscodePath.resolve(folder, "pom.xml");
 
 			if (fse.existsSync(pomFile) && !newProjectsMap.has(pomFile)) {
-				if (!this.addExistingProjectToNewProjectsMap(pomFile, LIBERTY_MAVEN_PROJECT, newProjectsMap)) {
+				if (!await this.addExistingProjectToNewProjectsMap(pomFile, LIBERTY_MAVEN_PROJECT, newProjectsMap)) {
 					const xmlString = await fse.readFile(pomFile, "utf8");
 					const project = await createProject(this._context, pomFile, LIBERTY_MAVEN_PROJECT, xmlString);
 					newProjectsMap.set(pomFile, project);
@@ -407,7 +419,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			} else {
 				const gradleFile = vscodePath.resolve(folder, "build.gradle");
 				if (fse.existsSync(gradleFile) && !newProjectsMap.has(gradleFile)) {
-					if (!this.addExistingProjectToNewProjectsMap(gradleFile, LIBERTY_GRADLE_PROJECT, newProjectsMap)) {
+					if (!await this.addExistingProjectToNewProjectsMap(gradleFile, LIBERTY_GRADLE_PROJECT, newProjectsMap)) {
 						const project = await createProject(this._context, gradleFile, LIBERTY_GRADLE_PROJECT);
 						newProjectsMap.set(gradleFile, project);
 					}
@@ -421,7 +433,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 export class LibertyProject extends vscode.TreeItem {
 	constructor(
 		private _context: vscode.ExtensionContext,
-		public readonly label: string,
+		public label: string,
 		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
 		// tslint:disable-next-line: no-shadowed-variable
 		public readonly path: string,
@@ -443,6 +455,10 @@ export class LibertyProject extends vscode.TreeItem {
 
 	public getLabel(): string {
 		return `${this.label}`;
+	}
+
+	public setLabel(label: string): void {
+		this.label = label;
 	}
 
 	public getState(): string {
@@ -505,21 +521,7 @@ export class LibertyProject extends vscode.TreeItem {
 }
 
 export async function createProject(context: vscode.ExtensionContext, buildFile: string, contextValue: string, xmlString?: string): Promise<LibertyProject> {
-	let label = "";
-	if (xmlString !== undefined) {
-		// eslint-disable-next-line @typescript-eslint/no-var-requires
-		const parseString = require("xml2js").parseString;
-		parseString(xmlString, (err: any, result: any) => {
-			if (result.project.artifactId[0] !== undefined) {
-				label = result.project.artifactId[0];
-			} else {
-				const dirName = vscodePath.dirname(buildFile);
-				label = vscodePath.basename(dirName);
-			}
-		});
-	} else {
-		label = await gradleUtil.getGradleProjectName(buildFile);
-	}
+	let label = await getLabelFromBuildFile(buildFile, xmlString);
 	const project: LibertyProject = new LibertyProject(context, label, vscode.TreeItemCollapsibleState.None, buildFile, "start", contextValue, undefined, {
 		command: "extension.open.project",
 		title: "",
@@ -528,3 +530,21 @@ export async function createProject(context: vscode.ExtensionContext, buildFile:
 	return project;
 }
 
+export async function getLabelFromBuildFile( buildFile: string, xmlString?: string): Promise<string> {
+    let label = "";
+    if (xmlString !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const parseString = require("xml2js").parseString;
+        parseString(xmlString, (err: any, result: any) => {
+            if (result.project.artifactId[0] !== undefined) {
+                label = result.project.artifactId[0];
+            } else {
+                const dirName = vscodePath.dirname(buildFile);
+                label = vscodePath.basename(dirName);
+            }
+        });
+    } else {
+		label = await gradleUtil.getGradleProjectName(buildFile);
+    }
+	return label;
+}
