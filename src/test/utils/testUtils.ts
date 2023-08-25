@@ -1,10 +1,11 @@
 import path = require('path');
-import { Workbench, ViewSection,InputBox, DefaultTreeItem, ViewItem } from 'vscode-extension-tester';
+import { Workbench, ViewSection,InputBox, DefaultTreeItem, ViewItem, SideBarView, CustomTreeItem, DefaultTreeSection, ActivityBar, By, TreeItem } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { expect } from "chai";
 import { MapContextMenuforMac } from './macUtils';
 import * as clipboard from 'clipboardy';
+
 
 export function delay(millisec: number) {
     return new Promise( resolve => setTimeout(resolve, millisec) );
@@ -12,6 +13,12 @@ export function delay(millisec: number) {
 
 export function getMvnProjectPath(): string {
     const mvnProjectPath = path.join(__dirname, "..","..","..","src", "test","resources", "maven","liberty.maven.test.wrapper.app");  
+    console.log("Path is : "+mvnProjectPath)  ;
+    return mvnProjectPath; 
+  }
+  
+export function getMvnServerXmlProjectPath(): string {
+    const mvnProjectPath = path.join(__dirname, "..","..","..","src", "test","resources", "maven-serverxml","liberty.maven.serverxml.test.wrapper.app");  
     console.log("Path is : "+mvnProjectPath)  ;
     return mvnProjectPath; 
   }
@@ -164,7 +171,63 @@ export function getMvnProjectPath(): string {
     return foundText;
   }
 
-  
+export async function isViewSectionEmpty(section: ViewSection): Promise<boolean> {
+    try {
+        const items = await section.getVisibleItems();
+        console.log("items...."+(items.length === 0));
+        return items.length === 0;
+    } catch (error) {
+      // if there is no visible elements, getVisibleItems() method is throwing timeout error.
+        return true;
+    }
+}
+
+export async function findFileRecursively(name: string,  parentItem?: TreeItem): Promise<TreeItem | undefined> {
+  let explorerSection;
+  if (!parentItem) {
+    explorerSection = await new SideBarView().getContent().getSection('liberty.maven.test.wrapper.app');
+}
+
+  const items = parentItem 
+      ? await parentItem.getChildren() 
+      : await explorerSection?.getVisibleItems();
+
+  if (!items) return undefined;
+
+  for (let item1 of items) {
+    let item = item1 as TreeItem;
+      if (await item.getLabel() === name) {
+          return item; // File found
+      }
+
+      if (await item.hasChildren()) {
+          // Search inside this directory
+          const foundItem = await findFileRecursively(name, item);
+          if (foundItem) {
+              return foundItem; // File found in a sub-directory
+          }
+      }
+  }
+
+  return undefined; // File not found
+}
+
+export async function copyFile(source: string, target: string): Promise<void> {
+  if (fs.existsSync(source)) {
+    console.log('File exist '+ source + "=======tar -" +target)
+    await delay(5000);
+    fs.copyFileSync(source, target);
+    console.log('Finished copying of file.')
+  }
+
+}
+
+export async function refreshLibertyDashboard(): Promise<void> {
+  const viewSection = new SideBarView().getContent().getSection('Liberty Dashboard');   
+
+   // Find the button relative to the title (adjust the locator based on the actual structure)
+   const item = (await viewSection).findElement({id: 'Refresh projects'});
+}
 
 /* Stop Server Liberty dashboard post Attach Debugger*/
 /* As the Window view changes using command to stop server instead of devmode action */

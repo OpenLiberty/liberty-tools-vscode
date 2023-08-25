@@ -4,7 +4,7 @@ import * as utils from './utils/testUtils';
 
 
 
-describe('Open Maven Project', () => {
+describe('Open Maven Server xml Project', () => {
 
     let driver: WebDriver;  
     
@@ -14,8 +14,8 @@ describe('Open Maven Project', () => {
         
     });
 
-    it('Open Sample Maven Project', async () => {       
-        await VSBrowser.instance.openResources(utils.getMvnProjectPath());
+    it('Open Sample Maven Project with no server.xml', async () => {       
+        await VSBrowser.instance.openResources(utils.getMvnServerXmlProjectPath());
 
     }).timeout(15000);
 
