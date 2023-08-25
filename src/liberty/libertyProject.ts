@@ -444,6 +444,7 @@ export class LibertyProject extends vscode.TreeItem {
 		public readonly command?: vscode.Command, // ? indicates optional param
 	) {
 		super(label, collapsibleState);
+		this.tooltip = this.path;
 	}
 
 	private EXPLORER_ICON = this.setExplorerIcon();
