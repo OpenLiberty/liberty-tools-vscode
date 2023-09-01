@@ -6,7 +6,6 @@ import { expect } from "chai";
 import { MapContextMenuforMac } from './macUtils';
 import * as clipboard from 'clipboardy';
 
-
 export function delay(millisec: number) {
     return new Promise( resolve => setTimeout(resolve, millisec) );
 }
