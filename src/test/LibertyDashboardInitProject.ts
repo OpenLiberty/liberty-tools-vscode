@@ -11,7 +11,6 @@ describe('Open Maven Server xml Project', () => {
 
     before(() => {
         driver = VSBrowser.instance.driver;
-        
     });
 
     it('Open Sample Maven Project with no server.xml', async () => {       
