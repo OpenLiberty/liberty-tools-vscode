@@ -200,9 +200,9 @@ export async function findFileRecursively(name: string,  parentItem?: TreeItem):
           return treeItem; // File found
       }
 
-      if (await item.hasChildren()) {
+      if (await treeItem.hasChildren()) {
           // Search inside this directory
-          const foundItem = await findFileRecursively(name, item);
+          const foundItem = await findFileRecursively(name, treeItem);
           if (foundItem) {
               return foundItem; // File found in a sub-directory
           }
