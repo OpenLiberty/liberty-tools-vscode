@@ -185,7 +185,7 @@ export async function findFileRecursively(name: string,  parentItem?: TreeItem):
   let explorerSection;
   if (!parentItem) {
     explorerSection = await new SideBarView().getContent().getSection('liberty.maven.test.wrapper.app');
-}
+  }
 
   const items = parentItem 
       ? await parentItem.getChildren() 
