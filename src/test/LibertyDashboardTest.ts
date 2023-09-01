@@ -1,6 +1,6 @@
 
 import { expect } from 'chai';
-import {SideBarView, ViewItem, ViewSection, DefaultTreeItem, DebugView } from 'vscode-extension-tester';
+import { SideBarView, ViewItem, ViewSection, DefaultTreeItem, DebugView } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
