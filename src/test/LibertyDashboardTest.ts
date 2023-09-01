@@ -1,10 +1,8 @@
-
 import { expect } from 'chai';
 import { SideBarView, ViewItem, ViewSection, DefaultTreeItem, DebugView } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
-
 
 describe('Liberty dashboard project detection tests', () => {
     let sidebar: SideBarView;
@@ -18,6 +16,14 @@ describe('Liberty dashboard project detection tests', () => {
         sidebar = new SideBarView();
         debugView = new DebugView();
     });
+
+    it('Delete server.xml from config.', async () => {
+
+        const dest = path.join(utils.getMvnServerXmlProjectPath(), "src", "main", "liberty", "config", "server.xml");
+        const deleteServerxml = await utils.deleteReports(dest);
+        expect(deleteServerxml).to.be.true;
+
+    }).timeout(80000);
 
     it('getViewControl works with the correct label', async () => {
 
@@ -54,14 +60,6 @@ describe('Liberty dashboard project detection tests', () => {
         item = await section.findItem(constants.MAVEN_SERVERXML_PROJECT) as DefaultTreeItem;
         expect(item).not.undefined;
 
-
     }).timeout(80000);
-
-    it('Delete server.xml from config.', async () => {
-        const dest = path.join(utils.getMvnServerXmlProjectPath(), "src", "main", "liberty", "config", "server.xml");
-        const deleteServerxml = await utils.deleteReports(dest);
-        expect(deleteServerxml).to.be.true;
-    }).timeout(80000);
-
 
 });
