@@ -194,10 +194,10 @@ export async function findFileRecursively(name: string,  parentItem?: TreeItem):
 
   if (!items) return undefined;
 
-  for (let item1 of items) {
-    let item = item1 as TreeItem;
-      if (await item.getLabel() === name) {
-          return item; // File found
+  for (let item of items) {
+    let treeItem = item as TreeItem;
+      if (await treeItem.getLabel() === name) {
+          return treeItem; // File found
       }
 
       if (await item.hasChildren()) {
