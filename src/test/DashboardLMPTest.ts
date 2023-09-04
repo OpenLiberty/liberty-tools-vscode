@@ -4,7 +4,7 @@ import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
 
-describe('Liberty dashboard project detection tests', () => {
+describe('Liberty dashboard project detection tests with LMP config in build file only', () => {
     let sidebar: SideBarView;
     let section: ViewSection;
     let item: DefaultTreeItem;
@@ -14,12 +14,12 @@ describe('Liberty dashboard project detection tests', () => {
     });
 
     /*************************************************************************************
-    ******* detect project with src/main/liberty/config/server.xml file only  ************           
+    ** detect project with LMP config in build file only (ie. no server.xml in project)  **        
     *************************************************************************************/
 
     it('Delete server.xml from config.', async () => {
 
-        const dest = path.join(utils.getMvnServerXmlProjectPath(), "src", "main", "liberty", "config", "server.xml");
+        const dest = path.join(utils.getMvnProjectPath(), "src", "main", "liberty", "config", "server.xml");
         const deleteServerxml = await utils.deleteReports(dest);
         expect(deleteServerxml).to.be.true;
 
@@ -34,32 +34,24 @@ describe('Liberty dashboard project detection tests', () => {
 
     }).timeout(10000);
 
-    it('Liberty dashboard is empty', async () => {
-
-        await utils.delay(30000);
-        const isEmpty = await utils.isViewSectionEmpty(section);
-        expect(isEmpty).true;
-
-    }).timeout(70000);
-
-    it('Copy server.xml to config folder', async () => {
-
-        await utils.delay(50000);
-        const serverxmlPath = path.join(utils.getMvnServerXmlProjectPath(), "src", "main", "liberty", "config", "serverxml", "server.xml");
-        const dest = path.join(utils.getMvnServerXmlProjectPath(), "src", "main", "liberty", "config", "server.xml");
-        await utils.copyFile(serverxmlPath, dest);
-        console.log("Finished copying file....");
-
-    }).timeout(90000);
-
     it('Open dasboard shows items - Maven', async () => {
 
         await utils.delay(50000);
         const menu = await section.getVisibleItems();
         expect(menu).not.empty;
-        item = await section.findItem(constants.MAVEN_SERVERXML_PROJECT) as DefaultTreeItem;
+        item = await section.findItem(constants.MAVEN_PROJECT) as DefaultTreeItem;
         expect(item).not.undefined;
 
     }).timeout(80000);
+
+    it('Copy server.xml to config folder', async () => {
+
+        await utils.delay(50000);
+        const serverxmlPath = path.join(utils.getMvnProjectPath(), "src", "main", "liberty", "config", "serverxml", "server.xml");
+        const dest = path.join(utils.getMvnProjectPath(), "src", "main", "liberty", "config", "server.xml");
+        await utils.copyFile(serverxmlPath, dest);
+        console.log("Finished copying file....");
+
+    }).timeout(90000);
 
 });

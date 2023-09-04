@@ -235,7 +235,10 @@
 		"test": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/*.js'",
 		"test-mac-maven":"npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/M*.js'",
 		"test-mac-gradle": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js'",
-		"test-mac-dashboard": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/L*.js'"
+		"test-mac-dashboard": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/Liberty*.js'",
+		"test-mac-LMP-dashboard": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/DashboardLMP*.js'",
+		"test-mac-LGP-dashboard": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/DashboardLGP*.js'"
+
 	},
 	"devDependencies": {
 		"@types/chai": "^4.3.4",

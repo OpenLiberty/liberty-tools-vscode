@@ -1,16 +1,20 @@
 import { WebDriver, VSBrowser } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 
-describe('Open Maven Server xml Project', () => {
+describe('Open Maven Project', () => {
 
     let driver: WebDriver;
 
     before(() => {
+
         driver = VSBrowser.instance.driver;
+
     });
 
-    it('Open Sample Maven Project with no LMP or LGP defined in build file', async () => {
-        await VSBrowser.instance.openResources(utils.getMvnServerXmlProjectPath());
+    it('Open Sample Maven Project with no server.xml', async () => {
+
+        await VSBrowser.instance.openResources(utils.getMvnProjectPath());
+        
     }).timeout(15000);
 
 });
