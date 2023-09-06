@@ -213,12 +213,13 @@ function prepareClientOptions(Liberty_LS :boolean) {
         return {
             // Filter to `bootstrap.properties` and `server.env` files within `src/main/liberty/config` or `usr/servers`
             documentSelector: [{ scheme: "file", 
-                                pattern: "**/{src/main/liberty/config,usr/servers/**}/{bootstrap.properties,server.env}" }],
+                                pattern: "**/{*.properties,*.env}" }],
             synchronize: {
                 configurationSection: SUPPORTED_LANGUAGE_IDS,
                 fileEvents: [
-                    workspace.createFileSystemWatcher("**/bootstrap.properties"),
-                    workspace.createFileSystemWatcher("**/server.env")
+                    workspace.createFileSystemWatcher("**/*.properties"),
+                    workspace.createFileSystemWatcher("**/*.env"),
+                    workspace.createFileSystemWatcher("**/liberty-plugin-config.xml")
                 ],
             }
         };
