@@ -33,7 +33,7 @@
     "error.parsing.pom": "Unable to parse pom file. The error is {0}.",
     "refreshing.liberty.dashboard": "Refreshing Liberty Dashboard projects...",
     "no.liberty.project.found.in.empty.workspace": "No Liberty project was found in empty workspace.",
-    "add.project.manually.no.projects.available.to.add": "No workspace folders are available to be added to Liberty Dashboard.",
+    "add.project.manually.no.projects.available.to.add": "No workspace folders are available to be added to the Liberty Dashboard.",
     "add.project.manually.message.0": "The selected project at {0} is added to the Liberty Dashboard.",
     "add.project.manually.message.1": "The selected project at {0} already exists in the Liberty Dashboard.",
     "add.project.manually.message.2": "The selected project at {0} is not a Maven or Gradle project.",
