@@ -14,7 +14,7 @@
     "starting.liberty.dev.on": "Starting Liberty dev mode on {0}.",
     "cannot.start.liberty.dev": "Cannot start Liberty dev mode on an undefined project.",
     "stopping.liverty.dev.on": "Stopping Liberty dev mode on {0}.",
-    "liberty.dev.not.started.on": "liberty dev mode did not start on {0}.",
+    "liberty.dev.not.started.on": "Liberty dev mode did not start on {0}.",
     "cannot.stop.liberty.dev.on.undefined": "Cannot stop Liberty dev mode on an undefined project.",
     "params.must.start.with.dash": "Parameters must start with -",
     "starting.liberty.dev.with.custom.param": "Starting Liberty dev mode with custom parameters on {0}.",
