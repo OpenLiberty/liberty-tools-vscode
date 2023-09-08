@@ -11,7 +11,7 @@
     "jakarta.ls.thumbs.up": "LSP4Jakarta $(thumbsup)",
     "jakarta.ls.started": "Language Server for Jakarta started.",
     "no.liberty.projects.found": "No liberty projects found.",
-    "starting.liberty.dev.on": "Starting liberty dev on {0}.",
+    "starting.liberty.dev.on": "Starting liberty dev mode on {0}.",
     "cannot.start.liberty.dev": "Cannot start liberty dev on an undefined project.",
     "stopping.liverty.dev.on": "Stopping liberty dev on {0}.",
     "liberty.dev.not.started.on": "liberty dev did not start on {0}.",
