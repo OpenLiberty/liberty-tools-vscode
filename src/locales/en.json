@@ -13,7 +13,7 @@
     "no.liberty.projects.found": "No liberty projects found.",
     "starting.liberty.dev.on": "Starting liberty dev mode on {0}.",
     "cannot.start.liberty.dev": "Cannot start liberty dev mode on an undefined project.",
-    "stopping.liverty.dev.on": "Stopping liberty dev on {0}.",
+    "stopping.liverty.dev.on": "Stopping liberty dev mode on {0}.",
     "liberty.dev.not.started.on": "liberty dev did not start on {0}.",
     "cannot.stop.liberty.dev.on.undefined": "Cannot stop liberty dev on an undefined project.",
     "params.must.start.with.dash": "Parameters must start with -",
