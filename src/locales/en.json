@@ -45,7 +45,7 @@
     "remove.custom.project.not.in.list": "The selected project does not exist in the Liberty Dashboard, or it was not manually added to the Liberty Dashboard. Nothing to remove.",
     "attach.debugger.liverty.dev.in": "Attaching debugger to Liberty server in {0}.",
     "cannot.attach.debugger.to.undefined": "Cannot attach debugger to an undefined project.",
-    "liberty.dev.attach.debugger.failed": "The Liberty server might not be started. Start the Liberty server by using the 'Start' or 'Start...' command in the Liberty dashboard. If you already started the Liberty server, wait until you see the dev mode startup message and try to attach the debugger again.",
+    "liberty.dev.attach.debugger.failed": "The Liberty server might not be started. Start the Liberty server by using the 'Start' or 'Start...' command in the Liberty dashboard. If you already started the Liberty server, wait until you see the Liberty dev mode startup message and try to attach the debugger again.",
     "liberty.dev.attach.debugger.failed.with.error": "Failed to attach debugger to selected project. The error is: {0}.",
     "liberty.dev.debug.label": "Debug {0}",
     "liberty.dev.attach.debugger.failed.no.port.in.server.env": "Failed to detect remote debug port in {0}.",
