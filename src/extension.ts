@@ -211,7 +211,7 @@ function startLangServer(context: ExtensionContext, requirements: RequirementsDa
 function prepareClientOptions(Liberty_LS :boolean) {
     if (Liberty_LS) {
         return {
-            // Filter to `bootstrap.properties` and `server.env` files within `src/main/liberty/config` or `usr/servers`
+            // Filter to `*.properties` and `*.env` files, let LCLS handle filtering for default/custom configs
             documentSelector: [{ scheme: "file", 
                                 pattern: "**/{*.properties,*.env}" }],
             synchronize: {
