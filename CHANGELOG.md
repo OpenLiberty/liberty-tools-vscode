@@ -2,6 +2,23 @@
 
 All notable changes to the Liberty Tools extension will be documented below.
 
+## 23.0.9
+
+Version 23.0.9 of Liberty Tools for Visual Studio Code is a fix release that contains minor enhancements and fixes. Version 23.0.9 requires Visual Studio Code version 1.78+ and requires Java 17 or later.
+
+Notable enhancements:
+
+- Updated Liberty Config Language Server version to 2.0.1. For information regarding changes for version 2.0.1, refer to the release notes linked below:
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/liberty-langserver-2.0.1
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/lemminx-liberty-2.0.1
+- Bug fix for “Start in container” action not appearing when project parent folder is opened in VS Code Explorer - https://github.com/OpenLiberty/liberty-tools-vscode/issues/258
+- Bug fix for the Liberty Dashboard not refreshing project names after they are changed - https://github.com/OpenLiberty/liberty-tools-vscode/issues/177
+- Bug fix for parameter field in “Start…” command redirecting focus to the terminal - https://github.com/OpenLiberty/liberty-tools-vscode/issues/210
+- Added the build file path as a tooltip when hovering over project names in the Liberty dashboard - https://github.com/OpenLiberty/liberty-tools-vscode/issues/208
+
+See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/23.0.6...23.0.9) for the full set of changes since the previous release.
+
+
 ## 23.0.6
 
 Version 23.0.6 of Liberty Tools for Visual Studio Code contains minor enhancements and fixes. Version 23.0.6 requires Visual Studio Code version 1.78+ and requires Java 17 or later.
