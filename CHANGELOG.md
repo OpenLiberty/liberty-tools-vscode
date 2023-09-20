@@ -6,7 +6,7 @@ All notable changes to the Liberty Tools extension will be documented below.
 
 Version 23.0.9 of Liberty Tools for Visual Studio Code is a fix release that contains minor enhancements and fixes. Version 23.0.9 requires Visual Studio Code version 1.78+ and requires Java 17 or later.
 
-Notable enhancements:
+Notable changes:
 
 - Updated Liberty Config Language Server version to 2.0.1. For information regarding changes for version 2.0.1, refer to the release notes linked below:
   - https://github.com/OpenLiberty/liberty-language-server/releases/tag/liberty-langserver-2.0.1
