@@ -97,6 +97,10 @@ main() {
             cat src/test/resources/gradle/liberty.gradle.test.wrapper.app/build/wlp/usr/servers/defaultServer/logs/messages.log
         fi
 
+        echo "DEBUG: Node.js version:\n"
+        node -v
+        echo "DEBUG: npm version:\n"
+        npm -v
         echo "DEBUG: Environment variables:\n"
         env
 
