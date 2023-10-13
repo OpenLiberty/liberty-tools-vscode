@@ -5,8 +5,8 @@ const cp = require("child_process");
 const libertyGroupId = "io.openliberty.tools";
 const libertyVersion = "2.0.1";
 const jakartaGroupId = "org.eclipse.lsp4jakarta";
-const jakartaVersion = "0.1.1";
-var releaseLevel = "releases";  //"snapshots"; //snapshots or releases
+const jakartaVersion = "0.2.0-SNAPSHOT";
+var releaseLevel = "snapshots";  //"snapshots"; //snapshots or releases
 
 const libertyLemminxName = "liberty-langserver-lemminx-" + libertyVersion + "-jar-with-dependencies.jar";
 const libertyLemminxDir = "../liberty-language-server/lemminx-liberty";
@@ -86,8 +86,7 @@ const jakartaGroupIdString = "&g=" + jakartaGroupId;
 const jakartaVersionString = "&v=" + jakartaVersion;
 const jakartaClassifierString = "&c=jar-with-dependencies";
 
-// const jakartaJDTURL = eclipseRepoURL + jakartaReleaseLevelString + jakartaGroupIdString + "&a=org.eclipse.lsp4jakarta.jdt.core" + jakartaVersionString;
-const jakartaJDTURL = "https://download.eclipse.org/lsp4jakarta/releases/0.1.1/repository/plugins/org.eclipse.lsp4jakarta.jdt.core_0.1.1.20230614-1652.jar";
+const jakartaJDTURL = eclipseRepoURL + jakartaReleaseLevelString + jakartaGroupIdString + "&a=org.eclipse.lsp4jakarta.jdt.core" + jakartaVersionString;
 const jakartaLSURL = eclipseRepoURL + jakartaReleaseLevelString + jakartaGroupIdString + "&a=org.eclipse.lsp4jakarta.ls" + jakartaClassifierString + jakartaVersionString;
 
 gulp.task("downloadLSP4JakartaJars", (done) => {
