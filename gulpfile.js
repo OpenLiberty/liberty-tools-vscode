@@ -6,7 +6,7 @@ const libertyGroupId = "io.openliberty.tools";
 const libertyVersion = "2.1-SNAPSHOT";
 const jakartaGroupId = "org.eclipse.lsp4jakarta";
 const jakartaVersion = "0.1.1";
-var releaseLevel = "releases";  //"snapshots"; //snapshots or releases
+var releaseLevel = "snapshots";  //"releases";  //snapshots or releases
 
 const libertyLemminxName = "liberty-langserver-lemminx-" + libertyVersion + "-jar-with-dependencies.jar";
 const libertyLemminxDir = "../liberty-language-server/lemminx-liberty";
