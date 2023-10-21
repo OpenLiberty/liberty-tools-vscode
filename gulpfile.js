@@ -3,7 +3,7 @@ const download = require("gulp-download2");
 const cp = require("child_process");
 
 const libertyGroupId = "io.openliberty.tools";
-const libertyVersion = "2.0.1";
+const libertyVersion = "2.1-SNAPSHOT";
 const jakartaGroupId = "org.eclipse.lsp4jakarta";
 const jakartaVersion = "0.2.0-SNAPSHOT";
 var releaseLevel = "snapshots";  //"snapshots"; //snapshots or releases
