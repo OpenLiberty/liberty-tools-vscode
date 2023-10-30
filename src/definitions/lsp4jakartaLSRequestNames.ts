@@ -9,6 +9,7 @@
  */
 
 // Jakarta Language API
+export const FILEINFO_REQUEST = "jakarta/java/fileInfo"
 export const JAVA_HOVER_REQUEST = "jakarta/java/hover";
 export const JAVA_DIAGNOSTICS_REQUEST = "jakarta/java/diagnostics";
 export const JAVA_COMPLETION_REQUEST = "jakarta/java/completion";

@@ -76,6 +76,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             console.log("LSP4Jakarta is ready, binding requests...");
     
             // Delegate requests from Jakarta LS to the Jakarta JDT core
+            bindRequest(lsp4jakartaLS.FILEINFO_REQUEST);
             bindRequest(lsp4jakartaLS.JAVA_COMPLETION_REQUEST);
             bindRequest(lsp4jakartaLS.JAVA_CODEACTION_REQUEST);
 	    bindRequest(lsp4jakartaLS.JAVA_CODEACTION_RESOLVE_REQUEST);
