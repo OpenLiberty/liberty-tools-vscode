@@ -21,10 +21,11 @@ import { workspace } from 'vscode';
 import { Executable, ExecutableOptions } from 'vscode-languageclient/node';
 import { RequirementsData } from './requirements';
 import * as glob from 'glob';
-import {LIBERTY_LS_JAR} from '../extension'
+import {JAKARTA_LS_JAR, LIBERTY_LS_JAR} from '../extension'
 
-// const DEBUG = startedInDebugMode();
-const LIBERTY_LS_DEBUG_PORT = 1064;
+const DEBUG = startedInDebugMode();
+const LIBERTY_LS_DEBUG_PORT = 8002;
+const JAKARTA_LS_DEBUG_PORT = 8003;
 
 // Referenced:
 // https://github.com/redhat-developer/vscode-microprofile/blob/master/src/languageServer/javaServerStarter.ts
@@ -42,19 +43,15 @@ export function prepareExecutable(jarName: string, requirements: RequirementsDat
 function prepareParams(jarName: string): string[] {
   const params: string[] = [];
 
-    // TODO: debug doesn't work yet
-//   if (DEBUG) {
-//     if (process.env.SUSPEND_SERVER === 'true') {
-//       params.push(`-agentlib:jdwp=transport=dt_socket,server=y,address=${DEBUG_PORT}`);
-//     } else {
-//       params.push(`-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${DEBUG_PORT},quiet=y`);
-//     }
-//   }
-
-  // uncomment to debug the Liberty Config Language Server
-  // if (jarName === LIBERTY_LS_JAR) {
-  //   params.push(`-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${LIBERTY_LS_DEBUG_PORT}`);
-  // }
+  // will only add debug args when run in development, not when run as an extension
+  if (DEBUG) {
+    if (jarName === LIBERTY_LS_JAR) {
+      params.push(`-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${LIBERTY_LS_DEBUG_PORT},quiet=y`);
+    }
+    else if (jarName === JAKARTA_LS_JAR) {
+      params.push(`-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${JAKARTA_LS_DEBUG_PORT},quiet=y`);
+    } 
+  }
 
   const jarHome = path.resolve(__dirname, "../jars");
   params.push('-jar');
