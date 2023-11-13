@@ -56,11 +56,11 @@ For more information on building Eclipse LSP4Jakarta, see the project documentat
 ### Debugging Language Servers
 When running the extension with locally built language servers, a debugger can be attached to the language server process.
 The debug ports are as follows:
-> Liberty Config Language Server
-> - Liberty-LemminX: `1054`
-> - Liberty Language Server: `8002`
->
-> Jakarta LS: `8003`
+
+- Liberty-LemminX: `1054`
+- Liberty Language Server: `8002`
+- Jakarta LS: `8003`
+
 
 With the `liberty-language-server` project opened in VSCode, run `Debug attach liberty-ls` or `Debug attach liberty-lemminx` to attach the respective debugger to the running extension.
 
