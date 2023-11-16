@@ -227,6 +227,10 @@ Liberty Tools editing assistance provides code completion, diagnostics, and quic
 
 ![Eclipse LSP4MP microprofile-config.properties completion](/docs/user-guide-screenshots/mp_completion.png)
 
+3. To use Jakarta EE-specific and MicroProfile-specific quick-fixes, hover over a supported Jakarta EE or MicroProfile diagnostic. A pop-up dialog containing the diagnostic message and a quick-fix (code action) appears.
+
+![Jakarta EE quick fix](/docs/user-guide-screenshots/LSP4Jakarta-quickfix.png)
+
 Jakarta EE API configuration assistance is offered through Eclipse LSP4Jakarta, the Language Server for Jakarta EE. For more information, see the [project documentation in GitHub](https://github.com/eclipse/lsp4jakarta#eclipse-lsp4jakarta).
 
 MicroProfile EE API configuration assistance is offered through Eclipse LSP4MP, the Language Server for MicroProfile. For more information, see the [project documentation in GitHub](https://github.com/eclipse/lsp4mp#eclipse-lsp4mp---language-server-for-microprofile).
