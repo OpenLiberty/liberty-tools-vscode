@@ -227,7 +227,7 @@ Liberty Tools editing assistance provides code completion, diagnostics, and quic
 
 ![Eclipse LSP4MP microprofile-config.properties completion](/docs/user-guide-screenshots/mp_completion.png)
 
-3. To use Jakarta EE-specific and MicroProfile-specific quick-fixes, hover over a supported Jakarta EE or MicroProfile diagnostic. A pop-up dialog containing the diagnostic message and a quick-fix (code action) appears.
+3. To use Jakarta EE-specific and MicroProfile-specific quick-fixes, hover over a Jakarta EE or MicroProfile diagnostic. A pop-up dialog that contains the diagnostic message and **Quick Fix** link appears. Click the **Quick Fix...** link to view a list of quick-fix options to choose from.
 
 ![Jakarta EE quick fix](/docs/user-guide-screenshots/LSP4Jakarta-quickfix.png)
 
