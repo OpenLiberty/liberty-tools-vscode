@@ -2,7 +2,7 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Liberty Tools",
 	"description": "Liberty Tools for Visual Studio Code",
-	"version": "23.0.7-SNAPSHOT",
+	"version": "23.0.12-SNAPSHOT",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
@@ -50,10 +50,10 @@
 	],
 	"contributes": {
 		"javaExtensions": [
-			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.1.1.jar"
+			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.2.0.jar"
 		],
 		"xml.javaExtensions": [
-			"./jars/liberty-langserver-lemminx-2.0-jar-with-dependencies.jar"
+			"./jars/liberty-langserver-lemminx-2.1.1-jar-with-dependencies.jar"
 		],
 		"views": {
 			"explorer": [

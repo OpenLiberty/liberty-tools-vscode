@@ -22,8 +22,8 @@ import { prepareExecutable } from "./util/javaServerStarter";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
-export const LIBERTY_LS_JAR = "liberty-langserver-2.0-jar-with-dependencies.jar";
-export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.1.1-jar-with-dependencies.jar";
+export const LIBERTY_LS_JAR = "liberty-langserver-2.1.1-jar-with-dependencies.jar";
+export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.2.0-jar-with-dependencies.jar";
 
 let libertyClient: LanguageClient;
 let jakartaClient: LanguageClient;
@@ -76,10 +76,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             console.log("LSP4Jakarta is ready, binding requests...");
     
             // Delegate requests from Jakarta LS to the Jakarta JDT core
-            bindRequest(lsp4jakartaLS.JAVA_CLASSPATH_REQUEST);
+            bindRequest(lsp4jakartaLS.FILEINFO_REQUEST);
+            bindRequest(lsp4jakartaLS.JAVA_COMPLETION_REQUEST);
             bindRequest(lsp4jakartaLS.JAVA_CODEACTION_REQUEST);
+	    bindRequest(lsp4jakartaLS.JAVA_CODEACTION_RESOLVE_REQUEST);
             bindRequest(lsp4jakartaLS.JAVA_DIAGNOSTICS_REQUEST);
-            bindRequest(lsp4jakartaLS.JAVA_CURSORCONTEXT_REQUEST);
+	    bindRequest(lsp4jakartaLS.JAVA_PROJECT_LABELS_REQUEST);
     
             item.text = localize("jakarta.ls.thumbs.up");
             item.tooltip = localize("jakarta.ls.started");
@@ -211,14 +213,15 @@ function startLangServer(context: ExtensionContext, requirements: RequirementsDa
 function prepareClientOptions(Liberty_LS :boolean) {
     if (Liberty_LS) {
         return {
-            // Filter to `bootstrap.properties` and `server.env` files within `src/main/liberty/config` or `usr/servers`
+            // Filter to `*.properties` and `*.env` files, let LCLS handle filtering for default/custom configs
             documentSelector: [{ scheme: "file", 
-                                pattern: "**/{src/main/liberty/config,usr/servers/**}/{bootstrap.properties,server.env}" }],
+                                pattern: "**/{*.properties,*.env}" }],
             synchronize: {
                 configurationSection: SUPPORTED_LANGUAGE_IDS,
                 fileEvents: [
-                    workspace.createFileSystemWatcher("**/bootstrap.properties"),
-                    workspace.createFileSystemWatcher("**/server.env")
+                    workspace.createFileSystemWatcher("**/*.properties"),
+                    workspace.createFileSystemWatcher("**/*.env"),
+                    workspace.createFileSystemWatcher("**/liberty-plugin-config.xml")
                 ],
             }
         };
