@@ -310,7 +310,6 @@ The Program includes some or all of the following that IBM obtained
 under the ISC License.
 
 at-least-node | Copyright (c) 2020 Ryan Zimmerman <opensrc@ryanzim.com>
-brace-expansion | Copyright (c) 2013 Julian Gruber <julian@juliangruber.com>
 graceful-fs | Copyright (c) Isaac Z. Schlueter  Ben Noordhuis  and Contributors
 lru-cache | Copyright (c) 2010-2023 Isaac Z. Schlueter and Contributors
 minimatch | Copyright (c) 2011-2023 Isaac Z. Schlueter and Contributors
@@ -349,6 +348,7 @@ under the MIT License:
 @types/semver | Copyright (c) Microsoft Corporation.
 @types/xml2js | Copyright (c) Microsoft Corporation.
 balanced-match | Copyright (c) 2013 Julian Gruber <julian@juliangruber.com>
+brace-expansion | Copyright (c) 2013 Julian Gruber <julian@juliangruber.com>
 fs-extra | Copyright (c) 2011-2017 JP Richardson
 jsonfile | Copyright (c) 2012-2015 JP Richardson <jprichardson@gmail.com>
 jsonpath-plus | Copyright (c) 2011-2019 Stefan Goessner, Subbu Allamaraju, Mike Brevoort,
