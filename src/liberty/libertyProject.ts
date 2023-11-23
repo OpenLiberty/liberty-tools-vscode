@@ -18,6 +18,7 @@ import { EXCLUDED_DIR_PATTERN, LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CO
 import { BuildFileImpl, GradleBuildFile } from "../util/buildFile";
 import { DashboardData } from "./dashboard";
 import { BaseLibertyProject } from "./baseLibertyProject";
+import path = require("path");
 
 const MAVEN_ICON = "maven-tag.png";
 const GRADLE_ICON = "gradle-tag-1.png";
@@ -213,6 +214,10 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public async getChildren(element?: LibertyProject): Promise<LibertyProject[]> {
+		
+		if (this.projects.size <= 0 ) {
+            return Promise.resolve([]);
+        }
 		if (vscode.workspace.workspaceFolders === undefined) {
 			vscode.window.showInformationMessage(localize("no.liberty.project.found.in.empty.workspace"));
 			return [];
