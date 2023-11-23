@@ -2,6 +2,20 @@
 
 All notable changes to the Liberty Tools extension will be documented below.
 
+## 23.0.12
+
+Version 23.0.12 of Liberty Tools for Visual Studio Code contains enhancements for editing support. Version 23.0.12 requires Visual Studio Code version 1.78+ and requires Java 17 or later.
+
+Notable changes:
+
+- Updated Liberty Config Language Server version to 2.1.1. For information regarding changes for version 2.1, refer to the release notes linked below:
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/liberty-langserver-2.1
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/lemminx-liberty-2.1
+- Updated Eclipse LSP4Jakarta version to 0.2.0. For more information regarding changes for version 0.2.0, refer to the release notes linked below:
+  - https://github.com/eclipse/lsp4jakarta/releases/tag/0.2.0
+
+See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/23.0.9...23.0.12) for the full set of changes since the previous release.
+
 ## 23.0.9
 
 Version 23.0.9 of Liberty Tools for Visual Studio Code is a fix release that contains minor enhancements and fixes. Version 23.0.9 requires Visual Studio Code version 1.78+ and requires Java 17 or later.
@@ -17,7 +31,6 @@ Notable changes:
 - Added the build file path as a tooltip when hovering over project names in the Liberty dashboard - https://github.com/OpenLiberty/liberty-tools-vscode/issues/208
 
 See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/23.0.6...23.0.9) for the full set of changes since the previous release.
-
 
 ## 23.0.6
 
