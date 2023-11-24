@@ -311,8 +311,13 @@ under the ISC License.
 
 at-least-node | Copyright (c) 2020 Ryan Zimmerman <opensrc@ryanzim.com>
 graceful-fs | Copyright (c) Isaac Z. Schlueter  Ben Noordhuis  and Contributors
+lru-cache | Copyright (c) 2010-2023 Isaac Z. Schlueter and Contributors
+minimatch | Copyright (c) 2011-2023 Isaac Z. Schlueter and Contributors
 sax | Copyright (c) Isaac Z. Schlueter and Contributors Copyright Mathias Bynens <https://mathiasbynens.be/>
+semver | Copyright (c) Isaac Z. Schlueter and Contributors
 which | Copyright (c) Isaac Z. Schlueter and Contributors
+yallist | Copyright (c) 2015-2023 Isaac Z. Schlueter and Contributors
+
 
 ISC License
 
@@ -342,6 +347,8 @@ under the MIT License:
 @types/node | Copyright (c) Microsoft Corporation. All rights reserved.
 @types/semver | Copyright (c) Microsoft Corporation.
 @types/xml2js | Copyright (c) Microsoft Corporation.
+balanced-match | Copyright (c) 2013 Julian Gruber <julian@juliangruber.com>
+brace-expansion | Copyright (c) 2013 Julian Gruber <julian@juliangruber.com>
 fs-extra | Copyright (c) 2011-2017 JP Richardson
 jsonfile | Copyright (c) 2012-2015 JP Richardson <jprichardson@gmail.com>
 jsonpath-plus | Copyright (c) 2011-2019 Stefan Goessner, Subbu Allamaraju, Mike Brevoort,
@@ -355,6 +362,7 @@ vscode-languageserver-protocol | Copyright (c) Microsoft Corporation
 vscode-languageserver-types | Copyright (c) Microsoft Corporation
 xml2js | Copyright 2010, 2011, 2012, 2013. All rights reserved.
 xmlbuilder | Copyright (c) 2013 Ozgur Ozcitak
+
 
 Permission is hereby granted, free of charge, to any person obtaining a 
 copy of this software and associated documentation files (the 
