@@ -213,10 +213,6 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public async getChildren(element?: LibertyProject): Promise<LibertyProject[]> {
-		
-		if (this.projects.size <= 0) {
-			return Promise.resolve([]);
-		}
 		if (vscode.workspace.workspaceFolders === undefined) {
 			vscode.window.showInformationMessage(localize("no.liberty.project.found.in.empty.workspace"));
 			return [];
