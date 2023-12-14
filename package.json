@@ -65,6 +65,12 @@
 				}
 			]
 		},
+		"viewsWelcome": [
+			{
+				"view": "liberty-dev",
+				"contents": "%views.welcome.message%"
+			}
+		],
 		"commands": [
 			{
 				"command": "liberty.dev.show.commands",
