@@ -22,7 +22,7 @@ import { prepareExecutable } from "./util/javaServerStarter";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
-export const LIBERTY_LS_JAR = "liberty-langserver-2.1.1-jar-with-dependencies.jar";
+export const LIBERTY_LS_JAR = "liberty-langserver-2.1.2-SNAPSHOT-jar-with-dependencies.jar";
 export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.2.0-jar-with-dependencies.jar";
 
 let libertyClient: LanguageClient;
@@ -215,13 +215,14 @@ function prepareClientOptions(Liberty_LS :boolean) {
         return {
             // Filter to `*.properties` and `*.env` files, let LCLS handle filtering for default/custom configs
             documentSelector: [{ scheme: "file", 
-                                pattern: "**/{*.properties,*.env}" }],
+                                pattern: "**/{*.properties,*.env,server.xml}" }],
             synchronize: {
                 configurationSection: SUPPORTED_LANGUAGE_IDS,
                 fileEvents: [
                     workspace.createFileSystemWatcher("**/*.properties"),
                     workspace.createFileSystemWatcher("**/*.env"),
-                    workspace.createFileSystemWatcher("**/liberty-plugin-config.xml")
+                    workspace.createFileSystemWatcher("**/liberty-plugin-config.xml"),
+                    workspace.createFileSystemWatcher("**/server.xml")
                 ],
             }
         };
