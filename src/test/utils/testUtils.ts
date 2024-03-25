@@ -1,10 +1,9 @@
 import path = require('path');
-import { Workbench, ViewSection,InputBox, DefaultTreeItem, ViewItem } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
-import { expect } from "chai";
 import { MapContextMenuforMac } from './macUtils';
-import * as clipboard from 'clipboardy';
+import clipboard = require('clipboardy');
 
 export function delay(millisec: number) {
     return new Promise( resolve => setTimeout(resolve, millisec) );
