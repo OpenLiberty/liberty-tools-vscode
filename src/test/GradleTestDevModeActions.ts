@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView,DefaultTreeItem, DebugView, ModalDialog } from 'vscode-extension-tester';
+import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView,DefaultTreeItem, DebugView } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
@@ -8,10 +8,8 @@ describe('Devmode action tests for Gradle Project', () => {
     let sidebar: SideBarView;
     let debugView: DebugView;
     let section: ViewSection;
-    let item: DefaultTreeItem;
-    let menu: ViewItem[];    
+    let item: DefaultTreeItem;    
     let tabs: string[];
-    let dialog: ModalDialog;   
 
     before(() => {
         sidebar = new SideBarView();
@@ -268,18 +266,7 @@ it('View test report for gradle project', async () => {
 
   // Now, clear the command history of the "command palette" to avoid receiving "recently used" suggestions. This action should be performed at the end of Gradle Project tests.
 it('Clear Command Palatte', async () => {
-  await new Workbench().executeCommand('Clear Command History');
-  await utils.delay(30000);  
-  dialog = new ModalDialog();
-  const message = await dialog.getMessage();
-
-  expect(message).contains('Do you want to clear the history of recently used commands?');
-  const details = await dialog.getDetails();
-
-  expect(details).equals(`This action is irreversible!`);
-  const buttons =  await dialog.getButtons();
-  expect(buttons.length).equals(2);
-  await dialog.pushButton('Clear');
+  await utils.clearCommandPalette();
 }).timeout(100000);
 
 });
