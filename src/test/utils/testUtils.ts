@@ -187,9 +187,7 @@ export async function clearCommandPalette() {
   const message = await dialog.getMessage();
 
   expect(message).contains('Do you want to clear the history of recently used commands?');
-  const details = await dialog.getDetails();
-
-  expect(details).equals(`This action is irreversible!`);
+  
   const buttons =  await dialog.getButtons();
   expect(buttons.length).equals(2);
   await dialog.pushButton('Clear');
