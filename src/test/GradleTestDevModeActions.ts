@@ -8,8 +8,7 @@ describe('Devmode action tests for Gradle Project', () => {
     let sidebar: SideBarView;
     let debugView: DebugView;
     let section: ViewSection;
-    let item: DefaultTreeItem;
-    let menu: ViewItem[];    
+    let item: DefaultTreeItem;    
     let tabs: string[];
 
     before(() => {
@@ -29,8 +28,10 @@ it('getViewControl works with the correct label',  async() => {
 
 it('Open dasboard shows items - Gradle', async () => {
 
-    
-    await utils.delay(80000);    
+      
+    await utils.delay(65000);
+    await section.expand(); 
+    await utils.delay(6000);
     const menu = await section.getVisibleItems();            
     expect(menu).not.empty;     
     item = await section.findItem(constants.GRADLE_PROJECT) as DefaultTreeItem;   
@@ -263,6 +264,10 @@ it('View test report for gradle project', async () => {
 }).timeout(30000);
 
 
+  // Now, clear the command history of the "command palette" to avoid receiving "recently used" suggestions. This action should be performed at the end of Gradle Project tests.
+it('Clear Command Palatte', async () => {
+  await utils.clearCommandPalette();
+}).timeout(100000);
 
 });
 

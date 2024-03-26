@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView, ActivityBar, ViewControl} from 'vscode-extension-tester';
+import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
@@ -29,9 +29,11 @@ it('getViewControl works with the correct label',  async() => {
 
 it('Open dasboard shows items - Maven', async () => {
 
-    
-  await utils.delay(65000);    
-  const menu = await section.getVisibleItems();            
+  
+  await utils.delay(65000);
+  section.expand();
+  await utils.delay(6000);
+  const menu = await section.getVisibleItems(); 
   expect(menu).not.empty;     
   item = await section.findItem(constants.MAVEN_PROJECT) as DefaultTreeItem;   
   expect(item).not.undefined;   
