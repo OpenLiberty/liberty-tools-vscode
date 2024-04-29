@@ -3,7 +3,7 @@ on:
   pull_request:
       types: [opened, synchronize]
   issues:
-      types: [ opened ]
+      types: [ opened, edited ]
   workflow_dispatch:
   push:
 jobs:
