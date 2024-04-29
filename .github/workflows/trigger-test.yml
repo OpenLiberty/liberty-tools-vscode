@@ -1,0 +1,19 @@
+name: trigger tests in another repository
+on:
+  pull_request:
+      types: [opened, synchronize]
+  issues:
+      types: [ opened ]
+  workflow_dispatch:
+  push:
+jobs:
+  trigger-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: trigger the automated test in another repo
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.REPO_ACCESS }}
+          repository: anusreelakshmi934/liberty-tools-intellij
+          event-type: my-event
+          client-payload: '{"github": ${{ toJson(github) }}, "TEST_ENV": "development" , "SERVICE": "smoke"}'
