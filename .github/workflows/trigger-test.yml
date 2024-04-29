@@ -6,6 +6,7 @@ on:
       types: [ opened ]
   workflow_dispatch:
   push:
+    branches: [ testing47 ]
 jobs:
   trigger-test:
     runs-on: ubuntu-latest
