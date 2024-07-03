@@ -1,6 +1,7 @@
-name: Build VSCode extension
+name: Build
 
 on:
+  workflow_dispatch:
   push:
     branches: '**'
   pull_request:
@@ -11,35 +12,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, macOS-latest, windows-latest]
 
     steps:
-      - name: Checkout liberty-tools-vscode
-        uses: actions/checkout@v3
-        with:
-          path: liberty-tools-vscode
-      - name: Checkout lsp4jakarta
-        uses: actions/checkout@v3
-        with:
-          repository: eclipse/lsp4jakarta
-          path: lsp4jakarta
-      - name: Setup Java 17
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: 17
-          cache: 'maven'
-      - name: Build Liberty Tools for VSCode
-        working-directory: ./liberty-tools-vscode
-        run: |
-            openssl version
-            node -v
-            npm -v
-      - name: Archive artifacts
-        if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v3        
-        with:
-          name: liberty-tools-vscode-${{ github.sha }}
-          path: ./**/*.vsix
-          if-no-files-found: warn
-          retention-days: 7
+      - name: Check OpenSSL version
+        run: openssl version
+      - name: Check OpenSSH version
+        run: ssh -V
+      - name: Check Node version
+        run: node -v
+      - name: Check NPM version
+        run: npm -v
