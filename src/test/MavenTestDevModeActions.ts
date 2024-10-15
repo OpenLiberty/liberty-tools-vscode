@@ -29,7 +29,7 @@ it('getViewControl works with the correct label',  async() => {
 
 it('Open dasboard shows items - Maven', async () => {
 
-  
+  // Wait for the Liberty Dashboard to load and expand. The dashboard only expands after using the 'expand()' method.  
   await utils.delay(65000);
   section.expand();
   await utils.delay(6000);
