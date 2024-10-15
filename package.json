@@ -247,7 +247,6 @@
 		"@types/glob": "^7.1.1",
 		"@types/mocha": "^7.0.2",
 		"@types/node": "^16.11.7",
-		"@types/selenium-webdriver": "^4.1.22",
 		"@types/vscode": "^1.42.0",
 		"@typescript-eslint/eslint-plugin": "^5.15.0",
 		"@typescript-eslint/parser": "^5.15.0",
@@ -262,21 +261,18 @@
 		"vscode-extension-tester": "^7.3.0",
 		"vscode-test": "^1.3.0",
 		"webpack": "^5.76.0",
-		"webpack-cli": "^4.10.0"
+		"webpack-cli": "^4.10.0",
+		"@types/selenium-webdriver": "^4.1.22",
+		"clipboardy": "^2.3.0"
 	},
 	"dependencies": {
 		"@types/fs-extra": "^8.1.0",
-		"@types/semver": "^7.3.2",
 		"@types/xml2js": "^0.4.5",
-		"clipboardy": "^2.3.0",
 		"expand-home-dir": "0.0.3",
 		"find-java-home": "^1.2.2",
 		"fs-extra": "^9.0.0",
 		"gradle-to-js": "^2.0.0",
 		"jsonpath-plus": "^7.0.0",
-		"node-fetch": "^2.6.1",
-		"path": "^0.12.7",
-		"selenium-webdriver": "^4.0.0",
 		"vscode-languageclient": "^8.1.0",
 		"xml2js": "^0.5.0"
 	}
