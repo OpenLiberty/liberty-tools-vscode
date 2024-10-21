@@ -109,12 +109,12 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
             terminal.show();
             libProject.setTerminal(terminal);
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                const mvnCmdStart = await mvnCmd(libProject.getPath());
-                const cmd = `${mvnCmdStart} io.openliberty.tools:liberty-maven-plugin:dev -f "${libProject.getPath()}"`;
+                const  mvnCmdStart= await mvnCmd(libProject.getPath());
+                const cmd = getCommandForMaven(mvnCmdStart,libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev");
                 terminal.sendText(cmd); // start dev mode on current project
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                const gradleCmdStart = await gradleCmd(libProject.getPath());
-                const cmd = `${gradleCmdStart} libertyDev -b="${libProject.getPath()}"`;
+                let gradleCmdStart = await gradleCmd(libProject.getPath());
+                const cmd=getCommandForGradle(gradleCmdStart,libProject.getPath(),"libertyDev");  
                 terminal.sendText(cmd); // start dev mode on current project
             }
         }
@@ -409,11 +409,11 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
 
                 if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                     const mvnCmdStart = await mvnCmd(libProject.getPath());
-                    const cmd = `${mvnCmdStart} io.openliberty.tools:liberty-maven-plugin:dev ${customCommand} -f "${libProject.getPath()}"`;
+                    const cmd = getCommandForMaven(mvnCmdStart,libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev");
                     terminal.sendText(cmd);
                 } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
                     const gradleCmdStart = await gradleCmd(libProject.getPath());
-                    const cmd = `${gradleCmdStart} libertyDev ${customCommand} -b="${libProject.getPath()}"`;
+                    const cmd=getCommandForGradle(gradleCmdStart,libProject.getPath(),"libertyDev");
                     terminal.sendText(cmd);
                 }
             }
@@ -444,11 +444,11 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
             libProject.setTerminal(terminal);
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                 const mvnCmdStart = await mvnCmd(libProject.getPath());
-                const cmd = `${mvnCmdStart} io.openliberty.tools:liberty-maven-plugin:devc -f "${libProject.getPath()}"`;
+                const cmd = getCommandForMaven(mvnCmdStart,libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev");
                 terminal.sendText(cmd);
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                const gradleCmdStart = await gradleCmd(libProject.getPath());
-                const cmd = `${gradleCmdStart} libertyDevc -b="${libProject.getPath()}"`;
+                let gradleCmdStart = await gradleCmd(libProject.getPath());
+                const cmd=getCommandForGradle(gradleCmdStart,libProject.getPath(),"libertyDev");
                 terminal.sendText(cmd);
             }
         }
@@ -545,7 +545,7 @@ export async function mvnCmd(pomPath: string): Promise<string> {
     if (preferMavenWrapper) {
         const localMvnwPath: string | undefined = await getLocalMavenWrapper(Path.dirname(pomPath));
         if (localMvnwPath) {
-            return localMvnwPath;
+            return `${localMvnwPath}`;
         }
     }
     return "mvn";
@@ -556,7 +556,7 @@ export async function gradleCmd(buildGradle: string): Promise<string> {
     if (preferGradleWrapper) {
         const localGradlewPath: string | undefined = await getLocalGradleWrapper(Path.dirname(buildGradle));
         if (localGradlewPath) {
-            return localGradlewPath;
+            return `${localGradlewPath}`;
         }
     }
     return "gradle";
@@ -570,14 +570,13 @@ export async function gradleCmd(buildGradle: string): Promise<string> {
  * @param projectFolder
  */
 async function getLocalMavenWrapper(projectFolder: string): Promise<string | undefined> {
-    const mvnw: string = isWin() ? "mvnw.cmd" : "mvnw";
-
-    // walk up parent folders
+   
     let current: string = projectFolder;
     while (Path.basename(current)) {
-        const potentialMvnwPath: string = Path.join(current, mvnw);
+        const potentialMvnwPath: string = Path.join(current);
+
         if (await pathExists(potentialMvnwPath)) {
-            return potentialMvnwPath;
+            return  potentialMvnwPath;
         }
         current = Path.dirname(current);
     }
@@ -590,16 +589,14 @@ async function getLocalMavenWrapper(projectFolder: string): Promise<string | und
  * @param projectFolder
  */
 async function getLocalGradleWrapper(projectFolder: string): Promise<string | undefined> {
-    const gradlew: string = isWin() ? "gradlew.bat" : "gradlew";
 
-    // walk up parent folders
     let current: string = projectFolder;
     while (Path.basename(current)) {
-        const potentialGradlewPath: string = Path.join(current, gradlew);
+       const potentialGradlewPath: string = Path.join(current);
         if (await pathExists(potentialGradlewPath)) {
             return potentialGradlewPath;
         }
-        current = Path.dirname(current);
+        current = Path.dirname(current);       
     }
     return undefined;
 }
@@ -610,4 +607,111 @@ async function getLocalGradleWrapper(projectFolder: string): Promise<string | un
  */
 function isWin(): boolean {
     return process.platform.startsWith("win");
+}
+
+function updateCmdForWin(gradleCmdStart: string, path: string, command: string) : string{
+    const dirs = gradleCmdStart.split('\\');
+    const quotedDir = dirs.map(dir => {
+        return dir.indexOf(' ') !== -1 ? `"${dir}"` : dir;
+    });
+    const modifiedPath=quotedDir.join('\\');
+    
+    const cmd = `${modifiedPath} ${command} -b="${path}"`;
+    return cmd;   
+}
+/**
+ * Reused from vscode-maven
+ * https://github.com/microsoft/vscode-maven/blob/main/src/mavenTerminal.ts
+ */
+enum ShellType {
+    CMD = "Command Prompt",
+    POWERSHELL = "PowerShell",
+    GIT_BASH = "Git Bash",
+    WSL = "WSL Bash",
+    OTHERS = "Others"
+}
+function currentWindowsShell(): ShellType {
+    const currentWindowsShellPath: string = vscode.env.shell;
+    const executable: string = Path.basename(currentWindowsShellPath);
+    switch (executable.toLowerCase()) {
+        case "cmd.exe":
+            return ShellType.CMD;
+        case "pwsh.exe":
+        case "powershell.exe":
+        case "pwsh": // pwsh on mac/linux
+        return ShellType.POWERSHELL;
+        case "bash.exe":
+        case 'git-cmd.exe':
+            return ShellType.GIT_BASH;
+        case 'wsl.exe':
+        case 'ubuntu.exe':
+        case 'ubuntu1804.exe':
+        case 'kali.exe':
+        case 'debian.exe':
+        case 'opensuse-42.exe':
+        case 'sles-12.exe':
+            return ShellType.WSL;
+        default:
+            return ShellType.OTHERS;
+    }
+}
+
+/**
+ * Return the maven commands based on the windows and Terminal 
+ */
+function getCommandForMaven(mvnCmdStart: string, pomPath: string,command:string) : string {
+
+if (isWin()) {
+    switch (currentWindowsShell()) {
+        case ShellType.GIT_BASH:
+            return "cd \""+ mvnCmdStart +"\" && "+"./mvnw "+`${command}`+ ` -f "${pomPath}"`; //Bash
+        case ShellType.POWERSHELL: {
+
+            mvnCmdStart=Path.join(mvnCmdStart, "mvnw.cmd");
+            return   "& \""+ mvnCmdStart +"\"" + `${command}`+ ` -f "${pomPath}"`; // PowerShell
+        }
+        case ShellType.CMD:
+            mvnCmdStart=Path.join(mvnCmdStart, "mvnw.cmd");
+            return   "\""+ mvnCmdStart +"\"" + `${command}`+ ` -f "${pomPath}"`; // CMD
+        case ShellType.WSL:
+            // return 
+        default:
+            mvnCmdStart=Path.join(mvnCmdStart, "mvnw.cmd");
+            return   "\""+ mvnCmdStart +"\"" + `${command}`+ ` -f "${pomPath}"`;  
+    }
+} else {
+    return "cd \""+ mvnCmdStart +"\" && "+"./mvnw "+`${command}`+ ` -f "${pomPath}"`;;
+}
+
+}
+
+/**
+ * Return the Gradle commands based on the windows and Terminal 
+ */
+function getCommandForGradle(gradleCmdStart: string, buildGradlePath: string,command: string) : string {
+
+if (isWin()) {
+    switch (currentWindowsShell()) {
+        case ShellType.GIT_BASH:
+            gradleCmdStart=Path.join(gradleCmdStart, "gradlew");
+            return "\""+ gradleCmdStart +"\"" + `${command}` + ` -b=" "${buildGradlePath}"`; //Bash
+        case ShellType.POWERSHELL: {
+
+            gradleCmdStart=Path.join(gradleCmdStart, "gradlew.bat");
+            return   "& \""+ gradleCmdStart +"\" " + `${command}` + ` -b=" "${buildGradlePath}"`;// PowerShell
+        }
+        case ShellType.CMD:
+            gradleCmdStart=Path.join(gradleCmdStart, "gradlew.bat");
+            return   "\""+ gradleCmdStart +"\"" + `${command}` + ` -b=" "${buildGradlePath}"`; // CMD
+        case ShellType.WSL:
+            // return 
+        default:
+            gradleCmdStart=Path.join(gradleCmdStart, "gradlew.bat");
+            return "\""+ gradleCmdStart +"\"" + `${command}` + ` -b=" "${buildGradlePath}"`;; 
+    }
+} else {
+    gradleCmdStart=Path.join(gradleCmdStart, "gradlew");
+    return "\""+ gradleCmdStart +"\" " + `${command}` + ` -b=" "${buildGradlePath}"`;
+}
+
 }
