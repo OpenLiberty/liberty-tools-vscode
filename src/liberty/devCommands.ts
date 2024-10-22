@@ -110,12 +110,10 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
             terminal.show();
             libProject.setTerminal(terminal);
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                const  mvnCmdStart= await mvnCmd(libProject.getPath());
-                const cmd = getCommandForMaven(mvnCmdStart,libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev");
+                const cmd = await getCommandForMaven(libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev");
                 terminal.sendText(cmd); // start dev mode on current project
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                let gradleCmdStart = await gradleCmd(libProject.getPath());
-                const cmd=getCommandForGradle(gradleCmdStart,libProject.getPath(),"libertyDev");  
+                const cmd = await getCommandForGradle(libProject.getPath(),"libertyDev");  
                 terminal.sendText(cmd); // start dev mode on current project
             }
         }
@@ -409,12 +407,10 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
                 }
 
                 if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                    const mvnCmdStart = await mvnCmd(libProject.getPath());
-                    const cmd = getCommandForMaven(mvnCmdStart,libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev",customCommand);
+                    const cmd = await getCommandForMaven(libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev",customCommand);
                     terminal.sendText(cmd);
                 } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                    const gradleCmdStart = await gradleCmd(libProject.getPath());
-                    const cmd=getCommandForGradle(gradleCmdStart,libProject.getPath(),"libertyDev",customCommand);
+                    const cmd = await getCommandForGradle(libProject.getPath(),"libertyDev",customCommand);
                     terminal.sendText(cmd);
                 }
             }
@@ -444,12 +440,10 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
             terminal.show();
             libProject.setTerminal(terminal);
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                const mvnCmdStart = await mvnCmd(libProject.getPath());
-                const cmd = getCommandForMaven(mvnCmdStart,libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:devc");
+                const cmd = await getCommandForMaven(libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:devc");
                 terminal.sendText(cmd);
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                let gradleCmdStart = await gradleCmd(libProject.getPath());
-                const cmd=getCommandForGradle(gradleCmdStart,libProject.getPath(),"libertyDevc");
+                const cmd = await getCommandForGradle(libProject.getPath(),"libertyDevc");
                 terminal.sendText(cmd);
             }
         }
@@ -509,9 +503,9 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                     );
                     panel.webview.html = getReport(report); // display HTML content
                 } else {
-                    const message = localize("test.report.does.not.exist.run.test.first", report);
-                    vscode.window.showInformationMessage(message);
-                }
+                        const message = localize("test.report.does.not.exist.run.test.first", report);
+                        vscode.window.showInformationMessage(message);
+                    }     
             });
         }
     } else if (ProjectProvider.getInstance() && reportType) {
@@ -608,4 +602,4 @@ async function getLocalGradleWrapper(projectFolder: string): Promise<string | un
  */
 export function isWin(): boolean {
     return process.platform.startsWith("win");
-}
+  }

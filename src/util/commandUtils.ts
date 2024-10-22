@@ -10,7 +10,7 @@
 
 import * as Path from "path";
 import * as vscode from "vscode";
-import { isWin } from "../liberty/devCommands";
+import { isWin,mvnCmd,gradleCmd } from "../liberty/devCommands";
 
 /**
  * Reused from vscode-maven
@@ -56,8 +56,17 @@ function currentWindowsShell(): ShellType {
 /**
  * Return the maven commands based on the OS and Terminal for start, startinContainer, start..
  */
-export function getCommandForMaven(mvnCmdStart: string, pomPath: string,command:string,customCommand?: string) : string {
+ export async function getCommandForMaven(pomPath: string,command:string,customCommand?: string) : Promise<string> {
 
+    let  mvnCmdStart = await mvnCmd(pomPath);
+    
+    if(mvnCmdStart === "mvn"){
+        if(customCommand)
+        {
+            return `${mvnCmdStart} ` + `${command}`+` ${customCommand}` + ` -f "${pomPath}"`;
+        }
+        return `${mvnCmdStart} ` + `${command}`+ ` -f "${pomPath}"`;
+    }
     if (isWin()) {
         switch (currentWindowsShell()) {
             case ShellType.GIT_BASH:
@@ -67,7 +76,7 @@ export function getCommandForMaven(mvnCmdStart: string, pomPath: string,command:
                 return "cd \""+ mvnCmdStart +"\" && "+"./mvnw "+`${command}`+ ` -f "${pomPath}"`; //Bash for start..
                 
             case ShellType.POWERSHELL: {
-                mvnCmdStart=Path.join(mvnCmdStart, "mvnw.cmd");
+                mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
                 if(customCommand){
 
                     return "& \""+ mvnCmdStart +"\" " + `${command}`+` ${customCommand}` +` -f "${pomPath}"`; //Poweshell for start..
@@ -75,23 +84,23 @@ export function getCommandForMaven(mvnCmdStart: string, pomPath: string,command:
                 return   "& \""+ mvnCmdStart +"\" " + `${command}`+ ` -f "${pomPath}"`; // PowerShell
             }
             case ShellType.CMD:
-                mvnCmdStart=Path.join(mvnCmdStart, "mvnw.cmd");
+                mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
                 if(customCommand){
 
                 return "\""+ mvnCmdStart +"\" " + `${command}`+` ${customCommand}` + ` -f "${pomPath}"`; //cmd for start..
                 }
                 return   "\""+ mvnCmdStart +"\" " + `${command}`+ ` -f "${pomPath}"`; // CMD
             case ShellType.WSL:
-                mvnCmdStart=toDefaultWslPath(mvnCmdStart);
-                pomPath=toDefaultWslPath(pomPath);
+                mvnCmdStart = toDefaultWslPath(mvnCmdStart);
+                pomPath = toDefaultWslPath(pomPath);
                 if(customCommand){
-                    return "cd \""+ mvnCmdStart +"\" && "+"./mvnw "+`${command}`+ ` ${customCommand}` +` -f "${pomPath}"`; //Bash 
+                    return "cd \""+ mvnCmdStart +"\" && "+"./mvnw "+`${command}`+ ` ${customCommand}` +` -f "${pomPath}"`; //Wsl start ..  
                 }
-                return "cd \""+ mvnCmdStart +"\" && "+"./mvnw "+`${command}`+ ` -f "${pomPath}"`; //Bash for start..
+                return "cd \""+ mvnCmdStart +"\" && "+"./mvnw "+`${command}`+ ` -f "${pomPath}"`; //Wsl  
                     
         
             default:
-                mvnCmdStart=Path.join(mvnCmdStart, "mvnw.cmd");
+                mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
                 if(customCommand){
                     return "\""+ mvnCmdStart +"\" " + `${command}`+` ${customCommand}` + ` -f "${pomPath}"`; 
                 }
@@ -109,46 +118,54 @@ export function getCommandForMaven(mvnCmdStart: string, pomPath: string,command:
 /**
  * Return the Gradle commands based on the OS and Terminal for start, startinContainer, start..
  */
-export function getCommandForGradle(gradleCmdStart: string, buildGradlePath: string, command: string, customCommand?: string) : string {
+export async function getCommandForGradle(buildGradlePath: string, command: string, customCommand?: string) : Promise<string> {
+    let gradleCmdStart = await gradleCmd(buildGradlePath);
 
+    if(gradleCmdStart === "gradle"){
+        if(customCommand)
+        {
+            return `${gradleCmdStart} ` + `${command}`+` ${customCommand}` + ` -b="${buildGradlePath}"`;
+        }
+        return `${gradleCmdStart} ` + `${command}`+ ` -b="${buildGradlePath}"`;
+    }
     if (isWin()) {
         switch (currentWindowsShell()) {
             case ShellType.GIT_BASH:
-                gradleCmdStart=Path.join(gradleCmdStart, "gradlew");
+                gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
                 if(customCommand){
                     return "\""+ gradleCmdStart +"\" " + `${command}` + ` ${customCommand}` +  ` -b="${buildGradlePath}"`; //bash start..
                 }
                 return "\""+ gradleCmdStart +"\" " + `${command}` + ` -b="${buildGradlePath}"`; //Bash
             case ShellType.POWERSHELL: {
-                gradleCmdStart=Path.join(gradleCmdStart, "gradlew.bat");
+                gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
                 if(customCommand){
                     return   "& \""+ gradleCmdStart +"\" " + `${command}` + ` ${customCommand}` +  ` -b="${buildGradlePath}"`;// PowerShell strat..
                 }
                 return   "& \""+ gradleCmdStart +"\" " + `${command}` + ` -b="${buildGradlePath}"`;// PowerShell
             }
             case ShellType.CMD:
-                gradleCmdStart=Path.join(gradleCmdStart, "gradlew.bat");
+                gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
                 if(customCommand){
                     return   "\""+ gradleCmdStart +"\" " + `${command}` + ` ${customCommand}` +  ` -b="${buildGradlePath}"`; // CMD start..
                 }
                 return   "\""+ gradleCmdStart +"\" " + `${command}` + ` -b="${buildGradlePath}"`; // CMD
             case ShellType.WSL:
-                buildGradlePath=toDefaultWslPath(buildGradlePath);
-                gradleCmdStart=toDefaultWslPath(gradleCmdStart)
-                gradleCmdStart=Path.join(gradleCmdStart, "gradlew");
+                buildGradlePath = toDefaultWslPath(buildGradlePath);
+                gradleCmdStart = toDefaultWslPath(gradleCmdStart)
+                gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
                 if(customCommand){
                     return "\""+ gradleCmdStart +"\" " + `${command}` + ` ${customCommand}` +  ` -b="${buildGradlePath}"`; //wsl start..
                 }
                 return "\""+ gradleCmdStart +"\" " + `${command}` + ` -b="${buildGradlePath}"`; //wsl
             default:
-                gradleCmdStart=Path.join(gradleCmdStart, "gradlew.bat");
+                gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
                 if(customCommand){
                     "\""+ gradleCmdStart +"\" " + `${command}` + ` ${customCommand}` + ` -b="${buildGradlePath}"`;
                 }
                 return "\""+ gradleCmdStart +"\" " + `${command}` + ` -b="${buildGradlePath}"`;
         }
     } else {
-        gradleCmdStart=Path.join(gradleCmdStart, "gradlew");
+        gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
         if(customCommand){
             return   "\""+ gradleCmdStart +"\" " + `${command}` + ` ${customCommand}` +  ` -b="${buildGradlePath}"`;
         }
@@ -170,3 +187,4 @@ function toDefaultWslPath(p: string): string {
         return p.replace(/\\/g, "/");
     }
 }
+
