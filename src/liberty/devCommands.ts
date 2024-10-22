@@ -503,9 +503,9 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                     );
                     panel.webview.html = getReport(report); // display HTML content
                 } else {
-                        const message = localize("test.report.does.not.exist.run.test.first", report);
-                        vscode.window.showInformationMessage(message);
-                    }     
+                    const message = localize("test.report.does.not.exist.run.test.first", report);
+                    vscode.window.showInformationMessage(message);
+                }     
             });
         }
     } else if (ProjectProvider.getInstance() && reportType) {
@@ -571,7 +571,7 @@ async function getLocalMavenWrapper(projectFolder: string): Promise<string | und
         const potentialMvnwPath: string = Path.join(current);
 
         if (await pathExists(potentialMvnwPath)) {
-            return  potentialMvnwPath;
+            return potentialMvnwPath;
         }
         current = Path.dirname(current);
     }
@@ -591,7 +591,7 @@ async function getLocalGradleWrapper(projectFolder: string): Promise<string | un
         if (await pathExists(potentialGradlewPath)) {
             return potentialGradlewPath;
         }
-        current = Path.dirname(current);       
+        current = Path.dirname(current);
     }
     return undefined;
 }
@@ -602,4 +602,4 @@ async function getLocalGradleWrapper(projectFolder: string): Promise<string | un
  */
 export function isWin(): boolean {
     return process.platform.startsWith("win");
-  }
+}
