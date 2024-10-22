@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2024 IBM Corporation.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+
 import * as Path from "path";
 import * as vscode from "vscode";
 import { isWin } from "../liberty/devCommands";
@@ -44,7 +54,7 @@ function currentWindowsShell(): ShellType {
 }
 
 /**
- * Return the maven commands based on the OS and Terminal 
+ * Return the maven commands based on the OS and Terminal for start, startinContainer, start..
  */
 export function getCommandForMaven(mvnCmdStart: string, pomPath: string,command:string,customCommand?: string) : string {
 
@@ -97,7 +107,7 @@ export function getCommandForMaven(mvnCmdStart: string, pomPath: string,command:
 }
 
 /**
- * Return the Gradle commands based on the OS and Terminal 
+ * Return the Gradle commands based on the OS and Terminal for start, startinContainer, start..
  */
 export function getCommandForGradle(gradleCmdStart: string, buildGradlePath: string, command: string, customCommand?: string) : string {
 
@@ -146,7 +156,10 @@ export function getCommandForGradle(gradleCmdStart: string, buildGradlePath: str
     }
 
 }
-
+/**
+ * Reused from vscode-maven
+ * https://github.com/microsoft/vscode-maven/blob/main/src/mavenTerminal.ts
+ */
 function toDefaultWslPath(p: string): string {
     const arr: string[] = p.split(":\\");
     if (arr.length === 2) {
