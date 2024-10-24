@@ -1,10 +1,10 @@
 import path = require('path');
-import { Workbench, ViewSection, InputBox, DefaultTreeItem, ViewItem, SideBarView, CustomTreeItem, DefaultTreeSection, ActivityBar, By, TreeItem } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, SideBarView, TreeItem, ViewSection } from 'vscode-extension-tester';
 import * as fs from 'fs';
-import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
-import { expect } from "chai";
+import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
-import * as clipboard from 'clipboardy';
+import clipboard = require('clipboardy');
+import { expect } from 'chai';
 
 export function delay(millisec: number) {
   return new Promise(resolve => setTimeout(resolve, millisec));
@@ -238,3 +238,17 @@ export async function stopLibertyserver() {
   (await input).click();
   await delay(10000);
 }
+
+export async function clearCommandPalette() {
+  await new Workbench().executeCommand('Clear Command History');
+  await delay(30000);  
+  const dialog = new ModalDialog();
+  const message = await dialog.getMessage();
+
+  expect(message).contains('Do you want to clear the history of recently used commands?');
+  
+  const buttons =  await dialog.getButtons();
+  expect(buttons.length).equals(2);
+  await dialog.pushButton('Clear');
+}
+  

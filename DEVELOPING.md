@@ -30,8 +30,8 @@ Ensure you have [Node.js and npm](https://docs.npmjs.com/downloading-and-install
      - Navigate to the Extensions activity bar, or use the shortcut `Ctrl`-`Shift`-`X`
      - Click the `...` dropdown menu and select `Install from VSIX` and choose the generated `liberty-tools-vscode-xxx.vsix` file
 
-Step 5 downloads the JARs for Liberty Config Language Server and Eclipse LSP4Jakarta that are consumed by the VS Code client.
-If you would like a different version of the language servers other than what is available to download, the following instructions explain how to build these JARs locally. Then rerun steps 6 and 7.
+> Step 5 downloads the JARs for Liberty Config Language Server and Eclipse LSP4Jakarta that are consumed by the VS Code client.
+If you would like a different version of the language servers other than what is available to download, the following instructions explain how to build these JARs locally.
 
 ## Language Servers
 
@@ -52,6 +52,17 @@ For more information on building Liberty Config Language Server, see the project
 3. Run steps 6 and 7 above
 
 For more information on building Eclipse LSP4Jakarta, see the project documentation on [GitHub](https://github.com/eclipse/lsp4jakarta/blob/main/docs/BUILDING.md). Note that there are [prerequisites](https://github.com/eclipse/lsp4jakarta/blob/main/docs/BUILDING.md#prerequisites) to building this project locally.
+
+### Debugging Language Servers
+When running the extension with locally built language servers, a debugger can be attached to the language server process.
+The debug ports are as follows:
+
+- Liberty-LemminX: `1054`
+- Liberty Language Server: `8002`
+- Jakarta LS: `8003`
+
+
+With the `liberty-language-server` project opened in VSCode, run `Debug attach liberty-ls` or `Debug attach liberty-lemminx` to attach the respective debugger to the running extension.
 
 ## Localization
 

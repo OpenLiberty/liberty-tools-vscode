@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView,DefaultTreeItem, DebugView } from 'vscode-extension-tester';
+import { InputBox, Workbench,SideBarView, ViewSection,EditorView,DefaultTreeItem, DebugView } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
@@ -8,8 +8,7 @@ describe('Devmode action tests for Gradle Project', () => {
     let sidebar: SideBarView;
     let debugView: DebugView;
     let section: ViewSection;
-    let item: DefaultTreeItem;
-    let menu: ViewItem[];    
+    let item: DefaultTreeItem;    
     let tabs: string[];
 
     before(() => {
@@ -29,8 +28,10 @@ it('getViewControl works with the correct label',  async() => {
 
 it('Open dasboard shows items - Gradle', async () => {
 
-    
-    await utils.delay(80000);    
+    // Wait for the Liberty Dashboard to load and expand. The dashboard only expands after using the 'expand()' method.  
+    await utils.delay(65000);
+    await section.expand(); 
+    await utils.delay(6000);
     const menu = await section.getVisibleItems();            
     expect(menu).not.empty;     
     item = await section.findItem(constants.GRADLE_PROJECT) as DefaultTreeItem;   
@@ -262,7 +263,11 @@ it('View test report for gradle project', async () => {
     
 }).timeout(30000);
 
-
+  // Based on the UI testing code, it sometimes selects the wrong command in "command palette", such as choosing "Liberty: Start ..." instead of "Liberty: Start" from the recent suggestions. This discrepancy occurs because we specifically need "Liberty: Start" at that moment.
+  // Now, clear the command history of the "command palette" to avoid receiving "recently used" suggestions. This action should be performed at the end of Gradle Project tests.
+it('Clear Command Palatte', async () => {
+  await utils.clearCommandPalette();
+}).timeout(100000);
 
 });
 
