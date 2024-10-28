@@ -530,12 +530,6 @@ export function deleteTerminal(terminal: vscode.Terminal): void {
 
 // return Maven executable path, Maven wrapper, or mvn
 export async function mvnCmd(pomPath: string): Promise<string> {
-
-    // attempt to use the Maven executable path, if empty try using mvn or mvnw according to the preferMavenWrapper setting
-    const mavenExecutablePath: string | undefined = vscode.workspace.getConfiguration("maven").get<string>("executable.path");
-    if (mavenExecutablePath) {
-        return mavenExecutablePath;
-    }
     const preferMavenWrapper: boolean | undefined = vscode.workspace.getConfiguration("maven").get<boolean>("executable.preferMavenWrapper");
     if (preferMavenWrapper) {
         const localMvnwPath: string | undefined = await getLocalMavenWrapper(Path.dirname(pomPath));
