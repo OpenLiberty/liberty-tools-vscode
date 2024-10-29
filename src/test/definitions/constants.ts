@@ -9,6 +9,7 @@
  */
 
 export const MAVEN_PROJECT = "liberty.maven.test.wrapper.app";
+export const MAVEN_SERVERXML_PROJECT = "liberty.maven.serverxml.test.wrapper.app";
 export const GRADLE_PROJECT= "liberty.gradle.test.wrapper.app";
 export const START_DASHBOARD_ACTION = "Start";
 export const STOP_DASHBOARD_ACTION = "Stop";

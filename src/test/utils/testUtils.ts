@@ -1,5 +1,5 @@
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, SideBarView, TreeItem, ViewSection } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
@@ -7,164 +7,223 @@ import clipboard = require('clipboardy');
 import { expect } from 'chai';
 
 export function delay(millisec: number) {
-    return new Promise( resolve => setTimeout(resolve, millisec) );
+  return new Promise(resolve => setTimeout(resolve, millisec));
 }
 
 export function getMvnProjectPath(): string {
-    const mvnProjectPath = path.join(__dirname, "..","..","..","src", "test","resources", "maven","liberty.maven.test.wrapper.app");  
-    console.log("Path is : "+mvnProjectPath)  ;
-    return mvnProjectPath; 
+  const mvnProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "maven", "liberty.maven.test.wrapper.app");
+  console.log("Path is : " + mvnProjectPath);
+  return mvnProjectPath;
+}
+
+export function getMvnServerXmlProjectPath(): string {
+  const mvnProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "maven-serverxml", "liberty.maven.serverxml.test.wrapper.app");
+  console.log("Path is : " + mvnProjectPath);
+  return mvnProjectPath;
+}
+
+export function getGradleProjectPath(): string {
+  const gradleProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "gradle", "liberty.gradle.test.wrapper.app");
+  console.log("Path is : " + gradleProjectPath);
+  return gradleProjectPath;
+}
+
+
+
+export async function launchDashboardAction(item: DefaultTreeItem, action: string, actionMac: string) {
+
+  console.log("Launching action:" + action);
+  if (process.platform === 'darwin') {//Only for MAC platform      
+    await MapContextMenuforMac(item, actionMac);
+  } else {  // NON MAC platforms    
+    console.log("before contextmenu");
+    const menuItem = await item.openContextMenu();
+    console.log("before select");
+    await menuItem.select(action);
   }
 
-  export function getGradleProjectPath(): string {
-    const gradleProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","gradle", "liberty.gradle.test.wrapper.app");  
-    console.log("Path is : "+gradleProjectPath)  ;
-    return gradleProjectPath; 
+}
+
+
+export async function setCustomParameter(customParam: string) {
+
+  console.log("Setting custom Parameter");
+  const input = new InputBox();
+  await input.click();
+  await input.setText(customParam);
+  await input.confirm();
+
+}
+
+export async function chooseCmdFromHistory(command: string): Promise<Boolean> {
+
+  console.log("Choosing command from history");
+  const input = new InputBox();
+  const pick = await input.findQuickPick(command);
+  if (pick) {
+    await pick.select();
+    await input.confirm();
+    return true;
   }
+  else
+    return false;
+}
 
- 
- 
-  export async function launchDashboardAction(item: DefaultTreeItem, action: string, actionMac: string) {
+export async function deleteReports(reportPath: string): Promise<Boolean> {
 
-    console.log("Launching action:" + action);  
-    if (process.platform === 'darwin') {//Only for MAC platform      
-      await MapContextMenuforMac( item,actionMac);            
-    } else {  // NON MAC platforms    
-      console.log("before contextmenu")  ;
-      const menuItem = await item.openContextMenu(); 
-      console.log("before select")  ; 
-      await menuItem.select(action);
+  //const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
+  if (fs.existsSync(reportPath)) {
+    fs.unlink(reportPath, (err) => {
+      if (err)
+        return false;
+      else {
+        console.log(reportPath + ' was deleted');
+        return true;
+      }
+    });
+  }
+  return true;
+}
+
+export async function checkIfTestReportExists(reportPath: string): Promise<Boolean> {
+  const maxAttempts = 10;
+  let foundReport = false;
+  //const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+
+      if (fs.existsSync(reportPath)) {
+        foundReport = true;
+        break;
+      }
+      else {
+        await delay(5000);
+        foundReport = false;
+        continue;
+      }
     }
+    catch (e) {
+      console.error("Caught exception when checking for test report", e);
 
+    }
   }
- 
+  return foundReport;
+}
 
-  export async function setCustomParameter(customParam: string) {
 
-    console.log("Setting custom Parameter");    
-    const input = new InputBox(); 
-    await input.click();   
-    await input.setText(customParam);      
-    await input.confirm();       
-  
-  }
 
-  export async function chooseCmdFromHistory(command: string): Promise<Boolean> {
+export async function checkTerminalforServerState(serverStatusCode: string): Promise<Boolean> {
+  const workbench = new Workbench();
+  let foundText = false;
+  let count = 0;
+  do {
+    clipboard.writeSync('');//clean slate for clipboard      
+    await workbench.executeCommand('terminal select all');
+    const text = clipboard.readSync();
+    console.log("debug:" + text);
+    if (text.includes(serverStatusCode)) {
+      foundText = true;
+      console.log("Found text " + serverStatusCode);
+      break;
+    }
+    else if (text.includes("FAILURE")) {
+      console.log("Found failure " + text);
+      foundText = false;
+      break;
+    }
+    else {
+      console.log("test is running ...")
+      foundText = false;
+    }
+    count++;
+    await workbench.getDriver().sleep(10000);
+  } while (!foundText && (count <= 20));
+  await workbench.executeCommand('terminal clear');
+  return foundText;
+}
 
-    console.log("Choosing command from history");    
-    const input = new InputBox();     
-    const pick = await input.findQuickPick(command);    
-    if (pick){
-      await pick.select();    
-      await input.confirm();       
+
+export async function checkTestStatus(testStatus: string): Promise<Boolean> {
+  const workbench = new Workbench();
+  let foundText = false;
+  let count = 0;
+  do {
+    clipboard.writeSync('');
+    await workbench.executeCommand('terminal select all');
+    const text = clipboard.readSync();
+    if (text.includes(testStatus)) {
+      foundText = true;
+      console.log("Found text " + testStatus);
+      break;
+    }
+    else
+      foundText = false;
+    count++;
+    await workbench.getDriver().sleep(2000);
+  } while (!foundText && (count <= 5));
+  await workbench.executeCommand('terminal clear');
+  return foundText;
+}
+
+export async function isViewSectionEmpty(section: ViewSection): Promise<boolean> {
+  try {
+    const items = await section.getVisibleItems();
+    console.log("items...." + (items.length === 0));
+    return items.length === 0;
+  } catch (error) {
+    // if there is no visible elements, getVisibleItems() method is throwing timeout error.
+    const err = error as Error;
+    if (err.name === "TimeoutError") {
       return true;
     }
-    else     
-      return false; 
+    return false;
+  }
+}
+
+export async function findFileRecursively(name: string, parentItem?: TreeItem): Promise<TreeItem | undefined> {
+  let explorerSection;
+  if (!parentItem) {
+    explorerSection = await new SideBarView().getContent().getSection('liberty.maven.test.wrapper.app');
   }
 
-  export async function deleteReports(reportPath:  string) : Promise<Boolean> {
+  const items = parentItem
+    ? await parentItem.getChildren()
+    : await explorerSection?.getVisibleItems();
 
-    //const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
-    if (fs.existsSync(reportPath) )
-    {
-      fs.unlink(reportPath, (err) => {
-        if (err) 
-        return false; 
-        else{
-        console.log(reportPath+ ' was deleted');
-        return true;
-        }
-        });               
-    }    
-      return true;   
+  if (!items) return undefined;
+
+  for (let item of items) {
+    let treeItem = item as TreeItem;
+    if (await treeItem.getLabel() === name) {
+      return treeItem; // File found
     }
 
-  export async function checkIfTestReportExists(reportPath: string) : Promise<Boolean> {
-    const maxAttempts = 10;
-    let foundReport = false;
-    //const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
-    for (let i = 0; i < maxAttempts; i++) {
-      try {
-                
-          if (fs.existsSync(reportPath)) 
-          {
-            foundReport = true;
-            break;
-          }
-          else{
-            await delay(5000);
-            foundReport = false;
-            continue;
-          }      
-      }
-      catch(e)
-      {
-        console.error("Caught exception when checking for test report", e);
-
+    if (await treeItem.hasChildren()) {
+      // Search inside this directory
+      const foundItem = await findFileRecursively(name, treeItem);
+      if (foundItem) {
+        return foundItem; // File found in a sub-directory
       }
     }
-    return foundReport;
-    }
-  
-    
-  
-  export async function checkTerminalforServerState(serverStatusCode : string ): Promise <Boolean> {
-    const workbench = new Workbench();
-    let  foundText = false;
-    let count=0;    
-    do{
-      clipboard.writeSync('');//clean slate for clipboard      
-      await workbench.executeCommand('terminal select all');       
-      const text = clipboard.readSync();        
-      console.log("debug:" + text)      ;
-      if( text.includes(serverStatusCode)){
-        foundText = true;
-        console.log("Found text "+ serverStatusCode);
-        break;
-      }
-      else if(text.includes("FAILURE"))
-      {     
-        console.log("Found failure "+ text);
-        foundText = false;             
-        break;      
-      }
-      else
-      {
-        console.log("test is running ...")
-        foundText = false;
-      }
-      count++;   
-      await workbench.getDriver().sleep(10000);
-    } while(!foundText && (count <= 20));
-    await workbench.executeCommand('terminal clear');
-    return foundText;
-  }
-  
-
-  export async function checkTestStatus(testStatus: string): Promise <Boolean>{
-    const workbench = new Workbench();
-    let  foundText = false;
-    let count=0;    
-    do{
-      clipboard.writeSync('');
-      await workbench.executeCommand('terminal select all');      
-      const text = clipboard.readSync();         
-      if( text.includes(testStatus)){
-        foundText = true;
-        console.log("Found text "+ testStatus);
-        break;
-      }      
-      else
-        foundText = false;
-      count++;   
-      await workbench.getDriver().sleep(2000);
-    } while(!foundText && (count <= 5));
-    await workbench.executeCommand('terminal clear');
-    return foundText;
   }
 
-  
+  return undefined; // File not found
+}
+
+export async function copyFile(source: string, target: string): Promise<void> {
+  if (fs.existsSync(source)) {
+    await delay(5000);
+    fs.copyFileSync(source, target);
+  }
+
+}
+
+export async function refreshLibertyDashboard(): Promise<void> {
+  const viewSection = new SideBarView().getContent().getSection('Liberty Dashboard');
+
+  // Find the button relative to the title (adjust the locator based on the actual structure)
+  const item = (await viewSection).findElement({ id: 'Refresh projects' });
+}
 
 /* Stop Server Liberty dashboard post Attach Debugger*/
 /* As the Window view changes using command to stop server instead of devmode action */
