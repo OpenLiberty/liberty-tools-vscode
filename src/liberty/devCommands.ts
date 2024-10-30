@@ -498,6 +498,10 @@ export async function openReport(reportType: string, libProject?: LibertyProject
             if (reportType === "gradle") {
                 reportTypeLabel = "test";
             }
+            /*
+            if its a maven project, check for the report in the initial path , else try for the alternate one and if it doesnt exist in both 
+            display a prompt for its non existance
+            */
             if(libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER){
                 console.log("report path ::"+report)
                 if(!await checkReportAndDisplay(report,reportType,reportTypeLabel,libProject)){
@@ -507,6 +511,9 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                         vscode.window.showInformationMessage(message);
                     }     
                 }
+            /*
+            if its a gralde project, then check existance for the report in the path set and if not display prompt for its non existance
+            */
             }else if(!await checkReportAndDisplay(report,reportType,reportTypeLabel,libProject)){
                         const message = localize("test.report.does.not.exist.run.test.first", report);
                         vscode.window.showInformationMessage(message);
@@ -612,6 +619,10 @@ function isWin(): boolean {
     return process.platform.startsWith("win");
 }
 
+/*
+will return the path of the report, since there are diffrent folders to look into and the file names can be different 
+we need to get the paths to look for dynamically
+*/
 function getReportFile(path :any,dir :string,filename:string):any{
     return Path.join(path,"target",dir, filename);
 }
