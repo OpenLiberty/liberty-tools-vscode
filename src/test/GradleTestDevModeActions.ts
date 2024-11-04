@@ -199,7 +199,7 @@ it('attach debugger for gradle with custom parameter event', async () => {
       }
     }
 
-    await utils.stopLibertyserver();
+    await utils.stopLibertyserverForGradle();
     isServerRunning = !await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING); //negate isServerRunning
     if (!isServerRunning)
       console.log("Server stopped successfully ");
@@ -209,7 +209,7 @@ it('attach debugger for gradle with custom parameter event', async () => {
   } finally {
     console.log("finally block: is server running -  ", isServerRunning);
     if (isServerRunning) {
-      utils.stopLibertyserver();
+      utils.stopLibertyserverForGradle();
     }
     else
       console.log("good to close test - Attach Debugger for start with custom parameter(-DdebugPort=7777) event");

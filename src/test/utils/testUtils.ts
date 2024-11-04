@@ -1,7 +1,7 @@
 import path = require('path');
 import { Workbench, InputBox, DefaultTreeItem, ModalDialog } from 'vscode-extension-tester';
 import * as fs from 'fs';
-import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
+import { GRADLE_PROJECT, MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
@@ -191,5 +191,19 @@ export async function clearCommandPalette() {
   const buttons =  await dialog.getButtons();
   expect(buttons.length).equals(2);
   await dialog.pushButton('Clear');
+}
+
+/* Stop Server Liberty dashboard post Attach Debugger for Gradle project */
+/* As the Window view changes using command to stop server instead of devmode action */
+export async function stopLibertyserverForGradle() {
+  console.log("Stop Server action for GRADLE_PROJECT: " + GRADLE_PROJECT);
+  const workbench = new Workbench();
+  await workbench.executeCommand(STOP_DASHBOARD_MAC_ACTION);
+  const input = InputBox.create();
+  (await input).clear();
+  (await input).setText(GRADLE_PROJECT);
+  (await input).confirm();
+  (await input).click();
+  await delay(10000);
 }
   
