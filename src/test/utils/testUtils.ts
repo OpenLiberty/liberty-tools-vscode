@@ -198,10 +198,8 @@ export async function clearCommandPalette() {
  * Function return project name with space
  */
 export function getNewGradleProjectNameWithSpace(): any {
-   
-  const gradleProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","gradleproject", "liberty.gradle.te st.wrapper.app");
-      
-  console.log("Gradle project path is: "+gradleProjectPath);
+  const gradleProjectPath = path.join(__dirname, "..","..","..","src","test","resources","gradleproject", "liberty.gradle.te st.wrapper.app");
+
   return gradleProjectPath;
 }
 
@@ -210,48 +208,32 @@ export function getNewGradleProjectNameWithSpace(): any {
  */
 
 export async function  renameProject(): Promise<void>{
-  
-    const currentDir =path.join(__dirname,  "..","..","..",'/src/test/resources/gradleproject'); 
-    const sourcurrentDir = path.join(__dirname,  "..","..","..",'src/test/resources/gradle');
-  
-    const sourceFilePath = path.join(sourcurrentDir, 'liberty.gradle.test.wrapper.app');
-    const newFilePath = path.join(currentDir,'liberty.gradle.te st.wrapper.app');
-  
-    console.log('Source Path:', sourceFilePath);
-    console.log('Destination Path:', newFilePath);
-
-    fsextra.copy(sourceFilePath,newFilePath)
-    .then(()=> console.log("coppied"))
+    fsextra.copy(getGradleProjectPath(),getNewGradleProjectNameWithSpace())
+    .then(()=> console.log("Project renamed.,  Gradle Project path is :"+getNewGradleProjectNameWithSpace()))
     .catch(err => console.log("Error renaming the project"));  
   }
+
 /**
  * Remove newly created Project folder with content
  */
 
 export async function removeProjectFolder(projectPath: string): Promise<void> {
   try {
-     /* Read all files and subdirectories in the folder */
+    await fs.accessSync(projectPath);
     const projectFiles = await fs.readdirSync(projectPath);
-    
-    /* Remove each file and subdirectory */
     await Promise.all(
       projectFiles.map(async (projectFile) => {
             const projectFilePath = path.join(projectPath, projectFile);
-            const stats = await fs.lstatSync(projectFilePath); // Use lstat from fs/promises
+            const stats = await fs.lstatSync(projectFilePath); 
             
             if (stats.isDirectory()) {
-                /* Recursively remove subdirectory */
                 await removeProjectFolder(projectFilePath);
             } else {
-                /* Remove file */
                 await fs.unlinkSync(projectFilePath);
             }
         })
     );
-  
-    /* Remove the now-empty directory */
     await fs.rmdirSync(projectPath);
-    // console.log(`Successfully removed Project folder: ${projectPath}`);
   } catch (error) {
       console.error(`Error removing project folder: ${error}`);
   }
