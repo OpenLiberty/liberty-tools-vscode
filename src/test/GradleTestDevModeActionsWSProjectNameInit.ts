@@ -6,9 +6,9 @@ import * as utils from './utils/testUtils';
 describe('Open Gradle Project - Project name with space', () => {
 
     let driver: WebDriver;  
+    utils.renameProject();
 
     before(() => {    
-        utils.renameProject();
         driver = VSBrowser.instance.driver;  
        
     });
