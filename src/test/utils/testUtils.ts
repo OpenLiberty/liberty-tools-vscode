@@ -192,4 +192,76 @@ export async function clearCommandPalette() {
   expect(buttons.length).equals(2);
   await dialog.pushButton('Clear');
 }
-  
+/**
+ * Function return project path with space
+ */
+export function getMvnProjectDirWithSpace(): any {
+   
+  const mavenProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","maven project", "liberty.maven.test.wrapper.app");
+      
+  console.log("Maven project path is  ",mavenProjectPath);
+  return mavenProjectPath;
+}  
+/*
+* Create new maven project with space in the directory
+*/
+export function createMvnProjectPathWithSpace(): void {
+ const existingMavenProjectPath = path.join(__dirname, "..","..","..","src", "test","resources");  
+
+ const sourcepath=path.join(existingMavenProjectPath, 'maven');
+ const mavenProjectFolder = path.join(existingMavenProjectPath, 'maven project'); 
+
+ /* function will copy Maven project from existing Maven project */
+ copyDirectoryAndProject(sourcepath, mavenProjectFolder);
+ const mavenProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","maven project", "liberty.maven.test.wrapper.app");
+ console.log("Maven project copy created - path: ",mavenProjectPath);
+ 
+}
+/**
+ * Function to create new folder and create a copy of the project
+ */
+async function copyDirectoryAndProject(src : string, dest : string){
+  try {
+      await fs.mkdirSync(dest, { recursive: true });
+
+      const projectFiles = await fs.readdirSync(src, { withFileTypes: true });
+
+      for (const projectFile of projectFiles) {
+          const srcPath = path.join(src, projectFile.name);
+          const destPath = path.join(dest, projectFile.name);
+
+          if (projectFile.isDirectory()) {
+              await copyDirectoryAndProject(srcPath, destPath);
+          } else {
+            await fs.copyFileSync(srcPath, destPath);
+        }
+      }
+  } catch (err) {
+      console.error(`Error copying project directory: ${err}`);
+  }
+}
+/**
+ * Remove newly created Project folder with content
+ */
+
+export async function removeProjectFolder(projectPath: string): Promise<void> {
+  try {
+    await fs.accessSync(projectPath);
+    const projectFiles = await fs.readdirSync(projectPath);
+    await Promise.all(
+      projectFiles.map(async (projectFile) => {
+            const projectFilePath = path.join(projectPath, projectFile);
+            const stats = await fs.lstatSync(projectFilePath); 
+
+            if (stats.isDirectory()) {
+                await removeProjectFolder(projectFilePath);
+            } else {
+                await fs.unlinkSync(projectFilePath);
+            }
+        })
+    );
+    await fs.rmdirSync(projectPath);
+  } catch (error) {
+      console.error(`Error removing project folder: ${error}`);
+  }
+}
