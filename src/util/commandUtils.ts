@@ -213,13 +213,13 @@ function getGradleCommandsForWin(gradleCmdStart: string, buildGradlePath: string
  * Reused from vscode-maven
  * https://github.com/microsoft/vscode-maven/blob/2ab8f392f418c8e0fe2903387f2b0013a1c50e78/src/utils/mavenUtils.ts
  */
-export function isWin(): boolean {
+function isWin(): boolean {
     return process.platform.startsWith("win");
 }
 
 
 // return Maven executable path, Maven wrapper, or mvn
-export async function mvnCmd(pomPath: string): Promise<string> {
+async function mvnCmd(pomPath: string): Promise<string> {
     const preferMavenWrapper: boolean | undefined = vscode.workspace.getConfiguration("maven").get<boolean>("executable.preferMavenWrapper");
     if (preferMavenWrapper) {
         const localMvnwPath: string | undefined = await getLocalMavenWrapper(Path.dirname(pomPath));
@@ -230,7 +230,7 @@ export async function mvnCmd(pomPath: string): Promise<string> {
     return "mvn";
 }
 
-export async function gradleCmd(buildGradle: string): Promise<string> {
+async function gradleCmd(buildGradle: string): Promise<string> {
     const preferGradleWrapper: boolean | undefined = vscode.workspace.getConfiguration("java").get<boolean>("import.gradle.wrapper.enabled");
     if (preferGradleWrapper) {
         const localGradlewPath: string | undefined = await getLocalGradleWrapper(Path.dirname(buildGradle));
@@ -246,7 +246,7 @@ export async function gradleCmd(buildGradle: string): Promise<string> {
  * https://github.com/microsoft/vscode-maven/blob/2ab8f392f418c8e0fe2903387f2b0013a1c50e78/src/utils/mavenUtils.ts
  * @param projectFolder
  */
-export async function getLocalMavenWrapper(projectFolder: string): Promise<string | undefined> {
+async function getLocalMavenWrapper(projectFolder: string): Promise<string | undefined> {
 
     let current: string = projectFolder;
     while (Path.basename(current)) {
@@ -264,7 +264,7 @@ export async function getLocalMavenWrapper(projectFolder: string): Promise<strin
  * Modified from vscode-maven, see getLocalMavenWrapper method above
  * @param projectFolder
  */
-export async function getLocalGradleWrapper(projectFolder: string): Promise<string | undefined> {
+async function getLocalGradleWrapper(projectFolder: string): Promise<string | undefined> {
 
     let current: string = projectFolder;
     while (Path.basename(current)) {
