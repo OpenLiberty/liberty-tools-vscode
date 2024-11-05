@@ -3,8 +3,9 @@ import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView,Defau
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
+// import { after } from 'mocha';
 
-describe('Devmode action tests for Gradle Project- Project name with space', () => {
+describe('Devmode action tests for Gradle Project - path with space', () => {
     let sidebar: SideBarView;
     let debugView: DebugView;
     let section: ViewSection;
@@ -17,33 +18,33 @@ describe('Devmode action tests for Gradle Project- Project name with space', () 
     });
 
 it('getViewControl works with the correct label',  async() => { 
-   
+
    const contentPart = sidebar.getContent();
    section = await contentPart.getSection('Liberty Dashboard');   
    console.log("Found Liberty Dashboard....");
    expect(section).not.undefined; 
- 
+
 }).timeout(25000);
 
 
 it('Open dasboard shows items - Gradle', async () => {
 
-      
-    await utils.delay(85000);
+
+    await utils.delay(65000);
     await section.expand(); 
     await utils.delay(6000);
     const menu = await section.getVisibleItems();            
     expect(menu).not.empty;     
-    item = await section.findItem(constants.GRADLE_PROJECT_WSP) as DefaultTreeItem;   
+    item = await section.findItem(constants.GRADLE_PROJECT) as DefaultTreeItem;   
     expect(item).not.undefined;   
-   
-    
+
+
 }).timeout(300000);
 
 
 it('Start gradle project from liberty dashboard', async () => {      
-    
-  
+
+
   await utils.launchDashboardAction(item,constants.START_DASHBOARD_ACTION,constants.START_DASHBOARD_MAC_ACTION);  
   await utils.delay(30000);
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
@@ -62,12 +63,12 @@ it('Start gradle project from liberty dashboard', async () => {
     expect (serverStopStatus).to.be.true;
 }
  expect (serverStartStatus).to.be.true; 
- 
-    
+
+
 }).timeout(350000);
 
 it('Run tests for gradle project', async () => {  
-  
+
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
   await utils.delay(30000);  
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
@@ -89,14 +90,14 @@ it('Run tests for gradle project', async () => {
     expect (testStatus).to.be.true;
 }
  expect (serverStartStatus).to.be.true; 
- 
-    
+
+
 }).timeout(350000);
 
 
 it('start gradle with options from liberty dashboard', async () => {      
-    
-  const reportPath = path.join(utils.getNewGradleProjectNameWithSpace(),"build", "reports", "tests", "test", "index.html");
+
+  const reportPath = path.join(utils.getGradleProjectPathDirWithSpace(),"build", "reports", "tests", "test", "index.html");
   const deleteReport = await utils.deleteReports(reportPath);
   expect (deleteReport).to.be.true;
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
@@ -120,12 +121,12 @@ it('start gradle with options from liberty dashboard', async () => {
     expect (checkFile).to.be.true;    
 }
  expect (serverStartStatus).to.be.true;
-    
+
 }).timeout(550000);
 
 it('start gradle with history from liberty dashboard', async () => {  
 
-  const reportPath = path.join(utils.getNewGradleProjectNameWithSpace(),"build", "reports", "tests", "test", "index.html");
+  const reportPath = path.join(utils.getGradleProjectPathDirWithSpace(),"build", "reports", "tests", "test", "index.html");
   const deleteReport = await utils.deleteReports(reportPath);
   expect (deleteReport).to.be.true;  
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);  
@@ -150,7 +151,7 @@ it('start gradle with history from liberty dashboard', async () => {
     expect (checkFile).to.be.true;
 }
  expect (serverStartStatus).to.be.true;
-    
+
 }).timeout(350000);
 
 it('attach debugger for gradle with custom parameter event', async () => {
@@ -161,7 +162,7 @@ it('attach debugger for gradle with custom parameter event', async () => {
     await utils.launchDashboardAction(item,constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
     await utils.setCustomParameter("-DdebugPort=7777");   
     await utils.delay(30000);
-    
+
     isServerRunning = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
     if (!isServerRunning)
       console.log("Server started with params message not found in terminal");
@@ -172,7 +173,7 @@ it('attach debugger for gradle with custom parameter event', async () => {
     await utils.delay(8000);
     const contentPart = debugView.getContent();
     //console.log("Get Content");
-    
+
     let mysecarry: Promise<ViewSection[]> = contentPart.getSections();    
     let mysecmap: IterableIterator<[number, ViewSection]> = (await mysecarry).entries();
     for (const [key, value] of (mysecmap)) {
@@ -203,14 +204,14 @@ it('attach debugger for gradle with custom parameter event', async () => {
 }).timeout(550000);
 
 it('start gradle with docker from liberty dashboard', async () => {     
-  
+
   if((process.platform === 'darwin' ) || (process.platform === 'win32') || (process.platform == 'linux'))
   {
     //skip running for platforms , enable them for linux after resolving docker setup in GHA
     return true;
   }
-    
-  
+
+
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);  
   await utils.delay(60000);
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
@@ -229,8 +230,8 @@ it('start gradle with docker from liberty dashboard', async () => {
     expect (serverStopStatus).to.be.true;
 }
  expect (serverStartStatus).to.be.true; 
- 
-    
+
+
 }).timeout(350000);
 
 it('View test report for gradle project', async () => {      
@@ -240,12 +241,12 @@ it('View test report for gradle project', async () => {
     //skip running for platforms , enable once https://github.com/OpenLiberty/liberty-tools-vscode/issues/266 is resolved
     return true;
   }
-    
+
   await utils.launchDashboardAction(item,constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
  // expect (tabs[1]], "Gradle test report not found").to.equal(constants.GRADLE_TEST_REPORT_TITLE);
  expect (tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE)>-1, "Gradle test report not found").to.equal(true); 
-    
+
 }).timeout(30000);
 
 
@@ -255,11 +256,10 @@ it('Clear Command Palatte', async () => {
 }).timeout(100000);
 
 after(() => {
-  const gradleProjectPath = path.join(__dirname,"..","..","src", "test","resources","gradleproject");
+  const gradleProjectPath = path.join(__dirname,"..","..","src", "test","resources","gradle project");
   console.log("Current path __dirname: "+ __dirname);
   console.log("Removing project from the path: "+ gradleProjectPath);
   utils.removeProjectFolder(gradleProjectPath);  
 });
 
 });
-

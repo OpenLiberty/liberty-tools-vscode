@@ -238,3 +238,50 @@ export async function removeProjectFolder(projectPath: string): Promise<void> {
       console.error(`Error removing project folder: ${error}`);
   }
 }
+/**
+ * Function return project path with space
+ */
+export function getGradleProjectPathDirWithSpace(): any {
+  const gradleProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","gradle project", "liberty.gradle.test.wrapper.app");   
+  console.log("Gradle project path is: "+gradleProjectPath);
+
+  return gradleProjectPath;
+}
+/**
+ * Create new gradle project with space in the directory
+ */
+export function createGradleProjectPathWithSpace(): void {
+  const existingGradleProjectPath = path.join(__dirname, "..","..","..","src", "test","resources");  
+
+  const sourcepath=path.join(existingGradleProjectPath, 'gradle');
+  const gradleProjectFolder = path.join(existingGradleProjectPath, 'gradle project'); 
+
+  /* function will copy gradle project from existing gradle project */
+  copyDirectoryAndProject(sourcepath, gradleProjectFolder);
+  const gradleProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","gradle project", "liberty.gradle.test.wrapper.app");
+  console.log("Gradle project copy created - path: "+gradleProjectPath);
+
+}  
+/**
+ * Function to create new folder and create a copy of the project
+ */
+async function copyDirectoryAndProject(src : string, dest : string){
+  try {
+      await fs.mkdirSync(dest, { recursive: true });
+
+      const projectFiles = await fs.readdirSync(src, { withFileTypes: true });
+
+      for (const projectFile of projectFiles) {
+          const srcPath = path.join(src, projectFile.name);
+          const destPath = path.join(dest, projectFile.name);
+
+          if (projectFile.isDirectory()) {
+              await copyDirectoryAndProject(srcPath, destPath);
+          } else {
+            await fs.copyFileSync(srcPath, destPath);
+        }
+      }
+  } catch (err) {
+      console.error(`Error copying project directory: ${err}`);
+  }
+}
