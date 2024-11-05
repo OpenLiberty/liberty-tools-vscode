@@ -5,7 +5,7 @@ import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/consta
 import { MapContextMenuforMac } from './macUtils';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
-import * as fsextra from 'fs-extra';
+import * as fse from 'fs-extra';
 
 export function delay(millisec: number) {
     return new Promise( resolve => setTimeout(resolve, millisec) );
@@ -208,7 +208,7 @@ export function getNewGradleProjectNameWithSpace(): any {
  */
 
 export async function  renameProject(): Promise<void>{
-    fsextra.copy(getGradleProjectPath(),getNewGradleProjectNameWithSpace())
+  fse.copy(getGradleProjectPath(),getNewGradleProjectNameWithSpace())
     .then(()=> console.log("Project renamed.,  Gradle Project path is :"+getNewGradleProjectNameWithSpace()))
     .catch(err => console.log("Error renaming the project"));  
   }
