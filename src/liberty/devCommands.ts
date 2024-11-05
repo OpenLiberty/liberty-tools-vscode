@@ -18,7 +18,6 @@ import { LibertyProject, ProjectProvider } from "./libertyProject";
 import { getReport, filterProjects } from "../util/helperUtil";
 import { COMMAND_TITLES, LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_SERVER_ENV_PORT_REGEX } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
-import { pathExists } from "fs-extra";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
 import { getCommandForMaven, getCommandForGradle } from "../util/commandUtils";
@@ -525,75 +524,4 @@ export function deleteTerminal(terminal: vscode.Terminal): void {
     } catch {
         console.error(localize("unable.to.delete.terminal", terminal.name));
     }
-}
-
-
-// return Maven executable path, Maven wrapper, or mvn
-export async function mvnCmd(pomPath: string): Promise<string> {
-    const preferMavenWrapper: boolean | undefined = vscode.workspace.getConfiguration("maven").get<boolean>("executable.preferMavenWrapper");
-    if (preferMavenWrapper) {
-        const localMvnwPath: string | undefined = await getLocalMavenWrapper(Path.dirname(pomPath));
-        if (localMvnwPath) {
-            return `${localMvnwPath}`;
-        }
-    }
-    return "mvn";
-}
-
-export async function gradleCmd(buildGradle: string): Promise<string> {
-    const preferGradleWrapper: boolean | undefined = vscode.workspace.getConfiguration("java").get<boolean>("import.gradle.wrapper.enabled");
-    if (preferGradleWrapper) {
-        const localGradlewPath: string | undefined = await getLocalGradleWrapper(Path.dirname(buildGradle));
-        if (localGradlewPath) {
-            return `${localGradlewPath}`;
-        }
-    }
-    return "gradle";
-}
-
-/**
- * Search for potential Maven wrapper, return undefined if does not exist
- *
- * Reused from vscode-maven
- * https://github.com/microsoft/vscode-maven/blob/2ab8f392f418c8e0fe2903387f2b0013a1c50e78/src/utils/mavenUtils.ts
- * @param projectFolder
- */
-async function getLocalMavenWrapper(projectFolder: string): Promise<string | undefined> {
-   
-    let current: string = projectFolder;
-    while (Path.basename(current)) {
-        const potentialMvnwPath: string = Path.join(current);
-
-        if (await pathExists(potentialMvnwPath)) {
-            return potentialMvnwPath;
-        }
-        current = Path.dirname(current);
-    }
-    return undefined;
-}
-
-/**
- * Search for potential Gradle wrapper, return undefined if it does not exist
- * Modified from vscode-maven, see getLocalMavenWrapper method above
- * @param projectFolder
- */
-async function getLocalGradleWrapper(projectFolder: string): Promise<string | undefined> {
-
-    let current: string = projectFolder;
-    while (Path.basename(current)) {
-       const potentialGradlewPath: string = Path.join(current);
-        if (await pathExists(potentialGradlewPath)) {
-            return potentialGradlewPath;
-        }
-        current = Path.dirname(current);
-    }
-    return undefined;
-}
-
-/**
- * Reused from vscode-maven
- * https://github.com/microsoft/vscode-maven/blob/2ab8f392f418c8e0fe2903387f2b0013a1c50e78/src/utils/mavenUtils.ts
- */
-export function isWin(): boolean {
-    return process.platform.startsWith("win");
 }
