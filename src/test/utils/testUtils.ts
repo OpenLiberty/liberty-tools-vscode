@@ -285,3 +285,28 @@ async function copyDirectoryAndProject(src : string, dest : string){
       console.error(`Error copying project directory: ${err}`);
   }
 }
+/**
+ * Function return project path with space
+ */
+export function getMvnProjectDirWithSpace(): any {
+
+  const mavenProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","maven project", "liberty.maven.test.wrapper.app");
+
+  console.log("Maven project path is  ",mavenProjectPath);
+  return mavenProjectPath;
+}  
+/*
+* Create new maven project with space in the directory
+*/
+export function createMvnProjectPathWithSpace(): void {
+ const existingMavenProjectPath = path.join(__dirname, "..","..","..","src", "test","resources");  
+
+ const sourcepath=path.join(existingMavenProjectPath, 'maven');
+ const mavenProjectFolder = path.join(existingMavenProjectPath, 'maven project'); 
+
+ /* function will copy Maven project from existing Maven project */
+ copyDirectoryAndProject(sourcepath, mavenProjectFolder);
+ const mavenProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","maven project", "liberty.maven.test.wrapper.app");
+ console.log("Maven project copy created - path: ",mavenProjectPath);
+
+}
