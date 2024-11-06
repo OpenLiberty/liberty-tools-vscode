@@ -490,7 +490,7 @@ export async function openReport(reportType: string, libProject?: LibertyProject
         if (path !== undefined) {
             let report: any;
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                report = getReportFile(path,"reports",reportType+".html");
+                report = getReportFile(path, "reports", reportType + ".html");
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
                 report = await getGradleTestReport(libProject.path, path);
             }
@@ -504,9 +504,9 @@ export async function openReport(reportType: string, libProject?: LibertyProject
             */
             if(libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER){
                 console.log("report path ::"+report)
-                if(!await checkReportAndDisplay(report,reportType,reportTypeLabel,libProject)){
-                    report = getReportFile(path,"site",reportType+"-report.html");
-                    if(!await checkReportAndDisplay(report,reportType,reportTypeLabel,libProject)){
+                if(!await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject)){
+                    report = getReportFile(path, "site", reportType + "-report.html");
+                    if(!await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject)){
                         const message = localize("test.report.does.not.exist.run.test.first", report);
                         vscode.window.showInformationMessage(message);
                     }     
@@ -514,7 +514,7 @@ export async function openReport(reportType: string, libProject?: LibertyProject
             /*
             if its a gralde project, then check existance for the report in the path set and if not display prompt for its non existance
             */
-            }else if(!await checkReportAndDisplay(report,reportType,reportTypeLabel,libProject)){
+            }else if(!await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject)){
                         const message = localize("test.report.does.not.exist.run.test.first", report);
                         vscode.window.showInformationMessage(message);
                     }
@@ -623,15 +623,15 @@ function isWin(): boolean {
 will return the path of the report, since there are diffrent folders to look into and the file names can be different 
 we need to get the paths to look for dynamically
 */
-function getReportFile(path :any,dir :string,filename:string):any{
-    return Path.join(path,"target",dir, filename);
+function getReportFile(path : any, dir : string, filename : string) : any{
+    return Path.join(path, "target", dir, filename);
 }
 
 /*
 Function will check if the report is available within the given path and returns a boolean based on it and also 
   the report will be displayed if it is available
 */
-function checkReportAndDisplay(report : any,reportType : string,reportTypeLabel: string,libProject :LibertyProject): Promise<boolean> {
+function checkReportAndDisplay(report : any, reportType : string, reportTypeLabel : string, libProject : LibertyProject) : Promise<boolean> {
     return new Promise((resolve) => {
       fs.exists(report, (exists) => {
         if(exists){
