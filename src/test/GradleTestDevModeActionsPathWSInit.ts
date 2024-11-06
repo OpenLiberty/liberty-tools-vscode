@@ -11,26 +11,28 @@
 import { WebDriver, VSBrowser } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 
-describe('Open Maven Project - path with space', () => {
+describe('Open Gradle Project - Project name with space', () => {
 
     let driver: WebDriver;
 
     before(() => {
 
-        driver = VSBrowser.instance.driver;
-
         /**
-         * Create new maven project with space in the directory
+         * Create new gradle project name with space in the directory
          */
 
-        utils.createMvnProjectPathWithSpace();
+        utils.getRenamedProject();
+        driver = VSBrowser.instance.driver;
 
     });
 
-    it('Open Sample Maven Project - path with space', async () => {
+    it('Open Sample Gradle Project - Project name with space', async () => {
 
-        await VSBrowser.instance.openResources(utils.getMvnProjectDirWithSpace());
+        await utils.delay(8000);
+        await VSBrowser.instance.openResources(utils.getGradleProjectPathWithSpace());
 
-    }).timeout(15000);
+    }).timeout(25000);
 
 });
+
+

@@ -165,8 +165,6 @@ export function getMvnProjectPath(): string {
     return foundText;
   }
 
-  
-
 /* Stop Server Liberty dashboard post Attach Debugger*/
 /* As the Window view changes using command to stop server instead of devmode action */
 export async function stopLibertyserver() {
@@ -197,8 +195,8 @@ export async function clearCommandPalette() {
 /**
  * Function return project name with space
  */
-export function getNewGradleProjectNameWithSpace(): any {
-  const gradleProjectPath = path.join(__dirname, "..","..","..","src","test","resources","gradleproject", "liberty.gradle.te st.wrapper.app");
+export function getGradleProjectPathWithSpace(): any {
+  const gradleProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "gradle project", "liberty.gradle.te st.wrapper.app");
 
   return gradleProjectPath;
 }
@@ -207,11 +205,11 @@ export function getNewGradleProjectNameWithSpace(): any {
  * Create new gradle project name with space in the directory
  */
 
-export async function  renameProject(): Promise<void>{
-  fse.copy(getGradleProjectPath(),getNewGradleProjectNameWithSpace())
-    .then(()=> console.log("Project renamed.,  Gradle Project path is :"+getNewGradleProjectNameWithSpace()))
-    .catch(err => console.log("Error renaming the project"));  
-  }
+export async function getRenamedProject(): Promise<void> {
+  fse.copy(getGradleProjectPath(), getGradleProjectPathWithSpace())
+    .then(() => console.log("Project renamed.,  Gradle Project path is :" + getGradleProjectPathWithSpace()))
+    .catch(err => console.log("Error renaming the project"));
+}
 
 /**
  * Remove newly created Project folder with content
@@ -223,66 +221,43 @@ export async function removeProjectFolder(projectPath: string): Promise<void> {
     const projectFiles = await fs.readdirSync(projectPath);
     await Promise.all(
       projectFiles.map(async (projectFile) => {
-            const projectFilePath = path.join(projectPath, projectFile);
-            const stats = await fs.lstatSync(projectFilePath); 
-            
-            if (stats.isDirectory()) {
-                await removeProjectFolder(projectFilePath);
-            } else {
-                await fs.unlinkSync(projectFilePath);
-            }
-        })
+        const projectFilePath = path.join(projectPath, projectFile);
+        const stats = await fs.lstatSync(projectFilePath);
+
+        if (stats.isDirectory()) {
+          await removeProjectFolder(projectFilePath);
+        } else {
+          await fs.unlinkSync(projectFilePath);
+        }
+      })
     );
     await fs.rmdirSync(projectPath);
   } catch (error) {
-      console.error(`Error removing project folder: ${error}`);
+    console.error(`Error removing project folder: ${error}`);
   }
 }
-/**
- * Function return project path with space
- */
-export function getGradleProjectPathDirWithSpace(): any {
-  const gradleProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","gradle project", "liberty.gradle.test.wrapper.app");   
-  console.log("Gradle project path is: "+gradleProjectPath);
 
-  return gradleProjectPath;
-}
-/**
- * Create new gradle project with space in the directory
- */
-export function createGradleProjectPathWithSpace(): void {
-  const existingGradleProjectPath = path.join(__dirname, "..","..","..","src", "test","resources");  
-
-  const sourcepath=path.join(existingGradleProjectPath, 'gradle');
-  const gradleProjectFolder = path.join(existingGradleProjectPath, 'gradle project'); 
-
-  /* function will copy gradle project from existing gradle project */
-  copyDirectoryAndProject(sourcepath, gradleProjectFolder);
-  const gradleProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","gradle project", "liberty.gradle.test.wrapper.app");
-  console.log("Gradle project copy created - path: "+gradleProjectPath);
-
-}  
 /**
  * Function to create new folder and create a copy of the project
  */
-async function copyDirectoryAndProject(src : string, dest : string){
+async function copyDirectoryAndProject(src: string, dest: string) {
   try {
-      await fs.mkdirSync(dest, { recursive: true });
+    await fs.mkdirSync(dest, { recursive: true });
 
-      const projectFiles = await fs.readdirSync(src, { withFileTypes: true });
+    const projectFiles = await fs.readdirSync(src, { withFileTypes: true });
 
-      for (const projectFile of projectFiles) {
-          const srcPath = path.join(src, projectFile.name);
-          const destPath = path.join(dest, projectFile.name);
+    for (const projectFile of projectFiles) {
+      const srcPath = path.join(src, projectFile.name);
+      const destPath = path.join(dest, projectFile.name);
 
-          if (projectFile.isDirectory()) {
-              await copyDirectoryAndProject(srcPath, destPath);
-          } else {
-            await fs.copyFileSync(srcPath, destPath);
-        }
+      if (projectFile.isDirectory()) {
+        await copyDirectoryAndProject(srcPath, destPath);
+      } else {
+        await fs.copyFileSync(srcPath, destPath);
       }
+    }
   } catch (err) {
-      console.error(`Error copying project directory: ${err}`);
+    console.error(`Error copying project directory: ${err}`);
   }
 }
 /**
@@ -290,23 +265,23 @@ async function copyDirectoryAndProject(src : string, dest : string){
  */
 export function getMvnProjectDirWithSpace(): any {
 
-  const mavenProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","maven project", "liberty.maven.test.wrapper.app");
+  const mavenProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "maven project", "liberty.maven.test.wrapper.app");
 
-  console.log("Maven project path is  ",mavenProjectPath);
+  console.log("Maven project path is  ", mavenProjectPath);
   return mavenProjectPath;
-}  
+}
 /*
 * Create new maven project with space in the directory
 */
 export function createMvnProjectPathWithSpace(): void {
- const existingMavenProjectPath = path.join(__dirname, "..","..","..","src", "test","resources");  
+  const existingMavenProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources");
 
- const sourcepath=path.join(existingMavenProjectPath, 'maven');
- const mavenProjectFolder = path.join(existingMavenProjectPath, 'maven project'); 
+  const sourcepath = path.join(existingMavenProjectPath, 'maven');
+  const mavenProjectFolder = path.join(existingMavenProjectPath, 'maven project');
 
- /* function will copy Maven project from existing Maven project */
- copyDirectoryAndProject(sourcepath, mavenProjectFolder);
- const mavenProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","maven project", "liberty.maven.test.wrapper.app");
- console.log("Maven project copy created - path: ",mavenProjectPath);
+  /* function will copy Maven project from existing Maven project */
+  copyDirectoryAndProject(sourcepath, mavenProjectFolder);
+  const mavenProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "maven project", "liberty.maven.test.wrapper.app");
+  console.log("Maven project copy created - path: ", mavenProjectPath);
 
 }
