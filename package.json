@@ -241,10 +241,8 @@
 		"test": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/*.js'",
 		"test-mac-maven":"npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/M*.js'",
 		"test-mac-gradle": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js'",
-		"test-mac-project-path-maven-WSPath": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/MavenTestDevModeActionsWSPath*.js'",
-		"test-mac-project-path-gradle-WSPath": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/GradleTestPathDevModeActionsWS*.js'",
-		"test-mac-project-path-gradle-WSProject": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/GradleTestDevModeActionsWSProjectName*.js'"
-		
+		"test-mac-maven-project-with-space": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/MavenTestDevModeActionsWSPath*.js'",
+		"test-mac-gradle-project-with-space": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/GradleTestDevModeActionsPathWS*.js'"	
 	},
 	"devDependencies": {
 		"@types/chai": "^4.3.4",
