@@ -1,7 +1,7 @@
 import path = require('path');
 import { Workbench, InputBox, DefaultTreeItem, ModalDialog } from 'vscode-extension-tester';
 import * as fs from 'fs';
-import { GRADLE_PROJECT, MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
+import { STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
