@@ -504,20 +504,15 @@ export async function openReport(reportType: string, libProject?: LibertyProject
             */
             if(libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER){
                 console.log("report path ::"+report)
-                if(!await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject)){
+                if(!await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, "reports")){
                     report = getReportFile(path, "site", reportType + "-report.html");
-                    if(!await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject)){
-                        const message = localize("test.report.does.not.exist.run.test.first", report);
-                        vscode.window.showInformationMessage(message);
-                    }     
+                    await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, "site")     
                 }
             /*
-            if its a gralde project, then check existance for the report in the path set and if not display prompt for its non existance
+            if its a gradle project, then check existance for the report in the path set and if not display prompt for its non existance
             */
-            }else if(!await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject)){
-                        const message = localize("test.report.does.not.exist.run.test.first", report);
-                        vscode.window.showInformationMessage(message);
-                    }
+            }else 
+                await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject,"")
 
         }
     } else if (ProjectProvider.getInstance() && reportType) {
@@ -631,7 +626,7 @@ function getReportFile(path : any, dir : string, filename : string) : any{
 Function will check if the report is available within the given path and returns a boolean based on it and also 
   the report will be displayed if it is available
 */
-function checkReportAndDisplay(report : any, reportType : string, reportTypeLabel : string, libProject : LibertyProject) : Promise<boolean> {
+function checkReportAndDisplay(report : any, reportType : string, reportTypeLabel : string, libProject : LibertyProject, directory : string) : Promise<boolean> {
     return new Promise((resolve) => {
       fs.exists(report, (exists) => {
         if(exists){
@@ -642,6 +637,16 @@ function checkReportAndDisplay(report : any, reportType : string, reportTypeLabe
                 {}, // Webview options
             );
             panel.webview.html = getReport(report); // display HTML content
+            /*
+            For maven projects we need to check for the report in 'reports' and 'site', we only need to show the message if it is not 
+            available in both the locations, below condition make sure to avoid the message when its a maven project and the directory 
+            is 'reports'
+            */ 
+        }else if(!((libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) 
+                    && directory=="reports")){
+
+                const message = localize("test.report.does.not.exist.run.test.first", report);
+                vscode.window.showInformationMessage(message);
         }
         console.log("report available::"+exists);
         resolve(exists);
