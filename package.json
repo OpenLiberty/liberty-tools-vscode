@@ -240,7 +240,8 @@
 		"buildJakarta": "gulp buildJakartaJdt buildJakartaLs",
 		"test": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/*.js'",
 		"test-mac-maven":"npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/M*.js'",
-		"test-mac-gradle": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js'"
+		"test-mac-gradle": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js'",
+		"test-lsp4jakarta": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/GradleSingle*.js'"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.3.4",
