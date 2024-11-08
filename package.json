@@ -53,7 +53,7 @@
 			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.2.1.jar"
 		],
 		"xml.javaExtensions": [
-			"./jars/liberty-langserver-lemminx-2.1.1-jar-with-dependencies.jar"
+			"./jars/liberty-langserver-lemminx-2.2-jar-with-dependencies.jar"
 		],
 		"views": {
 			"explorer": [
