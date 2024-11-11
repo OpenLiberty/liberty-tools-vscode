@@ -16,48 +16,19 @@ import { pathExists } from "fs-extra";
  * Reused from vscode-maven
  * https://github.com/microsoft/vscode-maven/blob/main/src/mavenTerminal.ts
  */
-enum ShellType {
+export enum ShellType {
     CMD = "Command Prompt",
     POWERSHELL = "PowerShell",
     GIT_BASH = "Git Bash",
     WSL = "WSL Bash",
     OTHERS = "Others"
 }
-/**
- * Reused from vscode-maven
- * https://github.com/microsoft/vscode-maven/blob/main/src/mavenTerminal.ts
- */
-function currentWindowsShell(): ShellType {
-    const currentWindowsShellPath: string = vscode.env.shell;
-    const executable: string = Path.basename(currentWindowsShellPath);
-    switch (executable.toLowerCase()) {
-        case "cmd.exe":
-            return ShellType.CMD;
-        case "pwsh.exe":
-        case "powershell.exe":
-        case "pwsh": // pwsh on mac/linux
-            return ShellType.POWERSHELL;
-        case "bash.exe":
-        case 'git-cmd.exe':
-            return ShellType.GIT_BASH;
-        case 'wsl.exe':
-        case 'ubuntu.exe':
-        case 'ubuntu1804.exe':
-        case 'kali.exe':
-        case 'debian.exe':
-        case 'opensuse-42.exe':
-        case 'sles-12.exe':
-            return ShellType.WSL;
-        default:
-            return ShellType.OTHERS;
-    }
-}
 
 /**
  * Return the maven commands based on the OS and Terminal for start, startinContainer, start..
  */
 
-export async function getCommandForMaven(pomPath: string, command: string, customCommand?: string): Promise<string> {
+export async function getCommandForMaven(pomPath: string, command: string, terminalType?: string, customCommand?: string): Promise<string> {
 
     // attempt to use the Maven executable path, if empty try using mvn or mvnw according to the preferMavenWrapper setting
     const mavenExecutablePath: string | undefined = vscode.workspace.getConfiguration("maven").get<string>("executable.path");
@@ -80,7 +51,7 @@ export async function getCommandForMaven(pomPath: string, command: string, custo
     }
     //checking the OS type for command customization
     if (isWin()) {
-        switch (currentWindowsShell()) {
+        switch (terminalType) {
             case ShellType.GIT_BASH:
                 if (customCommand) {
                     return "cd \"" + mvnCmdStart + "\" && " + "./mvnw " + `${command}` + ` ${customCommand}`; //Bash 
@@ -130,7 +101,7 @@ export async function getCommandForMaven(pomPath: string, command: string, custo
  * Return the Gradle commands based on the OS and Terminal for start, startinContainer, start..
  */
 
-export async function getCommandForGradle(buildGradlePath: string, command: string, customCommand?: string): Promise<string> {
+export async function getCommandForGradle(buildGradlePath: string, command: string, terminalType?: String, customCommand?: string): Promise<string> {
     let gradleCmdStart = await gradleCmd(buildGradlePath);
 
     if (gradleCmdStart === "gradle") {
@@ -141,7 +112,7 @@ export async function getCommandForGradle(buildGradlePath: string, command: stri
     }
     //checking the OS type for command customization
     if (isWin()) {
-        return getGradleCommandsForWin(gradleCmdStart, buildGradlePath, command, customCommand);
+        return getGradleCommandsForWin(gradleCmdStart, buildGradlePath, command, terminalType, customCommand);
     } else {
         gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
         if (customCommand) {
@@ -172,8 +143,8 @@ function toDefaultWslPath(p: string): string {
  * Return the Gradle commands for windows OS based on the terminal configured
  */
 
-function getGradleCommandsForWin(gradleCmdStart: string, buildGradlePath: string, command: string, customCommand?: string): string {
-    switch (currentWindowsShell()) {
+function getGradleCommandsForWin(gradleCmdStart: string, buildGradlePath: string, command: string, terminalType?: String, customCommand?: string): string {
+    switch (terminalType) {
         case ShellType.GIT_BASH:
             gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
             if (customCommand) {
@@ -213,7 +184,7 @@ function getGradleCommandsForWin(gradleCmdStart: string, buildGradlePath: string
  * Reused from vscode-maven
  * https://github.com/microsoft/vscode-maven/blob/2ab8f392f418c8e0fe2903387f2b0013a1c50e78/src/utils/mavenUtils.ts
  */
-function isWin(): boolean {
+export function isWin(): boolean {
     return process.platform.startsWith("win");
 }
 

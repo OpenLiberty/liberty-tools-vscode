@@ -20,7 +20,7 @@ import { COMMAND_TITLES, LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
-import { getCommandForMaven, getCommandForGradle } from "../util/commandUtils";
+import { getCommandForMaven, getCommandForGradle,ShellType } from "../util/commandUtils";
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 
@@ -100,6 +100,8 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             const path = Path.dirname(libProject.getPath());
+            const terminalType = currentWindowsShell();
+            libProject.setTerminalType(terminalType);
             terminal = libProject.createTerminal(path);
             if (terminal !== undefined) {
                 terminals[Number(terminal.processId)] = libProject;
@@ -109,10 +111,10 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
             terminal.show();
             libProject.setTerminal(terminal);
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                const cmd = await getCommandForMaven(libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev");
+                const cmd = await getCommandForMaven(libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType());
                 terminal.sendText(cmd); // start dev mode on current project
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                const cmd = await getCommandForGradle(libProject.getPath(),"libertyDev");  
+                const cmd = await getCommandForGradle(libProject.getPath(),"libertyDev", libProject.getTerminalType());  
                 terminal.sendText(cmd); // start dev mode on current project
             }
         }
@@ -357,6 +359,8 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             const path = Path.dirname(libProject.getPath());
+            const terminalType = currentWindowsShell();
+            libProject.setTerminalType(terminalType);
             terminal = libProject.createTerminal(path);
             if (terminal !== undefined) {
                 terminals[Number(terminal.processId)] = libProject;
@@ -406,10 +410,10 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
                 }
 
                 if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                    const cmd = await getCommandForMaven(libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev",customCommand);
+                    const cmd = await getCommandForMaven(libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType(), customCommand);
                     terminal.sendText(cmd);
                 } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                    const cmd = await getCommandForGradle(libProject.getPath(),"libertyDev",customCommand);
+                    const cmd = await getCommandForGradle(libProject.getPath(),"libertyDev", libProject.getTerminalType(), customCommand);
                     terminal.sendText(cmd);
                 }
             }
@@ -430,6 +434,8 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             const path = Path.dirname(libProject.getPath());
+            const terminalType = currentWindowsShell();
+            libProject.setTerminalType(terminalType);
             terminal = libProject.createTerminal(path);
             if (terminal !== undefined) {
                 terminals[Number(terminal.processId)] = libProject;
@@ -439,10 +445,10 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
             terminal.show();
             libProject.setTerminal(terminal);
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                const cmd = await getCommandForMaven(libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:devc");
+                const cmd = await getCommandForMaven(libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:devc", libProject.getTerminalType());
                 terminal.sendText(cmd);
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                const cmd = await getCommandForGradle(libProject.getPath(),"libertyDevc");
+                const cmd = await getCommandForGradle(libProject.getPath(),"libertyDevc", libProject.getTerminalType());
                 terminal.sendText(cmd);
             }
         }
@@ -523,5 +529,36 @@ export function deleteTerminal(terminal: vscode.Terminal): void {
         libProject.deleteTerminal();
     } catch {
         console.error(localize("unable.to.delete.terminal", terminal.name));
+    }
+}
+
+/**
+ * Reused from vscode-maven
+ * https://github.com/microsoft/vscode-maven/blob/main/src/mavenTerminal.ts
+ */
+
+function currentWindowsShell(): ShellType {
+    const currentWindowsShellPath: string = vscode.env.shell;
+    const executable: string = Path.basename(currentWindowsShellPath);
+    switch (executable.toLowerCase()) {
+        case "cmd.exe":
+            return ShellType.CMD;
+        case "pwsh.exe":
+        case "powershell.exe":
+        case "pwsh": // pwsh on mac/linux
+            return ShellType.POWERSHELL;
+        case "bash.exe":
+        case 'git-cmd.exe':
+            return ShellType.GIT_BASH;
+        case 'wsl.exe':
+        case 'ubuntu.exe':
+        case 'ubuntu1804.exe':
+        case 'kali.exe':
+        case 'debian.exe':
+        case 'opensuse-42.exe':
+        case 'sles-12.exe':
+            return ShellType.WSL;
+        default:
+            return ShellType.OTHERS;
     }
 }
