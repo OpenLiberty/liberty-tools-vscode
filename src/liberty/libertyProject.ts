@@ -217,7 +217,10 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					'Save Workspace'
 				).then(async (selection) => {
 					if (selection === 'Save Workspace') {
+						//setting workspaceSaveInProgress to true and storing it in globalstate for identifyting that the workspace is saved and needs to 
+						//save the manually adde projects to the dashboard
 						await this._context.globalState.update('workspaceSaveInProgress',true);
+						//opens the saveWorkspace as dialog box
 						await vscode.commands.executeCommand('workbench.action.saveWorkspaceAs');
 					}else {
 						// No workspace save was initiated
