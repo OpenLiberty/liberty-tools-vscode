@@ -109,7 +109,11 @@ function registerCommands(context: ExtensionContext) {
 		projectProvider = new ProjectProvider(context);
 		ProjectProvider.setInstance(projectProvider);
 	}
-
+    if (projectProvider.getContext().globalState.get('workspaceSaveInProgress') && projectProvider.getContext().globalState.get('selectedProject') !== undefined) {
+        devCommands.addProjectsToTheDashBoard(projectProvider, projectProvider.getContext().globalState.get('selectedProject') as string);
+        projectProvider.getContext().globalState.update('workspaceSaveInProgress', false);
+        projectProvider.getContext().globalState.update('selectedProject', undefined);
+    }
     if (vscode.workspace.workspaceFolders !== undefined) {
         registerFileWatcher(projectProvider);
         vscode.window.registerTreeDataProvider("liberty-dev", projectProvider);
