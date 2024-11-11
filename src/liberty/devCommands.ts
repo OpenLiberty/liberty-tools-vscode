@@ -92,7 +92,6 @@ export async function listAllCommands(): Promise<void> {
     });
 }
 
-
 // start dev mode
 export async function startDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
@@ -100,7 +99,8 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             const path = Path.dirname(libProject.getPath());
-            const terminalType = currentWindowsShell();
+            //fetch the default terminal details and store it in LibertyProject object 
+            const terminalType = defaultWindowsShell();
             libProject.setTerminalType(terminalType);
             terminal = libProject.createTerminal(path);
             if (terminal !== undefined) {
@@ -359,7 +359,8 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             const path = Path.dirname(libProject.getPath());
-            const terminalType = currentWindowsShell();
+            //fetch the default terminal details and store it in LibertyProject object 
+            const terminalType = defaultWindowsShell();
             libProject.setTerminalType(terminalType);
             terminal = libProject.createTerminal(path);
             if (terminal !== undefined) {
@@ -434,7 +435,8 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
             const path = Path.dirname(libProject.getPath());
-            const terminalType = currentWindowsShell();
+            //fetch the default terminal details and store it in LibertyProject object 
+            const terminalType = defaultWindowsShell();
             libProject.setTerminalType(terminalType);
             terminal = libProject.createTerminal(path);
             if (terminal !== undefined) {
@@ -533,13 +535,14 @@ export function deleteTerminal(terminal: vscode.Terminal): void {
 }
 
 /**
- * Reused from vscode-maven
+ * Reused from vscode-maven - currentWindowsShell()
  * https://github.com/microsoft/vscode-maven/blob/main/src/mavenTerminal.ts
+ * method to fetch default terminal configured
  */
 
-function currentWindowsShell(): ShellType {
-    const currentWindowsShellPath: string = vscode.env.shell;
-    const executable: string = Path.basename(currentWindowsShellPath);
+function defaultWindowsShell(): ShellType {
+    const defaultWindowsShellPath: string = vscode.env.shell;
+    const executable: string = Path.basename(defaultWindowsShellPath);
     switch (executable.toLowerCase()) {
         case "cmd.exe":
             return ShellType.CMD;
