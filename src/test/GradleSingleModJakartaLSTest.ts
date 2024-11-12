@@ -18,6 +18,7 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         }
 
         editor.typeText("rest");
+        await utils.delay(6000);
 
         //open the assistant
         const assist = await editor.toggleContentAssist(true);
@@ -26,11 +27,13 @@ describe('LSP4Jakarta LS test for snippet test', () => {
 			// to select an item use
 			await assist.select('rest_class')
 		}
+        await utils.delay(6000);
 
 		// close the assistant
 		await editor.toggleContentAssist(false);
 
         const insertedCode = await editor.getText();
+        await utils.delay(6000);
         assert(insertedCode.includes('public String methodname() {'), 'Snippet rest_class was not inserted correctly.');
 
         await editor.clearText();
