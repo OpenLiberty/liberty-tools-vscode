@@ -9,8 +9,14 @@ describe('LSP4Jakarta LS test for snippet test', () => {
 
     it('check if correct code is inserted when rest_class snippet is triggered',  async() => {
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), "src", "main", "java", "test", "gradle", "liberty", "web", "app", "SystemResource.java"));
-        //editor.clear();
+        
         editor = await new EditorView().openEditor('SystemResource.java') as TextEditor;
+
+        const textPressent = await editor.getText();
+        if(textPressent.length > 0){
+            editor.clearText();
+        }
+
         editor.typeText("rest");
 
         //open the assistant
@@ -26,6 +32,9 @@ describe('LSP4Jakarta LS test for snippet test', () => {
 
         const insertedCode = await editor.getText();
         assert(insertedCode.includes('public String methodname() {'), 'Snippet rest_class was not inserted correctly.');
+
+        await editor.clearText();
+        await editor.save();
     }).timeout(275000);
 
 });
