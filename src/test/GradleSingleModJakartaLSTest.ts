@@ -1,5 +1,4 @@
-import { TextEditor, EditorView, SideBarView, VSBrowser } from 'vscode-extension-tester';
-import * as constants from './definitions/constants';
+import { TextEditor, EditorView, VSBrowser } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as path from 'path';
 import * as assert from 'assert';
@@ -9,7 +8,6 @@ describe('LSP4Jakarta LS test for snippet test', () => {
     let editor: TextEditor;
 
     it('check if correct code is inserted when rest_class snippet is triggered',  async() => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), "src", "main", "java", "test", "gradle", "liberty", "web", "app", "SystemResource.java"));
         //editor.clear();
         editor = await new EditorView().openEditor('SystemResource.java') as TextEditor;
