@@ -70,7 +70,14 @@ describe('LSP4Jakarta LS test for snippet test', () => {
             }
         });
         await utils.delay(5000);
+
         assert(privateMethodError, "Did not find diagnostic help text.");
+
+        // change back to original state
+        insertedCode = insertedCode.replace("private String", "public String");
+        await editor.clearText();
+        await editor.setText(insertedCode);
+        await utils.delay(2000);
 
     }).timeout(275000);
 
