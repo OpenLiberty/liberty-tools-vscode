@@ -49,32 +49,28 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         
         editor = await new EditorView().openEditor('SystemResource2.java') as TextEditor;
 
-        //await titleBar.select("Selection", "Select All");
-        //await titleBar.select("Edit", "Copy");
-
         let insertedCode = await editor.getText();
+        // change the resource method from public to private
         insertedCode = insertedCode.replace("public String", "private String");
         await editor.setText(insertedCode);
-
         await utils.delay(3000);
 
+        // opeining the problem window
         const problemsView = await bottomBar.openProblemsView();
+        // filtering the problems with type error
         const errors = await problemsView.getAllVisibleMarkers(MarkerType.Error);
         await utils.delay(3000);
         let privateMethodError = false;
+        // iterates through errors array and find whether the error Only public methods can be exposed as resource methods exists or not
         errors.forEach(async (value) => {
             const label = await value.getText();
             console.log("label: ", label);
-            if(label.includes("Error: Only public methods can be exposed as resource methods")){
+            if(label.includes("Only public methods can be exposed as resource methods")){
                 privateMethodError = true;
             }
         });
+        await utils.delay(5000);
         assert(privateMethodError, "Did not find diagnostic help text.");
-
-        // await titleBar.select("Selection", "Select All");
-        // await titleBar.select("Edit", "Paste");
-
-        utils.delay(10000);
 
     }).timeout(275000);
 
