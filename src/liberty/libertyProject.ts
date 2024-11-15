@@ -212,16 +212,22 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		return new Promise((resolve) => {
 			try {
 				vscode.window.showInformationMessage(
-					'You are currently in an untitled workspace. Would you like to save it?',
+					'Please save the workspace first, as manually added projects to the dashboard may not persist in the next VS Code session if the workspace is not saved.',
 					{ modal: true },
 					'Save Workspace'
 				).then(async (selection) => {
 					if (selection === 'Save Workspace') {
 						//setting workspaceSaveInProgress to true and storing it in globalstate for identifyting that the workspace is saved and needs to 
-						//save the manually adde projects to the dashboard
+						//save the manually added projects to the dashboard
 						await this._context.globalState.update('workspaceSaveInProgress',true);
 						//opens the saveWorkspace as dialog box
 						await vscode.commands.executeCommand('workbench.action.saveWorkspaceAs');
+						//after execution of above line , if save is opted the workspace reloads and reinitialisation of the workspace happens based on the 
+						//activation events in package.json, if cancel is opted then the workspace is not going to be saved 
+						//so below lines will clear workspaceSaveInProgress and selectedProject from the global state
+						await this._context.globalState.update('workspaceSaveInProgress',false);
+						await this._context.globalState.update('selectedProject',undefined);
+						resolve();
 					}else {
 						// No workspace save was initiated
 						resolve();

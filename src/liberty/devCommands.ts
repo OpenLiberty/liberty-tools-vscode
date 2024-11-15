@@ -619,7 +619,7 @@ function isWin(): boolean {
 /*
 Method adds a project which is selected by the user from the list to the liberty dashboard 
 */
-export async function addProjectsToTheDashBoard(projectProvider : ProjectProvider,selection:string): Promise<void>{
+export async function  addProjectsToTheDashBoard(projectProvider : ProjectProvider,selection:string): Promise<void>{
     const result = await projectProvider.addUserSelectedPath(selection,projectProvider.getProjects());
     const message = localize(`add.project.manually.message.${result}`, selection);
     (result !== 0) ? console.error(message) : console.info(message); projectProvider.fireChangeEvent();
