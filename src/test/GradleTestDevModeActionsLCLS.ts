@@ -24,7 +24,23 @@ describe('LCLS Test for Gradle Project', function () {
         await utils.delay(3000);
         LoggingTagElement.click();
         await editor.click();
+        const actions = VSBrowser.instance.driver.actions();
+        await actions.move({ origin: LoggingTagElement }).perform();
+        await utils.delay(3000);
 
+        const driver = VSBrowser.instance.driver;
+        const hoverValue = editor.findElement(By.className('hover-row status-bar'));
+        await utils.delay(2000);
+
+        const quickFixPopupLink = await hoverValue.findElement(By.xpath("//*[contains(text(), 'Quick Fix... (⌘.)')]"));
+        quickFixPopupLink.click();
+
+        const hoverBar = editor.findElement(By.className('context-view monaco-component bottom left fixed'));
+        const actionList = await hoverBar.findElement(By.className('actionList'));
+        actionList.click();
+
+        await utils.delay(2000);
+        
         const updatedContent = await editor.getText();
         await utils.delay(3000);
         console.log("Content after Quick fix : ", updatedContent);
