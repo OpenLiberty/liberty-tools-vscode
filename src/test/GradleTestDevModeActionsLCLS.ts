@@ -16,9 +16,9 @@ describe('LCLS Test for Gradle Project', function () {
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
 
-        const wrongtext = "<logging appsWriteJson = \"wrong\" />";
-        const correcttext = "<logging appsWriteJson = \"false\" />";
-        await editor.typeTextAt(17, 5, wrongtext);
+        const stanzaSnippet = "<logging appsWriteJson = \"wrong\" />";
+        const expectedText = "<logging appsWriteJson = \"false\" />";
+        await editor.typeTextAt(17, 5, stanzaSnippet);
         await utils.delay(2000);
         const LoggingTagElement = editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
         await utils.delay(3000);
@@ -50,10 +50,9 @@ describe('LCLS Test for Gradle Project', function () {
         const fixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'false'\")]"));
         await fixOption.click();
 
-
         const updatedContent = await editor.getText();
         await utils.delay(3000);
         console.log("Content after Quick fix : ", updatedContent);
-        assert(updatedContent.includes(correcttext), 'quick fix not applied correctly.');
+        assert(updatedContent.includes(expectedText), 'quick fix not applied correctly.');
     }).timeout(25000);
 });
