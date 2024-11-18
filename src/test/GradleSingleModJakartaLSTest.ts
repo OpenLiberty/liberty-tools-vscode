@@ -77,6 +77,7 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         insertedCode = insertedCode.replace("private String", "public String");
         await editor.clearText();
         await editor.setText(insertedCode);
+        await bottomBar.closePanel();
         await utils.delay(2000);
 
     }).timeout(275000);
