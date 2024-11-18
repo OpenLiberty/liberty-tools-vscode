@@ -173,15 +173,15 @@ function showListOfPathsToAdd(uris: string[]) {
         if (!selection) {
             return;
         }
-        if(projectProvider.isUntitledWorkspace()){ 
+        if (projectProvider.isUntitledWorkspace()) {
             //Saving the selected project to globalstate for adding it to the dashboard after reinitialization of the extension when workspace is saved
-            await projectProvider.getContext().globalState.update('selectedProject',selection);
+            await projectProvider.getContext().globalState.update('selectedProject', selection);
             /*
             if the workspace is untitled suggest the user to save the workspace first 
-            */ 
+            */
             await projectProvider.checkUntitledWorkspaceAndSaveIt();
         }
-        await addProjectsToTheDashBoard(projectProvider,selection);
+        await addProjectsToTheDashBoard(projectProvider, selection);
     });
 }
 
@@ -619,8 +619,8 @@ function isWin(): boolean {
 /*
 Method adds a project which is selected by the user from the list to the liberty dashboard 
 */
-export async function  addProjectsToTheDashBoard(projectProvider : ProjectProvider,selection:string): Promise<void>{
-    const result = await projectProvider.addUserSelectedPath(selection,projectProvider.getProjects());
+export async function addProjectsToTheDashBoard(projectProvider: ProjectProvider, selection: string): Promise<void> {
+    const result = await projectProvider.addUserSelectedPath(selection, projectProvider.getProjects());
     const message = localize(`add.project.manually.message.${result}`, selection);
     (result !== 0) ? console.error(message) : console.info(message); projectProvider.fireChangeEvent();
     vscode.window.showInformationMessage(message);
