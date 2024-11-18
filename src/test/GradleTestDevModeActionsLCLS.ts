@@ -40,7 +40,17 @@ describe('LCLS Test for Gradle Project', function () {
         actionList.click();
 
         await utils.delay(2000);
-        
+        const pointerBlockElementt = await driver.findElement(By.css('.context-view-pointerBlock'));
+
+        if (pointerBlockElementt) {
+            await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockElementt);
+        } else {
+            console.log('pointerBlockElementt not found!');
+        }
+        const fixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'false'\")]"));
+        await fixOption.click();
+
+
         const updatedContent = await editor.getText();
         await utils.delay(3000);
         console.log("Content after Quick fix : ", updatedContent);
