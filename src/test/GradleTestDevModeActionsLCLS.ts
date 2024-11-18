@@ -1,4 +1,12 @@
-
+/**
+ * Copyright (c) 2024 IBM Corporation.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 import { By, EditorView, SideBarView, TextEditor, VSBrowser } from "vscode-extension-tester";
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
@@ -20,11 +28,11 @@ describe('LCLS Test for Gradle Project', function () {
         const expectedText = "<logging appsWriteJson = \"true\" />";
         await editor.typeTextAt(17, 5, stanzaSnippet);
         await utils.delay(2000);
-        const LoggingTagElement = editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
+        const flaggedString = editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
         await utils.delay(3000);
 
         const actions = VSBrowser.instance.driver.actions();
-        await actions.move({ origin: LoggingTagElement }).perform();
+        await actions.move({ origin: flaggedString }).perform();
         await utils.delay(3000);
 
         const driver = VSBrowser.instance.driver;
@@ -39,6 +47,7 @@ describe('LCLS Test for Gradle Project', function () {
         await utils.delay(2000);
 
         const pointerBlockElementt = await driver.findElement(By.css('.context-view-pointerBlock'));
+        // Setting pointer block element display value as none to choose option from Quickfix menu
         if (pointerBlockElementt) {
             await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockElementt);
         } else {
