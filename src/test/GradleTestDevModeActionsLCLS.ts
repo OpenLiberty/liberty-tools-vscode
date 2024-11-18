@@ -17,13 +17,12 @@ describe('LCLS Test for Gradle Project', function () {
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
 
         const stanzaSnippet = "<logging appsWriteJson = \"wrong\" />";
-        const expectedText = "<logging appsWriteJson = \"false\" />";
+        const expectedText = "<logging appsWriteJson = \"true\" />";
         await editor.typeTextAt(17, 5, stanzaSnippet);
         await utils.delay(2000);
         const LoggingTagElement = editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
         await utils.delay(3000);
-        LoggingTagElement.click();
-        await editor.click();
+
         const actions = VSBrowser.instance.driver.actions();
         await actions.move({ origin: LoggingTagElement }).perform();
         await utils.delay(3000);
@@ -33,21 +32,19 @@ describe('LCLS Test for Gradle Project', function () {
         await utils.delay(2000);
 
         const quickFixPopupLink = await hoverValue.findElement(By.xpath("//*[contains(text(), 'Quick Fix... (⌘.)')]"));
-        quickFixPopupLink.click();
+        await quickFixPopupLink.click();
 
         const hoverBar = editor.findElement(By.className('context-view monaco-component bottom left fixed'));
-        const actionList = await hoverBar.findElement(By.className('actionList'));
-        actionList.click();
-
+        await hoverBar.findElement(By.className('actionList'));
         await utils.delay(2000);
-        const pointerBlockElementt = await driver.findElement(By.css('.context-view-pointerBlock'));
 
+        const pointerBlockElementt = await driver.findElement(By.css('.context-view-pointerBlock'));
         if (pointerBlockElementt) {
             await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockElementt);
         } else {
             console.log('pointerBlockElementt not found!');
         }
-        const fixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'false'\")]"));
+        const fixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'true'\")]"));
         await fixOption.click();
 
         const updatedContent = await editor.getText();
