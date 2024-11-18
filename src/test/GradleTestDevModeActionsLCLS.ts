@@ -8,7 +8,7 @@ const assert = require('assert');
 
 describe('LCLS Test for Gradle Project', function () {
     let editor: TextEditor;
-    
+
     it('should apply quick fix for invalid value in server.xml', async () => {
         const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
         section.expand();
@@ -18,10 +18,16 @@ describe('LCLS Test for Gradle Project', function () {
 
         const wrongtext = "<logging appsWriteJson = \"wrong\" />";
         const correcttext = "<logging appsWriteJson = \"false\" />";
-        
+        await editor.typeTextAt(17, 5, wrongtext);
+        await utils.delay(2000);
+        const LoggingTagElement = editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
+        await utils.delay(3000);
+        LoggingTagElement.click();
+        await editor.click();
+
         const updatedContent = await editor.getText();
         await utils.delay(3000);
         console.log("Content after Quick fix : ", updatedContent);
         assert(updatedContent.includes(correcttext), 'quick fix not applied correctly.');
-    }).timeout(25000);  
+    }).timeout(25000);
 });
