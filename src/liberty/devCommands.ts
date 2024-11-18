@@ -77,18 +77,17 @@ export async function openProject(pomPath: string): Promise<void> {
 export async function listAllCommands(): Promise<void> {
     const libertyCommands = Array.from(COMMAND_TITLES.keys());
     vscode.window.showQuickPick(libertyCommands).then(selection => {
-            if (!selection) {
-                return;
-            }
-            const command = COMMAND_TITLES.get(selection);
-            if ( command !== undefined )
-            {
-                vscode.commands.executeCommand(command);
-            } else {
-                // should never happen
-                console.error("Unable to find corresponding command for " + selection);
-            }
-                
+        if (!selection) {
+            return;
+        }
+        const command = COMMAND_TITLES.get(selection);
+        if (command !== undefined) {
+            vscode.commands.executeCommand(command);
+        } else {
+            // should never happen
+            console.error("Unable to find corresponding command for " + selection);
+        }
+
     });
 }
 
@@ -130,7 +129,7 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
 
 export async function removeProject(): Promise<void> {
     const projectProvider: ProjectProvider = ProjectProvider.getInstance();
-    
+
     // clicked on the empty space and workspace has more than one folders, or
     // from command palette
     // Display the list of current user added projects for user to select.
@@ -163,7 +162,7 @@ export async function removeProject(): Promise<void> {
                     }
                 });
         });
-        
+
     }
 }
 
@@ -193,11 +192,11 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
         // scan the folder and get a list of folders with pom.xml and build.gradle
         const uris: string[] = await projectProvider.getListOfMavenAndGradleFolders(uri.fsPath);
         console.log(JSON.stringify(uris));
-        if ( uris.length > 0) {
+        if (uris.length > 0) {
             // present the list to add
             showListOfPathsToAdd(uris);
         }
-        
+
 
     } else {
         // clicked on the empty space and workspace has more than one folders, or
@@ -399,7 +398,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
             if (customCommand !== undefined) {
                 // save command
                 customCommand = customCommand.trim();
-                if ( customCommand.length > 0 ) {
+                if (customCommand.length > 0) {
                     const projectStartCmdParam: ProjectStartCmdParam = new ProjectStartCmdParam(libProject.getPath(), customCommand);
                     const projectProvider: ProjectProvider = ProjectProvider.getInstance();
                     const dashboardData: DashboardData = helperUtil.getStorageData(projectProvider.getContext());
@@ -489,30 +488,24 @@ export async function openReport(reportType: string, libProject?: LibertyProject
         const path = Path.dirname(libProject.getPath());
         if (path !== undefined) {
             let report: any;
-            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                report = getReportFile(path, "reports", reportType + ".html");
-            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                report = await getGradleTestReport(libProject.path, path);
-            }
             let reportTypeLabel = reportType;
             if (reportType === "gradle") {
                 reportTypeLabel = "test";
             }
-            /*
-            if its a maven project, check for the report in the initial path , else try for the alternate one and if it doesnt exist in both 
-            display a prompt for its non existance
-            */
-            if(libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER){
-                console.log("report path ::"+report)
-                if(!await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, "reports")){
+            let showErrorMessage: boolean = true;
+            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+                report = getReportFile(path, "reports", reportType + ".html");
+                showErrorMessage = false; // show the error message only if the directory is not reports, so setting to false
+                if (!await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage)) {
                     report = getReportFile(path, "site", reportType + "-report.html");
-                    await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, "site")     
+                    showErrorMessage = true;//report is not available in 'reports', hence show the message if report is not availabe in 'site', so setting to true
+                    await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage);
                 }
-            /*
-            if its a gradle project, then check existance for the report in the path set and if not display prompt for its non existance
-            */
-            }else 
-                await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject,"")
+            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+                report = await getGradleTestReport(libProject.path, path);
+                await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage);
+            }
+
 
         }
     } else if (ProjectProvider.getInstance() && reportType) {
@@ -618,7 +611,7 @@ function isWin(): boolean {
 will return the path of the report, since there are diffrent folders to look into and the file names can be different 
 we need to get the paths to look for dynamically
 */
-function getReportFile(path : any, dir : string, filename : string) : any{
+function getReportFile(path: any, dir: string, filename: string): any {
     return Path.join(path, "target", dir, filename);
 }
 
@@ -626,30 +619,28 @@ function getReportFile(path : any, dir : string, filename : string) : any{
 Function will check if the report is available within the given path and returns a boolean based on it and also 
   the report will be displayed if it is available
 */
-function checkReportAndDisplay(report : any, reportType : string, reportTypeLabel : string, libProject : LibertyProject, directory : string) : Promise<boolean> {
+function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel: string, libProject: LibertyProject, showErrorMessage: boolean): Promise<boolean> {
     return new Promise((resolve) => {
-      fs.exists(report, (exists) => {
-        if(exists){
-            const panel = vscode.window.createWebviewPanel(
-                reportType, // Identifies the type of the webview. Used internally
-                libProject.getLabel() + " " + reportTypeLabel + " report", // Title of the panel displayed to the user
-                vscode.ViewColumn.Two, // Open the panel in the second window
-                {}, // Webview options
-            );
-            panel.webview.html = getReport(report); // display HTML content
-            /*
-            For maven projects we need to check for the report in 'reports' and 'site', we only need to show the message if it is not 
-            available in both the locations, below condition make sure to avoid the message when its a maven project and the directory 
-            is 'reports'
-            */ 
-        }else if(!((libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) 
-                    && directory=="reports")){
+        fs.exists(report, (exists) => {
+            if (exists) {
+                const panel = vscode.window.createWebviewPanel(
+                    reportType, // Identifies the type of the webview. Used internally
+                    libProject.getLabel() + " " + reportTypeLabel + " report", // Title of the panel displayed to the user
+                    vscode.ViewColumn.Two, // Open the panel in the second window
+                    {}, // Webview options
+                );
+                panel.webview.html = getReport(report); // display HTML content
+                /*
+                For maven projects we need to check for the report in 'reports' and 'site', we only need to show the message if it is not 
+                available in both the locations, below condition make sure to avoid the message when its a maven project and the directory 
+                is 'reports'
+                */
+            } else if (showErrorMessage) {// if it is flagged to show the error message then show it else dont
 
                 const message = localize("test.report.does.not.exist.run.test.first", report);
                 vscode.window.showInformationMessage(message);
-        }
-        console.log("report available::"+exists);
-        resolve(exists);
-      });
+            }
+            resolve(exists);
+        });
     });
-  }
+}
