@@ -19,6 +19,7 @@ import { JAVA_EXTENSION_ID, waitForStandardMode } from "./util/javaServerMode";
 import { localize } from "./util/i18nUtil";
 import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "./util/requirements";
 import { prepareExecutable } from "./util/javaServerStarter";
+import * as helperUtil from "./util/helperUtil";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
@@ -109,10 +110,10 @@ function registerCommands(context: ExtensionContext) {
 		projectProvider = new ProjectProvider(context);
 		ProjectProvider.setInstance(projectProvider);
 	}
-    if (projectProvider.getContext().globalState.get('workspaceSaveInProgress') && projectProvider.getContext().globalState.get('selectedProject') !== undefined) {
+    if (projectProvider.getContext().globalState.get('workspaceSaveInProgress') &&
+        projectProvider.getContext().globalState.get('selectedProject') !== undefined) {
         devCommands.addProjectsToTheDashBoard(projectProvider, projectProvider.getContext().globalState.get('selectedProject') as string);
-        projectProvider.getContext().globalState.update('workspaceSaveInProgress', false);
-        projectProvider.getContext().globalState.update('selectedProject', undefined);
+        helperUtil.clearDataSavedInglobalState(projectProvider.getContext());
     }
     if (vscode.workspace.workspaceFolders !== undefined) {
         registerFileWatcher(projectProvider);

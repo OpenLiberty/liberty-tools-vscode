@@ -71,4 +71,12 @@ export function getStorageData(context: vscode.ExtensionContext): DashboardData 
 export async function saveStorageData(context: vscode.ExtensionContext, dasboardData: DashboardData): Promise<void>{
 	await context.workspaceState.update(LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY, dasboardData);
 }
+/**
+ * clears the states saved in global state
+ * @param context 
+ */
+export function clearDataSavedInglobalState(context: vscode.ExtensionContext) {
+	context.globalState.update('workspaceSaveInProgress', false);
+	context.globalState.update('selectedProject', undefined);
+}
 

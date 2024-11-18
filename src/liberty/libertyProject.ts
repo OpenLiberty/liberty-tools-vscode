@@ -208,7 +208,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	one project. if not saved there are chances for the projects state not being saved and manually added
 	projects might not be visible in the liberty dashboard
 	*/
-	public async checkUntitledWorkspaceAndSaveIt():Promise<void>{
+	public async checkUntitledWorkspaceAndSaveIt(): Promise<void> {
 		return new Promise((resolve) => {
 			try {
 				vscode.window.showInformationMessage(
@@ -219,35 +219,28 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					if (selection === 'Save Workspace') {
 						//setting workspaceSaveInProgress to true and storing it in globalstate for identifyting that the workspace is saved and needs to 
 						//save the manually added projects to the dashboard
-						await this._context.globalState.update('workspaceSaveInProgress',true);
+						await this._context.globalState.update('workspaceSaveInProgress', true);
 						//opens the saveWorkspace as dialog box
 						await vscode.commands.executeCommand('workbench.action.saveWorkspaceAs');
-						//after execution of above line , if save is opted the workspace reloads and reinitialisation of the workspace happens based on the 
-						//activation events in package.json, if cancel is opted then the workspace is not going to be saved 
-						//so below lines will clear workspaceSaveInProgress and selectedProject from the global state
-						await this._context.globalState.update('workspaceSaveInProgress',false);
-						await this._context.globalState.update('selectedProject',undefined);
-						resolve();
-					}else {
-						// No workspace save was initiated
-						resolve();
 					}
+					util.clearDataSavedInglobalState(this._context);
+					resolve();
 				});
 			} catch (error) {
-				console.debug("exception while saving the workspace"+error);
+				console.debug("exception while saving the workspace" + error);
 
-			}		
-		});		
+			}
+		});
 	}
 	/*
 	Method identifies a workspace that is untitled and containing morethan one project 
 	*/
-	public isUntitledWorkspace():boolean{
+	public isUntitledWorkspace(): boolean {
 		const workspaceFolders = vscode.workspace.workspaceFolders;
-		if (workspaceFolders && workspaceFolders.length > 1 
-			 				 && vscode.workspace.name === "Untitled (Workspace)"){
-								return true;
-							 }
+		if ((workspaceFolders && workspaceFolders.length > 1
+			&& vscode.workspace.name === "Untitled (Workspace)") || (vscode.workspace.workspaceFile == undefined)) {
+			return true;
+		}
 
 		return false;
 	}
