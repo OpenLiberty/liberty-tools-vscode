@@ -1,4 +1,4 @@
-import { TextEditor, EditorView, VSBrowser, TitleBar, BottomBarPanel, MarkerType } from 'vscode-extension-tester';
+import { TextEditor, EditorView, VSBrowser, BottomBarPanel, MarkerType, By } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as path from 'path';
 import * as assert from 'assert';
@@ -6,11 +6,9 @@ import * as assert from 'assert';
 describe('LSP4Jakarta LS test for snippet test', () => {
 
     let editor: TextEditor;
-    let titleBar: TitleBar;
     let bottomBar: BottomBarPanel;
 
     before(() => {
-		titleBar = new TitleBar();
         bottomBar = new BottomBarPanel();
 	});
 
@@ -77,8 +75,62 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         insertedCode = insertedCode.replace("private String", "public String");
         await editor.clearText();
         await editor.setText(insertedCode);
+        await bottomBar.closePanel();
         await utils.delay(2000);
 
+    }).timeout(275000);
+
+    it('check for qucikfix support',  async() => {
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), "src", "main", "java", "test", "gradle", "liberty", "web", "app", "SystemResource2.java"));
+        
+        editor = await new EditorView().openEditor('SystemResource2.java') as TextEditor;
+
+        let insertedCode = await editor.getText();
+        // change the resource method from public to private
+        insertedCode = insertedCode.replace("public String", "private String");
+        await editor.setText(insertedCode);
+        await utils.delay(3000);
+
+        const flaggedString = await editor.findElement(By.xpath("//*[contains(text(), \"methodname\")]"));
+        // await utils.delay(3000);
+
+        const actions = VSBrowser.instance.driver.actions();
+        await actions.move({ origin: flaggedString }).perform();
+        await utils.delay(3000);
+
+        const driver = VSBrowser.instance.driver;
+        const hoverValue = await editor.findElement(By.className('hover-row status-bar'));
+        // await utils.delay(2000);
+
+        const quickFixPopupLink = await hoverValue.findElement(By.xpath("//*[contains(text(), 'Quick Fix... (⌘.)')]"));
+        await quickFixPopupLink.click();
+
+        const hoverBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
+        await hoverBar.findElement(By.className('actionList'));
+        // await utils.delay(2000);
+
+        const pointerBlockElementt = await driver.findElement(By.css('.context-view-pointerBlock'));
+        // Setting pointer block element display value as none to choose option from Quickfix menu
+        if (pointerBlockElementt) {
+            await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockElementt);
+        } else {
+            console.log('pointerBlockElementt not found!');
+        }
+        const fixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Make method public\")]"));
+        await fixOption.click();
+        await utils.delay(3000);
+
+        const updatedContent = await editor.getText();
+        // await utils.delay(3000);
+        // console.log("Content after Quick fix : ", updatedContent);
+        assert(updatedContent.includes('public String methodname'), 'quick fix not applied correctly.');
+        await utils.delay(3000);
+
+        // change back to original state
+        insertedCode = insertedCode.replace("private String", "public String");
+        await editor.clearText();
+        await editor.setText(insertedCode);
+        await utils.delay(2000);
     }).timeout(275000);
 
 });
