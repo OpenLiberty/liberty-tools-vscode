@@ -103,9 +103,6 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         const quickFixPopupLink = await hoverValue.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
         await quickFixPopupLink.click();
 
-        const hoverBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
-        await hoverBar.findElement(By.className('actionList'));
-
         const pointerBlockElementt = await driver.findElement(By.css('.context-view-pointerBlock'));
         // Setting pointer block element display value as none to choose option from Quickfix menu
         if (pointerBlockElementt) {
