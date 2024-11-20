@@ -61,4 +61,30 @@ describe('LCLS Test for Gradle Project', function () {
         console.log("Content after Quick fix : ", updatedContent);
         assert(updatedContent.includes(expectedText), 'quick fix not applied correctly.');
     }).timeout(25000);
+    
+    it('should show hover support for server.env', async () => {
+        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
+        section.expand();
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'server.env'));
+        editor = await new EditorView().openEditor('server.env') as TextEditor;
+
+        const testHoverTarget = "WLP_LOGGING_CONSOLE_LOGLEVEL=AUDIT";
+        const hoverExpectedOutcome = "This setting controls the granularity of messages that go to the console. The valid values are INFO, AUDIT, WARNING, ERROR, and OFF. The default is AUDIT. If using with the Eclipse developer tools this must be set to the default.";
+        await editor.typeTextAt(1, 1, testHoverTarget);
+        await utils.delay(2000);
+        const focusTargetLement = editor.findElement(By.xpath("//*[contains(text(), 'LOGLEVEL')]"));
+        await utils.delay(3000);
+        focusTargetLement.click();
+        await editor.click();
+
+        const actions = VSBrowser.instance.driver.actions();
+        await actions.move({ origin: focusTargetLement }).perform();
+        await utils.delay(5000);
+
+        const hoverContents = editor.findElement(By.className('hover-contents'));
+        const hoverValue = await hoverContents.getText();
+        console.log("over text:" + hoverValue);
+        assert(hoverValue === (hoverExpectedOutcome), 'Did not get expected hover data.');
+    }).timeout(25000);
+    
 });
