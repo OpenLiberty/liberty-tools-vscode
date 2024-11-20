@@ -238,7 +238,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	public isUntitledWorkspace(): boolean {
 		const workspaceFolders = vscode.workspace.workspaceFolders;
 		if ((workspaceFolders && workspaceFolders.length > 1
-			&& vscode.workspace.name === "Untitled (Workspace)") || (vscode.workspace.workspaceFile == undefined)) {
+			&& vscode.workspace.name === "Untitled (Workspace)")) {
 			return true;
 		}
 
