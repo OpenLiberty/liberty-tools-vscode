@@ -77,20 +77,21 @@ export async function openProject(pomPath: string): Promise<void> {
 export async function listAllCommands(): Promise<void> {
     const libertyCommands = Array.from(COMMAND_TITLES.keys());
     vscode.window.showQuickPick(libertyCommands).then(selection => {
-        if (!selection) {
-            return;
-        }
-        const command = COMMAND_TITLES.get(selection);
+            if (!selection) {
+                return;
+            }
+            const command = COMMAND_TITLES.get(selection);
             if ( command !== undefined )
             {
-            vscode.commands.executeCommand(command);
-        } else {
-            // should never happen
-            console.error("Unable to find corresponding command for " + selection);
-        }
-
+                vscode.commands.executeCommand(command);
+            } else {
+                // should never happen
+                console.error("Unable to find corresponding command for " + selection);
+            }
+                
     });
 }
+
 
 // start dev mode
 export async function startDevMode(libProject?: LibertyProject | undefined): Promise<void> {
@@ -130,7 +131,7 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
 
 export async function removeProject(): Promise<void> {
     const projectProvider: ProjectProvider = ProjectProvider.getInstance();
-
+    
     // clicked on the empty space and workspace has more than one folders, or
     // from command palette
     // Display the list of current user added projects for user to select.
@@ -163,7 +164,7 @@ export async function removeProject(): Promise<void> {
                     }
                 });
         });
-
+        
     }
 }
 
@@ -197,7 +198,7 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
             // present the list to add
             showListOfPathsToAdd(uris);
         }
-
+        
 
     } else {
         // clicked on the empty space and workspace has more than one folders, or
