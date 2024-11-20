@@ -34,6 +34,7 @@ export const COMMAND_AND_PROJECT_TYPE_MAP: { [command: string]: string[] } = {
 };
 export const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target}/**";
 export const COMMAND_TITLES = new Map();
+export const UNTITLED_WORKSPACE="Untitled (Workspace)";
 COMMAND_TITLES.set(localize("hotkey.commands.title.refresh"), "liberty.explorer.refresh");
 
 COMMAND_TITLES.set(localize("hotkey.commands.title.start"), "liberty.dev.start");

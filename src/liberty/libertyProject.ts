@@ -14,7 +14,7 @@ import * as gradleUtil from "../util/gradleUtil";
 import * as mavenUtil from "../util/mavenUtil";
 import * as util from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
-import { EXCLUDED_DIR_PATTERN, LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER } from "../definitions/constants";
+import { EXCLUDED_DIR_PATTERN, LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER,UNTITLED_WORKSPACE } from "../definitions/constants";
 import { BuildFileImpl, GradleBuildFile } from "../util/buildFile";
 import { DashboardData } from "./dashboard";
 import { BaseLibertyProject } from "./baseLibertyProject";
@@ -203,11 +203,11 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		statusMessage.dispose();
 	}
 
-	/*
-	Method asks the user to save the workspace first if it is untitled and the workspace contains morethan
-	one project. if not saved there are chances for the projects state not being saved and manually added
-	projects might not be visible in the liberty dashboard
-	*/
+	/**
+	 * Method asks the user to save the workspace first if it is untitled and the workspace contains morethan
+	 * one project. if not saved there are chances for the projects state not being saved and manually added
+	 * projects might not be visible in the liberty dashboard.
+	 */
 	public async checkUntitledWorkspaceAndSaveIt(): Promise<void> {
 		return new Promise((resolve) => {
 			try {
@@ -217,8 +217,10 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					'Save Workspace'
 				).then(async (selection) => {
 					if (selection === 'Save Workspace') {
-						//setting workspaceSaveInProgress to true and storing it in globalstate for identifyting that the workspace is saved and needs to 
-						//save the manually added projects to the dashboard
+						/**
+						 * setting workspaceSaveInProgress to true and storing it in globalstate for identifyting that the
+						 * workspace is saved and needs to save the manually added projects to the dashboard
+						 */
 						await this._context.globalState.update('workspaceSaveInProgress', true);
 						//opens the saveWorkspace as dialog box
 						await vscode.commands.executeCommand('workbench.action.saveWorkspaceAs');
@@ -238,7 +240,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	public isUntitledWorkspace(): boolean {
 		const workspaceFolders = vscode.workspace.workspaceFolders;
 		if ((workspaceFolders && workspaceFolders.length > 1
-			&& vscode.workspace.name === "Untitled (Workspace)")) {
+			&& vscode.workspace.name === UNTITLED_WORKSPACE)) {
 			return true;
 		}
 		return false;
