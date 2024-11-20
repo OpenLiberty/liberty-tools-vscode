@@ -14,10 +14,10 @@ describe('LSP4Jakarta LS test for snippet test', () => {
 
         const textPressent = await editor.getText();
         if(textPressent.length > 0){
-            editor.clearText();
+            await editor.clearText();
         }
 
-        editor.typeText("rest");
+        await editor.typeText("rest");
         await utils.delay(6000);
 
         //open the assistant
