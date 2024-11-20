@@ -233,7 +233,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		});
 	}
 	/*
-	Method identifies a workspace that is untitled and containing morethan one project 
+	Method identifies a workspace that is untitled and containing more than one project 
 	*/
 	public isUntitledWorkspace(): boolean {
 		const workspaceFolders = vscode.workspace.workspaceFolders;
