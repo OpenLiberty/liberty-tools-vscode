@@ -411,7 +411,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
                 }
 
                 if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                    const cmd = await getCommandForMaven(libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType(), customCommand);
+                    const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType(), customCommand);
                     terminal.sendText(cmd);
                 } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
                     const cmd = await getCommandForGradle(libProject.getPath(), "libertyDev", libProject.getTerminalType(), customCommand);
