@@ -99,14 +99,8 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         console.log(localize("starting.liberty.dev.on", libProject.getLabel()));
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
-            const path = Path.dirname(libProject.getPath());
-            //fetch the default terminal details and store it in LibertyProject object 
-            const terminalType = defaultWindowsShell();
-            libProject.setTerminalType(terminalType);
-            terminal = libProject.createTerminal(path);
-            if (terminal !== undefined) {
-                terminals[Number(terminal.processId)] = libProject;
-            }
+            //function call to create new terminal for LTV
+            terminal = createTerminalforLiberty(libProject, terminal);
         }
         if (terminal !== undefined) {
             terminal.show();
@@ -359,14 +353,8 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
     if (libProject !== undefined) {
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
-            const path = Path.dirname(libProject.getPath());
-            //fetch the default terminal details and store it in LibertyProject object 
-            const terminalType = defaultWindowsShell();
-            libProject.setTerminalType(terminalType);
-            terminal = libProject.createTerminal(path);
-            if (terminal !== undefined) {
-                terminals[Number(terminal.processId)] = libProject;
-            }
+            //function call to create new terminal for LTV
+            terminal = createTerminalforLiberty(libProject, terminal);
         }
         if (terminal !== undefined) {
             terminal.show();
@@ -435,14 +423,8 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
     if (libProject !== undefined) {
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
-            const path = Path.dirname(libProject.getPath());
-            //fetch the default terminal details and store it in LibertyProject object 
-            const terminalType = defaultWindowsShell();
-            libProject.setTerminalType(terminalType);
-            terminal = libProject.createTerminal(path);
-            if (terminal !== undefined) {
-                terminals[Number(terminal.processId)] = libProject;
-            }
+            //function call to create new terminal for LTV
+            terminal = createTerminalforLiberty(libProject, terminal);
         }
         if (terminal !== undefined) {
             terminal.show();
@@ -534,3 +516,18 @@ export function deleteTerminal(terminal: vscode.Terminal): void {
         console.error(localize("unable.to.delete.terminal", terminal.name));
     }
 }
+/**
+ * function to create new terminal of default type 
+ */
+function createTerminalforLiberty(libProject: LibertyProject, terminal: vscode.Terminal | undefined) {
+    const path = Path.dirname(libProject.getPath());
+    //fetch the default terminal details and store it in LibertyProject object 
+    const terminalType = defaultWindowsShell();
+    libProject.setTerminalType(terminalType);
+    terminal = libProject.createTerminal(path);
+    if (terminal !== undefined) {
+        terminals[Number(terminal.processId)] = libProject;
+    }
+    return terminal;
+}
+
