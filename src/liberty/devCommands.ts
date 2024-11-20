@@ -496,10 +496,14 @@ export async function openReport(reportType: string, libProject?: LibertyProject
             let showErrorMessage: boolean = true;
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                 report = getReportFile(path, "reports", reportType + ".html");
-                showErrorMessage = false; // show the error message only if both "reports" and "site" dirs do not contain the test reports - setting to false since this will be the first location checked
+                // show the error message only if both "reports" and "site" dirs do not contain the test reports
+                // set to false since this will be the first location checked
+                showErrorMessage = false; 
                 if (!await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage)) {
                     report = getReportFile(path, "site", reportType + "-report.html");
-                    showErrorMessage = true; // show the error message only if both "reports" and "site" dirs do not contain the test reports - setting to true since this will be the second location checked
+                    // show the error message only if both "reports" and "site" dirs do not contain the test reports
+                    // set to true since this will be the second location checked
+                    showErrorMessage = true; 
                     await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage);
                 }
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
@@ -630,11 +634,11 @@ function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel:
                 );
                 panel.webview.html = getReport(report); // display HTML content
                 /*
-                For maven projects we need to check for the report in 'reports' and 'site', we only need to show the message if it is not 
-                available in both the locations, below condition make sure to avoid the message when its a maven project and the directory 
-                is 'reports'
+                For Maven projects we need to check for the test report in the 'reports' and 'site' dirs. 
+                We only need to show the message if it is not available in both locations. 
+                The `showErrorMessage` flag will only be set to true when checking the second location.
                 */
-            } else if (showErrorMessage) { // If it is flagged to show the error message, then show it. Otherwise do not show it.
+            } else if (showErrorMessage) {
                 const message = localize("test.report.does.not.exist.run.test.first", report);
                 vscode.window.showInformationMessage(message);
             }
