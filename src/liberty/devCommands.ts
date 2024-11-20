@@ -130,7 +130,7 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
 
 export async function removeProject(): Promise<void> {
     const projectProvider: ProjectProvider = ProjectProvider.getInstance();
-
+    
     // clicked on the empty space and workspace has more than one folders, or
     // from command palette
     // Display the list of current user added projects for user to select.
@@ -163,7 +163,7 @@ export async function removeProject(): Promise<void> {
                     }
                 });
         });
-
+        
     }
 }
 
@@ -507,7 +507,6 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                 await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage);
             }
 
-
         }
     } else if (ProjectProvider.getInstance() && reportType) {
         showProjects(reportType, openReport, reportType);
@@ -637,7 +636,6 @@ function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel:
                 is 'reports'
                 */
             } else if (showErrorMessage) {// if it is flagged to show the error message then show it else dont
-
                 const message = localize("test.report.does.not.exist.run.test.first", report);
                 vscode.window.showInformationMessage(message);
             }
