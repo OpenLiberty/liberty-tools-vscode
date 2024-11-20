@@ -223,15 +223,15 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 						//opens the saveWorkspace as dialog box
 						await vscode.commands.executeCommand('workbench.action.saveWorkspaceAs');
 					}
-					util.clearDataSavedInglobalState(this._context);
+					util.clearDataSavedInGlobalState(this._context);
 					resolve();
 				});
 			} catch (error) {
 				console.debug("exception while saving the workspace" + error);
-
 			}
 		});
 	}
+
 	/*
 	Method identifies a workspace that is untitled and containing more than one project 
 	*/
@@ -241,7 +241,6 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			&& vscode.workspace.name === "Untitled (Workspace)")) {
 			return true;
 		}
-
 		return false;
 	}
 

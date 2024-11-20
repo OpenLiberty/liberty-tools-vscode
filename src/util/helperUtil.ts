@@ -75,7 +75,7 @@ export async function saveStorageData(context: vscode.ExtensionContext, dasboard
  * clears the states saved in global state
  * @param context 
  */
-export function clearDataSavedInglobalState(context: vscode.ExtensionContext) {
+export function clearDataSavedInGlobalState(context: vscode.ExtensionContext) {
 	context.globalState.update('workspaceSaveInProgress', false);
 	context.globalState.update('selectedProject', undefined);
 }

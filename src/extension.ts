@@ -113,7 +113,7 @@ function registerCommands(context: ExtensionContext) {
     if (projectProvider.getContext().globalState.get('workspaceSaveInProgress') &&
         projectProvider.getContext().globalState.get('selectedProject') !== undefined) {
         devCommands.addProjectsToTheDashBoard(projectProvider, projectProvider.getContext().globalState.get('selectedProject') as string);
-        helperUtil.clearDataSavedInglobalState(projectProvider.getContext());
+        helperUtil.clearDataSavedInGlobalState(projectProvider.getContext());
     }
     if (vscode.workspace.workspaceFolders !== undefined) {
         registerFileWatcher(projectProvider);
