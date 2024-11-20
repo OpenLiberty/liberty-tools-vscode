@@ -122,7 +122,6 @@ async function gradleCmd(buildGradle: string): Promise<string> {
  */
 async function getLocalGradleWrapper(projectFolder: string): Promise<string | undefined> {
     const gradlew: string = isWin() ? "gradlew.bat" : "gradlew";
-
     // walk up parent folders
     let current: string = projectFolder;
     while (Path.basename(current)) {
@@ -143,7 +142,6 @@ async function getLocalGradleWrapper(projectFolder: string): Promise<string | un
  */
 async function getLocalMavenWrapper(projectFolder: string): Promise<string | undefined> {
     const mvnw: string = isWin() ? "mvnw.cmd" : "mvnw";
-
     // walk up parent folders
     let current: string = projectFolder;
     while (Path.basename(current)) {
