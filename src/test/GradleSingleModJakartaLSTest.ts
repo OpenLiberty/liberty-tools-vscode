@@ -100,7 +100,7 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         const driver = VSBrowser.instance.driver;
         const hoverValue = await editor.findElement(By.className('hover-row status-bar'));
 
-        const quickFixPopupLink = await hoverValue.findElement(By.xpath("//*[contains(text(), 'Quick Fix... (⌘.)')]"));
+        const quickFixPopupLink = await hoverValue.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
         await quickFixPopupLink.click();
 
         const hoverBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
