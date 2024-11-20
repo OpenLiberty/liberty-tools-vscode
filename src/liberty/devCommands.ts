@@ -111,8 +111,8 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
             terminal.show();
             libProject.setTerminal(terminal);
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType());
-                terminal.sendText(cmd); // start dev mode on current project
+                // const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType());
+                // terminal.sendText(cmd); // start dev mode on current project
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
                 const cmd = await getCommandForGradle(libProject.getPath(), "libertyDev", libProject.getTerminalType());
                 terminal.sendText(cmd); // start dev mode on current project
