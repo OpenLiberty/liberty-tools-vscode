@@ -77,17 +77,18 @@ export async function openProject(pomPath: string): Promise<void> {
 export async function listAllCommands(): Promise<void> {
     const libertyCommands = Array.from(COMMAND_TITLES.keys());
     vscode.window.showQuickPick(libertyCommands).then(selection => {
-        if (!selection) {
-            return;
-        }
-        const command = COMMAND_TITLES.get(selection);
-        if (command !== undefined) {
-            vscode.commands.executeCommand(command);
-        } else {
-            // should never happen
-            console.error("Unable to find corresponding command for " + selection);
-        }
-
+            if (!selection) {
+                return;
+            }
+            const command = COMMAND_TITLES.get(selection);
+            if ( command !== undefined )
+            {
+                vscode.commands.executeCommand(command);
+            } else {
+                // should never happen
+                console.error("Unable to find corresponding command for " + selection);
+            }
+                
     });
 }
 
@@ -192,11 +193,11 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
         // scan the folder and get a list of folders with pom.xml and build.gradle
         const uris: string[] = await projectProvider.getListOfMavenAndGradleFolders(uri.fsPath);
         console.log(JSON.stringify(uris));
-        if (uris.length > 0) {
+        if ( uris.length > 0) {
             // present the list to add
             showListOfPathsToAdd(uris);
         }
-
+        
 
     } else {
         // clicked on the empty space and workspace has more than one folders, or
@@ -398,7 +399,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
             if (customCommand !== undefined) {
                 // save command
                 customCommand = customCommand.trim();
-                if (customCommand.length > 0) {
+                if ( customCommand.length > 0 ) {
                     const projectStartCmdParam: ProjectStartCmdParam = new ProjectStartCmdParam(libProject.getPath(), customCommand);
                     const projectProvider: ProjectProvider = ProjectProvider.getInstance();
                     const dashboardData: DashboardData = helperUtil.getStorageData(projectProvider.getContext());

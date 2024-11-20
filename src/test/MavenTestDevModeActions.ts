@@ -102,7 +102,7 @@ it('start maven with options from liberty dashboard', async () => {
   const alternateReportPath = path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html"); // new path to scan for the reports 
   let deleteReport = await utils.deleteReports(reportPath);
   let deleteAlternateReport = await utils.deleteReports(alternateReportPath);
-  expect (deleteReport || deleteAlternateReport).to.be.true; // there should be a report available irrespective of the surefire versions we use , so either one needs to be true 
+  expect (deleteReport && deleteAlternateReport).to.be.true; // there should be a report available irrespective of the surefire versions we use , so either one needs to be true 
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
   await utils.setCustomParameter("-DhotTests=true");  
   await utils.delay(30000);  
@@ -135,7 +135,7 @@ it('start maven with history from liberty dashboard', async () => {
   const alternateReportPath = path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html");
   let deleteReport = await utils.deleteReports(reportPath);
   let deleteAlternateReport = await utils.deleteReports(alternateReportPath);
-  expect (deleteReport || deleteAlternateReport).to.be.true;  
+  expect (deleteReport && deleteAlternateReport).to.be.true;  
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);  
   const foundCommand = await utils.chooseCmdFromHistory("-DhotTests=true");
   expect (foundCommand).to.be.true;  
