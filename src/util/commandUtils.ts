@@ -16,8 +16,7 @@ import { pathExists } from "fs-extra";
  * Reused from vscode-maven
  * https://github.com/microsoft/vscode-maven/blob/main/src/mavenTerminal.ts
  */
-export enum ShellType {
-    CMD = "Command Prompt",
+enum ShellType {
     POWERSHELL = "PowerShell",
     GIT_BASH = "Git Bash",
     WSL = "WSL Bash",
@@ -25,109 +24,49 @@ export enum ShellType {
 }
 
 /**
- * Return the maven commands based on the OS and Terminal for start, startinContainer, start..
+ * Return the maven command based on the OS and Terminal for start, start in container, start..
  */
-
 export async function getCommandForMaven(pomPath: string, command: string, terminalType?: string, customCommand?: string): Promise<string> {
 
     // attempt to use the Maven executable path, if empty try using mvn or mvnw according to the preferMavenWrapper setting
     const mavenExecutablePath: string | undefined = vscode.workspace.getConfiguration("maven").get<string>("executable.path");
-
     if (mavenExecutablePath) {
-
-        if (customCommand) {
-            return `${mavenExecutablePath} ` + `${command}` + ` ${customCommand}` + ` -f "${pomPath}"`;
-        }
-        return `${mavenExecutablePath} ` + `${command}` + ` -f "${pomPath}"`;
+        return formDefaultCommand(mavenExecutablePath, pomPath, command, "-f ", customCommand);
     }
-
     let mvnCmdStart = await mvnCmd(pomPath);
-
     if (mvnCmdStart === "mvn") {
-        if (customCommand) {
-            return `${mvnCmdStart} ` + `${command}` + ` ${customCommand}` + ` -f "${pomPath}"`;
-        }
-        return `${mvnCmdStart} ` + `${command}` + ` -f "${pomPath}"`;
+        return formDefaultCommand(mvnCmdStart, pomPath, command, "-f ", customCommand);
     }
     //checking the OS type for command customization
     if (isWin()) {
-        switch (terminalType) {
-            case ShellType.GIT_BASH:
-                if (customCommand) {
-                    return "cd \"" + mvnCmdStart + "\" && " + "./mvnw " + `${command}` + ` ${customCommand}`; //Bash 
-                }
-                return "cd \"" + mvnCmdStart + "\" && " + "./mvnw " + `${command}`; //Bash for start..
-
-            case ShellType.POWERSHELL: {
-                mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
-                if (customCommand) {
-
-                    return "& \"" + mvnCmdStart + "\" " + `${command}` + ` ${customCommand}` + ` -f "${pomPath}"`; //Poweshell for start..
-                }
-                return "& \"" + mvnCmdStart + "\" " + `${command}` + ` -f "${pomPath}"`; // PowerShell
-            }
-            case ShellType.CMD:
-                mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
-                if (customCommand) {
-                    return "\"" + mvnCmdStart + "\" " + `${command}` + ` ${customCommand}` + ` -f "${pomPath}"`; //cmd for start..
-                }
-                return "\"" + mvnCmdStart + "\" " + `${command}` + ` -f "${pomPath}"`; // CMD
-            case ShellType.WSL:
-                mvnCmdStart = toDefaultWslPath(mvnCmdStart);
-                pomPath = toDefaultWslPath(pomPath);
-                if (customCommand) {
-                    return "cd \"" + mvnCmdStart + "\" && " + "./mvnw " + `${command}` + ` ${customCommand}`; //Wsl start ..  
-                }
-                return "cd \"" + mvnCmdStart + "\" && " + "./mvnw " + `${command}`; //Wsl  
-
-
-            default:
-                mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
-                if (customCommand) {
-                    return "\"" + mvnCmdStart + "\" " + `${command}` + ` ${customCommand}` + ` -f "${pomPath}"`;
-                }
-                return "\"" + mvnCmdStart + "\" " + `${command}` + ` -f "${pomPath}"`;
-        }
+        return getMavenCommandForWin(mvnCmdStart, pomPath, command, terminalType, customCommand);
     } else {
-        if (customCommand) {
-            return "cd \"" + mvnCmdStart + "\" && " + "./mvnw " + `${command}` + ` ${customCommand}`;
-        }
-        return "cd \"" + mvnCmdStart + "\" && " + "./mvnw " + `${command}`;
+        return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand);
     }
-
 }
 
 /**
- * Return the Gradle commands based on the OS and Terminal for start, startinContainer, start..
+ * Return the gradle command based on the OS and Terminal for start, start in container, start..
  */
-
 export async function getCommandForGradle(buildGradlePath: string, command: string, terminalType?: String, customCommand?: string): Promise<string> {
     let gradleCmdStart = await gradleCmd(buildGradlePath);
 
     if (gradleCmdStart === "gradle") {
-        if (customCommand) {
-            return `${gradleCmdStart} ` + `${command}` + ` ${customCommand}` + ` -b="${buildGradlePath}"`;
-        }
-        return `${gradleCmdStart} ` + `${command}` + ` -b="${buildGradlePath}"`;
+        return formDefaultCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
     }
     //checking the OS type for command customization
     if (isWin()) {
-        return getGradleCommandsForWin(gradleCmdStart, buildGradlePath, command, terminalType, customCommand);
+        return getGradleCommandForWin(gradleCmdStart, buildGradlePath, command, terminalType, customCommand);
     } else {
         gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
-        if (customCommand) {
-            return "\"" + gradleCmdStart + "\" " + `${command}` + ` ${customCommand}` + ` -b="${buildGradlePath}"`;
-        }
-        return "\"" + gradleCmdStart + "\" " + `${command}` + ` -b="${buildGradlePath}"`;
+        return formDefaultCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
     }
-
 }
 
 /**
  * Reused from vscode-maven
  * https://github.com/microsoft/vscode-maven/blob/main/src/mavenTerminal.ts
  */
-
 function toDefaultWslPath(p: string): string {
     const arr: string[] = p.split(":\\");
     if (arr.length === 2) {
@@ -140,47 +79,6 @@ function toDefaultWslPath(p: string): string {
 }
 
 /**
- * Return the Gradle commands for windows OS based on the terminal configured
- */
-
-function getGradleCommandsForWin(gradleCmdStart: string, buildGradlePath: string, command: string, terminalType?: String, customCommand?: string): string {
-    switch (terminalType) {
-        case ShellType.GIT_BASH:
-            gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
-            if (customCommand) {
-                return "\"" + gradleCmdStart + "\" " + `${command}` + ` ${customCommand}` + ` -b="${buildGradlePath}"`; //bash start..
-            }
-            return "\"" + gradleCmdStart + "\" " + `${command}` + ` -b="${buildGradlePath}"`; //Bash
-        case ShellType.POWERSHELL: {
-            gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
-            if (customCommand) {
-                return "& \"" + gradleCmdStart + "\" " + `${command}` + ` ${customCommand}` + ` -b="${buildGradlePath}"`;// PowerShell strat..
-            }
-            return "& \"" + gradleCmdStart + "\" " + `${command}` + ` -b="${buildGradlePath}"`;// PowerShell
-        }
-        case ShellType.CMD:
-            gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
-            if (customCommand) {
-                return "\"" + gradleCmdStart + "\" " + `${command}` + ` ${customCommand}` + ` -b="${buildGradlePath}"`; // CMD start..
-            }
-            return "\"" + gradleCmdStart + "\" " + `${command}` + ` -b="${buildGradlePath}"`; // CMD
-        case ShellType.WSL:
-            buildGradlePath = toDefaultWslPath(buildGradlePath);
-            gradleCmdStart = toDefaultWslPath(gradleCmdStart)
-            gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
-            if (customCommand) {
-                return "\"" + gradleCmdStart + "\" " + `${command}` + ` ${customCommand}` + ` -b="${buildGradlePath}"`; //wsl start..
-            }
-            return "\"" + gradleCmdStart + "\" " + `${command}` + ` -b="${buildGradlePath}"`; //wsl
-        default:
-            gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
-            if (customCommand) {
-                "\"" + gradleCmdStart + "\" " + `${command}` + ` ${customCommand}` + ` -b="${buildGradlePath}"`;
-            }
-            return "\"" + gradleCmdStart + "\" " + `${command}` + ` -b="${buildGradlePath}"`;
-    }
-}
-/**
  * Reused from vscode-maven
  * https://github.com/microsoft/vscode-maven/blob/2ab8f392f418c8e0fe2903387f2b0013a1c50e78/src/utils/mavenUtils.ts
  */
@@ -188,8 +86,9 @@ export function isWin(): boolean {
     return process.platform.startsWith("win");
 }
 
-
-// return Maven executable path, Maven wrapper, or mvn
+/**
+ * Returns maven wrapper path or mvn
+ */
 async function mvnCmd(pomPath: string): Promise<string> {
     const preferMavenWrapper: boolean | undefined = vscode.workspace.getConfiguration("maven").get<boolean>("executable.preferMavenWrapper");
     if (preferMavenWrapper) {
@@ -201,6 +100,9 @@ async function mvnCmd(pomPath: string): Promise<string> {
     return "mvn";
 }
 
+/**
+ * Returns gradle wrapper path or gradle
+ */
 async function gradleCmd(buildGradle: string): Promise<string> {
     const preferGradleWrapper: boolean | undefined = vscode.workspace.getConfiguration("java").get<boolean>("import.gradle.wrapper.enabled");
     if (preferGradleWrapper) {
@@ -211,41 +113,145 @@ async function gradleCmd(buildGradle: string): Promise<string> {
     }
     return "gradle";
 }
+
 /**
  * Search for potential Maven wrapper, return undefined if does not exist
  * Reused from vscode-maven
  * https://github.com/microsoft/vscode-maven/blob/2ab8f392f418c8e0fe2903387f2b0013a1c50e78/src/utils/mavenUtils.ts
  * @param projectFolder
  */
-async function getLocalMavenWrapper(projectFolder: string): Promise<string | undefined> {
+async function getLocalGradleWrapper(projectFolder: string): Promise<string | undefined> {
+    const gradlew: string = isWin() ? "gradlew.bat" : "gradlew";
 
+    // walk up parent folders
     let current: string = projectFolder;
     while (Path.basename(current)) {
-        const potentialMvnwPath: string = Path.join(current);
+        const potentialGradlewFullPath: string = Path.join(current, gradlew);
+        const potentialGradlewPath: string = Path.join(current);
+        if (await pathExists(potentialGradlewFullPath)) {
+            return potentialGradlewPath;
+        }
+        current = Path.dirname(current);
+    }
+    return undefined;
+}
 
-        if (await pathExists(potentialMvnwPath)) {
+/**
+ * Search for potential Gradle wrapper, return undefined if it does not exist
+ * Modified from vscode-maven, see getLocalMavenWrapper method above
+ * @param projectFolder
+ */
+async function getLocalMavenWrapper(projectFolder: string): Promise<string | undefined> {
+    const mvnw: string = isWin() ? "mvnw.cmd" : "mvnw";
+
+    // walk up parent folders
+    let current: string = projectFolder;
+    while (Path.basename(current)) {
+        const potentialMvnwfullPath: string = Path.join(current, mvnw);
+        const potentialMvnwPath: string = Path.join(current);
+        if (await pathExists(potentialMvnwfullPath)) {
             return potentialMvnwPath;
         }
         current = Path.dirname(current);
     }
     return undefined;
 }
-/**
- * Search for potential Gradle wrapper, return undefined if it does not exist
- * Modified from vscode-maven, see getLocalMavenWrapper method above
- * @param projectFolder
- */
-async function getLocalGradleWrapper(projectFolder: string): Promise<string | undefined> {
 
-    let current: string = projectFolder;
-    while (Path.basename(current)) {
-        const potentialGradlewPath: string = Path.join(current);
-        if (await pathExists(potentialGradlewPath)) {
-            return potentialGradlewPath;
-        }
-        current = Path.dirname(current);
+/**
+ * Returns the gradle command for windows OS based on the terminal configured
+ */
+function getGradleCommandForWin(gradleCmdStart: string, buildGradlePath: string, command: string, terminalType?: String, customCommand?: string): string {
+    switch (terminalType) {
+        case ShellType.GIT_BASH:
+            gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
+            return formDefaultCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand); //Bash
+        case ShellType.POWERSHELL:
+            gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
+            return formPowershellCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
+        case ShellType.WSL:
+            return formLinuxBasedCommand(toDefaultWslPath(gradleCmdStart), command, "./gradlew ", customCommand); //Wsl
+        default:
+            gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
+            return formDefaultCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
     }
-    return undefined;
+}
+
+/**
+ * Returns the maven command for windows OS based on the terminal configured
+ */
+function getMavenCommandForWin(mvnCmdStart: string, pomPath: string, command: string, terminalType?: String, customCommand?: string): string {
+    switch (terminalType) {
+        case ShellType.GIT_BASH:
+            return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand);
+        case ShellType.POWERSHELL:
+            mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
+            return formPowershellCommand(mvnCmdStart, pomPath, command, "-f ", customCommand);
+        case ShellType.WSL:
+            mvnCmdStart = toDefaultWslPath(mvnCmdStart);
+            return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand);
+        default:
+            mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
+            return formDefaultCommand(mvnCmdStart, pomPath, command, "-f ", customCommand);
+    }
+}
+
+/**
+ * Returns the Powershell based command for windows OS
+ */
+function formPowershellCommand(cmdStart: string, projectPath: string, command: string, cmdOption: String, customCommand?: string): string {
+    if (customCommand) {
+        return "& \"" + cmdStart + "\" " + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${projectPath}"`; //Powershell for start..
+    }
+    return "& \"" + cmdStart + "\" " + `${command}` + ` ${cmdOption}"${projectPath}"`;  //PowerShell
+}
+
+/**
+ * Returns the Linux based command
+ */
+function formLinuxBasedCommand(mvnCmdStart: string, command: string, wrapperType: String, customCommand?: string): string {
+    if (customCommand) {
+        return "cd \"" + mvnCmdStart + "\" && " + `${wrapperType}` + `${command}` + ` ${customCommand}`; //Bash or WSL for start..
+    }
+    return "cd \"" + mvnCmdStart + "\" && " + `${wrapperType}` + `${command}`; //Bash or WSL command
+}
+
+/**
+ * Returns default command
+ */
+function formDefaultCommand(mvnProjectPath: string, pomPath: String, command: string, cmdOption: String, customCommand?: string): string {
+    if (customCommand) {
+        return "\"" + mvnProjectPath + "\" " + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${pomPath}"`;
+    }
+    return "\"" + mvnProjectPath + "\" " + `${command}` + ` ${cmdOption}"${pomPath}"`;
+}
+
+/**
+ * Reused from vscode-maven - currentWindowsShell()
+ * https://github.com/microsoft/vscode-maven/blob/main/src/mavenTerminal.ts
+ * method to fetch default terminal configured
+ */
+export function defaultWindowsShell(): ShellType {
+    const defaultWindowsShellPath: string = vscode.env.shell;
+    const executable: string = Path.basename(defaultWindowsShellPath);
+    switch (executable.toLowerCase()) {
+        case "pwsh.exe":
+        case "powershell.exe":
+        case "pwsh": // pwsh on mac/linux
+            return ShellType.POWERSHELL;
+        case "bash.exe":
+        case 'git-cmd.exe':
+            return ShellType.GIT_BASH;
+        case 'wsl.exe':
+        case 'ubuntu.exe':
+        case 'ubuntu1804.exe':
+        case 'kali.exe':
+        case 'debian.exe':
+        case 'opensuse-42.exe':
+        case 'sles-12.exe':
+            return ShellType.WSL;
+        default:
+            return ShellType.OTHERS;
+    }
 }
 
 

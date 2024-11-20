@@ -20,7 +20,7 @@ import { COMMAND_TITLES, LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
-import { getCommandForMaven, getCommandForGradle,ShellType } from "../util/commandUtils";
+import { getCommandForMaven, getCommandForGradle, defaultWindowsShell } from "../util/commandUtils";
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 
@@ -77,18 +77,18 @@ export async function openProject(pomPath: string): Promise<void> {
 export async function listAllCommands(): Promise<void> {
     const libertyCommands = Array.from(COMMAND_TITLES.keys());
     vscode.window.showQuickPick(libertyCommands).then(selection => {
-            if (!selection) {
-                return;
-            }
-            const command = COMMAND_TITLES.get(selection);
+        if (!selection) {
+            return;
+        }
+        const command = COMMAND_TITLES.get(selection);
             if ( command !== undefined )
             {
-                vscode.commands.executeCommand(command);
-            } else {
-                // should never happen
-                console.error("Unable to find corresponding command for " + selection);
-            }
-                
+            vscode.commands.executeCommand(command);
+        } else {
+            // should never happen
+            console.error("Unable to find corresponding command for " + selection);
+        }
+
     });
 }
 
@@ -111,10 +111,10 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
             terminal.show();
             libProject.setTerminal(terminal);
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                const cmd = await getCommandForMaven(libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType());
+                const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType());
                 terminal.sendText(cmd); // start dev mode on current project
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                const cmd = await getCommandForGradle(libProject.getPath(),"libertyDev", libProject.getTerminalType());  
+                const cmd = await getCommandForGradle(libProject.getPath(), "libertyDev", libProject.getTerminalType());
                 terminal.sendText(cmd); // start dev mode on current project
             }
         }
@@ -130,7 +130,7 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
 
 export async function removeProject(): Promise<void> {
     const projectProvider: ProjectProvider = ProjectProvider.getInstance();
-    
+
     // clicked on the empty space and workspace has more than one folders, or
     // from command palette
     // Display the list of current user added projects for user to select.
@@ -163,7 +163,7 @@ export async function removeProject(): Promise<void> {
                     }
                 });
         });
-        
+
     }
 }
 
@@ -197,7 +197,7 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
             // present the list to add
             showListOfPathsToAdd(uris);
         }
-        
+
 
     } else {
         // clicked on the empty space and workspace has more than one folders, or
@@ -411,10 +411,10 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
                 }
 
                 if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                    const cmd = await getCommandForMaven(libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType(), customCommand);
+                    const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType(), customCommand);
                     terminal.sendText(cmd);
                 } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                    const cmd = await getCommandForGradle(libProject.getPath(),"libertyDev", libProject.getTerminalType(), customCommand);
+                    const cmd = await getCommandForGradle(libProject.getPath(), "libertyDev", libProject.getTerminalType(), customCommand);
                     terminal.sendText(cmd);
                 }
             }
@@ -447,10 +447,10 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
             terminal.show();
             libProject.setTerminal(terminal);
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                const cmd = await getCommandForMaven(libProject.getPath(),"io.openliberty.tools:liberty-maven-plugin:devc", libProject.getTerminalType());
+                const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:devc", libProject.getTerminalType());
                 terminal.sendText(cmd);
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                const cmd = await getCommandForGradle(libProject.getPath(),"libertyDevc", libProject.getTerminalType());
+                const cmd = await getCommandForGradle(libProject.getPath(), "libertyDevc", libProject.getTerminalType());
                 terminal.sendText(cmd);
             }
         }
@@ -512,7 +512,7 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                 } else {
                     const message = localize("test.report.does.not.exist.run.test.first", report);
                     vscode.window.showInformationMessage(message);
-                }     
+                }
             });
         }
     } else if (ProjectProvider.getInstance() && reportType) {
@@ -531,37 +531,5 @@ export function deleteTerminal(terminal: vscode.Terminal): void {
         libProject.deleteTerminal();
     } catch {
         console.error(localize("unable.to.delete.terminal", terminal.name));
-    }
-}
-
-/**
- * Reused from vscode-maven - currentWindowsShell()
- * https://github.com/microsoft/vscode-maven/blob/main/src/mavenTerminal.ts
- * method to fetch default terminal configured
- */
-
-function defaultWindowsShell(): ShellType {
-    const defaultWindowsShellPath: string = vscode.env.shell;
-    const executable: string = Path.basename(defaultWindowsShellPath);
-    switch (executable.toLowerCase()) {
-        case "cmd.exe":
-            return ShellType.CMD;
-        case "pwsh.exe":
-        case "powershell.exe":
-        case "pwsh": // pwsh on mac/linux
-            return ShellType.POWERSHELL;
-        case "bash.exe":
-        case 'git-cmd.exe':
-            return ShellType.GIT_BASH;
-        case 'wsl.exe':
-        case 'ubuntu.exe':
-        case 'ubuntu1804.exe':
-        case 'kali.exe':
-        case 'debian.exe':
-        case 'opensuse-42.exe':
-        case 'sles-12.exe':
-            return ShellType.WSL;
-        default:
-            return ShellType.OTHERS;
     }
 }
