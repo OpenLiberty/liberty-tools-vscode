@@ -102,7 +102,7 @@ it('start maven with options from liberty dashboard', async () => {
   const alternateReportPath = path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html"); // new path to scan for the reports 
   let deleteReport = await utils.deleteReports(reportPath);
   let deleteAlternateReport = await utils.deleteReports(alternateReportPath);
-  expect (deleteReport && deleteAlternateReport).to.be.true; // there should be a report available irrespective of the surefire versions we use , so either one needs to be true 
+  expect (deleteReport && deleteAlternateReport).to.be.true; // both report files should either not exist or be successfully deleted
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
   await utils.setCustomParameter("-DhotTests=true");  
   await utils.delay(30000);  
@@ -114,7 +114,7 @@ it('start maven with options from liberty dashboard', async () => {
     console.log("Server succuessfully started");  
     let checkFile = await utils.checkIfTestReportExists(reportPath);
     let checkAlternateFile = await utils.checkIfTestReportExists(alternateReportPath);
-    expect (checkFile || checkAlternateFile).to.be.true;
+    expect (checkFile || checkAlternateFile).to.be.true; // check both potential locations for the test report, one of them must exist
     await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
     const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
     if(!serverStopStatus){ 
@@ -135,7 +135,7 @@ it('start maven with history from liberty dashboard', async () => {
   const alternateReportPath = path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html");
   let deleteReport = await utils.deleteReports(reportPath);
   let deleteAlternateReport = await utils.deleteReports(alternateReportPath);
-  expect (deleteReport && deleteAlternateReport).to.be.true;  
+  expect (deleteReport && deleteAlternateReport).to.be.true;  // both report files should either not exist or be successfully deleted
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);  
   const foundCommand = await utils.chooseCmdFromHistory("-DhotTests=true");
   expect (foundCommand).to.be.true;  
@@ -148,7 +148,7 @@ it('start maven with history from liberty dashboard', async () => {
     console.log("Server succuessfully started");  
     let checkFile = await utils.checkIfTestReportExists(reportPath);
     let checkAlternateFile = await utils.checkIfTestReportExists(alternateReportPath);
-    expect (checkFile || checkAlternateFile).to.be.true;
+    expect (checkFile || checkAlternateFile).to.be.true; // check both potential locations for the test report, one of them must exist
     await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
     const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
     if(!serverStopStatus){ 
