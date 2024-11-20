@@ -23,7 +23,6 @@ describe('LCLS Test for Gradle Project', function () {
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'server.xml'));
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const actualContent = await editor.getText();
 
         const stanzaSnippet = "<logging appsWriteJson = \"wrong\" />";
         const expectedText = "<logging appsWriteJson = \"true\" />";
@@ -61,9 +60,6 @@ describe('LCLS Test for Gradle Project', function () {
         await utils.delay(3000);
         console.log("Content after Quick fix : ", updatedContent);
         assert(updatedContent.includes(expectedText), 'quick fix not applied correctly.');
-        editor.clearText();
-        editor.setText(actualContent);
-        console.log("Content restored  : ", actualContent);
     }).timeout(25000);
 
     it('should show hover support for server.env', async () => {
