@@ -1,4 +1,4 @@
-import { TextEditor, EditorView, VSBrowser, TitleBar, BottomBarPanel, MarkerType } from 'vscode-extension-tester';
+import { TextEditor, EditorView, VSBrowser, By } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as path from 'path';
 import * as assert from 'assert';
@@ -6,13 +6,6 @@ import * as assert from 'assert';
 describe('LSP4Jakarta LS test for snippet test', () => {
 
     let editor: TextEditor;
-    let titleBar: TitleBar;
-    let bottomBar: BottomBarPanel;
-
-    before(() => {
-		titleBar = new TitleBar();
-        bottomBar = new BottomBarPanel();
-	});
 
     it('check if correct code is inserted when rest_class snippet is triggered',  async() => {
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), "src", "main", "java", "test", "gradle", "liberty", "web", "app", "SystemResource.java"));
@@ -55,29 +48,29 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         await editor.setText(insertedCode);
         await utils.delay(3000);
 
-        // opeining the problem window
-        const problemsView = await bottomBar.openProblemsView();
-        // filtering the problems with type error
-        const errors = await problemsView.getAllVisibleMarkers(MarkerType.Error);
-        await utils.delay(3000);
-        let privateMethodError = false;
-        // iterates through errors array and find whether the error Only public methods can be exposed as resource methods exists or not
-        errors.forEach(async (value) => {
-            const label = await value.getText();
-            console.log("label: ", label);
-            if(label.includes("Only public methods can be exposed as resource methods")){
-                privateMethodError = true;
-            }
-        });
-        await utils.delay(5000);
+        const flaggedString = await editor.findElement(By.xpath("//*[contains(text(), \"methodname\")]"));
 
-        assert(privateMethodError, "Did not find diagnostic help text.");
+        const actions = VSBrowser.instance.driver.actions();
+        await actions.move({ origin: flaggedString }).perform();
+        await utils.delay(3000);
+
+        const hoverValue = await editor.findElement(By.className('hover-row status-bar'));
+
+        const viewProblemLink = await hoverValue.findElement(By.xpath("//*[contains(text(), 'View Problem')]"));
+        await viewProblemLink.click();
+
+        const fixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Only public methods can be exposed as resource methods\")]"));
+        await utils.delay(2000);
+        console.log("fixoption reached");
+        const diagnostic = await fixOption.getText();
+        console.log("dignostic text", diagnostic);
+
+        assert(diagnostic.includes("Only public methods can be exposed as resource methods"), "Did not find diagnostic help text.");
 
         // change back to original state
         insertedCode = insertedCode.replace("private String", "public String");
         await editor.clearText();
         await editor.setText(insertedCode);
-        await bottomBar.closePanel();
         await utils.delay(2000);
 
     }).timeout(275000);
