@@ -39,7 +39,7 @@ describe('LCLS Test for Gradle Project', function () {
         const hoverValue = editor.findElement(By.className('hover-row status-bar'));
         await utils.delay(2000);
 
-        const quickFixPopupLink = await hoverValue.findElement(By.xpath("//*[contains(text(), 'Quick Fix... (⌘.)')]"));
+        const quickFixPopupLink = await hoverValue.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
         await quickFixPopupLink.click();
 
         const hoverBar = editor.findElement(By.className('context-view monaco-component bottom left fixed'));
