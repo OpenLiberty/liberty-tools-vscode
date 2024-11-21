@@ -17,6 +17,7 @@ import { pathExists } from "fs-extra";
  * https://github.com/microsoft/vscode-maven/blob/main/src/mavenTerminal.ts
  */
 enum ShellType {
+    CMD = "Command Prompt",
     POWERSHELL = "PowerShell",
     GIT_BASH = "Git Bash",
     WSL = "WSL Bash",
@@ -169,6 +170,7 @@ function getGradleCommandForWin(gradleCmdStart: string, buildGradlePath: string,
         case ShellType.WSL:
             return formLinuxBasedCommand(toDefaultWslPath(gradleCmdStart), command, "./gradlew ", customCommand); //Wsl
         default:
+            // The default case is ShellType CMD or OTHERS
             gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
             return formDefaultCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
     }
@@ -188,6 +190,7 @@ function getMavenCommandForWin(mvnCmdStart: string, pomPath: string, command: st
             mvnCmdStart = toDefaultWslPath(mvnCmdStart);
             return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand);
         default:
+            // The default case is ShellType CMD or OTHERS
             mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
             return formDefaultCommand(mvnCmdStart, pomPath, command, "-f ", customCommand);
     }
@@ -232,6 +235,8 @@ export function defaultWindowsShell(): ShellType {
     const defaultWindowsShellPath: string = vscode.env.shell;
     const executable: string = Path.basename(defaultWindowsShellPath);
     switch (executable.toLowerCase()) {
+        case "cmd.exe":
+            return ShellType.CMD;
         case "pwsh.exe":
         case "powershell.exe":
         case "pwsh": // pwsh on mac/linux
