@@ -207,21 +207,21 @@ function formPowershellCommand(cmdStart: string, projectPath: string, command: s
 /**
  * Returns the Linux based command
  */
-function formLinuxBasedCommand(mvnCmdStart: string, command: string, wrapperType: String, customCommand?: string): string {
+function formLinuxBasedCommand(cmdStart: string, command: string, wrapperType: String, customCommand?: string): string {
     if (customCommand) {
-        return "cd \"" + mvnCmdStart + "\" && " + `${wrapperType}` + `${command}` + ` ${customCommand}`; //Bash or WSL for start..
+        return "cd \"" + cmdStart + "\" && " + `${wrapperType}` + `${command}` + ` ${customCommand}`; //Bash or WSL for start..
     }
-    return "cd \"" + mvnCmdStart + "\" && " + `${wrapperType}` + `${command}`; //Bash or WSL command
+    return "cd \"" + cmdStart + "\" && " + `${wrapperType}` + `${command}`; //Bash or WSL command
 }
 
 /**
  * Returns default command
  */
-function formDefaultCommand(mvnProjectPath: string, pomPath: String, command: string, cmdOption: String, customCommand?: string): string {
+function formDefaultCommand(projectPath: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string): string {
     if (customCommand) {
-        return "\"" + mvnProjectPath + "\" " + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${pomPath}"`;
+        return "\"" + projectPath + "\" " + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${buildFilePath}"`;
     }
-    return "\"" + mvnProjectPath + "\" " + `${command}` + ` ${cmdOption}"${pomPath}"`;
+    return "\"" + projectPath + "\" " + `${command}` + ` ${cmdOption}"${buildFilePath}"`;
 }
 
 /**
