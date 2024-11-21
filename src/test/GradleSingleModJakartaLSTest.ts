@@ -61,9 +61,7 @@ describe('LSP4Jakarta LS test for snippet test', () => {
 
         const fixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Only public methods can be exposed as resource methods\")]"));
         await utils.delay(2000);
-        console.log("fixoption reached");
         const diagnostic = await fixOption.getText();
-        console.log("dignostic text", diagnostic);
 
         assert(diagnostic.includes("Only public methods can be exposed as resource methods"), "Did not find diagnostic help text.");
 
