@@ -93,7 +93,7 @@ export function isWin(): boolean {
 async function mvnCmd(pomPath: string): Promise<string> {
     const preferMavenWrapper: boolean | undefined = vscode.workspace.getConfiguration("maven").get<boolean>("executable.preferMavenWrapper");
     if (preferMavenWrapper) {
-        const localMvnwPath: string | undefined = await getLocalMavenWrapper(Path.dirname(pomPath));
+        const localMvnwPath: string | undefined = await getLocalMavenWrapperDir(Path.dirname(pomPath));
         if (localMvnwPath) {
             return `${localMvnwPath}`;
         }
@@ -107,7 +107,7 @@ async function mvnCmd(pomPath: string): Promise<string> {
 async function gradleCmd(buildGradle: string): Promise<string> {
     const preferGradleWrapper: boolean | undefined = vscode.workspace.getConfiguration("java").get<boolean>("import.gradle.wrapper.enabled");
     if (preferGradleWrapper) {
-        const localGradlewPath: string | undefined = await getLocalGradleWrapper(Path.dirname(buildGradle));
+        const localGradlewPath: string | undefined = await getLocalGradleWrapperDir(Path.dirname(buildGradle));
         if (localGradlewPath) {
             return `${localGradlewPath}`;
         }
@@ -124,14 +124,13 @@ async function gradleCmd(buildGradle: string): Promise<string> {
 async function getLocalGradleWrapperDir(projectFolder: string): Promise<string | undefined> {
     const gradlew: string = isWin() ? "gradlew.bat" : "gradlew";
     // walk up parent folders
-    let current: string = projectFolder;
-    while (Path.basename(current)) {
-        const potentialGradlewFullPath: string = Path.join(current, gradlew);
-        const potentialGradlewPath: string = Path.join(current);
-        if (await pathExists(potentialGradlewFullPath)) {
-            return potentialGradlewPath;
+    let currentDir: string = projectFolder;
+    while (Path.basename(currentDir)) {
+        const potentialGradlewPath: string = Path.join(currentDir, gradlew);
+        if (await pathExists(potentialGradlewPath)) {
+            return currentDir;
         }
-        current = Path.dirname(current);
+        currentDir = Path.dirname(currentDir);
     }
     return undefined;
 }
@@ -141,17 +140,16 @@ async function getLocalGradleWrapperDir(projectFolder: string): Promise<string |
  * Modified from vscode-maven, see getLocalMavenWrapper method above
  * @param projectFolder
  */
-async function getLocalMavenWrapper(projectFolder: string): Promise<string | undefined> {
+async function getLocalMavenWrapperDir(projectFolder: string): Promise<string | undefined> {
     const mvnw: string = isWin() ? "mvnw.cmd" : "mvnw";
     // walk up parent folders
-    let current: string = projectFolder;
-    while (Path.basename(current)) {
-        const potentialMvnwfullPath: string = Path.join(current, mvnw);
-        const potentialMvnwPath: string = Path.join(current);
-        if (await pathExists(potentialMvnwfullPath)) {
-            return potentialMvnwPath;
+    let currentDir: string = projectFolder;
+    while (Path.basename(currentDir)) {
+        const potentialMvnwPath: string = Path.join(currentDir, mvnw);
+        if (await pathExists(potentialMvnwPath)) {
+            return currentDir;
         }
-        current = Path.dirname(current);
+        currentDir = Path.dirname(currentDir);
     }
     return undefined;
 }
