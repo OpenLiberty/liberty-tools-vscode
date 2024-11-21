@@ -116,9 +116,8 @@ async function gradleCmd(buildGradle: string): Promise<string> {
 }
 
 /**
- * Search for potential Maven wrapper, return undefined if does not exist
- * Reused from vscode-maven
- * https://github.com/microsoft/vscode-maven/blob/2ab8f392f418c8e0fe2903387f2b0013a1c50e78/src/utils/mavenUtils.ts
+ * Search for potential Gradle wrapper, return undefined if does not exist
+ * Modified from vscode-maven, see getLocalMavenWrapperDir method below
  * @param projectFolder
  */
 async function getLocalGradleWrapperDir(projectFolder: string): Promise<string | undefined> {
@@ -136,8 +135,9 @@ async function getLocalGradleWrapperDir(projectFolder: string): Promise<string |
 }
 
 /**
- * Search for potential Gradle wrapper, return undefined if it does not exist
- * Modified from vscode-maven, see getLocalMavenWrapper method above
+ * Search for potential Maven wrapper, return undefined if it does not exist
+ * Modified from vscode-maven
+ * https://github.com/microsoft/vscode-maven/blob/2ab8f392f418c8e0fe2903387f2b0013a1c50e78/src/utils/mavenUtils.ts
  * @param projectFolder
  */
 async function getLocalMavenWrapperDir(projectFolder: string): Promise<string | undefined> {
