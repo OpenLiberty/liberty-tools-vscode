@@ -121,7 +121,7 @@ async function gradleCmd(buildGradle: string): Promise<string> {
  * https://github.com/microsoft/vscode-maven/blob/2ab8f392f418c8e0fe2903387f2b0013a1c50e78/src/utils/mavenUtils.ts
  * @param projectFolder
  */
-async function getLocalGradleWrapper(projectFolder: string): Promise<string | undefined> {
+async function getLocalGradleWrapperDir(projectFolder: string): Promise<string | undefined> {
     const gradlew: string = isWin() ? "gradlew.bat" : "gradlew";
     // walk up parent folders
     let current: string = projectFolder;
