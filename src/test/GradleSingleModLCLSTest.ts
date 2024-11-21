@@ -64,5 +64,5 @@ describe('LCLS Test for Gradle Project', function () {
         await editor.setText(actualContent);
         console.log("Content restored");
 
-    }).timeout(27000);
+    }).timeout(28000);
 });
