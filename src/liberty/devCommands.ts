@@ -474,29 +474,27 @@ export async function openReport(reportType: string, libProject?: LibertyProject
         const path = Path.dirname(libProject.getPath());
         if (path !== undefined) {
             let report: any;
-            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                report = Path.join(path, "target", "site", reportType + "-report.html");
-            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                report = await getGradleTestReport(libProject.path, path);
-            }
             let reportTypeLabel = reportType;
             if (reportType === "gradle") {
                 reportTypeLabel = "test";
             }
-            fs.exists(report, (exists) => {
-                if (exists) {
-                    const panel = vscode.window.createWebviewPanel(
-                        reportType, // Identifies the type of the webview. Used internally
-                        libProject.getLabel() + " " + reportTypeLabel + " report", // Title of the panel displayed to the user
-                        vscode.ViewColumn.Two, // Open the panel in the second window
-                        {}, // Webview options
-                    );
-                    panel.webview.html = getReport(report); // display HTML content
-                } else {
-                    const message = localize("test.report.does.not.exist.run.test.first", report);
-                    vscode.window.showInformationMessage(message);
+            let showErrorMessage: boolean = true;
+            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+                report = getReportFile(path, "reports", reportType + ".html");
+                // show the error message only if both "reports" and "site" dirs do not contain the test reports
+                // set to false since this will be the first location checked
+                showErrorMessage = false; 
+                if (!await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage)) {
+                    report = getReportFile(path, "site", reportType + "-report.html");
+                    // show the error message only if both "reports" and "site" dirs do not contain the test reports
+                    // set to true since this will be the second location checked
+                    showErrorMessage = true; 
+                    await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage);
                 }
-            });
+            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+                report = await getGradleTestReport(libProject.path, path);
+                await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage);
+            }
         }
     } else if (ProjectProvider.getInstance() && reportType) {
         showProjects(reportType, openReport, reportType);
@@ -531,3 +529,39 @@ function createTerminalforLiberty(libProject: LibertyProject, terminal: vscode.T
     return terminal;
 }
 
+/*
+will return the path of the report, since there are diffrent folders to look into and the file names can be different 
+we need to get the paths to look for dynamically
+*/
+function getReportFile(path: any, dir: string, filename: string): any {
+    return Path.join(path, "target", dir, filename);
+}
+
+/*
+Function will check if the report is available within the given path and returns a boolean based on it and also 
+  the report will be displayed if it is available
+*/
+function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel: string, libProject: LibertyProject, showErrorMessage: boolean): Promise<boolean> {
+    return new Promise((resolve) => {
+        fs.exists(report, (exists) => {
+            if (exists) {
+                const panel = vscode.window.createWebviewPanel(
+                    reportType, // Identifies the type of the webview. Used internally
+                    libProject.getLabel() + " " + reportTypeLabel + " report", // Title of the panel displayed to the user
+                    vscode.ViewColumn.Two, // Open the panel in the second window
+                    {}, // Webview options
+                );
+                panel.webview.html = getReport(report); // display HTML content
+                /*
+                For Maven projects we need to check for the test report in the 'reports' and 'site' dirs. 
+                We only need to show the message if it is not available in both locations. 
+                The `showErrorMessage` flag will only be set to true when checking the second location.
+                */
+            } else if (showErrorMessage) {
+                const message = localize("test.report.does.not.exist.run.test.first", report);
+                vscode.window.showInformationMessage(message);
+            }
+            resolve(exists);
+        });
+    });
+}
