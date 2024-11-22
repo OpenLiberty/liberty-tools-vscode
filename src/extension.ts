@@ -110,11 +110,9 @@ function registerCommands(context: ExtensionContext) {
 		projectProvider = new ProjectProvider(context);
 		ProjectProvider.setInstance(projectProvider);
 	}
-    if (projectProvider.getContext().globalState.get('workspaceSaveInProgress') &&
-        projectProvider.getContext().globalState.get('selectedProject') !== undefined) {
-        devCommands.addProjectsToTheDashBoard(projectProvider, projectProvider.getContext().globalState.get('selectedProject') as string);
-        helperUtil.clearDataSavedInGlobalState(projectProvider.getContext());
-    }
+
+    handleWorkspaceSaveInProgress(projectProvider);
+
     if (vscode.workspace.workspaceFolders !== undefined) {
         registerFileWatcher(projectProvider);
         vscode.window.registerTreeDataProvider("liberty-dev", projectProvider);
@@ -261,4 +259,12 @@ async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
         throw new Error("VSCode java api not found");
     }
     return Promise.resolve(api);
+}
+
+function handleWorkspaceSaveInProgress(projectProvider: ProjectProvider) {
+    if (projectProvider.getContext().globalState.get('workspaceSaveInProgress') &&
+        projectProvider.getContext().globalState.get('selectedProject') !== undefined) {
+        devCommands.addProjectsToTheDashBoard(projectProvider, projectProvider.getContext().globalState.get('selectedProject') as string);
+        helperUtil.clearDataSavedInGlobalState(projectProvider.getContext());
+    }
 }

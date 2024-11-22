@@ -173,7 +173,7 @@ function showListOfPathsToAdd(uris: string[]) {
         if (!selection) {
             return;
         }
-        if (projectProvider.isUntitledWorkspace()) {
+        if (projectProvider.isMultiProjectUntitledWorkspace()) {
             /**
              * Saving the selected project to globalstate for adding it to the dashboard after 
              * reinitialization of the extension when workspace is saved
