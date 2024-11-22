@@ -22,7 +22,7 @@ import { prepareExecutable } from "./util/javaServerStarter";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
-export const LIBERTY_LS_JAR = "liberty-langserver-2.1.1-jar-with-dependencies.jar";
+export const LIBERTY_LS_JAR = "liberty-langserver-2.2-jar-with-dependencies.jar";
 export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.2.1-jar-with-dependencies.jar";
 
 let libertyClient: LanguageClient;
@@ -165,6 +165,10 @@ function registerCommands(context: ExtensionContext) {
             devCommands.deleteTerminal(closedTerminal);
         })
     );
+     // Listens for any new folders are added to the workspace
+     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+        projectProvider.refresh();
+    }));
 }
 
 // this method is called when your extension is deactivated
