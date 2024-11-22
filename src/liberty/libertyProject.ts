@@ -487,6 +487,7 @@ export class LibertyProject extends vscode.TreeItem {
 		public contextValue: string,
 		public terminal?: vscode.Terminal,
 		public readonly command?: vscode.Command, // ? indicates optional param
+		public terminalType?: string,
 	) {
 		super(label, collapsibleState);
 		this.tooltip = this.path;
@@ -532,6 +533,13 @@ export class LibertyProject extends vscode.TreeItem {
 
 	public setTerminal(terminal: vscode.Terminal): void {
 		this.terminal = terminal;
+	}
+	public getTerminalType(): string | undefined {
+		return this.terminalType;
+	}
+
+	public setTerminalType(terminalType: string): void {
+		this.terminalType = terminalType;
 	}
 
 	public createTerminal(projectHome: string): vscode.Terminal | undefined {
