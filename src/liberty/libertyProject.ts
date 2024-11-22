@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, 2023 IBM Corporation.
+ * Copyright (c) 2020, 2024 IBM Corporation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -442,6 +442,7 @@ export class LibertyProject extends vscode.TreeItem {
 		public contextValue: string,
 		public terminal?: vscode.Terminal,
 		public readonly command?: vscode.Command, // ? indicates optional param
+		public terminalType?: string,
 	) {
 		super(label, collapsibleState);
 		this.tooltip = this.path;
@@ -487,6 +488,13 @@ export class LibertyProject extends vscode.TreeItem {
 
 	public setTerminal(terminal: vscode.Terminal): void {
 		this.terminal = terminal;
+	}
+	public getTerminalType(): string | undefined {
+		return this.terminalType;
+	}
+
+	public setTerminalType(terminalType: string): void {
+		this.terminalType = terminalType;
 	}
 
 	public createTerminal(projectHome: string): vscode.Terminal | undefined {
