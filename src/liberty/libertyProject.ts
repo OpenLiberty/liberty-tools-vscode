@@ -225,6 +225,11 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 						//opens the saveWorkspace as dialog box
 						await vscode.commands.executeCommand('workbench.action.saveWorkspaceAs');
 					}
+					/**
+					 * If the user cancels saving the workspace and exits without saving, the data stays in the global state, 
+					 * which is shared across all VS Code instances. To prevent this data from being mistakenly used in other 
+					 * sessions and added to the dashboard, it should be cleared if the user cancels the save.
+					 */
 					util.clearDataSavedInGlobalState(this._context);
 					resolve();
 				});
