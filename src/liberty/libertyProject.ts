@@ -234,9 +234,9 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					resolve();
 				});
 			} catch (error) {
+				console.debug("exception while saving the workspace" + error);
 				util.clearDataSavedInGlobalState(this._context);
 				resolve();
-				console.debug("exception while saving the workspace" + error);
 			}
 		});
 	}
