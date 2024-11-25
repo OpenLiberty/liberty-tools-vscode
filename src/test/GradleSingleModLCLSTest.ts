@@ -28,7 +28,7 @@ describe('LCLS Test for Gradle Project', function () {
         const expectedText = "<logging appsWriteJson = \"true\" />";
         await editor.typeTextAt(18, 5, stanzaSnippet);
         await utils.delay(2000);
-        const flaggedString = editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
+        const flaggedString = await editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
         await utils.delay(3000);
 
         const actions = VSBrowser.instance.driver.actions();
@@ -36,13 +36,13 @@ describe('LCLS Test for Gradle Project', function () {
         await utils.delay(3000);
 
         const driver = VSBrowser.instance.driver;
-        const hoverValue = editor.findElement(By.className('hover-row status-bar'));
+        const hoverValue = await editor.findElement(By.className('hover-row status-bar'));
         await utils.delay(2000);
 
         const quickFixPopupLink = await hoverValue.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
         await quickFixPopupLink.click();
 
-        const hoverBar = editor.findElement(By.className('context-view monaco-component bottom left fixed'));
+        const hoverBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
         await hoverBar.findElement(By.className('actionList'));
         await utils.delay(2000);
 
