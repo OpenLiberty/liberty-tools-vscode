@@ -63,7 +63,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             item.text = localize("liberty.ls.thumbs.up");
             item.tooltip = localize("liberty.ls.started");
             toggleItem(window.activeTextEditor, item);
-            handleWorkspaceSaveInProgress(getProjectProvider(context));
+            handleWorkspaceSaveInProgress(context);
             registerCommands(context);
         }, (error: any) => {
             console.log("Liberty client was not ready. Did not initialize");
@@ -255,7 +255,8 @@ async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
     return Promise.resolve(api);
 }
 
-function handleWorkspaceSaveInProgress(projectProvider: ProjectProvider) {
+function handleWorkspaceSaveInProgress(context: vscode.ExtensionContext) {
+    let projectProvider = getProjectProvider(context);
     if (projectProvider.getContext().globalState.get('workspaceSaveInProgress') &&
         projectProvider.getContext().globalState.get('selectedProject') !== undefined) {
         devCommands.addProjectsToTheDashBoard(projectProvider, projectProvider.getContext().globalState.get('selectedProject') as string);
@@ -263,11 +264,11 @@ function handleWorkspaceSaveInProgress(projectProvider: ProjectProvider) {
     }
 }
 
-function getProjectProvider(context: vscode.ExtensionContext) : ProjectProvider{ 
+function getProjectProvider(context: vscode.ExtensionContext): ProjectProvider {
     let projectProvider = ProjectProvider.getInstance();
-	if ( !projectProvider ) {
-		projectProvider = new ProjectProvider(context);
-		ProjectProvider.setInstance(projectProvider);
-	}
+    if (!projectProvider) {
+        projectProvider = new ProjectProvider(context);
+        ProjectProvider.setInstance(projectProvider);
+    }
     return projectProvider;
 }
