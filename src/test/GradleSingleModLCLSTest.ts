@@ -26,7 +26,7 @@ describe('LCLS Test for Gradle Project', function () {
         const actualContent = await editor.getText();
         const stanzaSnippet = "<logging appsWriteJson = \"wrong\" />";
         const expectedText = "<logging appsWriteJson = \"true\" />";
-        await editor.typeTextAt(17, 5, stanzaSnippet);
+        await editor.typeTextAt(18, 5, stanzaSnippet);
         await utils.delay(2000);
         const flaggedString = editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
         await utils.delay(3000);
