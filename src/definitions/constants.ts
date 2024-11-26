@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, 2022 IBM Corporation.
+ * Copyright (c) 2020, 2024 IBM Corporation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -34,6 +34,7 @@ export const COMMAND_AND_PROJECT_TYPE_MAP: { [command: string]: string[] } = {
 };
 export const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target}/**";
 export const COMMAND_TITLES = new Map();
+export const UNTITLED_WORKSPACE="Untitled (Workspace)";
 COMMAND_TITLES.set(localize("hotkey.commands.title.refresh"), "liberty.explorer.refresh");
 
 COMMAND_TITLES.set(localize("hotkey.commands.title.start"), "liberty.dev.start");
