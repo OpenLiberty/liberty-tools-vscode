@@ -32,7 +32,7 @@ export async function getCommandForMaven(pomPath: string, command: string, termi
     // attempt to use the Maven executable path, if empty try using mvn or mvnw according to the preferMavenWrapper setting
     const mavenExecutablePath: string | undefined = vscode.workspace.getConfiguration("maven").get<string>("executable.path");
     if (mavenExecutablePath) {
-        return formDefaultCommand(mavenExecutablePath, pomPath, command, "-f ", customCommand);
+        return formDefaultCommandWithPath(mavenExecutablePath, pomPath, command, "-f ", customCommand);
     }
     let mvnCmdStart = await mvnCmd(pomPath);
     if (mvnCmdStart === "mvn") {
@@ -161,7 +161,7 @@ function getGradleCommandForWin(gradleCmdStart: string, buildGradlePath: string,
     switch (terminalType) {
         case ShellType.GIT_BASH:
             gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
-            return formDefaultCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand); //Bash
+            return formDefaultCommandWithPath(gradleCmdStart, buildGradlePath, command, "-b=", customCommand); //Bash
         case ShellType.POWERSHELL:
             gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
             return formPowershellCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
@@ -170,7 +170,7 @@ function getGradleCommandForWin(gradleCmdStart: string, buildGradlePath: string,
         default:
             // The default case is ShellType CMD or OTHERS
             gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
-            return formDefaultCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
+            return formDefaultCommandWithPath(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
     }
 }
 
@@ -190,7 +190,7 @@ function getMavenCommandForWin(mvnCmdStart: string, pomPath: string, command: st
         default:
             // The default case is ShellType CMD or OTHERS
             mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
-            return formDefaultCommand(mvnCmdStart, pomPath, command, "-f ", customCommand);
+            return formDefaultCommandWithPath(mvnCmdStart, pomPath, command, "-f ", customCommand);
     }
 }
 
@@ -218,6 +218,16 @@ function formLinuxBasedCommand(cmdStart: string, command: string, wrapperType: S
  * Returns default command
  */
 function formDefaultCommand(projectPath: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string): string {
+    if (customCommand) {
+        return `${projectPath} ` + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${buildFilePath}"`;
+    }
+    return `${projectPath} ` + `${command}` + ` ${cmdOption}"${buildFilePath}"`;
+}
+
+/**
+ * Returns default format for the command with Path  
+ */
+function formDefaultCommandWithPath(projectPath: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string): string {
     if (customCommand) {
         return "\"" + projectPath + "\" " + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${buildFilePath}"`;
     }
