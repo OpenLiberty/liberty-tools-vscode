@@ -60,7 +60,7 @@ export async function getCommandForGradle(buildGradlePath: string, command: stri
         return getGradleCommandForWin(gradleCmdStart, buildGradlePath, command, terminalType, customCommand);
     } else {
         gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
-        return formDefaultCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
+        return formDefaultCommandWithPath(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
     }
 }
 
@@ -215,17 +215,17 @@ function formLinuxBasedCommand(cmdStart: string, command: string, wrapperType: S
 }
 
 /**
- * Returns default command
+ * Returns default command if 'mvn'/ 'gradle' using for command execution
  */
-function formDefaultCommand(projectPath: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string): string {
+function formDefaultCommand(cmdExecutable: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string): string {
     if (customCommand) {
-        return `${projectPath} ` + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${buildFilePath}"`;
+        return `${cmdExecutable} ` + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${buildFilePath}"`;
     }
-    return `${projectPath} ` + `${command}` + ` ${cmdOption}"${buildFilePath}"`;
+    return `${cmdExecutable} ` + `${command}` + ` ${cmdOption}"${buildFilePath}"`;
 }
 
 /**
- * Returns default format for the command with Path  
+ * Returns default format for the command with wrapper path specified
  */
 function formDefaultCommandWithPath(projectPath: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string): string {
     if (customCommand) {
