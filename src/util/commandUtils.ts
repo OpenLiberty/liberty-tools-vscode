@@ -60,7 +60,7 @@ export async function getCommandForGradle(buildGradlePath: string, command: stri
         return getGradleCommandForWin(gradleCmdStart, buildGradlePath, command, terminalType, customCommand);
     } else {
         gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
-        return formDefaultCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
+        return formDefaultCommandWithPath(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
     }
 }
 
