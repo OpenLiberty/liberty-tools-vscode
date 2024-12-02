@@ -32,6 +32,12 @@ export async function getCommandForMaven(pomPath: string, command: string, termi
     // attempt to use the Maven executable path, if empty try using mvn or mvnw according to the preferMavenWrapper setting
     const mavenExecutablePath: string | undefined = vscode.workspace.getConfiguration("maven").get<string>("executable.path");
     if (mavenExecutablePath) {
+        if (isWin() && terminalType === ShellType.POWERSHELL) {
+            /**
+            * Function call to get the command for powershell in Windows OS
+            */
+            return formPowershellCommand(mavenExecutablePath, pomPath, command, "-f ", customCommand);
+        }
         return formDefaultCommandWithPath(mavenExecutablePath, pomPath, command, "-f ", customCommand);
     }
     let mvnCmdStart = await mvnCmd(pomPath);
