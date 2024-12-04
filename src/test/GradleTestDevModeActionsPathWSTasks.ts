@@ -258,12 +258,10 @@ describe('Devmode action tests for Gradle Project- Project name with space', () 
     const gradleProjectPath = path.join(__dirname, "..", "..", "src", "test", "resources", "gradle project");
     console.log("Current path __dirname: " + __dirname);
     console.log("Removing project from the path: " + gradleProjectPath);
-
     /**
      * Remove newly created project after test case execution 
      */
-
-    utils.removeProjectFolder(gradleProjectPath);
+    utils.removeProjectFolderWithContent(gradleProjectPath);
   });
 
 });

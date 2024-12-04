@@ -14,25 +14,19 @@ import * as utils from './utils/testUtils';
 describe('Open Gradle Project - Project name with space', () => {
 
     let driver: WebDriver;
-
     before(() => {
-
         /**
-         * Create new gradle project name with space in the directory
+         * Create new gradle project name with space in the new directory
          */
-
-        utils.getRenamedProject();
+        utils.getProjectWithSpaceInDir(utils.getGradleProjectPath(), utils.getGradleProjectPathWithSpace());
         driver = VSBrowser.instance.driver;
 
     });
 
     it('Open Sample Gradle Project - Project name with space', async () => {
-
         await utils.delay(8000);
         await VSBrowser.instance.openResources(utils.getGradleProjectPathWithSpace());
-
     }).timeout(25000);
-
 });
 
 

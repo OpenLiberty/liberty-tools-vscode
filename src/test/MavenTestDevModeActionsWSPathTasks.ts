@@ -262,7 +262,11 @@ describe('Devmode action tests for Maven Project - path with space', () => {
     const mavenProjectPath = path.join(__dirname, "..", "..", "src", "test", "resources", "maven project");
     console.log("Current path __dirname" + mavenProjectPath);
     console.log("Project path to remove" + mavenProjectPath);
-    utils.removeProjectFolder(mavenProjectPath);
+    /**
+     * Remove newly created project after test case execution 
+     */
+
+    utils.removeProjectFolderWithContent(mavenProjectPath);
     console.log("Project removed from the path:" + mavenProjectPath);
 
   });

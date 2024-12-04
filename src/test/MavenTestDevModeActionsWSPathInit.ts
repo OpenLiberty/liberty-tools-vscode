@@ -14,23 +14,18 @@ import * as utils from './utils/testUtils';
 describe('Open Maven Project - path with space', () => {
 
     let driver: WebDriver;
-
     before(() => {
-
-        driver = VSBrowser.instance.driver;
-
         /**
-         * Create new maven project with space in the directory
+         * Create new gradle project name with space in the new directory
          */
-
-        utils.createMvnProjectPathWithSpace();
+        utils.getProjectWithSpaceInDir(utils.getMvnProjectPath(), utils.getMvnProjectDirWithSpace());
+        driver = VSBrowser.instance.driver;
 
     });
 
     it('Open Sample Maven Project - path with space', async () => {
-
+        await utils.delay(8000);
         await VSBrowser.instance.openResources(utils.getMvnProjectDirWithSpace());
-
     }).timeout(15000);
 
 });
