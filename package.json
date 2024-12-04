@@ -2,7 +2,7 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Liberty Tools",
 	"description": "Liberty Tools for Visual Studio Code",
-	"version": "24.0.11-SNAPSHOT",
+	"version": "24.0.12",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
@@ -50,7 +50,7 @@
 	],
 	"contributes": {
 		"javaExtensions": [
-			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.2.1.jar"
+			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.2.2.jar"
 		],
 		"xml.javaExtensions": [
 			"./jars/liberty-langserver-lemminx-2.2-jar-with-dependencies.jar"
@@ -260,7 +260,7 @@
 		"typescript": "^4.8.4",
 		"vscode-extension-tester": "^7.3.0",
 		"vscode-test": "^1.3.0",
-		"webpack": "^5.76.0",
+		"webpack": "^5.96.1",
 		"webpack-cli": "^4.10.0",
 		"@types/selenium-webdriver": "^4.1.22",
 		"clipboardy": "^2.3.0"
@@ -275,6 +275,6 @@
 		"@types/semver": "^7.3.2",
 		"vscode-languageclient": "^8.1.0",
 		"xml2js": "^0.5.0",
-		"jsonpath-plus": "^7.0.0"
+		"jsonpath-plus": "^10.2.0"
 	}
 }
