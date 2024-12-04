@@ -7,7 +7,7 @@ For information regarding known issues and limitations, refer to our [Common Iss
   - [Software requirements](#software-requirements)
   - [Application requirements](#application-requirements)
   - [Configure your Java runtime for language servers](#configure-your-java-runtime-for-language-servers)
-  - [External Settings](#external-settings)
+  - [External Settings](#external-extension-settings)
 - [Open the Liberty dashboard](#open-the-liberty-dashboard)
 - [Run your application on Liberty using dev mode](#run-your-application-on-liberty-using-dev-mode)
   - [Use the Liberty dashboard](#use-the-liberty-dashboard)
