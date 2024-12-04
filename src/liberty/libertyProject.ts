@@ -14,7 +14,7 @@ import * as gradleUtil from "../util/gradleUtil";
 import * as mavenUtil from "../util/mavenUtil";
 import * as util from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
-import { EXCLUDED_DIR_PATTERN, LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER } from "../definitions/constants";
+import { EXCLUDED_DIR_PATTERN, LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, UNTITLED_WORKSPACE } from "../definitions/constants";
 import { BuildFileImpl, GradleBuildFile } from "../util/buildFile";
 import { DashboardData } from "./dashboard";
 import { BaseLibertyProject } from "./baseLibertyProject";
@@ -201,6 +201,56 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		// trigger a re-render of the tree view
 		this._onDidChangeTreeData.fire(undefined);
 		statusMessage.dispose();
+	}
+
+	/**
+	 * This method asks the user to save the workspace first if it is untitled and the workspace contains more than
+	 * one project. If the workspace is not saved, there are chances that the project's state may not be saved and 
+	 * manually added projects may not be visible in the Liberty dashboard in a new VS Code session.
+	 */
+	public async checkUntitledWorkspaceAndSaveIt(): Promise<void> {
+		return new Promise((resolve) => {
+			try {
+				vscode.window.showInformationMessage(
+					localize("workspace.not.saved.projects.may.not.persist"),
+					{ modal: true },
+					'Save Workspace'
+				).then(async (selection) => {
+					if (selection === 'Save Workspace') {
+						/**
+						 * setting workspaceSaveInProgress to true and storing it in globalstate for identifyting that the
+						 * workspace is saved and needs to save the manually added projects to the dashboard
+						 */
+						await this._context.globalState.update('workspaceSaveInProgress', true);
+						//opens the saveWorkspace as dialog box
+						await vscode.commands.executeCommand('workbench.action.saveWorkspaceAs');
+					}
+					/**
+					 * If the user cancels saving the workspace and exits without saving, the data stays in the global state, 
+					 * which is shared across all VS Code instances. To prevent this data from being mistakenly used in other 
+					 * sessions and added to the dashboard, it should be cleared if the user cancels the save.
+					 */
+					util.clearDataSavedInGlobalState(this._context);
+					resolve();
+				});
+			} catch (error) {
+				console.debug("exception while saving the workspace" + error);
+				util.clearDataSavedInGlobalState(this._context);
+				resolve();
+			}
+		});
+	}
+
+	/*
+	This method identifies a workspace that is untitled and contains more than one project 
+	*/
+	public isMultiProjectUntitledWorkspace(): boolean {
+		const workspaceFolders = vscode.workspace.workspaceFolders;
+		if ((workspaceFolders && workspaceFolders.length > 1
+			&& vscode.workspace.name === UNTITLED_WORKSPACE)) {
+			return true;
+		}
+		return false;
 	}
 
 	public fireChangeEvent(): void {
