@@ -17,56 +17,65 @@ const assert = require('assert');
 describe('LCLS Test for Gradle Project', function () {
     let editor: TextEditor;
 
+    before(() => {
+        utils.copyConfig(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'),path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));     
+    });
+
     it('should apply quick fix for invalid value in server.xml', async () => {
         const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
         section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'server.xml'));
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
-
-        const stanzaSnippet = "<logging appsWriteJson = \"wrong\" />";
-        const expectedText = "<logging appsWriteJson = \"true\" />";
-        await editor.typeTextAt(17, 5, stanzaSnippet);
+        const actualSeverXMLContent = await editor.getText();
+        const stanzaSnipet = "<logging appsWriteJson = \"wrong\" />";
+        const expectedHoverData = "<logging appsWriteJson = \"true\" />";
+        await editor.typeTextAt(17, 5, stanzaSnipet);
         await utils.delay(2000);
-        const flaggedString = editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
+        const flagedString = await editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
         await utils.delay(3000);
 
         const actions = VSBrowser.instance.driver.actions();
-        await actions.move({ origin: flaggedString }).perform();
+        await actions.move({ origin: flagedString }).perform();
         await utils.delay(3000);
 
         const driver = VSBrowser.instance.driver;
-        const hoverValue = editor.findElement(By.className('hover-row status-bar'));
+        const hoverTxt= await editor.findElement(By.className('hover-row status-bar'));
         await utils.delay(2000);
 
-        const quickFixPopupLink = await hoverValue.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
-        await quickFixPopupLink.click();
+        const qckFixPopupLink = await hoverTxt.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
+        await qckFixPopupLink.click();
 
-        const hoverBar = editor.findElement(By.className('context-view monaco-component bottom left fixed'));
-        await hoverBar.findElement(By.className('actionList'));
+        const hoverTaskBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
+        await hoverTaskBar.findElement(By.className('actionList'));
         await utils.delay(2000);
 
-        const pointerBlockElementt = await driver.findElement(By.css('.context-view-pointerBlock'));
+        const pointerBlockedElement = await driver.findElement(By.css('.context-view-pointerBlock'));
         // Setting pointer block element display value as none to choose option from Quickfix menu
-        if (pointerBlockElementt) {
-            await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockElementt);
+        if (pointerBlockedElement) {
+            await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockedElement);
         } else {
             console.log('pointerBlockElementt not found!');
         }
-        const fixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'true'\")]"));
-        await fixOption.click();
+        const qckfixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'true'\")]"));
+        await qckfixOption.click();
 
-        const updatedContent = await editor.getText();
+        const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after Quick fix : ", updatedContent);
-        assert(updatedContent.includes(expectedText), 'quick fix not applied correctly.');
-    }).timeout(25000);
+        console.log("Content after Quick fix : ", updatedSeverXMLContent);
+        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly.');
+        await editor.clearText();
+        await editor.setText(actualSeverXMLContent);
+        console.log("Content restored");
 
+    }).timeout(38000);
+
+    
     it('should show hover support for server.env', async () => {
         const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
         section.expand();
         
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'server.env'));
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.env'));
         editor = await new EditorView().openEditor('server.env') as TextEditor;
 
         const actualContent = editor.getText();
@@ -90,5 +99,10 @@ describe('LCLS Test for Gradle Project', function () {
         await editor.clearText();
 
     }).timeout(25000);
+
+    after(() => {
+        utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
+        console.log("Removed new config folder:");
+      });
     
 });
