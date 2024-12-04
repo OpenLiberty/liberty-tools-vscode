@@ -72,7 +72,7 @@ describe('LCLS Test for Gradle Project', function () {
 
     after(() => {
         
-        utils.removeProjectFolderWithContent(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
+        utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         console.log("Removed new config folder:");
       
       });

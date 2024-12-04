@@ -197,7 +197,7 @@ export async function clearCommandPalette() {
 /**
  * Remove newly created Project folder with content
  */
-export async function removeProjectFolderWithContent(projectPath: string): Promise<void> {
+export async function removeConfigDir(projectPath: string): Promise<void> {
   try {
     await fs.accessSync(projectPath);
     const projectContent = await fs.readdirSync(projectPath);
@@ -206,7 +206,7 @@ export async function removeProjectFolderWithContent(projectPath: string): Promi
         const projectContentPath = path.join(projectPath, projectFiles);
         const stats = await fs.lstatSync(projectContentPath);
         if (stats.isDirectory()) {
-          await removeProjectFolderWithContent(projectContentPath);
+          await removeConfigDir(projectContentPath);
         } else {
           await fs.unlinkSync(projectContentPath);
         }
@@ -218,6 +218,9 @@ export async function removeProjectFolderWithContent(projectPath: string): Promi
   }
 }
 
+/**
+ * Copy config directory and create new config 
+ */
 export async function copyConfig(existingConfigPath: string, copyConfigPath: string): Promise<void> {
   fse.copy(existingConfigPath, copyConfigPath)
     .then(() => console.log("New config folder created :" + copyConfigPath))
