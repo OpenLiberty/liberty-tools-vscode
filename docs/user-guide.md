@@ -7,7 +7,8 @@ For information regarding known issues and limitations, refer to our [Common Iss
   - [Software requirements](#software-requirements)
   - [Application requirements](#application-requirements)
   - [Configure your Java runtime for language servers](#configure-your-java-runtime-for-language-servers)
-  - [External Settings](#external-extension-settings)
+  - [External extension settings](#external-extension-settings)
+  - [Terminal shell support](#terminal-shell-support)
 - [Open the Liberty dashboard](#open-the-liberty-dashboard)
 - [Run your application on Liberty using dev mode](#run-your-application-on-liberty-using-dev-mode)
   - [Use the Liberty dashboard](#use-the-liberty-dashboard)
@@ -75,6 +76,15 @@ For LemMinX, Liberty Tools for Visual Studio Code will check for the Java versio
 | `java.import.gradle.wrapper.enabled` | Gradle commands executed by dev mode honour this setting. If this setting is set to `true`, dev mode tries to use `gradlew` if a Gradle wrapper file can be found. Otherwise, it uses `gradle`. | [Language support for Java extension](https://marketplace.visualstudio.com/items?itemName=redhat.java) |
 | `xml.java.home` | This setting allows a user to define their LemMinX language server runtime without altering the `JAVA_HOME` environment variable.  | Not set |
 | `java.jdt.ls.java.home` | This setting specifies the folder path to the JDK (17 or later) that is used to launch the Java Language Server. This setting replaces the Java extension's embedded JRE to start the language servers.  | Not set |
+
+### Terminal shell support
+
+Liberty Tools supports the default shell types for each OS in the Visual Studio Code terminal. These include:
+- Linux: Bash or sh
+- macOS: Bash or Zsh
+- Windows: Command Prompt (cmd.exe)
+
+It may be possible to use other shell types, but support is not guaranteed. Please feel free to open an enhancement issue if your preferred shell type is not supported: https://github.com/OpenLiberty/liberty-tools-vscode/issues.
 
 ## Open the Liberty dashboard
 
