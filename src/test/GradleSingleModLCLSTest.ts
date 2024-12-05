@@ -14,14 +14,14 @@ import * as constants from './definitions/constants';
 const path = require('path');
 const assert = require('assert');
 
-describe('LCLS Test for Gradle Project', function () {
+describe('LCLS tests for Gradle Project', function () {
     let editor: TextEditor;
 
     before(() => {
         utils.copyConfig(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'),path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));     
     });
 
-    it('should apply quick fix for invalid value in server.xml', async () => {
+    it('Should apply quick fix for invalid value in server.xml', async () => {
         const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
         section.expand();
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
@@ -71,9 +71,8 @@ describe('LCLS Test for Gradle Project', function () {
     }).timeout(38000);
 
     after(() => {
-        
         utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         console.log("Removed new config folder:");
-      
-      });
+
+    });
 });
