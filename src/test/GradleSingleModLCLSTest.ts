@@ -154,6 +154,49 @@ Enables: cdi-3.0, jndi-1.0, json-1.0, jsonp-2.0, mpConfig-3.0`;
 
     }).timeout(33000);
 
+    it('Should show type ahead support in server.xml Liberty Server Feature', async () => {
+        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
+        section.expand();
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+
+        editor = await new EditorView().openEditor('server.xml') as TextEditor;
+        const serverxmlContent = await editor.getText();
+        const featureTag = "<f";
+
+        const addFeature = "<feature>el-3.0</feature>";
+        await editor.typeTextAt(15, 35, '\n');
+        await editor.typeTextAt(16, 9, featureTag);
+        await utils.delay(5000);
+        //open the assistant
+        let asist = await editor.toggleContentAssist(true);
+        // toggle can return void, so we need to make sure the object is present
+        if (asist) {
+            // to select an item use
+            await asist.select('feature')
+        }
+        // close the assistant
+        await editor.toggleContentAssist(false);
+        const stanzaSnipet = "el-3";
+
+        await editor.typeTextAt(16, 18, stanzaSnipet);
+        await utils.delay(5000);
+
+        asist = await editor.toggleContentAssist(true);
+        if (asist) {
+            await asist.select('el-3.0')
+        }
+        await editor.toggleContentAssist(false);
+
+        const updatedServerxmlContent = await editor.getText();
+        await utils.delay(3000);
+        console.log("Content after Quick fix : ", updatedServerxmlContent);
+        assert(updatedServerxmlContent.includes(addFeature), 'quick fix not applied correctly.');
+        editor.clearText();
+        editor.setText(serverxmlContent);
+        console.log("Content restored");
+
+    }).timeout(35000);
+
     after(() => {
         utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         console.log("Removed new config folder:");
