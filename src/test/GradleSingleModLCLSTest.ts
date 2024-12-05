@@ -63,7 +63,7 @@ describe('LCLS tests for Gradle Project', function () {
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
         console.log("Content after Quick fix : ", updatedSeverXMLContent);
-        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly.');
+        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly for appsWriteJson.');
         await editor.clearText();
         await editor.setText(actualSeverXMLContent);
         console.log("Content restored");
@@ -93,7 +93,7 @@ describe('LCLS tests for Gradle Project', function () {
         const hverContent = editor.findElement(By.className('hover-contents'));
         const hverValue = await hverContent.getText();
         console.log("Hover text:" + hverValue);
-        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data.');
+        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data for server.env - LOGLEVEL');
         await editor.clearText();
 
     }).timeout(35000);
@@ -120,7 +120,7 @@ Source: ol-24.0.0.11.xsd`;
         const hverValue = await hverContent.getText();
         console.log("Hover text:" + hverValue);
 
-        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data.');
+        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data for Liberty Server Attribute -httpEndpoint');
 
     }).timeout(35000);
 
@@ -150,7 +150,7 @@ Enables: cdi-3.0, jndi-1.0, json-1.0, jsonp-2.0, mpConfig-3.0`;
         const hverValue = await hverContent.getText();
         console.log("Hover text:" + hverValue);
 
-        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data.');
+        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data Liberty Server Feature - mpHealth.');
 
     }).timeout(33000);
 
@@ -189,8 +189,8 @@ Enables: cdi-3.0, jndi-1.0, json-1.0, jsonp-2.0, mpConfig-3.0`;
 
         const updatedServerxmlContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after Quick fix : ", updatedServerxmlContent);
-        assert(updatedServerxmlContent.includes(addFeature), 'quick fix not applied correctly.');
+        console.log("Content after type ahead support : ", updatedServerxmlContent);
+        assert(updatedServerxmlContent.includes(addFeature), 'Type ahead support is not worked as expected in server.xml Liberty Server Feature - el-3.0.');
         editor.clearText();
         editor.setText(serverxmlContent);
         console.log("Content restored");
