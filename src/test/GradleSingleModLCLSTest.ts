@@ -33,7 +33,7 @@ describe('LCLS tests for Gradle Project', function () {
         await editor.typeTextAt(17, 5, stanzaSnipet);
         await utils.delay(2000);
         const flagedString = await editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
-        await utils.delay(3000);
+        await utils.delay(7000);
 
         const actions = VSBrowser.instance.driver.actions();
         await actions.move({ origin: flagedString }).perform();
@@ -66,9 +66,41 @@ describe('LCLS tests for Gradle Project', function () {
         assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly.');
         await editor.clearText();
         await editor.setText(actualSeverXMLContent);
+        await utils.delay(3000);
         console.log("Content restored");
 
     }).timeout(38000);
+
+    it('Should show hover support for server.xml Liberty Server Attribute', async () => {
+
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        editor = await new EditorView().openEditor('server.xml') as TextEditor;
+
+        const actualSeverXMLContent = await editor.getText();
+        const hverExpectdOutcome = `Configuration properties for an HTTP endpoint.
+Source: ol-24.0.0.11.xsd`;
+
+        console.log(hverExpectdOutcome);
+        const focusTargtElemnt = editor.findElement(By.xpath("//*[contains(text(), 'httpEndpoint')]"));
+        await utils.delay(3000);
+        focusTargtElemnt.click();
+        await editor.click();
+
+        const actns = VSBrowser.instance.driver.actions();
+        await actns.move({ origin: focusTargtElemnt }).perform();
+        await utils.delay(5000);
+
+        const hverContent = editor.findElement(By.className('hover-contents'));
+        const hverValue = await hverContent.getText();
+        console.log("Hover text:" + hverValue);
+
+        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data.');
+        await editor.clearText();
+        await editor.setText(actualSeverXMLContent);
+        await utils.delay(3000);
+        console.log("Content restored");
+
+    }).timeout(35000);
 
     it('Should show hover support for server.env', async () => {
         const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
@@ -98,33 +130,7 @@ describe('LCLS tests for Gradle Project', function () {
 
     }).timeout(35000);
 
-    it('Should show hover support for server.xml Liberty Server Attribute', async () => {
-
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
-
-        const hverExpectdOutcome = `Configuration properties for an HTTP endpoint.
-Source: ol-24.0.0.11.xsd`;
-
-        console.log(hverExpectdOutcome);
-        const focusTargtElemnt = editor.findElement(By.xpath("//*[contains(text(), 'httpEndpoint')]"));
-        await utils.delay(3000);
-        focusTargtElemnt.click();
-        await editor.click();
-
-        const actns = VSBrowser.instance.driver.actions();
-        await actns.move({ origin: focusTargtElemnt }).perform();
-        await utils.delay(5000);
-
-        const hverContent = editor.findElement(By.className('hover-contents'));
-        const hverValue = await hverContent.getText();
-        console.log("Hover text:" + hverValue);
-
-        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data.');
-
-    }).timeout(35000);
-
-    after(() => {
+    after(() => {      
         utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         console.log("Removed new config folder:");
       });
