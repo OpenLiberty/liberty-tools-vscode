@@ -290,14 +290,17 @@ The Program includes some or all of the following that IBM obtained
 under the Eclipse Public License (source code available via the
 indicated URL):
 
- org.eclipse.lsp4j:org.eclipse.lsp4j.generator | https://mvnrepository.com/artifact/org.eclipse.lsp4j/org.eclipse.lsp4j.generator/0.17.0
+org.eclipse.lsp4j:org.eclipse.lsp4j.generator | https://mvnrepository.com/artifact/org.eclipse.lsp4j/org.eclipse.lsp4j.generator/0.17.0
 org.eclipse.lsp4j:org.eclipse.lsp4j | https://repo1.maven.org/maven2/org/eclipse/lsp4j/org.eclipse.lsp4j/0.14.0/org.eclipse.lsp4j-0.14.0-sources.jar
 org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc | https://repo1.maven.org/maven2/org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc/0.14.0/org.eclipse.lsp4j.jsonrpc-0.14.0-sources.jar
 org.eclipse.lsp4jakarta:org.eclipse.lsp4jakarta.jdt.core | https://github.com/eclipse/lsp4jakarta
+org.eclipse.lsp4jakarta:org.eclipse.lsp4jakarta.ls | https://github.com/eclipse/lsp4jakarta
 org.eclipse.lsp4mp:org.eclipse.lsp4mp.ls | https://github.com/eclipse/lsp4mp/tree/0.5.0
 org.eclipse.xtend:org.eclipse.xtend.lib | https://mvnrepository.com/artifact/org.eclipse.xtend/org.eclipse.xtend.lib/2.28.0
 org.eclipse.xtend:org.eclipse.xtend.lib.macro | https://mvnrepository.com/artifact/org.eclipse.xtend/org.eclipse.xtend.lib.macro/2.28.0
 org.eclipse.xtext:org.eclipse.xtext.xbase.lib | https://mvnrepository.com/artifact/org.eclipse.xtext/org.eclipse.xtext.xbase.lib/2.28.0
+io.openliberty.tools:liberty-langserver | https://mvnrepository.com/artifact/io.openliberty.tools/liberty-langserver/2.2
+io.openliberty.tools:liberty-langserver-lemminx | https://mvnrepository.com/artifact/io.openliberty.tools/liberty-langserver-lemminx/2.2
 
 END OF ECLIPSE PUBLIC LICENSE, VERSION 2 NOTICES AND INFORMATION
 
@@ -343,6 +346,8 @@ MIT LICENSE
 The Program includes some or all of the following that IBM obtained
 under the MIT License:
 
+@jsep-plugin/assignment | Copyright 2013 Stephen Oney <https://ericsmekens.github.io/jsep/>
+@jsep-plugin/regex | Copyright 2013 Stephen Oney <https://ericsmekens.github.io/jsep/>
 @types/fs-extra | Copyright (c) Microsoft Corporation.
 @types/node | Copyright (c) Microsoft Corporation. All rights reserved.
 @types/semver | Copyright (c) Microsoft Corporation.
@@ -350,10 +355,11 @@ under the MIT License:
 balanced-match | Copyright (c) 2013 Julian Gruber <julian@juliangruber.com>
 brace-expansion | Copyright (c) 2013 Julian Gruber <julian@juliangruber.com>
 fs-extra | Copyright (c) 2011-2017 JP Richardson
+jsep | Copyright 2013 Stephen Oney <https://ericsmekens.github.io/jsep/>
 jsonfile | Copyright (c) 2012-2015 JP Richardson <jprichardson@gmail.com>
 jsonpath-plus | Copyright (c) 2011-2019 Stefan Goessner, Subbu Allamaraju, Mike Brevoort,
 Robert Krahn, Brett Zamir, Richard Schneider
-lodash.merge | Copyright OpenJS Foundation and other contributors <https://openjsf.org/
+lodash.merge | Copyright OpenJS Foundation and other contributors <https://openjsf.org/>
 org.checkerframework:checker-qual | Copyright 2004-present by the Checker Framework developers
 universalify | Copyright (c) 2017 Ryan Zimmerman <opensrc@ryanzim.com>
 vscode-jsonrpc | Copyright (c) Microsoft Corporation
