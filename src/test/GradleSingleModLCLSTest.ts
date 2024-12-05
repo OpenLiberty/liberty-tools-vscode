@@ -124,6 +124,36 @@ Source: ol-24.0.0.11.xsd`;
 
     }).timeout(35000);
 
+    it('Should show hover support for server.xml Liberty Server Feature', async () => {
+
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'server.xml'));
+        editor = await new EditorView().openEditor('server.xml') as TextEditor;
+
+        const hverExpectdOutcome = `Description: This feature provides support for the MicroProfile Health specification.
+Enabled by: microProfile-5.0, microProfile-6.0, microProfile-6.1
+Enables: cdi-3.0, jndi-1.0, json-1.0, jsonp-2.0, mpConfig-3.0`;
+        const testHverTarget = '<feature>mpHealth-4.0</feature>';
+
+        await editor.typeTextAt(15, 35, '\n');
+        await utils.delay(1000);
+        await editor.typeTextAt(16, 9, testHverTarget);
+        const focusTargtElemnt = editor.findElement(By.xpath("//*[contains(text(), 'mpHealth')]"));
+        await utils.delay(3000);
+        focusTargtElemnt.click();
+        await editor.click();
+
+        const actns = VSBrowser.instance.driver.actions();
+        await actns.move({ origin: focusTargtElemnt }).perform();
+        await utils.delay(5000);
+
+        const hverContent = editor.findElement(By.className('hover-contents'));
+        const hverValue = await hverContent.getText();
+        console.log("Hover text:" + hverValue);
+
+        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data.');
+
+    }).timeout(33000);
+
     after(() => {
         utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         console.log("Removed new config folder:");
