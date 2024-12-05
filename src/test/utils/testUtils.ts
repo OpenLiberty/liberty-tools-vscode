@@ -193,6 +193,7 @@ export async function clearCommandPalette() {
   expect(buttons.length).equals(2);
   await dialog.pushButton('Clear');
 }
+
 /**
  * Remove newly created Project folder with content
  */
