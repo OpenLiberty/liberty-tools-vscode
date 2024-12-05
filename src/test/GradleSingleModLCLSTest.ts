@@ -117,10 +117,10 @@ Source: ol-24.0.0.11.xsd`;
         await utils.delay(5000);
 
         const hverContent = editor.findElement(By.className('hover-contents'));
-        const hoverValue = await hverContent.getText();
-        console.log("Hover text:" + hoverValue);
+        const hverValue = await hverContent.getText();
+        console.log("Hover text:" + hverValue);
 
-        assert(hoverValue === (hverExpectdOutcome), 'Did not get expected hover data.');
+        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data.');
 
     }).timeout(35000);
 
