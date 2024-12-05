@@ -14,81 +14,119 @@ import * as constants from './definitions/constants';
 const path = require('path');
 const assert = require('assert');
 
-describe('LCLS Test for Gradle Project', function () {
+describe('LCLS tests for Gradle Project', function () {
     let editor: TextEditor;
 
-    it('should apply quick fix for invalid value in server.xml', async () => {
+    before(() => {
+        utils.copyConfig(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'),path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));     
+    });
+
+    it('Should apply quick fix for invalid value in server.xml', async () => {
         const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
         section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'server.xml'));
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const actualContent = await editor.getText();
-        const stanzaSnippet = "<logging appsWriteJson = \"wrong\" />";
-        const expectedText = "<logging appsWriteJson = \"true\" />";
-        await editor.typeTextAt(17, 5, stanzaSnippet);
+        const actualSeverXMLContent = await editor.getText();
+        const stanzaSnipet = "<logging appsWriteJson = \"wrong\" />";
+        const expectedHoverData = "<logging appsWriteJson = \"true\" />";
+        await editor.typeTextAt(17, 5, stanzaSnipet);
         await utils.delay(2000);
-        const flaggedString = editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
+        const flagedString = await editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
         await utils.delay(3000);
 
         const actions = VSBrowser.instance.driver.actions();
-        await actions.move({ origin: flaggedString }).perform();
+        await actions.move({ origin: flagedString }).perform();
         await utils.delay(3000);
 
         const driver = VSBrowser.instance.driver;
-        const hoverValue = editor.findElement(By.className('hover-row status-bar'));
+        const hoverTxt= await editor.findElement(By.className('hover-row status-bar'));
         await utils.delay(2000);
 
-        const quickFixPopupLink = await hoverValue.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
-        await quickFixPopupLink.click();
+        const qckFixPopupLink = await hoverTxt.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
+        await qckFixPopupLink.click();
 
-        const hoverBar = editor.findElement(By.className('context-view monaco-component bottom left fixed'));
-        await hoverBar.findElement(By.className('actionList'));
+        const hoverTaskBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
+        await hoverTaskBar.findElement(By.className('actionList'));
         await utils.delay(2000);
 
-        const pointerBlockElementt = await driver.findElement(By.css('.context-view-pointerBlock'));
+        const pointerBlockedElement = await driver.findElement(By.css('.context-view-pointerBlock'));
         // Setting pointer block element display value as none to choose option from Quickfix menu
-        if (pointerBlockElementt) {
-            await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockElementt);
+        if (pointerBlockedElement) {
+            await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockedElement);
         } else {
             console.log('pointerBlockElementt not found!');
         }
-        const fixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'true'\")]"));
-        await fixOption.click();
+        const qckfixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'true'\")]"));
+        await qckfixOption.click();
 
-        const updatedContent = await editor.getText();
+        const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after Quick fix : ", updatedContent);
-        assert(updatedContent.includes(expectedText), 'quick fix not applied correctly.');
-        editor.clearText();
-        editor.setText(actualContent);
+        console.log("Content after Quick fix : ", updatedSeverXMLContent);
+        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly.');
+        await editor.clearText();
+        await editor.setText(actualSeverXMLContent);
         console.log("Content restored");
 
-    }).timeout(25000);
+    }).timeout(38000);
 
-    it('should show hover support for server.xml Liberty Server Attribute', async () => {
+    it('Should show hover support for server.env', async () => {
+        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
+        section.expand();
+        
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.env'));
+        editor = await new EditorView().openEditor('server.env') as TextEditor;
 
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'server.xml'));
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
-
-        const hoverExpectedOutcome = `Configuration properties for an HTTP endpoint.
-Source: ol-24.0.0.11.xsd`;
-
-        console.log(hoverExpectedOutcome);
-        const focusTargetLement = editor.findElement(By.xpath("//*[contains(text(), 'httpEndpoint')]"));
+        const testHverTarget = "WLP_LOGGING_CONSOLE_LOGLEVEL=AUDIT";
+        const hverExpectdOutcome = "This setting controls the granularity of messages that go to the console. The valid values are INFO, AUDIT, WARNING, ERROR, and OFF. The default is AUDIT. If using with the Eclipse developer tools this must be set to the default.";
+        await editor.typeTextAt(1, 1, testHverTarget);
+        await utils.delay(2000);
+        const focusTargtElemnt = editor.findElement(By.xpath("//*[contains(text(), 'LOGLEVEL')]"));
         await utils.delay(3000);
-        focusTargetLement.click();
+        focusTargtElemnt.click();
         await editor.click();
 
-        const actions = VSBrowser.instance.driver.actions();
-        await actions.move({ origin: focusTargetLement }).perform();
+        const actns = VSBrowser.instance.driver.actions();
+        await actns.move({ origin: focusTargtElemnt }).perform();
         await utils.delay(5000);
 
-        const hoverContents = editor.findElement(By.className('hover-contents'));
-        const hoverValue = await hoverContents.getText();
+        const hverContent = editor.findElement(By.className('hover-contents'));
+        const hverValue = await hverContent.getText();
+        console.log("Hover text:" + hverValue);
+        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data.');
+        await editor.clearText();
+
+    }).timeout(35000);
+
+    it('Should show hover support for server.xml Liberty Server Attribute', async () => {
+
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        editor = await new EditorView().openEditor('server.xml') as TextEditor;
+
+        const hverExpectdOutcome = `Configuration properties for an HTTP endpoint.
+Source: ol-24.0.0.11.xsd`;
+
+        console.log(hverExpectdOutcome);
+        const focusTargtElemnt = editor.findElement(By.xpath("//*[contains(text(), 'httpEndpoint')]"));
+        await utils.delay(3000);
+        focusTargtElemnt.click();
+        await editor.click();
+
+        const actns = VSBrowser.instance.driver.actions();
+        await actns.move({ origin: focusTargtElemnt }).perform();
+        await utils.delay(5000);
+
+        const hverContent = editor.findElement(By.className('hover-contents'));
+        const hoverValue = await hverContent.getText();
         console.log("Hover text:" + hoverValue);
 
-        assert(hoverValue === (hoverExpectedOutcome), 'Did not get expected hover data.');
+        assert(hoverValue === (hverExpectdOutcome), 'Did not get expected hover data.');
 
-    }).timeout(25000);
+    }).timeout(35000);
+
+    after(() => {
+        utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
+        console.log("Removed new config folder:");
+      });
+    
 });
