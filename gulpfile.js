@@ -69,12 +69,12 @@ gulp.task("downloadLibertyLSJars", (done) => {
       url: libertyLemminxURL,
       file: libertyLemminxName,
     })
-    .pipe(gulp.dest("./jars"));
+    .pipe(gulp.dest("./jars", { encoding: false}));
     download({
       url: libertyLSURL,
       file: libertyLSName,
     })
-    .pipe(gulp.dest("./jars"));
+    .pipe(gulp.dest("./jars", { encoding: false}));
   done();
 });
 
@@ -94,12 +94,12 @@ gulp.task("downloadLSP4JakartaJars", (done) => {
       url: jakartaJDTURL,
       file: jakartaJdtName,
     })
-    .pipe(gulp.dest("./jars"));
+    .pipe(gulp.dest("./jars", { encoding: false}));
     download({
       url: jakartaLSURL,
       file: jakartaLSName,
     })
-    .pipe(gulp.dest("./jars"));
+    .pipe(gulp.dest("./jars", { encoding: false}));
   done();
 });
 
