@@ -22,7 +22,7 @@ gulp.task("buildLemminxLiberty", (done) => {
     cwd: libertyLemminxDir,
     stdio: "inherit",
   });
-  gulp.src(libertyLemminxDir + "/target/" + libertyLemminxName).pipe(gulp.dest("./jars"));
+  gulp.src(libertyLemminxDir + "/target/" + libertyLemminxName, { encoding: false }).pipe(gulp.dest("./jars"));
   done();
 });
 
@@ -31,7 +31,7 @@ gulp.task("buildLibertyServer", (done) => {
     cwd: libertyLSDir,
     stdio: "inherit",
   });
-  gulp.src(libertyLSDir + "/target/" + libertyLSName).pipe(gulp.dest("./jars"));
+  gulp.src(libertyLSDir + "/target/" + libertyLSName, { encoding: false }).pipe(gulp.dest("./jars"));
   done();
 });
 
@@ -40,7 +40,7 @@ gulp.task("buildJakartaJdt", (done) => {
     cwd: jakartaJdtDir,
     stdio: "inherit",
   });
-  gulp.src(jakartaJdtDir + "/target/" + jakartaJdtName).pipe(gulp.dest("./jars"));
+  gulp.src(jakartaJdtDir + "/target/" + jakartaJdtName, { encoding: false }).pipe(gulp.dest("./jars"));
   done();
 });
 
@@ -49,7 +49,7 @@ gulp.task("buildJakartaLs", (done) => {
     cwd: jakartaLSDir,
     stdio: "inherit",
   });
-  gulp.src(jakartaLSDir + "/target/" + jakartaLSName).pipe(gulp.dest("./jars"));
+  gulp.src(jakartaLSDir + "/target/" + jakartaLSName, { encoding: false }).pipe(gulp.dest("./jars"));
   done();
 });
 
@@ -69,12 +69,12 @@ gulp.task("downloadLibertyLSJars", (done) => {
       url: libertyLemminxURL,
       file: libertyLemminxName,
     })
-    .pipe(gulp.dest("./jars"));
+    .pipe(gulp.dest("./jars", { encoding: false}));
     download({
       url: libertyLSURL,
       file: libertyLSName,
     })
-    .pipe(gulp.dest("./jars"));
+    .pipe(gulp.dest("./jars", { encoding: false}));
   done();
 });
 
@@ -94,12 +94,12 @@ gulp.task("downloadLSP4JakartaJars", (done) => {
       url: jakartaJDTURL,
       file: jakartaJdtName,
     })
-    .pipe(gulp.dest("./jars"));
+    .pipe(gulp.dest("./jars", { encoding: false}));
     download({
       url: jakartaLSURL,
       file: jakartaLSName,
     })
-    .pipe(gulp.dest("./jars"));
+    .pipe(gulp.dest("./jars", { encoding: false}));
   done();
 });
 
