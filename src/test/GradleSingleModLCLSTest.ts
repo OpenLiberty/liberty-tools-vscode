@@ -30,8 +30,8 @@ describe('LCLS tests for Gradle Project', function () {
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
         actualSeverXMLContent = await editor.getText();
 
-        assert(actualSeverXMLContent.length!==0, 'Content of server.xml is not in coppied.');
-        console.log('Sever.xml content:',actualSeverXMLContent);
+        assert(actualSeverXMLContent.length !== 0, 'Content of server.xml is not in coppied.');
+        console.log('Sever.xml content:', actualSeverXMLContent);
 
     }).timeout(10000);
 
@@ -77,7 +77,7 @@ describe('LCLS tests for Gradle Project', function () {
         await utils.delay(3000);
         console.log("Content after Quick fix : ", updatedSeverXMLContent);
         assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly for the invalid value in server.xml.');
-        
+
         editor.clearText();
         editor.setText(actualSeverXMLContent);
         console.log("Content restored");
@@ -195,7 +195,6 @@ describe('LCLS tests for Gradle Project', function () {
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
         const stanzaSnipet = "log";
-
         const insertedConfig = "<logging></logging>";
         await editor.typeTextAt(17, 5, stanzaSnipet);
         await utils.delay(5000);
@@ -221,7 +220,115 @@ describe('LCLS tests for Gradle Project', function () {
         editor.setText(actualSeverXMLContent);
         console.log("Content restored");
 
-    }).timeout(25000);
+    }).timeout(35000);
+
+    it('Should show diagnostic support in boostrap.properties ', async () => {
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'bootstrap.properties'));
+        editor = await new EditorView().openEditor('bootstrap.properties') as TextEditor;
+
+        const configNameSnippet = "com.ibm.ws.logging.con";;
+        const insertConfig = "=wrong";
+        const envCfgNameChooserSnippet = "com.ibm.ws.logging.console.format";
+        const expectedHoverData = "The value `wrong` is not valid for the property `com.ibm.ws.logging.console.format`.";
+
+        await editor.typeTextAt(1, 1, configNameSnippet);
+        await utils.delay(5000);
+        //open the assistant
+        let asist = await editor.toggleContentAssist(true);
+        // toggle can return void, so we need to make sure the object is present
+        if (asist) {
+            // to select an item use
+            await asist.select(envCfgNameChooserSnippet);
+        }
+        // close the assistant
+        await editor.toggleContentAssist(false);
+
+        await editor.typeTextAt(1, 34, insertConfig);
+        const focusTargetLement = editor.findElement(By.xpath("//*[contains(text(), 'wrong')]"));
+        await utils.delay(3000);
+        focusTargetLement.click();
+        await editor.click();
+
+        const actions = VSBrowser.instance.driver.actions();
+        await actions.move({ origin: focusTargetLement }).perform();
+        await utils.delay(5000);
+
+        const hoverContents = editor.findElement(By.className('hover-contents'));
+        const hoverValue = await hoverContents.getText();
+        console.log("Hover text:" + hoverValue);
+
+        assert(hoverValue.includes(expectedHoverData), 'Did not get expected diagnostic as expected in boostrap.properties.');
+        editor.clearText();
+
+    }).timeout(35000);
+
+
+    it('Should show hover support for bootstrap.properties Liberty Server properties setting', async () => {
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'bootstrap.properties'));
+        editor = await new EditorView().openEditor('bootstrap.properties') as TextEditor;
+
+        const ExpectedHoverOutcome = 'This setting controls the granularity of messages that go to the console. The valid values are INFO, AUDIT, WARNING, ERROR, and OFF. The default is AUDIT. If using with the Eclipse developer tools this must be set to the default.';
+        await editor.clearText();
+        const testHoverTarget = "com.ibm.ws.logging.console.log.level=OFF";
+        await editor.typeTextAt(1, 1, testHoverTarget);
+        await utils.delay(5000);
+        console.log(ExpectedHoverOutcome);
+        const focusTargetLement = editor.findElement(By.xpath("//*[contains(text(), 'ws.logging.console.log.level')]"));
+        await utils.delay(3000);
+        focusTargetLement.click();
+        await editor.click();
+
+        const actions = VSBrowser.instance.driver.actions();
+        await actions.move({ origin: focusTargetLement }).perform();
+        await utils.delay(5000);
+
+        const hoverContents = editor.findElement(By.className('hover-contents'));
+        const hoverValue = await hoverContents.getText();
+        console.log("Hover text:" + hoverValue);
+
+        assert(hoverValue === (ExpectedHoverOutcome), 'Did not get expected hover data for bootstrap.properties.');
+        editor.clearText();
+
+    }).timeout(35000);
+
+    it('Should show type ahead support in bootstrap.properties for a Liberty Server Configuration booststrap.properties entry', async () => {
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'bootstrap.properties'));
+        editor = await new EditorView().openEditor('bootstrap.properties') as TextEditor;
+
+        const configNameSnippet = "com.ibm.ws.logging.con";;
+        const insertConfig = "=TBA";
+        const envCfgNameChooserSnippet = "com.ibm.ws.logging.console.format";
+        const expectedServerEnvString = 'com.ibm.ws.logging.console.format=TBASIC';
+
+        await editor.typeTextAt(1, 1, configNameSnippet);
+        await utils.delay(5000);
+        //open the assistant
+        let asist = await editor.toggleContentAssist(true);
+        // toggle can return void, so we need to make sure the object is present
+        if (asist) {
+            // to select an item use
+            await asist.select(envCfgNameChooserSnippet);
+        }
+        // close the assistant
+        await editor.toggleContentAssist(false);
+
+        await editor.typeTextAt(1, 34, insertConfig);
+        await utils.delay(2500);
+        asist = await editor.toggleContentAssist(true);
+        // toggle can return void, so we need to make sure the object is present
+        if (asist) {
+            // to select an item use
+            await asist.select('TBASIC');
+        }
+        // close the assistant
+        await editor.toggleContentAssist(false);
+
+        const updatedSeverEnvContent = await editor.getText();
+        await utils.delay(3000);
+        assert(updatedSeverEnvContent.includes(expectedServerEnvString), 'Type ahead support is not working as expected in bootstrap.properties');
+        editor.clearText();
+
+    }).timeout(35000);
 
     after(() => {
         utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
