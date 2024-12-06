@@ -5,6 +5,7 @@ import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/consta
 import { MapContextMenuforMac } from './macUtils';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
+import * as fse from 'fs-extra';
 
 export function delay(millisec: number) {
     return new Promise( resolve => setTimeout(resolve, millisec) );
@@ -192,4 +193,54 @@ export async function clearCommandPalette() {
   expect(buttons.length).equals(2);
   await dialog.pushButton('Clear');
 }
-  
+/**
+ * Function return project name with space
+ */
+export function getGradleProjectPathWithSpace(): any {
+  const gradleProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "gradle project", "liberty.gradle.te st.wrapper.app");
+
+  return gradleProjectPath;
+}
+
+/**
+ * Create new gradle project name with space in the directory
+ */
+
+export async function getProjectWithSpaceInDir(existingProjectPath: string, copyProjectPath: string): Promise<void> {
+  fse.copy(existingProjectPath, copyProjectPath)
+    .then(() => console.log("Project renamed.,  Gradle Project path is :" + copyProjectPath))
+    .catch(err => console.log("Error renaming the project"));
+}
+
+/**
+ * Remove newly created Project folder with content
+ */
+export async function removeProjectFolderWithContent(projectPath: string): Promise<void> {
+  try {
+    await fs.accessSync(projectPath);
+    const projectContent = await fs.readdirSync(projectPath);
+    await Promise.all(
+      projectContent.map(async (projectFiles) => {
+        const projectContentPath = path.join(projectPath, projectFiles);
+        const stats = await fs.lstatSync(projectContentPath);
+        if (stats.isDirectory()) {
+          await removeProjectFolderWithContent(projectContentPath);
+        } else {
+          await fs.unlinkSync(projectContentPath);
+        }
+      })
+    );
+    await fs.rmdirSync(projectPath);
+  } catch (error) {
+    console.error(`Error removing new project: ${error}`);
+  }
+}
+
+/**
+ * Function return project path with space
+ */
+export function getMvnProjectDirWithSpace(): any {
+  const mavenProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "maven project", "liberty.maven.test.wrapper.app");
+  console.log("Maven project path is  ", mavenProjectPath);
+  return mavenProjectPath;
+}
