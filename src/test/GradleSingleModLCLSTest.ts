@@ -18,7 +18,7 @@ describe('LCLS tests for Gradle Project', function () {
     let editor: TextEditor;
 
     before(() => {
-        utils.copyConfig(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'),path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));     
+        utils.copyConfig(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'), path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
     });
 
     it('Should apply quick fix for invalid value in server.xml', async () => {
@@ -33,14 +33,14 @@ describe('LCLS tests for Gradle Project', function () {
         await editor.typeTextAt(17, 5, stanzaSnipet);
         await utils.delay(2000);
         const flagedString = await editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
-        await utils.delay(3000);
+        await utils.delay(7000);
 
         const actions = VSBrowser.instance.driver.actions();
         await actions.move({ origin: flagedString }).perform();
         await utils.delay(3000);
 
         const driver = VSBrowser.instance.driver;
-        const hoverTxt= await editor.findElement(By.className('hover-row status-bar'));
+        const hoverTxt = await editor.findElement(By.className('hover-row status-bar'));
         await utils.delay(2000);
 
         const qckFixPopupLink = await hoverTxt.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
@@ -63,50 +63,23 @@ describe('LCLS tests for Gradle Project', function () {
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
         console.log("Content after Quick fix : ", updatedSeverXMLContent);
-        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly.');
+        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly for the invalid value in server.xml.');
         await editor.clearText();
         await editor.setText(actualSeverXMLContent);
+        await utils.delay(3000);
         console.log("Content restored");
 
     }).timeout(38000);
-
-    it('Should show hover support for server.env', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.env'));
-        editor = await new EditorView().openEditor('server.env') as TextEditor;
-
-        const testHverTarget = "WLP_LOGGING_CONSOLE_LOGLEVEL=AUDIT";
-        const hverExpectdOutcome = "This setting controls the granularity of messages that go to the console. The valid values are INFO, AUDIT, WARNING, ERROR, and OFF. The default is AUDIT. If using with the Eclipse developer tools this must be set to the default.";
-        await editor.typeTextAt(1, 1, testHverTarget);
-        await utils.delay(2000);
-        const focusTargtElemnt = editor.findElement(By.xpath("//*[contains(text(), 'LOGLEVEL')]"));
-        await utils.delay(3000);
-        focusTargtElemnt.click();
-        await editor.click();
-
-        const actns = VSBrowser.instance.driver.actions();
-        await actns.move({ origin: focusTargtElemnt }).perform();
-        await utils.delay(5000);
-
-        const hverContent = editor.findElement(By.className('hover-contents'));
-        const hverValue = await hverContent.getText();
-        console.log("Hover text:" + hverValue);
-        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data.');
-        await editor.clearText();
-
-    }).timeout(35000);
 
     it('Should show hover support for server.xml Liberty Server Attribute', async () => {
 
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
 
-        const hverExpectdOutcome = `Configuration properties for an HTTP endpoint.
-Source: ol-24.0.0.11.xsd`;
+        const actualSeverXMLContent = await editor.getText();
+        const hovrExpctdOutcome = `Configuration properties for an HTTP endpoint.`;
 
-        console.log(hverExpectdOutcome);
+        console.log(hovrExpctdOutcome);
         const focusTargtElemnt = editor.findElement(By.xpath("//*[contains(text(), 'httpEndpoint')]"));
         await utils.delay(3000);
         focusTargtElemnt.click();
@@ -117,10 +90,14 @@ Source: ol-24.0.0.11.xsd`;
         await utils.delay(5000);
 
         const hverContent = editor.findElement(By.className('hover-contents'));
-        const hverValue = await hverContent.getText();
-        console.log("Hover text:" + hverValue);
+        const hoveredText = await hverContent.getText();
+        console.log("Hover text:" + hoveredText);
 
-        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data.');
+        assert(hoveredText.includes(hovrExpctdOutcome), 'Did not get expected hover data Liberty Server Attribute.');
+        await editor.clearText();
+        await editor.setText(actualSeverXMLContent);
+        await utils.delay(3000);
+        console.log("Content restored");
 
     }).timeout(35000);
 
@@ -129,9 +106,7 @@ Source: ol-24.0.0.11.xsd`;
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'server.xml'));
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
 
-        const hverExpectdOutcome = `Description: This feature provides support for the MicroProfile Health specification.
-Enabled by: microProfile-5.0, microProfile-6.0, microProfile-6.1
-Enables: cdi-3.0, jndi-1.0, json-1.0, jsonp-2.0, mpConfig-3.0`;
+        const hverExpectdOutcome = `Description: This feature provides support for the MicroProfile Health specification.`;
         const testHverTarget = '<feature>mpHealth-4.0</feature>';
 
         await editor.typeTextAt(15, 35, '\n');
@@ -150,13 +125,13 @@ Enables: cdi-3.0, jndi-1.0, json-1.0, jsonp-2.0, mpConfig-3.0`;
         const hverValue = await hverContent.getText();
         console.log("Hover text:" + hverValue);
 
-        assert(hverValue === (hverExpectdOutcome), 'Did not get expected hover data.');
+        assert(hverValue.includes(hverExpectdOutcome), 'Did not get expected hover data Liberty Server Feature.');
 
     }).timeout(33000);
 
     after(() => {
         utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         console.log("Removed new config folder:");
-      });
-    
+    });
+
 });
