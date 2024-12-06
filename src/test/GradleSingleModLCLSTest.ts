@@ -18,7 +18,7 @@ describe('LCLS tests for Gradle Project', function () {
     let editor: TextEditor;
 
     before(() => {
-        utils.copyConfig(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'),path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));     
+        utils.copyConfig(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'), path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
     });
 
     it('Should apply quick fix for invalid value in server.xml', async () => {
@@ -33,14 +33,14 @@ describe('LCLS tests for Gradle Project', function () {
         await editor.typeTextAt(17, 5, stanzaSnipet);
         await utils.delay(2000);
         const flagedString = await editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
-        await utils.delay(3000);
+        await utils.delay(7000);
 
         const actions = VSBrowser.instance.driver.actions();
         await actions.move({ origin: flagedString }).perform();
         await utils.delay(3000);
 
         const driver = VSBrowser.instance.driver;
-        const hoverTxt= await editor.findElement(By.className('hover-row status-bar'));
+        const hoverTxt = await editor.findElement(By.className('hover-row status-bar'));
         await utils.delay(2000);
 
         const qckFixPopupLink = await hoverTxt.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
@@ -63,16 +63,17 @@ describe('LCLS tests for Gradle Project', function () {
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
         console.log("Content after Quick fix : ", updatedSeverXMLContent);
-        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly.');
+        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly for the invalid value in server.xml.');
         await editor.clearText();
         await editor.setText(actualSeverXMLContent);
+        await utils.delay(3000);
         console.log("Content restored");
 
     }).timeout(38000);
-
+    
     after(() => {
         utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         console.log("Removed new config folder:");
-
     });
+
 });
