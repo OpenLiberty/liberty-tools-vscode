@@ -16,10 +16,24 @@ const assert = require('assert');
 
 describe('LCLS tests for Gradle Project', function () {
     let editor: TextEditor;
+    let actualSeverXMLContent: string;
 
     before(() => {
         utils.copyConfig(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'), path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
     });
+
+    it('Should coppy content of server.xml', async () => {
+        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
+        section.expand();
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+
+        editor = await new EditorView().openEditor('server.xml') as TextEditor;
+        actualSeverXMLContent = await editor.getText();
+
+        assert(actualSeverXMLContent.length!==0, 'Content of server.xml is not in coppied.');
+        console.log('Sever.xml content:',actualSeverXMLContent);
+
+    }).timeout(10000);
 
     it('Should apply quick fix for invalid value in server.xml', async () => {
         const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
@@ -27,7 +41,6 @@ describe('LCLS tests for Gradle Project', function () {
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const actualSeverXMLContent = await editor.getText();
         const stanzaSnipet = "<logging appsWriteJson = \"wrong\" />";
         const expectedHoverData = "<logging appsWriteJson = \"true\" />";
         await editor.typeTextAt(17, 5, stanzaSnipet);
@@ -64,9 +77,9 @@ describe('LCLS tests for Gradle Project', function () {
         await utils.delay(3000);
         console.log("Content after Quick fix : ", updatedSeverXMLContent);
         assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly for the invalid value in server.xml.');
-        await editor.clearText();
-        await editor.setText(actualSeverXMLContent);
-        await utils.delay(3000);
+        
+        editor.clearText();
+        editor.setText(actualSeverXMLContent);
         console.log("Content restored");
 
     }).timeout(38000);
@@ -76,7 +89,6 @@ describe('LCLS tests for Gradle Project', function () {
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
 
-        const actualSeverXMLContent = await editor.getText();
         const hovrExpctdOutcome = `Configuration properties for an HTTP endpoint.`;
 
         console.log(hovrExpctdOutcome);
@@ -94,9 +106,9 @@ describe('LCLS tests for Gradle Project', function () {
         console.log("Hover text:" + hoveredText);
 
         assert(hoveredText.includes(hovrExpctdOutcome), 'Did not get expected hover data Liberty Server Attribute.');
-        await editor.clearText();
-        await editor.setText(actualSeverXMLContent);
-        await utils.delay(3000);
+
+        editor.clearText();
+        editor.setText(actualSeverXMLContent);
         console.log("Content restored");
 
     }).timeout(35000);
@@ -127,6 +139,10 @@ describe('LCLS tests for Gradle Project', function () {
 
         assert(hverValue.includes(hverExpectdOutcome), 'Did not get expected hover data Liberty Server Feature.');
 
+        editor.clearText();
+        editor.setText(actualSeverXMLContent);
+        console.log("Content restored");
+
     }).timeout(33000);
 
     it('Should show type ahead support in server.xml Liberty Server Feature', async () => {
@@ -135,7 +151,6 @@ describe('LCLS tests for Gradle Project', function () {
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const serverxmlContent = await editor.getText();
         const featureTag = "<f";
 
         const addFeature = "<feature>el-3.0</feature>";
@@ -166,8 +181,9 @@ describe('LCLS tests for Gradle Project', function () {
         await utils.delay(3000);
         console.log("Content after type ahead support : ", updatedServerxmlContent);
         assert(updatedServerxmlContent.includes(addFeature), 'Type ahead support is not worked as expected in server.xml Liberty Server Feature - el-3.0.');
+
         editor.clearText();
-        editor.setText(serverxmlContent);
+        editor.setText(actualSeverXMLContent);
         console.log("Content restored");
 
     }).timeout(35000);
