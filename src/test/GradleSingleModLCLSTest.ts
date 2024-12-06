@@ -30,7 +30,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
         actualSeverXMLContent = await editor.getText();
 
-        assert(actualSeverXMLContent.length !== 0, 'Content of server.xml is not in coppied.');
+        assert(actualSeverXMLContent.length !== 0, 'Content of server.xml is not coppied.');
         console.log('Sever.xml content:', actualSeverXMLContent);
 
     }).timeout(10000);
@@ -115,7 +115,7 @@ describe('LCLS tests for Gradle Project', function () {
 
     it('Should show hover support for server.xml Liberty Server Feature', async () => {
 
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'server.xml'));
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
 
         const hverExpectdOutcome = `Description: This feature provides support for the MicroProfile Health specification.`;
@@ -262,7 +262,6 @@ describe('LCLS tests for Gradle Project', function () {
 
     }).timeout(35000);
 
-
     it('Should show hover support for bootstrap.properties Liberty Server properties setting', async () => {
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'bootstrap.properties'));
         editor = await new EditorView().openEditor('bootstrap.properties') as TextEditor;
@@ -292,40 +291,41 @@ describe('LCLS tests for Gradle Project', function () {
     }).timeout(35000);
 
     it('Should show type ahead support in bootstrap.properties for a Liberty Server Configuration booststrap.properties entry', async () => {
+        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
+        section.expand();
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'bootstrap.properties'));
+
         editor = await new EditorView().openEditor('bootstrap.properties') as TextEditor;
+        const featureTag = "com.ibm.ws.logging.t";
+        const addFeature = 'com.ibm.ws.logging.trace.format=TBASIC';
 
-        const configNameSnippet = "com.ibm.ws.logging.con";;
-        const insertConfig = "=TBA";
-        const envCfgNameChooserSnippet = "com.ibm.ws.logging.console.format";
-        const expectedServerEnvString = 'com.ibm.ws.logging.console.format=TBASIC';
-
-        await editor.typeTextAt(1, 1, configNameSnippet);
+        await editor.typeTextAt(1, 1, featureTag);
         await utils.delay(5000);
         //open the assistant
         let asist = await editor.toggleContentAssist(true);
         // toggle can return void, so we need to make sure the object is present
         if (asist) {
             // to select an item use
-            await asist.select(envCfgNameChooserSnippet);
+            await asist.select('com.ibm.ws.logging.trace.format');
         }
         // close the assistant
         await editor.toggleContentAssist(false);
+        const stanzaSnipet = '=TB';
 
-        await editor.typeTextAt(1, 34, insertConfig);
-        await utils.delay(2500);
+        await editor.typeTextAt(1, 32, stanzaSnipet);
+        await utils.delay(5000);
+
         asist = await editor.toggleContentAssist(true);
-        // toggle can return void, so we need to make sure the object is present
         if (asist) {
-            // to select an item use
-            await asist.select('TBASIC');
+            await asist.select('TBASIC')
         }
-        // close the assistant
         await editor.toggleContentAssist(false);
 
-        const updatedSeverEnvContent = await editor.getText();
+        const updatedbootstrapContent = await editor.getText();
         await utils.delay(3000);
-        assert(updatedSeverEnvContent.includes(expectedServerEnvString), 'Type ahead support is not working as expected in bootstrap.properties');
+        console.log("Content after type ahead support : ", updatedbootstrapContent);
+        assert(updatedbootstrapContent.includes(addFeature), 'Type ahead support is not worked as expected in bootstrap.properties');
+
         editor.clearText();
 
     }).timeout(35000);
