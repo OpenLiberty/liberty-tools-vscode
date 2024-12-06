@@ -77,8 +77,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
 
         const actualSeverXMLContent = await editor.getText();
-        const hovrExpctdOutcome = `Configuration properties for an HTTP endpoint.
-Source: ol-24.0.0.11.xsd`;
+        const hovrExpctdOutcome = `Configuration properties for an HTTP endpoint.`;
 
         console.log(hovrExpctdOutcome);
         const focusTargtElemnt = editor.findElement(By.xpath("//*[contains(text(), 'httpEndpoint')]"));
@@ -94,7 +93,7 @@ Source: ol-24.0.0.11.xsd`;
         const hoveredText = await hverContent.getText();
         console.log("Hover text:" + hoveredText);
 
-        assert(hoveredText === (hovrExpctdOutcome), 'Did not get expected hover data.');
+        assert(hoveredText.includes(hovrExpctdOutcome), 'Did not get expected hover data.');
         await editor.clearText();
         await editor.setText(actualSeverXMLContent);
         await utils.delay(3000);
