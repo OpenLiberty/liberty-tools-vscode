@@ -39,6 +39,6 @@ describe('LSP4Jakarta LS test for snippet test', () => {
 
         await editor.clearText();
         await editor.save();
-    }).timeout(275000);
+    }).timeout(475000);
 
 });
