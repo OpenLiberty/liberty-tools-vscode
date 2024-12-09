@@ -35,7 +35,7 @@ describe('LCLS tests for Gradle Project', function () {
 
     }).timeout(10000);
 
-    it('Should show hover support for server.xml Liberty Server Feature', async () => {
+    it('Should show diagnostic for server.xml invalid value', async () => {
 
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'server.xml'));
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
@@ -57,7 +57,7 @@ describe('LCLS tests for Gradle Project', function () {
         const hverValue = await hverContent.getText();
         console.log("Hover text:" + hverValue);
 
-        assert(hverValue.includes(hverExpectdOutcome), 'Did not get expected hover data Liberty Server Feature.');
+        assert(hverValue.includes(hverExpectdOutcome), 'Did not get expected diagnostic in server.xml');
 
         editor.clearText();
         editor.setText(actualSeverXMLContent);
