@@ -5,6 +5,7 @@ import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/consta
 import { MapContextMenuforMac } from './macUtils';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
+import * as fse from 'fs-extra';
 
 export function delay(millisec: number) {
     return new Promise( resolve => setTimeout(resolve, millisec) );
@@ -192,4 +193,36 @@ export async function clearCommandPalette() {
   expect(buttons.length).equals(2);
   await dialog.pushButton('Clear');
 }
-  
+
+/**
+ * Remove newly created Project folder with content
+ */
+export async function removeConfigDir(projectPath: string): Promise<void> {
+  try {
+    await fs.accessSync(projectPath);
+    const projectContent = await fs.readdirSync(projectPath);
+    await Promise.all(
+      projectContent.map(async (projectFiles) => {
+        const projectContentPath = path.join(projectPath, projectFiles);
+        const stats = await fs.lstatSync(projectContentPath);
+        if (stats.isDirectory()) {
+          await removeConfigDir(projectContentPath);
+        } else {
+          await fs.unlinkSync(projectContentPath);
+        }
+      })
+    );
+    await fs.rmdirSync(projectPath);
+  } catch (error) {
+    console.error(`Error removing new project: ${error}`);
+  }
+}
+
+/**
+ * Copy config directory and create new config 
+ */
+export async function copyConfig(existingConfigPath: string, copyConfigPath: string): Promise<void> {
+  fse.copy(existingConfigPath, copyConfigPath)
+    .then(() => console.log("New config folder created :" + copyConfigPath))
+    .catch(err => console.log("Error creating config folder"));
+}
