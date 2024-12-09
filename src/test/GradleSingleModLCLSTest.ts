@@ -37,7 +37,7 @@ describe('LCLS tests for Gradle Project', function () {
 
     it('Should show diagnostic for server.xml invalid value', async () => {
 
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'server.xml'));
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
 
         const hverExpectdOutcome = `'wrong' is not a valid value of union type 'booleanType'.`;
