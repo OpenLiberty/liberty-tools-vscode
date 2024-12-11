@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, 2022 IBM Corporation.
+ * Copyright (c) 2020, 2024 IBM Corporation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -70,5 +70,13 @@ export function getStorageData(context: vscode.ExtensionContext): DashboardData 
  */
 export async function saveStorageData(context: vscode.ExtensionContext, dasboardData: DashboardData): Promise<void>{
 	await context.workspaceState.update(LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY, dasboardData);
+}
+/**
+ * clears the states saved in global state
+ * @param context 
+ */
+export function clearDataSavedInGlobalState(context: vscode.ExtensionContext) {
+	context.globalState.update('workspaceSaveInProgress', false);
+	context.globalState.update('selectedProject', undefined);
 }
 
