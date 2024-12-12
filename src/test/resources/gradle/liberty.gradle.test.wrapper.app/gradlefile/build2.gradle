@@ -1,0 +1,44 @@
+apply plugin: 'liberty'
+apply plugin: 'war'
+
+version '1.0'
+group 'liberty.gradle.test.wrapper.app'
+
+sourceCompatibility = 17
+targetCompatibility = 17
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+        dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.6.1'
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+     // provided dependencies
+     providedCompile 'javax.servlet:javax.servlet-api:3.1.0' 
+     providedCompile 'org.eclipse.microprofile:microprofile:5.0'
+     
+     // test dependencies
+     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1' 
+     testImplementation 'commons-httpclient:commons-httpclient:3.1'
+
+}
+
+liberty {
+    server{
+        verifyAppStartTimeout = 150
+    }
+}
+
+clean.dependsOn 'libertyStop'
