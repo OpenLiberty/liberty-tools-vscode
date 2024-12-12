@@ -22,6 +22,7 @@ describe('LSP4Jakarta LS test for snippet test', () => {
 
         //open the assistant
         const assist = await editor.toggleContentAssist(true);
+        await utils.delay(6000);
 		// toggle can return void, so we need to make sure the object is present
 		if (assist) {
 			// to select an item use
