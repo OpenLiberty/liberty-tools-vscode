@@ -25,7 +25,7 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         await utils.delay(6000);
 		// toggle can return void, so we need to make sure the object is present
 		if (assist) {
-            console.log("assist reached");
+            console.log("assist reached", await assist.getItems());
 			// to select an item use
 			await assist.select('rest_class');
             console.log("assist selected");
