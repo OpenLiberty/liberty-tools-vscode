@@ -40,8 +40,8 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         console.log("inserted text: ", insertedCode);
         assert(insertedCode.includes('public String methodname() {'), 'Snippet rest_class was not inserted correctly.');
 
-        await editor.clearText();
-        await editor.save();
+        // await editor.clearText();
+        // await editor.save();
     }).timeout(475000);
 
 });
