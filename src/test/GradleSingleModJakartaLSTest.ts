@@ -8,15 +8,16 @@ describe('LSP4Jakarta LS test for snippet test', () => {
     let editor: TextEditor;
 
     it('check if correct code is inserted when rest_class snippet is triggered',  async() => {
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), "src", "main", "java", "test", "gradle", "liberty", "web", "app", "HelloServlet.java"));
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), "src", "main", "java", "test", "gradle", "liberty", "web", "app", "SystemResource.java"));
         
-        editor = await new EditorView().openEditor('HelloServlet.java') as TextEditor;
+        editor = await new EditorView().openEditor('SystemResource.java') as TextEditor;
 
         const textPressent = await editor.getText();
         if(textPressent.length > 0){
             await editor.clearText();
         }
 
+        await utils.delay(9000);
         await editor.typeText("rest");
         await utils.delay(6000);
 
