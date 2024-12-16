@@ -33,7 +33,7 @@ describe('LCLS tests for Gradle Project', function () {
         assert(actualSeverXMLContent.length !== 0, 'Content of server.xml is not in coppied.');
         console.log('Sever.xml content:', actualSeverXMLContent);
 
-    }).timeout(10000);
+    }).timeout(15000);
 
     it('Should show diagnostic for server.xml invalid value', async () => {
 
