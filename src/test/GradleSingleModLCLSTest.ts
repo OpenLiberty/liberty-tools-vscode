@@ -259,7 +259,7 @@ describe('LCLS tests for Gradle Project', function () {
         console.log("Content restored");
 
     }).timeout(38000);
-    
+
     it('Should apply quick fix for invalid value in server.xml for server feature', async () => {
         const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
         section.expand();
@@ -309,6 +309,49 @@ describe('LCLS tests for Gradle Project', function () {
         console.log("Content restored");
 
     }).timeout(38000);
+
+    it('Should show type ahead support in server.xml Liberty Server platform', async () => {
+        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
+        section.expand();
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+
+        editor = await new EditorView().openEditor('server.xml') as TextEditor;
+        const featureTag = "<p";
+
+        const addFeature = "<platform>jakartaee-11.0</platform>";
+        await editor.typeTextAt(15, 35, '\n');
+        await editor.typeTextAt(16, 9, featureTag);
+        await utils.delay(5000);
+        //open the assistant
+        let asist = await editor.toggleContentAssist(true);
+        // toggle can return void, so we need to make sure the object is present
+        if (asist) {
+            // to select an item use
+            await asist.select('platform')
+        }
+        // close the assistant
+        await editor.toggleContentAssist(false);
+        const stanzaSnipet = "jakar";
+
+        await editor.typeTextAt(16, 19, stanzaSnipet);
+        await utils.delay(5000);
+
+        asist = await editor.toggleContentAssist(true);
+        if (asist) {
+            await asist.select('jakartaee-11.0')
+        }
+        await editor.toggleContentAssist(false);
+
+        const updatedServerxmlContent = await editor.getText();
+        await utils.delay(3000);
+        console.log("Content after type ahead support : ", updatedServerxmlContent);
+        assert(updatedServerxmlContent.includes(addFeature), 'Type ahead support is not worked as expected in server.xml Liberty Server platform');
+
+        editor.clearText();
+        editor.setText(actualSeverXMLContent);
+        console.log("Content restored");
+
+    }).timeout(35000);
 
     after(() => {
         utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
