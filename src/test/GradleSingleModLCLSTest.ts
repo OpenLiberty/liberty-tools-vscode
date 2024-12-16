@@ -146,6 +146,56 @@ describe('LCLS tests for Gradle Project', function () {
 
     }).timeout(38000);
 
+    it('Should apply quick fix for invalid value in server.xml for server platform', async () => {
+        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
+        section.expand();
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+
+        editor = await new EditorView().openEditor('server.xml') as TextEditor;
+        const stanzaSnipet = "<platform>jakarta</platform>";
+        const expectedHoverData = "<platform>jakartaee-11.0</platform>";
+        await editor.typeTextAt(15, 35, '\n');
+        await editor.typeTextAt(16, 9, stanzaSnipet);
+        await utils.delay(2000);
+        const flagedString = await editor.findElement(By.xpath("//*[contains(text(), '\jakarta\')]"));
+        await utils.delay(7000);
+
+        const actions = VSBrowser.instance.driver.actions();
+        await actions.move({ origin: flagedString }).perform();
+        await utils.delay(3000);
+
+        const driver = VSBrowser.instance.driver;
+        const hoverTxt = await editor.findElement(By.className('hover-row status-bar'));
+        await utils.delay(2000);
+
+        const qckFixPopupLink = await hoverTxt.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
+        await qckFixPopupLink.click();
+
+        const hoverTaskBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
+        await hoverTaskBar.findElement(By.className('actionList'));
+        await utils.delay(2000);
+
+        const pointerBlockedElement = await driver.findElement(By.css('.context-view-pointerBlock'));
+        // Setting pointer block element display value as none to choose option from Quickfix menu
+        if (pointerBlockedElement) {
+            await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockedElement);
+        } else {
+            console.log('pointerBlockElementt not found!');
+        }
+        const qckfixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace platform with jakartaee-11.0\")]"));
+        await qckfixOption.click();
+
+        const updatedSeverXMLContent = await editor.getText();
+        await utils.delay(3000);
+        console.log("Content after Quick fix : ", updatedSeverXMLContent);
+        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly for the invalid value in server.xml server platform.');
+
+        editor.clearText();
+        editor.setText(actualSeverXMLContent);
+        console.log("Content restored");
+
+    }).timeout(38000);
+
     after(() => {
         utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         console.log("Removed new config folder:");
