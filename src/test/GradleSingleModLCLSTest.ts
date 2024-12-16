@@ -114,6 +114,38 @@ describe('LCLS tests for Gradle Project', function () {
 
     }).timeout(38000);
 
+    it('Should show hover text in server.xml for server platform', async () => {
+        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
+        section.expand();
+        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+
+        editor = await new EditorView().openEditor('server.xml') as TextEditor;
+        const stanzaSnipet = "<platform>jakartaee-11.0</platform>";
+        const expectedDiagnosticData =  `Description: This platform resolves the Liberty features that support the Jakarta EE 11.0 platform.`;
+        await editor.typeTextAt(15, 35, '\n');
+        await editor.typeTextAt(16, 9, stanzaSnipet);
+        await utils.delay(2000);
+        const focusTargtElemnt = await editor.findElement(By.xpath("//*[contains(text(), '\jakarta\')]"));
+        await utils.delay(3000);
+        focusTargtElemnt.click();
+        await editor.click();
+
+        const actns = VSBrowser.instance.driver.actions();
+        await actns.move({ origin: focusTargtElemnt }).perform();
+        await utils.delay(5000);
+
+        const hverContent = editor.findElement(By.className('hover-contents'));
+        const hverValue = await hverContent.getText();
+        console.log("Hover text:" + hverValue);
+
+        assert(hverValue.includes(expectedDiagnosticData), 'Did not get expected hover text in server.xml server platform');
+
+        editor.clearText();
+        editor.setText(actualSeverXMLContent);
+        console.log("Content restored");
+
+    }).timeout(38000);
+
     it('Should show diagnostic for invalid value in server.xml for server platform', async () => {
         const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
         section.expand();
