@@ -360,8 +360,8 @@ describe('LCLS tests for Gradle Project', function () {
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
         const stanzaSnipet = "<feature>servlet</feature>";
-        const expectedSnippetFeature = "<feature>servlet</feature>";
-        const expectedSnippetPlatform = "<platform>jakartaee-9.1</platform>";
+        const expectedFeatureEntry = "<feature>servlet</feature>";
+        const expectedPlatformEntry = "<platform>jakartaee-9.1</platform>";
         const expectedDiagnosticData = `ERROR: The "servlet" versionless feature cannot be resolved since there are more than one common platform. Specify a platform or a feature with a version to enable resolution`;
         await editor.typeTextAt(15, 35, '\n');
         await editor.typeTextAt(16, 9, stanzaSnipet);
@@ -384,11 +384,10 @@ describe('LCLS tests for Gradle Project', function () {
             await editor.typeTextAt(17, 9, stanzaSnipetPlatform);
             await utils.delay(2000);
         }
-        console.log("expected text:" + expectedSnippetFeature);
         const updatedServerxmlContent = await editor.getText();
         console.log("expected text:" + updatedServerxmlContent);
 
-        assert(updatedServerxmlContent.includes(expectedSnippetFeature) && updatedServerxmlContent.includes(expectedSnippetPlatform), 'Did not get expected diagnostic in server.xml server feature');
+        assert(updatedServerxmlContent.includes(expectedFeatureEntry) && updatedServerxmlContent.includes(expectedPlatformEntry), 'Did not get expected entries in server.xml for versionless combination for server feature and platform');
 
         editor.clearText();
         editor.setText(actualSeverXMLContent);
