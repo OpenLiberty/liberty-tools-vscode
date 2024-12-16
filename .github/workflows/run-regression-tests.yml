@@ -23,8 +23,8 @@ jobs:
         - runtime: mac
           os: macOS-13
 
-      #  - runtime: windows
-      #    os: windows-latest
+        - runtime: windows
+          os: windows-latest
 
     name: Build Plugin
     runs-on: ${{ matrix.os }}
