@@ -121,7 +121,7 @@ describe('LCLS tests for Gradle Project', function () {
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
         const stanzaSnipet = "<platform>jakartaee-11.0</platform>";
-        const expectedDiagnosticData =  `Description: This platform resolves the Liberty features that support the Jakarta EE 11.0 platform.`;
+        const expectedDiagnosticData = `Description: This platform resolves the Liberty features that support the Jakarta EE 11.0 platform.`;
         await editor.typeTextAt(15, 35, '\n');
         await editor.typeTextAt(16, 9, stanzaSnipet);
         await utils.delay(2000);
@@ -153,7 +153,7 @@ describe('LCLS tests for Gradle Project', function () {
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
         const stanzaSnipet = "<platform>jakarta</platform>";
-        const expectedDiagnosticData =  `ERROR: The platform "jakarta" does not exist.`;
+        const expectedDiagnosticData = `ERROR: The platform "jakarta" does not exist.`;
         await editor.typeTextAt(15, 35, '\n');
         await editor.typeTextAt(16, 9, stanzaSnipet);
         await utils.delay(2000);
@@ -235,7 +235,7 @@ describe('LCLS tests for Gradle Project', function () {
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
         const stanzaSnipet = "<feature>servlet</feature>";
-        const expectedDiagnosticData =  `ERROR: The "servlet" versionless feature cannot be resolved since there are more than one common platform. Specify a platform or a feature with a version to enable resolution`;
+        const expectedDiagnosticData = `ERROR: The "servlet" versionless feature cannot be resolved since there are more than one common platform. Specify a platform or a feature with a version to enable resolution`;
         await editor.typeTextAt(15, 35, '\n');
         await editor.typeTextAt(16, 9, stanzaSnipet);
         await utils.delay(2000);
@@ -362,7 +362,7 @@ describe('LCLS tests for Gradle Project', function () {
         const stanzaSnipet = "<feature>servlet</feature>";
         const expectedSnippetFeature = "<feature>servlet</feature>";
         const expectedSnippetPlatform = "<platform>jakartaee-9.1</platform>";
-        const expectedDiagnosticData =  `ERROR: The "servlet" versionless feature cannot be resolved since there are more than one common platform. Specify a platform or a feature with a version to enable resolution`;
+        const expectedDiagnosticData = `ERROR: The "servlet" versionless feature cannot be resolved since there are more than one common platform. Specify a platform or a feature with a version to enable resolution`;
         await editor.typeTextAt(15, 35, '\n');
         await editor.typeTextAt(16, 9, stanzaSnipet);
         await utils.delay(2000);
@@ -378,7 +378,7 @@ describe('LCLS tests for Gradle Project', function () {
         const hverContent = editor.findElement(By.className('hover-contents'));
         const hverValue = await hverContent.getText();
         console.log("Hover text:" + hverValue);
-        if(hverValue.includes(expectedDiagnosticData)){
+        if (hverValue.includes(expectedDiagnosticData)) {
             const stanzaSnipetPlatform = "<platform>jakartaee-9.1</platform>";
             await editor.typeTextAt(16, 35, '\n');
             await editor.typeTextAt(17, 9, stanzaSnipetPlatform);
@@ -388,8 +388,8 @@ describe('LCLS tests for Gradle Project', function () {
         const updatedServerxmlContent = await editor.getText();
         console.log("expected text:" + updatedServerxmlContent);
 
-        const asrt= assert(updatedServerxmlContent.includes(expectedSnippetFeature) && updatedServerxmlContent.includes(expectedSnippetPlatform), 'Did not get expected diagnostic in server.xml server feature');
-    
+        assert(updatedServerxmlContent.includes(expectedSnippetFeature) && updatedServerxmlContent.includes(expectedSnippetPlatform), 'Did not get expected diagnostic in server.xml server feature');
+
         editor.clearText();
         editor.setText(actualSeverXMLContent);
         console.log("Content restored");
