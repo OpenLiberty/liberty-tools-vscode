@@ -384,7 +384,7 @@ describe('LCLS tests for Gradle Project', function () {
             await utils.delay(2000);
         }
         const updatedServerxmlContent = await editor.getText();
-        console.log("expected text:" + updatedServerxmlContent);
+        console.log("Updated server.xml content:" + updatedServerxmlContent);
 
         assert(updatedServerxmlContent.includes(stanzaSnipet) && updatedServerxmlContent.includes(expectedPlatformEntry), 'Did not get expected entries in server.xml for versionless combination for server feature and platform');
 
