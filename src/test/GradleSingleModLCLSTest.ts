@@ -359,11 +359,11 @@ describe('LCLS tests for Gradle Project', function () {
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const stanzaSnipet = "<feature>servlet</feature>";
-        const expectedPlatformEntry = "<platform>jakartaee-9.1</platform>";
+        const stanzaSnipetFeature = "<feature>servlet</feature>";
+        const stanzaSnipetPlatform = "<platform>jakartaee-9.1</platform>";
         const expectedDiagnosticData = `ERROR: The "servlet" versionless feature cannot be resolved since there are more than one common platform. Specify a platform or a feature with a version to enable resolution`;
         await editor.typeTextAt(15, 35, '\n');
-        await editor.typeTextAt(16, 9, stanzaSnipet);
+        await editor.typeTextAt(16, 9, stanzaSnipetFeature);
         await utils.delay(2000);
         const focusTargtElemnt = await editor.findElement(By.xpath("//*[contains(text(), '\servlet\')]"));
         await utils.delay(3000);
@@ -378,7 +378,6 @@ describe('LCLS tests for Gradle Project', function () {
         const hverValue = await hverContent.getText();
         console.log("Hover text:" + hverValue);
         if (hverValue.includes(expectedDiagnosticData)) {
-            const stanzaSnipetPlatform = "<platform>jakartaee-9.1</platform>";
             await editor.typeTextAt(16, 35, '\n');
             await editor.typeTextAt(17, 9, stanzaSnipetPlatform);
             await utils.delay(2000);
@@ -386,7 +385,7 @@ describe('LCLS tests for Gradle Project', function () {
         const updatedServerxmlContent = await editor.getText();
         console.log("Updated server.xml content:" + updatedServerxmlContent);
 
-        assert(updatedServerxmlContent.includes(stanzaSnipet) && updatedServerxmlContent.includes(expectedPlatformEntry), 'Did not get expected entries in server.xml for versionless combination for server feature and platform');
+        assert(updatedServerxmlContent.includes(stanzaSnipetFeature) && updatedServerxmlContent.includes(stanzaSnipetPlatform), 'Did not get expected entries in server.xml for versionless combination for server feature and platform');
 
         editor.clearText();
         editor.setText(actualSeverXMLContent);
