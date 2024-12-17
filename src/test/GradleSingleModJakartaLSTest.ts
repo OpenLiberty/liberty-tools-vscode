@@ -54,6 +54,7 @@ describe('LSP4Jakarta LS test for snippet test', () => {
     });
 
     function copyFolderContents(sourceFolder: string, destinationFolder: string): void {
+        console.log('source folder', sourceFolder);
         if (!fs.existsSync(sourceFolder)) {
             throw new Error('Source folder does not exist');
         }
@@ -61,8 +62,10 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         if (!fs.existsSync(destinationFolder)) {
             fs.mkdirSync(destinationFolder);
         }
+        console.log('destination folder', destinationFolder);
 
         const files = fs.readdirSync(sourceFolder);
+        console.log('files to copy', files);
 
         for (const file of files) {
             const sourcePath = path.join(sourceFolder, file);
