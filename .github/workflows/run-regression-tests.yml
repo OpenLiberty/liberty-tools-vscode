@@ -62,6 +62,6 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: liberty-run-tests-screenshots-${{ github.sha }}
-          path: ./images/*.png
+          path: ./**/*.png
           if-no-files-found: warn
           retention-days: 7
