@@ -48,7 +48,7 @@ describe('LSP4Jakarta LS test for snippet test', () => {
 
     after(() => {
         const sourcePath = VSBrowser.instance.getScreenshotsDir();
-        const destinationPath = './screenshots';
+        const destinationPath = './images';
 
         copyFolderContents(sourcePath, destinationPath);
     });
