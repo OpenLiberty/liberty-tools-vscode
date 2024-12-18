@@ -43,14 +43,14 @@ jobs:
         run: bash ./src/test/resources/ci/scripts/exec.sh BUILD
 
       # Archive artifacts
-      - name: Archive artifacts
-        if: runner.os == 'linux' && matrix.targetVSCode == 'latest'
-        uses: actions/upload-artifact@v3
-        with:
-          name: liberty-tools-vscode-${{ github.sha }}
-          path: ./**/*.vsix
-          if-no-files-found: warn
-          retention-days: 7
+      #- name: Archive artifacts
+      #  if: runner.os == 'linux' && matrix.targetVSCode == 'latest'
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: liberty-tools-vscode-${{ github.sha }}
+      #    path: ./**/*.vsix
+      #    if-no-files-found: warn
+      #    retention-days: 7
 
       # Build the plugin.
       - name: 'Test: RunTests'
