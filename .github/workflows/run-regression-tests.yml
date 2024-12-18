@@ -8,26 +8,44 @@ on:
 
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        runtime: [ linux, mac ]
+        runtime: [ linux, mac, windows ]
+        include:
+          - runtime: linux
+            os: ubuntu-latest
+            reportName: linux-test-report
+          - runtime: mac
+            os: macOS-latest
+            reportName: mac-test-report
+          - runtime: windows
+            os: windows-latest
+            reportName: windows-test-report
+
+# jobs:
+#   build:
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         runtime: [ linux, mac, windows ]
      # Removing windows as a standard run flavor   runtime: [ linux, mac, windows ]
-        targetVSCode: [previous, latest ]
+        # targetVSCode: [previous, latest ]
       # As Vscode 1.79 and 1.78 are  the only support version for current release, running test with only latest,previous
       #Enable it in future for multiple releases as applicable  targetVSCode: [ previousMinusOne, previous, latest ]
-        include:
-        - runtime: linux
-          os: ubuntu-latest
+        # include:
+        # - runtime: linux
+        #   os: ubuntu-latest
 
-        - runtime: mac
-          os: macOS-13
+        # - runtime: mac
+        #   os: macOS-13
 
-        - runtime: windows
-          os: windows-latest
+        # - runtime: windows
+        #   os: windows-latest
 
-    name: Build Plugin
-    runs-on: ${{ matrix.os }}
+    # name: Build Plugin
+    # runs-on: ${{ matrix.os }}
 
     steps:
       # Checkout the eclipse plugin repository.
