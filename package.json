@@ -216,6 +216,12 @@
 						"default": false,
 						"description": "If this value is true, and if the setting java.home has a value, then the environment variable JAVA_HOME will be set to the value of java.home when a new terminal window is created.",
 						"scope": "window"
+					},
+					"liberty.refresh.enabled": {
+						"type": "boolean",
+						"default": true,
+						"description": "If this value is false the extension will not try to refresh the liberty dashboard upon changes in the workspace.",
+						"scope": "window"
 					}
 				}
 			}
