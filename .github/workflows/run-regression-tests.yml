@@ -58,10 +58,10 @@ jobs:
 
       # Archive screenshots
       - name: Archive screenshots
-        if: runner.os == 'linux' && matrix.targetVSCode == 'latest'
+        if: always() && runner.os == 'linux' && matrix.targetVSCode == 'latest'
         uses: actions/upload-artifact@v3
         with:
           name: liberty-run-tests-screenshots-${{ github.sha }}
-          path: ./**/*.png
+          path: ./screenshots/*.png
           if-no-files-found: warn
           retention-days: 7

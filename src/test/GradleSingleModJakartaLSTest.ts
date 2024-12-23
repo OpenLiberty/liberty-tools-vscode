@@ -18,7 +18,7 @@ describe('LSP4Jakarta LS test for snippet test', () => {
             await editor.clearText();
         }
 
-        await utils.delay(9000);
+        await utils.delay(65000);
         await editor.typeText("rest");
         await utils.delay(6000);
 
@@ -48,7 +48,7 @@ describe('LSP4Jakarta LS test for snippet test', () => {
 
     after(() => {
         const sourcePath = VSBrowser.instance.getScreenshotsDir();
-        const destinationPath = './images';
+        const destinationPath = './screenshots';
 
         copyFolderContents(sourcePath, destinationPath);
     });
