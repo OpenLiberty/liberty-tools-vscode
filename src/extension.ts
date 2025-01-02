@@ -183,7 +183,7 @@ export function deactivate(): Promise<void[]> {
  * @param projectProvider Liberty Dev projects
  */
 export function registerFileWatcher(projectProvider: ProjectProvider): void {
-	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
+	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml,!**/target/**,!**/build/**}");
 	watcher.onDidCreate(async () => {
 		projectProvider.refresh();
 	});
