@@ -18,13 +18,13 @@ describe('LSP4Jakarta LS test for snippet test', () => {
             await editor.clearText();
         }
 
-        await utils.delay(65000);
+        await utils.delay(85000);
         await editor.typeText("rest");
         await utils.delay(6000);
 
         //open the assistant
         const assist = await editor.toggleContentAssist(true);
-        await utils.delay(6000);
+        await utils.delay(10000);
         await VSBrowser.instance.takeScreenshot("rest_class");
         console.log("screenshot", VSBrowser.instance.getScreenshotsDir());
 		// toggle can return void, so we need to make sure the object is present
