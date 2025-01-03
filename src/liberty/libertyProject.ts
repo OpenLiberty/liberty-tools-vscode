@@ -86,8 +86,8 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	 * */
 	public async getListOfMavenAndGradleFolders(path: string): Promise<string[]>{
 		let uris: string[] = [];
-		const pomPattern = new vscode.RelativePattern(path, "**/pom.xml");
-		const gradlePattern = new vscode.RelativePattern(path, "**/build.gradle");
+		const pomPattern = new vscode.RelativePattern(path, "**/!(target|build)/**/pom.xml");
+		const gradlePattern = new vscode.RelativePattern(path, "**/!(target|build)/**/build.gradle");
 		let paths = (await vscode.workspace.findFiles(pomPattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
 		uris = uris.concat(paths);
 		paths = (await vscode.workspace.findFiles(gradlePattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
@@ -410,8 +410,8 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	private async updateProjects(): Promise<void> {
 		// find all build files in the open workspace and find all the ones that are valid for dev-mode
 		
-		const pomPaths = (await vscode.workspace.findFiles("**/pom.xml", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
-		const gradlePaths = (await vscode.workspace.findFiles("**/build.gradle", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
+		const pomPaths = (await vscode.workspace.findFiles("**/!(target|build)/**/pom.xml", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
+		const gradlePaths = (await vscode.workspace.findFiles("**/!(target|build)/**/build.gradle", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
 		const validPoms: BuildFileImpl[] = await this.findValidPOMs(pomPaths);
 		const validGradleBuilds: BuildFileImpl[] = await this.findValidGradleBuildFiles(gradlePaths);
 		let serverXMLPaths: string[] = [];
