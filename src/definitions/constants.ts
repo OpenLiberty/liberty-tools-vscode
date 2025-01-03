@@ -32,7 +32,7 @@ export const COMMAND_AND_PROJECT_TYPE_MAP: { [command: string]: string[] } = {
     "gradle":[ LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER],
     "liberty.dev.debug": [LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
 };
-export const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target}/**";
+export const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target,build}/**";
 export const COMMAND_TITLES = new Map();
 export const UNTITLED_WORKSPACE="Untitled (Workspace)";
 COMMAND_TITLES.set(localize("hotkey.commands.title.refresh"), "liberty.explorer.refresh");
