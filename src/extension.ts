@@ -163,8 +163,13 @@ function registerCommands(context: ExtensionContext) {
         })
     );
      // Listens for any new folders are added to the workspace
-     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
-        projectProvider.refresh();
+    context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+        const isTargetOrBuildFolderChanged = event.added.some(folder =>
+            folder.uri.fsPath.includes('/target') || folder.uri.fsPath.includes('/build')) ||
+            event.removed.some(folder =>
+                folder.uri.fsPath.includes('/target') || folder.uri.fsPath.includes('/build'));
+        if (!isTargetOrBuildFolderChanged)
+            projectProvider.refresh();
     }));
 }
 
