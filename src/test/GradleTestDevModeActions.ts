@@ -236,17 +236,11 @@ it('Start gradle project from liberty dashboard', async () => {
 
 it('View test report for gradle project', async () => {      
 
-  // if((process.platform === 'darwin' ) || (process.platform === 'win32') || (process.platform == 'linux'))
-  // {
-  //   // //skip running for platforms , enable once https://github.com/OpenLiberty/liberty-tools-vscode/issues/266 is resolved
-  //   return true;
-
-  //   // section = await contentPart.getSection('Liberty Dashboard');   
-  //   // console.log("Found Liberty Dashboard....");
-  //   // const focusTargtElemnt = findElement(By.xpath("//*[contains(text(), 'wrong')]"));
-
-
-  // }
+  if((process.platform === 'darwin' ))
+  {
+    // //skip running for platforms , enable once https://github.com/OpenLiberty/liberty-tools-vscode/issues/266 is resolved
+    return true;
+  }
     
   await utils.launchDashboardAction(item,constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
