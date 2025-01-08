@@ -162,9 +162,9 @@ function registerCommands(context: ExtensionContext) {
             devCommands.deleteTerminal(closedTerminal);
         })
     );
-     // Listens for any new folders are added to the workspace
+    // Listens for any new folders are added to the workspace
     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
-            projectProvider.refresh();
+        projectProvider.refresh();
     }));
 }
 
