@@ -164,11 +164,6 @@ function registerCommands(context: ExtensionContext) {
     );
      // Listens for any new folders are added to the workspace
     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
-        const isTargetOrBuildFolderChanged = event.added.some(folder =>
-            folder.uri.fsPath.includes('/target') || folder.uri.fsPath.includes('/build')) ||
-            event.removed.some(folder =>
-                folder.uri.fsPath.includes('/target') || folder.uri.fsPath.includes('/build'));
-        if (!isTargetOrBuildFolderChanged)
             projectProvider.refresh();
     }));
 }
@@ -188,16 +183,22 @@ export function deactivate(): Promise<void[]> {
  * @param projectProvider Liberty Dev projects
  */
 export function registerFileWatcher(projectProvider: ProjectProvider): void {
-	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml,!**/target/**,!**/build/**}");
-	watcher.onDidCreate(async () => {
-		projectProvider.refresh();
-	});
-	watcher.onDidChange(async () => {
-		projectProvider.refresh();
-	});
-	watcher.onDidDelete(async () => {
-		projectProvider.refresh();
-	});
+    const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
+    const isInTargetOrBuild = (uri: vscode.Uri) => {
+        return helperUtil.isInTargetOrBuild(uri.fsPath);
+    }
+    if (!isInTargetOrBuild) {
+        watcher.onDidCreate(async (uri) => {
+            projectProvider.refresh();
+        });
+        watcher.onDidChange(async (uri) => {
+            projectProvider.refresh();
+        });
+        watcher.onDidDelete(async (uri) => {
+            projectProvider.refresh();
+        });
+    }
+
 }
 
 function startLangServer(context: ExtensionContext, requirements: RequirementsData, isLiberty: boolean) {

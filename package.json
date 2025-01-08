@@ -29,8 +29,8 @@
 		"theme": "dark"
 	},
 	"activationEvents": [
-		"workspaceContains:**/!(target|build)/**/pom.xml",
-		"workspaceContains:**/!(target|build)/**/build.gradle",
+		"workspaceContains:**/pom.xml",
+		"workspaceContains:**/build.gradle",
 		"onCommand:liberty.dev.start",
 		"onCommand:liberty.dev.stop",
 		"onCommand:liberty.dev.custom",
