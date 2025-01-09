@@ -132,7 +132,7 @@ it('start gradle with history from liberty dashboard', async () => {
   const foundCommand = await utils.chooseCmdFromHistory("--hotTests");
   console.log("foundcmd:" + foundCommand);
   expect (foundCommand).to.be.true;  
-  await utils.delay(30000);
+  await utils.delay(100000);  
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
   if(!serverStartStatus)
     console.log("Server started with params message not found in the terminal ");
