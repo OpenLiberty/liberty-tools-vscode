@@ -101,7 +101,7 @@ it('start gradle with options from liberty dashboard', async () => {
   expect (deleteReport).to.be.true;
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
   await utils.setCustomParameter("--hotTests");  
-  await utils.delay(30000);  
+  await utils.delay(100000);  
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
   if(!serverStartStatus)
     console.log("Server started with params message not found in terminal ");
