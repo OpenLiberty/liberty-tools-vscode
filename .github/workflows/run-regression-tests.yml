@@ -55,3 +55,13 @@ jobs:
       # Build the plugin.
       - name: 'Test: RunTests'
         run: bash ./src/test/resources/ci/scripts/exec.sh TEST ${{ matrix.targetVSCode }}
+
+      # Archive screenshots
+      - name: Archive screenshots
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: liberty-run-tests-screenshots-${{ runner.os }}-${{ matrix.targetVSCode }}
+          path: ./screenshots/*.png
+          if-no-files-found: warn
+          retention-days: 7
