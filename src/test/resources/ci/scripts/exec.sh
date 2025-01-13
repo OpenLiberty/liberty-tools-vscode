@@ -118,9 +118,9 @@ startDisplayAndDocker() {
         metacity --sm-disable --replace 2> metacity.err &
 
         #start docker deamon
-        sudo service docker start &
+        sudo systemctl start docker &
         sleep 30
-        docker ps
+        sudo systemctl status docker
     fi
 }
 
