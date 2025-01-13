@@ -79,12 +79,5 @@ export function clearDataSavedInGlobalState(context: vscode.ExtensionContext) {
 	context.globalState.update('workspaceSaveInProgress', false);
 	context.globalState.update('selectedProject', undefined);
 }
-/**
- * Method checks if the given file path is in target or build folders and returns a boolean
- * @param filePath 
- * @returns 
- */
-export function isInTargetOrBuild(filePath: string): boolean {
-	return filePath.includes('/target/') || filePath.includes('/build/');
-}
+
 
