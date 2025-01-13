@@ -1,8 +1,9 @@
 import { expect } from 'chai';
-import { InputBox, Workbench,SideBarView, ViewSection,EditorView,DefaultTreeItem, DebugView } from 'vscode-extension-tester';
+import { InputBox, Workbench,SideBarView, ViewSection,EditorView,DefaultTreeItem, DebugView, By } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
+import { setInputBox } from './utils/macUtils';
 
 describe('Devmode action tests for Gradle Project', () => {
     let sidebar: SideBarView;
@@ -239,19 +240,35 @@ it('View test report for gradle project', async () => {
   if((process.platform === 'darwin' ))
   {
     // //skip running for platforms , enable once https://github.com/OpenLiberty/liberty-tools-vscode/issues/266 is resolved
-    return true;
-  }
+    // return true;
+    const workbench = new Workbench();
+    await workbench.openCommandPrompt();
+    // await utils.delay(30000);
+    await workbench.executeCommand(constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
+    await utils.delay(3000);
+    // await workbench.executeCommand(constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
+    setInputBox(constants.GRADLE_PROJECT);
+    await utils.delay(2500);
     
-  await utils.launchDashboardAction(item,constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);   
+    tabs = await new EditorView().getOpenEditorTitles();
+    console.log("Printing tabs: "+tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE));
+    await utils.delay(5000);
+    // expect (tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE)>-1, "Gradle test report not found").to.equal(true); 
+  }else{
+     await utils.launchDashboardAction(item,constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
- // expect (tabs[1]], "Gradle test report not found").to.equal(constants.GRADLE_TEST_REPORT_TITLE);
- expect (tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE)>-1, "Gradle test report not found").to.equal(true); 
+  // expect (tabs[1]], "Gradle test report not found").to.equal(constants.GRADLE_TEST_REPORT_TITLE);
+  expect (tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE)>-1, "Gradle test report not found").to.equal(true); 
+  }
+  
+ 
     
 }).timeout(30000);
 
   // Based on the UI testing code, it sometimes selects the wrong command in "command palette", such as choosing "Liberty: Start ..." instead of "Liberty: Start" from the recent suggestions. This discrepancy occurs because we specifically need "Liberty: Start" at that moment.
   // Now, clear the command history of the "command palette" to avoid receiving "recently used" suggestions. This action should be performed at the end of Gradle Project tests.
 it('Clear Command Palatte', async () => {
+  await utils.delay(3000);
   await utils.clearCommandPalette();
 }).timeout(100000);
 
