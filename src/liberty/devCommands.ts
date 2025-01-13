@@ -39,6 +39,8 @@ class LibertyProjectQuickPickItem implements QuickPickItem {
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 function showProjects(command: string, callback: Function, reportType?: string): void {
+    console.log("Inside showProjects else if command"+ command);
+    console.log("Inside showProjects else if reportType"+ reportType);
     const projectProvider: ProjectProvider = ProjectProvider.getInstance();
     // Find a list of projects that can be started
     const projects: LibertyProject[] = filterProjects(Array.from(projectProvider.getProjects().values()),
@@ -478,6 +480,7 @@ export async function runTests(libProject?: LibertyProject | undefined): Promise
 
 // open surefire, failsafe, or gradle test report
 export async function openReport(reportType: string, libProject?: LibertyProject | undefined): Promise<void> {
+    console.log("Inside openProject");
     if (libProject !== undefined) {
         const path = Path.dirname(libProject.getPath());
         if (path !== undefined) {
@@ -505,6 +508,7 @@ export async function openReport(reportType: string, libProject?: LibertyProject
             }
         }
     } else if (ProjectProvider.getInstance() && reportType) {
+        console.log("Inside openProject else if");
         showProjects(reportType, openReport, reportType);
     } else {
         const message = localize("cannot.open.test.reports.on.undefined.project");
