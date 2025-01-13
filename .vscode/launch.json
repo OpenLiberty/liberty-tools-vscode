@@ -6,6 +6,12 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"command": "npm run test-mac-gradle",
+			"name": "Run npm start",
+			"request": "launch",
+			"type": "node-terminal"
+		},
+		{
 			"name": "Run Extension",
 			"type": "extensionHost",
 			"request": "launch",
