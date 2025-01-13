@@ -252,8 +252,8 @@ it('View test report for gradle project', async () => {
     
     tabs = await new EditorView().getOpenEditorTitles();
     console.log("Printing tabs: "+tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE));
-    await utils.delay(5000);
-    // expect (tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE)>-1, "Gradle test report not found").to.equal(true); 
+    await utils.delay(1000);
+    expect (tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE)>-1, "Gradle test report not found").to.equal(true); 
   }else{
      await utils.launchDashboardAction(item,constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
@@ -263,7 +263,7 @@ it('View test report for gradle project', async () => {
   
  
     
-}).timeout(30000);
+}).timeout(50000);
 
   // Based on the UI testing code, it sometimes selects the wrong command in "command palette", such as choosing "Liberty: Start ..." instead of "Liberty: Start" from the recent suggestions. This discrepancy occurs because we specifically need "Liberty: Start" at that moment.
   // Now, clear the command history of the "command palette" to avoid receiving "recently used" suggestions. This action should be performed at the end of Gradle Project tests.
