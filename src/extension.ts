@@ -188,7 +188,6 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
     const handleUri = async (uri: vscode.Uri) => {
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders) {
-            console.log("No workspace folders are open.");
             return;
         }
         for (let folder of workspaceFolders) {
