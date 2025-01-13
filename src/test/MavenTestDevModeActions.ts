@@ -1,8 +1,9 @@
 import { expect } from 'chai';
-import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView } from 'vscode-extension-tester';
+import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView, VSBrowser } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
+import * as fs from 'fs';
 
 describe('Devmode action tests for Maven Project', () => {
     let sidebar: SideBarView;
@@ -268,6 +269,39 @@ it('attach debugger for start with custom parameter event', async () => {
  
     
 }).timeout(350000);
+
+after(() => {
+  const sourcePath = VSBrowser.instance.getScreenshotsDir();
+  const destinationPath = './screenshots';
+
+  copyFolderContents(sourcePath, destinationPath);
+});
+
+function copyFolderContents(sourceFolder: string, destinationFolder: string): void {
+  console.log('source folder', sourceFolder);
+  if (!fs.existsSync(sourceFolder)) {
+      throw new Error('Source folder does not exist');
+  }
+
+  if (!fs.existsSync(destinationFolder)) {
+      fs.mkdirSync(destinationFolder);
+  }
+  console.log('destination folder', destinationFolder);
+
+  const files = fs.readdirSync(sourceFolder);
+  console.log('files to copy', files);
+
+  for (const file of files) {
+      const sourcePath = path.join(sourceFolder, file);
+      const destinationPath = path.join(destinationFolder, file);
+
+      if (fs.statSync(sourcePath).isDirectory()) {
+          copyFolderContents(sourcePath, destinationPath);
+      } else {
+          fs.copyFileSync(sourcePath, destinationPath);
+      }
+  }
+}
 
 
 });
