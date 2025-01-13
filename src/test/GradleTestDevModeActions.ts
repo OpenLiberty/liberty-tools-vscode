@@ -243,7 +243,7 @@ it('View test report for gradle project', async () => {
     // return true;
     const workbench = new Workbench();
     await workbench.openCommandPrompt();
-    // await utils.delay(30000);
+    await utils.delay(30000);
     await workbench.executeCommand(constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
     await utils.delay(3000);
     // await workbench.executeCommand(constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
