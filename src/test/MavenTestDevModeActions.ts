@@ -270,28 +270,28 @@ it('attach debugger for start with custom parameter event', async () => {
     
 }).timeout(350000);
 
-after(() => {
-  const sourcePath = VSBrowser.instance.getScreenshotsDir();
-  const destinationPath = './screenshots';
+  after(() => {
+    const sourcePath = VSBrowser.instance.getScreenshotsDir();
+    const destinationPath = './screenshots';
 
-  copyFolderContents(sourcePath, destinationPath);
-});
+    copyFolderContents(sourcePath, destinationPath);
+  });
 
-function copyFolderContents(sourceFolder: string, destinationFolder: string): void {
-  console.log('source folder', sourceFolder);
-  if (!fs.existsSync(sourceFolder)) {
-      throw new Error('Source folder does not exist');
-  }
+  function copyFolderContents(sourceFolder: string, destinationFolder: string): void {
+    console.log('source folder', sourceFolder);
+    if (!fs.existsSync(sourceFolder)) {
+      return;
+    }
 
-  if (!fs.existsSync(destinationFolder)) {
+    if (!fs.existsSync(destinationFolder)) {
       fs.mkdirSync(destinationFolder);
-  }
-  console.log('destination folder', destinationFolder);
+    }
+    console.log('destination folder', destinationFolder);
 
-  const files = fs.readdirSync(sourceFolder);
-  console.log('files to copy', files);
+    const files = fs.readdirSync(sourceFolder);
+    console.log('files to copy', files);
 
-  for (const file of files) {
+    for (const file of files) {
       const sourcePath = path.join(sourceFolder, file);
       const destinationPath = path.join(destinationFolder, file);
 
@@ -300,8 +300,8 @@ function copyFolderContents(sourceFolder: string, destinationFolder: string): vo
       } else {
           fs.copyFileSync(sourcePath, destinationPath);
       }
+    }
   }
-}
 
 
 });
