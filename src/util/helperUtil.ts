@@ -80,4 +80,3 @@ export function clearDataSavedInGlobalState(context: vscode.ExtensionContext) {
 	context.globalState.update('selectedProject', undefined);
 }
 
-

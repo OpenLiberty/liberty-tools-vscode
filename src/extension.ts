@@ -163,8 +163,8 @@ function registerCommands(context: ExtensionContext) {
             devCommands.deleteTerminal(closedTerminal);
         })
     );
-    // Listens for any new folders are added to the workspace
-    context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+     // Listens for any new folders are added to the workspace
+     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
         projectProvider.refresh();
     }));
 }
@@ -205,9 +205,8 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
             }
 
             // Check if the path includes 'target' or 'build' directly under the project root
-            // Using regex to check that these directories are at the root level of the project
             if (!/^target\/|^build\//.test(relativePath)) {
-                // Refresh the project for any file outside of the 'target' and 'build' folders
+                // Refresh the project for any build file update outside of the 'target' and 'build' folders
                 projectProvider.refresh();
             }
         }
