@@ -238,6 +238,7 @@ it('start gradle with docker from liberty dashboard', async () => {
   it('View test report for gradle project', async () => {
 
     if ((process.platform === 'darwin')) {
+      //Function call to enter corresponding command in the command prompt to display test report for gradle project in mac
       await viewTestReportForMac();
     } else {
       await utils.launchDashboardAction(item, constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);

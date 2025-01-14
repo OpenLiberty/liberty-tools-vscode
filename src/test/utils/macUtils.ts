@@ -27,6 +27,9 @@ export async function setInputBox(MapActionString: string): Promise<boolean> {
     }
 }
 
+/**
+ * Function to enter corresponding command in the command prompt to display test report for gradle project
+ */
 export async function viewTestReportForMac() {
     const workbench = new Workbench();
       await workbench.openCommandPrompt();
