@@ -240,7 +240,7 @@ it('attach debugger for start with custom parameter event', async () => {
 
  it('start maven with docker from liberty dashboard', async () => {      
 
-  if((process.platform === 'darwin' ) || (process.platform === 'win32'))
+  if((process.platform === 'darwin' ) || (process.platform === 'win32') || (process.platform == 'linux'))
   {
     //skip running for platforms , enable them for linux after resolving docker setup in GHA
     return true;
