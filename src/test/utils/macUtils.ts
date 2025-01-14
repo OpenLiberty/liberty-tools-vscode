@@ -4,7 +4,8 @@ import {
     DefaultTreeItem, Workbench,
     InputBox,
 } from "vscode-extension-tester";
-
+import * as utils from './testUtils';
+import * as constants from '../definitions/constants';
 
 // NOTE: For MAC OS, Open issue with vscode-extension-tester for ContextMenu Click -> https://github.com/redhat-developer/vscode-extension-tester/issues/444
 // So workaround using InputBOx to Map the contextmenu input to its corresponding Action for MAC till the issue is resolved in tool
@@ -24,4 +25,15 @@ export async function setInputBox(MapActionString: string): Promise<boolean> {
     } else {
         return false;
     }
+}
+
+export async function viewTestReportForMac() {
+    const workbench = new Workbench();
+      await workbench.openCommandPrompt();
+      await utils.delay(3000);
+      await workbench.executeCommand(constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
+      await utils.delay(3000);
+
+      setInputBox(constants.GRADLE_PROJECT);
+      await utils.delay(2500);
 }
