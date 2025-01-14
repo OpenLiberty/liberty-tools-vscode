@@ -37,11 +37,6 @@ export function getMvnProjectPath(): string {
     }
 
   }
-
-  export async function launchDockerAction(item: DefaultTreeItem, action: string) {
-    console.log("Launching docker action:" + action);      
-    await MapContextMenuforMac( item,action);            
-  }
  
 
   export async function setCustomParameter(customParam: string) {

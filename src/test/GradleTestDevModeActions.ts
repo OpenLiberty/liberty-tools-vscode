@@ -226,7 +226,7 @@ it('start gradle with docker from liberty dashboard', async () => {
   }
     
   
-  await utils.launchDockerAction(item, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);
+  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);  
   await utils.delay(60000);
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
   if(!serverStartStatus)
