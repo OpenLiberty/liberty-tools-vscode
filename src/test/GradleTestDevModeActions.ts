@@ -3,7 +3,7 @@ import { InputBox, Workbench,SideBarView, ViewSection,EditorView,DefaultTreeItem
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
-import { setInputBox } from './utils/macUtils';
+import { viewTestReportForMac } from './utils/macUtils';
 
 describe('Devmode action tests for Gradle Project', () => {
     let sidebar: SideBarView;
@@ -238,14 +238,7 @@ it('start gradle with docker from liberty dashboard', async () => {
   it('View test report for gradle project', async () => {
 
     if ((process.platform === 'darwin')) {
-      const workbench = new Workbench();
-      await workbench.openCommandPrompt();
-      await utils.delay(3000);
-      await workbench.executeCommand(constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
-      await utils.delay(3000);
-
-      setInputBox(constants.GRADLE_PROJECT);
-      await utils.delay(2500);
+      await viewTestReportForMac();
     } else {
       await utils.launchDashboardAction(item, constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
       tabs = await new EditorView().getOpenEditorTitles();
