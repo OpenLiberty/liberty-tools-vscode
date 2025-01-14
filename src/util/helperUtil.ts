@@ -42,7 +42,6 @@ export function getConfiguration<T>(section: string, resourceOrFilepath?: vscode
  * @returns a list of projects that the given command can be excuted on.
  */
 export function filterProjects(projects: LibertyProject[], command: string): LibertyProject[] {
-	console.log("inside filterProjects printing command"+ command);
 	const resultProjects: LibertyProject[] = [];
 	for ( const project of projects) {
 		const applicableTypes = COMMAND_AND_PROJECT_TYPE_MAP[command];
