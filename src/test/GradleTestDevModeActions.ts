@@ -241,23 +241,21 @@ it('View test report for gradle project', async () => {
   {
     const workbench = new Workbench();
     await workbench.openCommandPrompt();
-    await utils.delay(30000);
+    await utils.delay(3000);
     await workbench.executeCommand(constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
     await utils.delay(3000);
 
     setInputBox(constants.GRADLE_PROJECT);
     await utils.delay(2500);
-
-    tabs = await new EditorView().getOpenEditorTitles();
-    console.log("Tabs opened: "+tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE));
-    await utils.delay(1000);
-    expect (tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE)>-1, "Gradle test report not found").to.equal(true); 
   }else{
      await utils.launchDashboardAction(item,constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
   // expect (tabs[1]], "Gradle test report not found").to.equal(constants.GRADLE_TEST_REPORT_TITLE);
-  expect (tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE)>-1, "Gradle test report not found").to.equal(true); 
   } 
+  tabs = await new EditorView().getOpenEditorTitles();
+  await utils.delay(1000);
+  console.log("Tabs opened: "+tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE));
+  expect (tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE)>-1, "Gradle test report not found").to.equal(true); 
 }).timeout(50000);
 
   // Based on the UI testing code, it sometimes selects the wrong command in "command palette", such as choosing "Liberty: Start ..." instead of "Liberty: Start" from the recent suggestions. This discrepancy occurs because we specifically need "Liberty: Start" at that moment.
