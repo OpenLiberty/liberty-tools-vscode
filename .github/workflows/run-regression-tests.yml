@@ -55,4 +55,3 @@ jobs:
       # Build the plugin.
       - name: 'Test: RunTests'
         run: bash ./src/test/resources/ci/scripts/exec.sh TEST ${{ matrix.targetVSCode }}
-
