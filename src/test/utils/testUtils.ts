@@ -199,20 +199,20 @@ export async function clearCommandPalette() {
  */
 export async function removeConfigDir(projectPath: string): Promise<void> {
   try {
-    await fs.accessSync(projectPath);
-    const projectContent = await fs.readdirSync(projectPath);
+    fs.accessSync(projectPath);
+    const projectContent = fs.readdirSync(projectPath);
     await Promise.all(
       projectContent.map(async (projectFiles) => {
         const projectContentPath = path.join(projectPath, projectFiles);
-        const stats = await fs.lstatSync(projectContentPath);
+        const stats = fs.lstatSync(projectContentPath);
         if (stats.isDirectory()) {
           await removeConfigDir(projectContentPath);
         } else {
-          await fs.unlinkSync(projectContentPath);
+          fs.unlinkSync(projectContentPath);
         }
       })
     );
-    await fs.rmdirSync(projectPath);
+    fs.rmdirSync(projectPath);
   } catch (error) {
     console.error(`Error removing new project: ${error}`);
   }
