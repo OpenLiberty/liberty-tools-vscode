@@ -219,6 +219,10 @@ it('View Integration test report for maven project', async () => {
     
 }).timeout(10000);
 
+/**
+ * All future test cases should be written before the test that attaches the debugger, as this will switch the UI to the debugger view.
+ * If, for any reason, a test case needs to be written after the debugger test, ensure that the UI is switched back to the explorer view before executing the subsequent tests.
+ */
 it('attach debugger for start with custom parameter event', async () => {
   console.log("start attach debugger");
   let isServerRunning: Boolean = true;
