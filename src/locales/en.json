@@ -72,5 +72,5 @@
     "hotkey.commands.title.add.project": "Liberty: Add Project to Liberty Dashboard",
     "hotkey.commands.title.remove.project": "Liberty: Remove Project from Liberty Dashboard",
     "hotkey.commands.title.show.commands": "Liberty: Show Liberty commands",
-    "workspace.not.saved.projects.may.not.persist": "Save the workspace first. Projects that are manually added to the Liberty Dashboard may not persist in the next VS Code session if the workspace is not saved before adding the project."
+    "workspace.not.saved.projects.may.not.persist": "Save the workspace first. Projects that you manually add to the Liberty Dashboard might not persist in the next VS Code session if you don't save the workspace before you add the project."
 }
