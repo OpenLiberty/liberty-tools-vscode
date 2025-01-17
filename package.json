@@ -2,7 +2,7 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Liberty Tools",
 	"description": "Liberty Tools for Visual Studio Code",
-	"version": "24.0.12",
+	"version": "25.0.1-SNAPSHOT",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
@@ -257,7 +257,7 @@
 		"chai": "^4.3.7",
 		"eslint": "^8.11.0",
 		"glob": "^7.1.6",
-		"gulp": "^4.0.2",
+		"gulp": "^5.0.0",
 		"gulp-download2": "^1.1.0",
 		"mocha": "^9.2.2",
 		"ts-loader": "^9.3.1",

@@ -1,7 +1,7 @@
 import path = require('path');
 import { Workbench, InputBox, DefaultTreeItem, ModalDialog, ViewSection, TreeItem, SideBarView } from 'vscode-extension-tester';
 import * as fs from 'fs';
-import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
+import { STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
@@ -172,13 +172,13 @@ export function getMvnProjectPath(): string {
 
 /* Stop Server Liberty dashboard post Attach Debugger*/
 /* As the Window view changes using command to stop server instead of devmode action */
-export async function stopLibertyserver() {
-  console.log("Stop Server action for MAVEN_PROJECT : " + MAVEN_PROJECT);
+export async function stopLibertyserver(projectName: string) {
+  console.log("Stop Server action for Project : " + projectName);
   const workbench = new Workbench();
   await workbench.executeCommand(STOP_DASHBOARD_MAC_ACTION);
   const input = InputBox.create();
   (await input).clear();
-  (await input).setText(MAVEN_PROJECT);
+  (await input).setText(projectName);
   (await input).confirm();
   (await input).click();
   await delay(10000);
@@ -248,3 +248,4 @@ export async function copyFile(source: string, target: string): Promise<void> {
   }
 
 }
+  
