@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024 IBM Corporation.
+ * Copyright (c) 2025 IBM Corporation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -22,7 +22,7 @@ describe('LCLS tests for Gradle Project', function () {
         utils.copyConfig(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'), path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
     });
 
-    it('Should coppy content of server.xml', async () => {
+    it('Should copy content of server.xml', async () => {
         const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
         section.expand();
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
@@ -30,7 +30,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
         actualSeverXMLContent = await editor.getText();
 
-        assert(actualSeverXMLContent.length !== 0, 'Content of server.xml is not in coppied.');
+        assert(actualSeverXMLContent.length !== 0, 'Content of server.xml is not in copied.');
         console.log('Sever.xml content:', actualSeverXMLContent);
 
     }).timeout(15000);
