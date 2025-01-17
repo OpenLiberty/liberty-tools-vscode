@@ -270,6 +270,11 @@ it('attach debugger for start with custom parameter event', async () => {
     
 }).timeout(350000);
 
+  /**
+   * The following after hook copies the screenshot from the temporary folder in which it is saved to a known permanent location in the project folder.
+   * The MavenTestDevModeAction is the last test file that will be executed. Hence the after hook placed here
+   * ensures that all the screenshots will be copied to a known permanent location in the project folder.
+   */
   after(() => {
     const sourcePath = VSBrowser.instance.getScreenshotsDir();
     const destinationPath = './screenshots';
@@ -278,7 +283,6 @@ it('attach debugger for start with custom parameter event', async () => {
   });
 
   function copyFolderContents(sourceFolder: string, destinationFolder: string): void {
-    console.log('source folder', sourceFolder);
     if (!fs.existsSync(sourceFolder)) {
       return;
     }
@@ -286,11 +290,8 @@ it('attach debugger for start with custom parameter event', async () => {
     if (!fs.existsSync(destinationFolder)) {
       fs.mkdirSync(destinationFolder);
     }
-    console.log('destination folder', destinationFolder);
 
     const files = fs.readdirSync(sourceFolder);
-    console.log('files to copy', files);
-
     for (const file of files) {
       const sourcePath = path.join(sourceFolder, file);
       const destinationPath = path.join(destinationFolder, file);
