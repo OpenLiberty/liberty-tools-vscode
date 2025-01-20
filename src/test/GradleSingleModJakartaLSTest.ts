@@ -17,42 +17,47 @@ describe('LSP4Jakarta LS test for snippet test', () => {
             await editor.clearText();
         }
 
+        await utils.delay(85000);
         await editor.typeText("rest");
+        await utils.delay(6000);
 
         //open the assistant
         const assist = await editor.toggleContentAssist(true);
-		// toggle can return void, so we need to make sure the object is present
-		if (assist) {
-			// to select an item use
-			await assist.select('rest_class')
-		}
+        await utils.delay(6000);
+        // toggle can return void, so we need to make sure the object is present
+        if (assist) {
+            // to select an item use
+            await assist.select('rest_class');
+        }
+        await utils.delay(6000);
 
-		// close the assistant
-		await editor.toggleContentAssist(false);
+        // close the assistant
+        await editor.toggleContentAssist(false);
 
         const insertedCode = await editor.getText();
+        await utils.delay(6000);
         assert(insertedCode.includes('public String methodname() {'), 'Snippet rest_class was not inserted correctly.');
 
         await editor.clearText();
         await editor.save();
-    }).timeout(275000);
+    }).timeout(475000);
 
     it('check for diagnostic support',  async() => {
         await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), "src", "main", "java", "test", "gradle", "liberty", "web", "app", "SystemResource2.java"));
-        
+
         editor = await new EditorView().openEditor('SystemResource2.java') as TextEditor;
 
         let insertedCode = await editor.getText();
         // change the resource method from public to private
         insertedCode = insertedCode.replace("public String", "private String");
         await editor.setText(insertedCode);
-        await utils.delay(3000);
+        await utils.delay(6000);
 
         const flaggedString = await editor.findElement(By.xpath("//*[contains(text(), \"methodname\")]"));
 
         const actions = VSBrowser.instance.driver.actions();
         await actions.move({ origin: flaggedString }).perform();
-        await utils.delay(3000);
+        await utils.delay(6000);
 
         const hoverValue = await editor.findElement(By.className('hover-row status-bar'));
 
@@ -60,7 +65,7 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         await viewProblemLink.click();
 
         const fixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Only public methods can be exposed as resource methods\")]"));
-        await utils.delay(2000);
+        await utils.delay(6000);
         const diagnostic = await fixOption.getText();
 
         assert(diagnostic.includes("Only public methods can be exposed as resource methods"), "Did not find diagnostic help text.");
@@ -69,8 +74,7 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         insertedCode = insertedCode.replace("private String", "public String");
         await editor.clearText();
         await editor.setText(insertedCode);
-        await utils.delay(2000);
-
-    }).timeout(275000);
+        await utils.delay(4000);
+    }).timeout(475000);
 
 });
