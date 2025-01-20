@@ -24,16 +24,15 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         //open the assistant
         const assist = await editor.toggleContentAssist(true);
         await utils.delay(6000);
-		// toggle can return void, so we need to make sure the object is present
-		if (assist) {
-			// to select an item use
-			await assist.select('rest_class');
-            console.log("assist selected");
-		}
+        // toggle can return void, so we need to make sure the object is present
+        if (assist) {
+            // to select an item use
+            await assist.select('rest_class');
+        }
         await utils.delay(6000);
 
-		// close the assistant
-		await editor.toggleContentAssist(false);
+        // close the assistant
+        await editor.toggleContentAssist(false);
 
         const insertedCode = await editor.getText();
         await utils.delay(6000);
@@ -42,7 +41,5 @@ describe('LSP4Jakarta LS test for snippet test', () => {
         await editor.clearText();
         await editor.save();
     }).timeout(475000);
-
-    
 
 });
