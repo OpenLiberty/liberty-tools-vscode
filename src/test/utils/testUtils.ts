@@ -193,4 +193,113 @@ export async function clearCommandPalette() {
   await dialog.pushButton('Clear');
 }
 
+export async function clearMavenPluginCache(): Promise<boolean> {
+  // Check if the platform is Linux or macOS
+  const homeDirectory = process.platform === 'linux' || process.platform === 'darwin' ? process.env.HOME // For Linux/macOS, use HOME
+    : process.platform === 'win32' ? process.env.USERPROFILE // For Windows, use USERPROFILE
+      : undefined; // In case the platform is unknown
+
+  if (!homeDirectory) {
+    throw new Error('Home directory not found');
+  }
+
+  const mavenRepoPath = path.join(homeDirectory, '.m2', 'repository', 'org', 'apache', 'maven', 'plugins');
+  return deleteDirectory(mavenRepoPath);
+}
+
+function deleteDirectory(directoryPath: string): boolean {
+  try {
+    // Read all the contents of the directory
+    const files = fs.readdirSync(directoryPath);
+
+    for (const file of files) {
+      const currentPath = path.join(directoryPath, file);
+      const stat = fs.statSync(currentPath);
+
+      if (stat.isDirectory()) {
+        // Recursively delete directories
+        deleteDirectory(currentPath);
+      } else {
+        // Delete the file
+        fs.unlinkSync(currentPath);
+      }
+    }
+
+    // Once all files and subdirectories are deleted, remove the directory itself
+    fs.rmdirSync(directoryPath);
+    return true;
+  } catch (err) {
+    console.error(`Error while deleting directory: ${err}`);
+    return false;
+  }
+}
+
+// Function to modify content inside pom XML to add surefire version 3.4.0 plugin
+export async function modifyPomFile() {
+  //Read the POM file
+  fs.readFile('src/test/resources/maven/liberty.maven.test.wrapper.app/pom.xml', 'utf8', (err, data) => {
+    if (err) {
+      console.log('Error reading the file:', err);
+      console.error('Error reading the file:', err);
+      return;
+    }
+
+    //Find the specific comment and replace its content
+    const commentRegex = /<!--\s*Test report insertion point, do not remove\s*-->/;
+    const newContent = `<plugin>
+                                <groupId>org.apache.maven.plugins</groupId>
+                                <artifactId>maven-surefire-report-plugin</artifactId>
+                                <version>3.4.0</version>
+                          </plugin>`;
+    // Check if the comment is found
+    if (commentRegex.test(data)) {
+      const updatedData = data.replace(commentRegex, `<!-- replace this content -->\n${newContent}\n<!-- replace this content end -->`);
+
+      //Write the modified content back to the POM file
+      fs.writeFile('src/test/resources/maven/liberty.maven.test.wrapper.app/pom.xml', updatedData, 'utf8', (err) => {
+        if (err) {
+          console.log('Error writing to the file:', err);
+          console.error('Error writing to the file:', err);
+        } else {
+          console.log('POM file updated successfully');
+        }
+      });
+    } else {
+      console.log('Comment with the specified marker not found in the POM file');
+    }
+  });
+}
+
+// Function to revert changes made by modifyPomFile()
+export async function revertPomFile() {
+  //path to pom.xml in the test project
+  const pomFilePath = 'src/test/resources/maven/liberty.maven.test.wrapper.app/pom.xml';
+
+  //Read the POM file
+  fs.readFile(pomFilePath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('Error reading the file:', err);
+      return;
+    }
+
+    //Find the inserted plugin block and revert it back to the original comment
+    const pluginBlockRegex = /<!--\s*replace this content\s*-->([\s\S]*?)<!--\s*replace this content end\s*-->/;
+
+    // Check if the inserted plugin block exists
+    if (pluginBlockRegex.test(data)) {
+      const revertedData = data.replace(pluginBlockRegex, `<!-- Test report insertion point, do not remove -->`);
+
+      //Write the reverted content back to the POM file
+      fs.writeFile(pomFilePath, revertedData, 'utf8', (err) => {
+        if (err) {
+          console.error('Error writing to the file:', err);
+        } else {
+          console.log('POM file reverted successfully');
+        }
+      });
+    } else {
+      console.log('Plugin block not found, nothing to revert.');
+    }
+  });
+}
   
