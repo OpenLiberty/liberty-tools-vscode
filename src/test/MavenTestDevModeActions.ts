@@ -252,7 +252,8 @@ it('attach debugger for start with custom parameter event', async () => {
   let attachStatus: Boolean = false;
   try {
     await utils.launchDashboardAction(item,constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
-    await utils.setCustomParameter("-DdebugPort=7777");   
+    await utils.setCustomParameter("-DdebugPort=7777");  
+    console.log("after calling set customparameter"); 
     await utils.delay(30000);
     
     isServerRunning = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
