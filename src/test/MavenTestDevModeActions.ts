@@ -189,63 +189,6 @@ it('View Integration test report for maven project', async () => {
     
 }).timeout(10000);
 
-it('Run tests for sample maven project with surefire version 3.4.0', async () => {
-
-  // Define the report paths
-  const reportPaths = [
-    path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html"),
-    path.join(utils.getMvnProjectPath(), "target", "reports", "surefire.html"),
-    path.join(utils.getMvnProjectPath(), "target", "site", "surefire-report.html"),
-    path.join(utils.getMvnProjectPath(), "target", "site", "failsafe-report.html")
-  ];
-
-  // Delete all reports and check if all deletions were successful
-  const deletePromises = reportPaths.map(reportPath => utils.deleteReports(reportPath));
-  const deleteResults = await Promise.all(deletePromises);
-  // All the report files should either not exist or be successfully deleted
-  expect(deleteResults.every(result => result === true)).to.be.true;
-
-  await utils.clearMavenPluginCache();
-  await utils.modifyPomFile();
-  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
-  const foundCommand = await utils.chooseCmdFromHistory("-DhotTests=true");
-  expect(foundCommand).to.be.true;
-  await utils.delay(30000);
-  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
-  if (!serverStartStatus)
-    console.log("Server started with params message not found in the terminal ");
-  else {
-    console.log("Server succuessfully started");
-    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
-    const serverStopStatus = await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
-    await utils.revertPomFile();
-    if (!serverStopStatus) {
-      console.error("Server stopped message not found in the terminal");
-    }
-    else {
-      console.log("Server stopped successfully");
-    }
-    expect(serverStopStatus).to.be.true;
-  }
-  expect(serverStartStatus).to.be.true;
-}).timeout(350000);
-
-it('View Unit test report for maven project with surefire version 3.4.0', async () => {
-
-  await utils.launchDashboardAction(item, constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);
-  tabs = await new EditorView().getOpenEditorTitles();
-  expect(tabs.indexOf(constants.SUREFIRE_REPORT_TITLE) > -1, "Unit test report not found").to.equal(true);
-
-}).timeout(10000);
-
-it('View Integration test report for maven project with surefire version 3.4.0', async () => {
-
-  await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);
-  tabs = await new EditorView().getOpenEditorTitles();
-  expect(tabs.indexOf(constants.FAILSAFE_REPORT_TITLE) > -1, "Integration test report not found").to.equal(true);
-
-}).timeout(10000);
-
 it('attach debugger for start with custom parameter event', async () => {
   console.log("start attach debugger");
   let isServerRunning: Boolean = true;
@@ -326,6 +269,63 @@ it('attach debugger for start with custom parameter event', async () => {
  
     
 }).timeout(350000);
+
+it('Run tests for sample maven project with surefire version 3.4.0', async () => {
+
+  // Define the report paths
+  const reportPaths = [
+    path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html"),
+    path.join(utils.getMvnProjectPath(), "target", "reports", "surefire.html"),
+    path.join(utils.getMvnProjectPath(), "target", "site", "surefire-report.html"),
+    path.join(utils.getMvnProjectPath(), "target", "site", "failsafe-report.html")
+  ];
+
+  // Delete all reports and check if all deletions were successful
+  const deletePromises = reportPaths.map(reportPath => utils.deleteReports(reportPath));
+  const deleteResults = await Promise.all(deletePromises);
+  // All the report files should either not exist or be successfully deleted
+  expect(deleteResults.every(result => result === true)).to.be.true;
+
+  await utils.clearMavenPluginCache();
+  await utils.modifyPomFile();
+  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
+  const foundCommand = await utils.chooseCmdFromHistory("-DhotTests=true");
+  expect(foundCommand).to.be.true;
+  await utils.delay(30000);
+  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
+  if (!serverStartStatus)
+    console.log("Server started with params message not found in the terminal ");
+  else {
+    console.log("Server succuessfully started");
+    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+    const serverStopStatus = await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
+    await utils.revertPomFile();
+    if (!serverStopStatus) {
+      console.error("Server stopped message not found in the terminal");
+    }
+    else {
+      console.log("Server stopped successfully");
+    }
+    expect(serverStopStatus).to.be.true;
+  }
+  expect(serverStartStatus).to.be.true;
+}).timeout(350000);
+
+it('View Unit test report for maven project with surefire version 3.4.0', async () => {
+
+  await utils.launchDashboardAction(item, constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);
+  tabs = await new EditorView().getOpenEditorTitles();
+  expect(tabs.indexOf(constants.SUREFIRE_REPORT_TITLE) > -1, "Unit test report not found").to.equal(true);
+
+}).timeout(10000);
+
+it('View Integration test report for maven project with surefire version 3.4.0', async () => {
+
+  await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);
+  tabs = await new EditorView().getOpenEditorTitles();
+  expect(tabs.indexOf(constants.FAILSAFE_REPORT_TITLE) > -1, "Integration test report not found").to.equal(true);
+
+}).timeout(10000);
 
 
 });
