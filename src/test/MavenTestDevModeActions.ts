@@ -33,8 +33,10 @@ it('Open dasboard shows items - Maven', async () => {
   await utils.delay(65000);
   section.expand();
   await utils.delay(6000);
+  console.log('before get visible items 1 ');
   const menu = await section.getVisibleItems(); 
-  expect(menu).not.empty;     
+  expect(menu).not.empty;
+  console.log('after menu not empty 1 ');     
   item = await section.findItem(constants.MAVEN_PROJECT) as DefaultTreeItem;   
   expect(item).not.undefined;   
   utils.clearMavenPluginCache(); // clearing the cache so initially it uses the latest verison of the plugins and initiate the testing
@@ -245,6 +247,23 @@ it('View Integration test report for maven project with surefire version 3.4.0',
   expect(tabs.indexOf(constants.FAILSAFE_REPORT_TITLE) > -1, "Integration test report not found").to.equal(true);
 
 }).timeout(35000);
+
+it('Open dasboard shows items 2 - Maven', async () => {
+
+  // Wait for the Liberty Dashboard to load and expand. The dashboard only expands after using the 'expand()' method.  
+  await utils.delay(65000);
+  section.expand();
+  await utils.delay(6000);
+  console.log('before get visible items 2 ');
+  const menu = await section.getVisibleItems(); 
+  expect(menu).not.empty; 
+  console.log('after  menu not empty 2 ');    
+  item = await section.findItem(constants.MAVEN_PROJECT) as DefaultTreeItem;   
+  expect(item).not.undefined;   
+  //utils.clearMavenPluginCache(); // clearing the cache so initially it uses the latest verison of the plugins and initiate the testing
+   
+    
+}).timeout(275000);
 
 it('attach debugger for start with custom parameter event', async () => {
   console.log("start attach debugger");
