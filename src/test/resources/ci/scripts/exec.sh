@@ -76,6 +76,7 @@ main() {
               chown -R runner src/test/resources/maven
               chown -R runner  src/test/resources/gradle
               npm run test-mac-gradle -- -u -c $VSCODE_VERSION_TO_RUN
+              rc=$?
               npm run test-mac-maven -- -u -c $VSCODE_VERSION_TO_RUN
 
             else
