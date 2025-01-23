@@ -45,8 +45,7 @@ export function getMvnProjectPath(): string {
     const input = new InputBox(); 
     await input.click();   
     await input.setText(customParam);      
-    await input.confirm();   
-    console.log("after seeting custom parameter");    
+    await input.confirm();      
   
   }
 

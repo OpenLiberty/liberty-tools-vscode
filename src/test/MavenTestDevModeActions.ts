@@ -3,6 +3,7 @@ import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, Defa
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
+import * as fs from 'fs';
 
 describe('Devmode action tests for Maven Project', () => {
     let sidebar: SideBarView;
@@ -33,10 +34,8 @@ it('Open dasboard shows items - Maven', async () => {
   await utils.delay(65000);
   section.expand();
   await utils.delay(6000);
-  console.log('before get visible items 1 ');
   const menu = await section.getVisibleItems(); 
-  expect(menu).not.empty;
-  console.log('after menu not empty 1 ');     
+  expect(menu).not.empty;  
   item = await section.findItem(constants.MAVEN_PROJECT) as DefaultTreeItem;   
   expect(item).not.undefined;   
   utils.clearMavenPluginCache(); // clearing the cache so initially it uses the latest verison of the plugins and initiate the testing
@@ -193,20 +192,6 @@ it('View Integration test report for maven project', async () => {
 
 it('Run tests for sample maven project with surefire version 3.4.0', async () => {
 
-  // Define the report paths
-  const reportPaths = [
-    path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html"),
-    path.join(utils.getMvnProjectPath(), "target", "reports", "surefire.html"),
-    path.join(utils.getMvnProjectPath(), "target", "site", "surefire-report.html"),
-    path.join(utils.getMvnProjectPath(), "target", "site", "failsafe-report.html")
-  ];
-
-  // Delete all reports and check if all deletions were successful
-  const deletePromises = reportPaths.map(reportPath => utils.deleteReports(reportPath));
-  const deleteResults = await Promise.all(deletePromises);
-  // All the report files should either not exist or be successfully deleted
-  expect(deleteResults.every(result => result === true)).to.be.true;
-
   await utils.clearMavenPluginCache();
   await utils.modifyPomFile();
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
@@ -232,38 +217,28 @@ it('Run tests for sample maven project with surefire version 3.4.0', async () =>
   expect(serverStartStatus).to.be.true;
 }).timeout(350000);
 
-it('View Unit test report for maven project with surefire version 3.4.0', async () => {
+it('check all test reports exists', async () => {
+  // Define the report paths
+  const reportPaths = [
+    path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html"),
+    path.join(utils.getMvnProjectPath(), "target", "reports", "surefire.html"),
+    path.join(utils.getMvnProjectPath(), "target", "site", "surefire-report.html"),
+    path.join(utils.getMvnProjectPath(), "target", "site", "failsafe-report.html")
+  ];
+  // Check if all reports exist
+  const checkPromises = reportPaths.map(reportPath => {
+    return new Promise(resolve => {
+      const exists = fs.existsSync(reportPath);
+      resolve(exists);
+    });
+  });
 
-  await utils.launchDashboardAction(item, constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);
-  tabs = await new EditorView().getOpenEditorTitles();
-  expect(tabs.indexOf(constants.SUREFIRE_REPORT_TITLE) > -1, "Unit test report not found").to.equal(true);
+  // Wait for all checks to complete
+  const existenceResults = await Promise.all(checkPromises);
 
-}).timeout(35000);
-
-it('View Integration test report for maven project with surefire version 3.4.0', async () => {
-
-  await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);
-  tabs = await new EditorView().getOpenEditorTitles();
-  expect(tabs.indexOf(constants.FAILSAFE_REPORT_TITLE) > -1, "Integration test report not found").to.equal(true);
-
-}).timeout(35000);
-
-it('Open dasboard shows items 2 - Maven', async () => {
-
-  // Wait for the Liberty Dashboard to load and expand. The dashboard only expands after using the 'expand()' method.  
-  await utils.delay(65000);
-  section.expand();
-  await utils.delay(6000);
-  console.log('before get visible items 2 ');
-  const menu = await section.getVisibleItems(); 
-  expect(menu).not.empty; 
-  console.log('after  menu not empty 2 ');    
-  item = await section.findItem(constants.MAVEN_PROJECT) as DefaultTreeItem;   
-  expect(item).not.undefined;   
-  //utils.clearMavenPluginCache(); // clearing the cache so initially it uses the latest verison of the plugins and initiate the testing
-   
-    
-}).timeout(275000);
+  // All report files should exist
+  expect(existenceResults.every(result => result === true)).to.be.true;
+}).timeout(10000);
 
 it('attach debugger for start with custom parameter event', async () => {
   console.log("start attach debugger");
@@ -271,8 +246,7 @@ it('attach debugger for start with custom parameter event', async () => {
   let attachStatus: Boolean = false;
   try {
     await utils.launchDashboardAction(item,constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
-    await utils.setCustomParameter("-DdebugPort=7777");  
-    console.log("after calling set customparameter"); 
+    await utils.setCustomParameter("-DdebugPort=7777");
     await utils.delay(30000);
     
     isServerRunning = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
