@@ -192,8 +192,8 @@ it('View Integration test report for maven project', async () => {
 
 it('Run tests for sample maven project with surefire version 3.4.0', async () => {
 
-  await utils.clearMavenPluginCache();
-  await utils.modifyPomFile();
+  await utils.clearMavenPluginCache();// Clears the cache to ensure the specific surefire versions are downloaded for the next test
+  await utils.modifyPomFile();// Modifies pom.xml to inlcude surefire version 3.4.0
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
   const foundCommand = await utils.chooseCmdFromHistory("-DhotTests=true");
   expect(foundCommand).to.be.true;
@@ -205,7 +205,8 @@ it('Run tests for sample maven project with surefire version 3.4.0', async () =>
     console.log("Server succuessfully started");
     await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
     const serverStopStatus = await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
-    await utils.revertPomFile();
+    await utils.revertPomFile();// Removes specific verison of the surefire plugin added for testing
+    await utils.clearMavenPluginCache();// Clear the plugin cache to remove the current versions and ensure the latest plugins are used for the next tests.
     if (!serverStopStatus) {
       console.error("Server stopped message not found in the terminal");
     }
