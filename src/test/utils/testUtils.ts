@@ -1,7 +1,7 @@
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, SideBarView, VSBrowser } from 'vscode-extension-tester';
 import * as fs from 'fs';
-import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
+import * as constants from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
@@ -170,12 +170,12 @@ export function getMvnProjectPath(): string {
 /* Stop Server Liberty dashboard post Attach Debugger*/
 /* As the Window view changes using command to stop server instead of devmode action */
 export async function stopLibertyserver() {
-  console.log("Stop Server action for MAVEN_PROJECT : " + MAVEN_PROJECT);
+  console.log("Stop Server action for MAVEN_PROJECT : " + constants.MAVEN_PROJECT);
   const workbench = new Workbench();
-  await workbench.executeCommand(STOP_DASHBOARD_MAC_ACTION);
+  await workbench.executeCommand(constants.STOP_DASHBOARD_MAC_ACTION);
   const input = InputBox.create();
   (await input).clear();
-  (await input).setText(MAVEN_PROJECT);
+  (await input).setText(constants.MAVEN_PROJECT);
   (await input).confirm();
   (await input).click();
   await delay(10000);
@@ -197,7 +197,7 @@ export async function clearCommandPalette() {
 /**
  * Remove newly created Project folder with content
  */
-export async function removeConfigDir(projectPath: string): Promise<void> {
+export async function removeDirectoryByPath(projectPath: string): Promise<void> {
   try {
     fs.accessSync(projectPath);
     const projectContent = fs.readdirSync(projectPath);
@@ -206,7 +206,7 @@ export async function removeConfigDir(projectPath: string): Promise<void> {
         const projectContentPath = path.join(projectPath, projectFiles);
         const stats = fs.lstatSync(projectContentPath);
         if (stats.isDirectory()) {
-          await removeConfigDir(projectContentPath);
+          await removeDirectoryByPath(projectContentPath);
         } else {
           fs.unlinkSync(projectContentPath);
         }
@@ -221,8 +221,14 @@ export async function removeConfigDir(projectPath: string): Promise<void> {
 /**
  * Copy config directory and create new config 
  */
-export async function copyConfig(existingConfigPath: string, copyConfigPath: string): Promise<void> {
+export async function copyDirectoryByPath(existingConfigPath: string, copyConfigPath: string): Promise<void> {
   fse.copy(existingConfigPath, copyConfigPath)
     .then(() => console.log("New config folder created :" + copyConfigPath))
     .catch(err => console.log("Error creating config folder"));
+}
+
+export async function openServerXMLFile() {
+  const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
+  section.expand();
+  await VSBrowser.instance.openResources(path.join(getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
 }

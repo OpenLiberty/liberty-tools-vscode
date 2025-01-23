@@ -16,31 +16,27 @@ const assert = require('assert');
 
 describe('LCLS tests for Gradle Project', function () {
     let editor: TextEditor;
-    let actualSeverXMLContent: string;
+    let actualServerXMLContent: string;
 
     before(() => {
-        utils.copyConfig(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'), path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
+        utils.copyDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'), path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
     });
 
     it('Should copy content of server.xml', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openServerXMLFile();
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        actualSeverXMLContent = await editor.getText();
+        actualServerXMLContent = await editor.getText();
 
-        assert(actualSeverXMLContent.length !== 0, 'Content of server.xml is not in copied.');
-        console.log('Sever.xml content:', actualSeverXMLContent);
+        assert(actualServerXMLContent.length !== 0, 'Content of server.xml is not in copied.');
+        console.log('Sever.xml content:', actualServerXMLContent);
 
-    }).timeout(10000);
+    }).timeout(25000);
 
     it('Should show diagnostic for server.xml invalid value', async () => {
+        await utils.openServerXMLFile();
 
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
-
-        const hverExpectdOutcome = `'wrong' is not a valid value of union type 'booleanType'.`;
+        const hoverExpectedOutcome = `'wrong' is not a valid value of union type 'booleanType'.`;
         const testHverTarget = '<logging appsWriteJson = \"wrong\" />';
 
         await editor.typeTextAt(17, 5, testHverTarget);
@@ -53,33 +49,31 @@ describe('LCLS tests for Gradle Project', function () {
         await actns.move({ origin: focusTargtElemnt }).perform();
         await utils.delay(5000);
 
-        const hverContent = editor.findElement(By.className('hover-contents'));
-        const hverValue = await hverContent.getText();
-        console.log("Hover text:" + hverValue);
+        const hoverContent = editor.findElement(By.className('hover-contents'));
+        const hoverFoundOutcome = await hoverContent.getText();
+        console.log("Hover text is:" + hoverFoundOutcome);
 
-        assert(hverValue.includes(hverExpectdOutcome), 'Did not get expected diagnostic in server.xml');
+        assert(hoverFoundOutcome.includes(hoverExpectedOutcome), 'Did not get expected diagnostic in server.xml');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
+        editor.setText(actualServerXMLContent);
         console.log("Content restored");
 
     }).timeout(35000);
 
     it('Should apply quick fix for invalid value in server.xml', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openServerXMLFile();
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const stanzaSnipet = "<logging appsWriteJson = \"wrong\" />";
-        const expectedHoverData = "<logging appsWriteJson = \"true\" />";
-        await editor.typeTextAt(17, 5, stanzaSnipet);
+        const stanzaSnippet = "<logging appsWriteJson = \"wrong\" />";
+        const expectedHoverSnippet = "<logging appsWriteJson = \"true\" />";
+        await editor.typeTextAt(17, 5, stanzaSnippet);
         await utils.delay(2000);
-        const flagedString = await editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
+        const flaggedString = await editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
         await utils.delay(7000);
 
         const actions = VSBrowser.instance.driver.actions();
-        await actions.move({ origin: flagedString }).perform();
+        await actions.move({ origin: flaggedString }).perform();
         await utils.delay(3000);
 
         const driver = VSBrowser.instance.driver;
@@ -98,87 +92,79 @@ describe('LCLS tests for Gradle Project', function () {
         if (pointerBlockedElement) {
             await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockedElement);
         } else {
-            console.log('pointerBlockElementt not found!');
+            console.log('pointerBlockElement is not found!');
         }
-        const qckfixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'true'\")]"));
-        await qckfixOption.click();
+        const quickfixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'true'\")]"));
+        await quickfixOption.click();
 
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
         console.log("Content after Quick fix : ", updatedSeverXMLContent);
-        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly for the invalid value in server.xml.');
+        assert(updatedSeverXMLContent.includes(expectedHoverSnippet), 'Quick fix not applied correctly for the invalid value in server.xml.');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
+        editor.setText(actualServerXMLContent);
         console.log("Content restored");
 
     }).timeout(38000);
 
     it('Should show hover support for server.xml Liberty Server Attribute', async () => {
+        await utils.openServerXMLFile();
 
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
+        const hoverOutcome = `Configuration properties for an HTTP endpoint.`;
 
-        const hovrExpctdOutcome = `Configuration properties for an HTTP endpoint.`;
-
-        console.log(hovrExpctdOutcome);
-        const focusTargtElemnt = editor.findElement(By.xpath("//*[contains(text(), 'httpEndpoint')]"));
+        const focusTargtElement = editor.findElement(By.xpath("//*[contains(text(), 'httpEndpoint')]"));
         await utils.delay(3000);
-        focusTargtElemnt.click();
+        focusTargtElement.click();
         await editor.click();
 
         const actns = VSBrowser.instance.driver.actions();
-        await actns.move({ origin: focusTargtElemnt }).perform();
+        await actns.move({ origin: focusTargtElement }).perform();
         await utils.delay(5000);
 
         const hverContent = editor.findElement(By.className('hover-contents'));
         const hoveredText = await hverContent.getText();
         console.log("Hover text:" + hoveredText);
 
-        assert(hoveredText.includes(hovrExpctdOutcome), 'Did not get expected hover data Liberty Server Attribute.');
+        assert(hoveredText.includes(hoverOutcome), 'Did not get expected hover data Liberty Server Attribute.');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
+        editor.setText(actualServerXMLContent);
         console.log("Content restored");
 
     }).timeout(35000);
 
     it('Should show hover support for server.xml Liberty Server Feature', async () => {
+        await utils.openServerXMLFile();
 
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
-
-        const hverExpectdOutcome = `Description: This feature provides support for the MicroProfile Health specification.`;
-        const testHverTarget = '<feature>mpHealth-4.0</feature>';
+        const hoverExpectedOutcome = `Description: This feature provides support for the MicroProfile Health specification.`;
+        const testHoverTarget = '<feature>mpHealth-4.0</feature>';
 
         await editor.typeTextAt(15, 35, '\n');
         await utils.delay(1000);
-        await editor.typeTextAt(16, 9, testHverTarget);
-        const focusTargtElemnt = editor.findElement(By.xpath("//*[contains(text(), 'mpHealth')]"));
+        await editor.typeTextAt(16, 9, testHoverTarget);
+        const focusTargetElement = editor.findElement(By.xpath("//*[contains(text(), 'mpHealth')]"));
         await utils.delay(3000);
-        focusTargtElemnt.click();
+        focusTargetElement.click();
         await editor.click();
 
-        const actns = VSBrowser.instance.driver.actions();
-        await actns.move({ origin: focusTargtElemnt }).perform();
+        const actions = VSBrowser.instance.driver.actions();
+        await actions.move({ origin: focusTargetElement }).perform();
         await utils.delay(5000);
 
-        const hverContent = editor.findElement(By.className('hover-contents'));
-        const hverValue = await hverContent.getText();
-        console.log("Hover text:" + hverValue);
+        const hoverContents = editor.findElement(By.className('hover-contents'));
+        const hoveredValue = await hoverContents.getText();
 
-        assert(hverValue.includes(hverExpectdOutcome), 'Did not get expected hover data Liberty Server Feature.');
+        assert(hoveredValue.includes(hoverExpectedOutcome), 'Did not get expected hover data Liberty Server Feature.');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
+        editor.setText(actualServerXMLContent);
         console.log("Content restored");
 
     }).timeout(33000);
 
     it('Should show type ahead support in server.xml Liberty Server Feature', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openServerXMLFile();
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
         const featureTag = "<f";
@@ -188,11 +174,11 @@ describe('LCLS tests for Gradle Project', function () {
         await editor.typeTextAt(16, 9, featureTag);
         await utils.delay(5000);
         //open the assistant
-        let asist = await editor.toggleContentAssist(true);
+        let assist = await editor.toggleContentAssist(true);
         // toggle can return void, so we need to make sure the object is present
-        if (asist) {
+        if (assist) {
             // to select an item use
-            await asist.select('feature')
+            await assist.select('feature')
         }
         // close the assistant
         await editor.toggleContentAssist(false);
@@ -201,9 +187,9 @@ describe('LCLS tests for Gradle Project', function () {
         await editor.typeTextAt(16, 18, stanzaSnipet);
         await utils.delay(5000);
 
-        asist = await editor.toggleContentAssist(true);
-        if (asist) {
-            await asist.select('el-3.0')
+        assist = await editor.toggleContentAssist(true);
+        if (assist) {
+            await assist.select('el-3.0')
         }
         await editor.toggleContentAssist(false);
 
@@ -213,32 +199,27 @@ describe('LCLS tests for Gradle Project', function () {
         assert(updatedServerxmlContent.includes(addFeature), 'Type ahead support is not worked as expected in server.xml Liberty Server Feature - el-3.0.');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
+        editor.setText(actualServerXMLContent);
         console.log("Content restored");
 
     }).timeout(35000);
 
     it('Should show type ahead support in server.xml Liberty Server Configuration Stanza', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openServerXMLFile();
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const stanzaSnipet = "log";
+        const stanzaSnippet = "log";
 
         const insertedConfig = "<logging></logging>";
-        await editor.typeTextAt(17, 5, stanzaSnipet);
+        await editor.typeTextAt(17, 5, stanzaSnippet);
         await utils.delay(5000);
         //open the assistant
-        let asist = await editor.toggleContentAssist(true);
+        let assist = await editor.toggleContentAssist(true);
         // toggle can return void, so we need to make sure the object is present
-        if (asist) {
+        if (assist) {
             // to select an item use
-            await asist.select('logging')
+            await assist.select('logging')
         }
-        // close the assistant
-        await editor.toggleContentAssist(false);
-
         // close the assistant
         await editor.toggleContentAssist(false);
 
@@ -248,14 +229,16 @@ describe('LCLS tests for Gradle Project', function () {
         assert(updatedServerxmlContent.includes(insertedConfig), 'Type ahead support is not worked as expected in server.xml Liberty Server Configuration Stanza');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
+        editor.setText(actualServerXMLContent);
         console.log("Content restored");
 
     }).timeout(25000);
 
     after(() => {
-        utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
+        utils.removeDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         console.log("Removed new config folder:");
     });
 
 });
+
+
