@@ -16,31 +16,27 @@ const assert = require('assert');
 
 describe('LCLS tests for Gradle Project', function () {
     let editor: TextEditor;
-    let actualSeverXMLContent: string;
+    let actualServerXMLContent: string;
 
     before(() => {
-        utils.copyConfig(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'), path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
+        utils.copyDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'), path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
     });
 
     it('Should copy content of server.xml', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openServerXMLFile();
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        actualSeverXMLContent = await editor.getText();
+        actualServerXMLContent = await editor.getText();
 
-        assert(actualSeverXMLContent.length !== 0, 'Content of server.xml is not in copied.');
-        console.log('Sever.xml content:', actualSeverXMLContent);
+        assert(actualServerXMLContent.length !== 0, 'Content of server.xml is not in copied.');
+        console.log('Sever.xml content:', actualServerXMLContent);
 
-    }).timeout(10000);
+    }).timeout(25000);
 
     it('Should show diagnostic for server.xml invalid value', async () => {
+        await utils.openServerXMLFile();
 
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
-
-        const hverExpectdOutcome = `'wrong' is not a valid value of union type 'booleanType'.`;
+        const hoverExpectedOutcome = `'wrong' is not a valid value of union type 'booleanType'.`;
         const testHverTarget = '<logging appsWriteJson = \"wrong\" />';
 
         await editor.typeTextAt(17, 5, testHverTarget);
@@ -53,33 +49,31 @@ describe('LCLS tests for Gradle Project', function () {
         await actns.move({ origin: focusTargtElemnt }).perform();
         await utils.delay(5000);
 
-        const hverContent = editor.findElement(By.className('hover-contents'));
-        const hverValue = await hverContent.getText();
-        console.log("Hover text:" + hverValue);
+        const hoverContent = editor.findElement(By.className('hover-contents'));
+        const hoverFoundOutcome = await hoverContent.getText();
+        console.log("Hover text is:" + hoverFoundOutcome);
 
-        assert(hverValue.includes(hverExpectdOutcome), 'Did not get expected diagnostic in server.xml');
+        assert(hoverFoundOutcome.includes(hoverExpectedOutcome), 'Did not get expected diagnostic in server.xml');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
+        editor.setText(actualServerXMLContent);
         console.log("Content restored");
 
     }).timeout(35000);
 
     it('Should apply quick fix for invalid value in server.xml', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openServerXMLFile();
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const stanzaSnipet = "<logging appsWriteJson = \"wrong\" />";
-        const expectedHoverData = "<logging appsWriteJson = \"true\" />";
-        await editor.typeTextAt(17, 5, stanzaSnipet);
+        const stanzaSnippet = "<logging appsWriteJson = \"wrong\" />";
+        const expectedHoverSnippet = "<logging appsWriteJson = \"true\" />";
+        await editor.typeTextAt(17, 5, stanzaSnippet);
         await utils.delay(2000);
-        const flagedString = await editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
+        const flaggedString = await editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
         await utils.delay(7000);
 
         const actions = VSBrowser.instance.driver.actions();
-        await actions.move({ origin: flagedString }).perform();
+        await actions.move({ origin: flaggedString }).perform();
         await utils.delay(3000);
 
         const driver = VSBrowser.instance.driver;
@@ -98,24 +92,24 @@ describe('LCLS tests for Gradle Project', function () {
         if (pointerBlockedElement) {
             await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockedElement);
         } else {
-            console.log('pointerBlockElementt not found!');
+            console.log('pointerBlockElement is not found!');
         }
-        const qckfixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'true'\")]"));
-        await qckfixOption.click();
+        const quickfixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'true'\")]"));
+        await quickfixOption.click();
 
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
         console.log("Content after Quick fix : ", updatedSeverXMLContent);
-        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly for the invalid value in server.xml.');
+        assert(updatedSeverXMLContent.includes(expectedHoverSnippet), 'Quick fix not applied correctly for the invalid value in server.xml.');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
+        editor.setText(actualServerXMLContent);
         console.log("Content restored");
 
     }).timeout(38000);
 
     after(() => {
-        utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
+        utils.removeDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         console.log("Removed new config folder:");
     });
 
