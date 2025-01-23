@@ -195,7 +195,7 @@ export async function clearCommandPalette() {
 }
 
 /**
- * Remove newly created Project folder with content
+ * Remove specific directory
  */
 export async function removeDirectoryByPath(projectPath: string): Promise<void> {
   try {
@@ -219,7 +219,7 @@ export async function removeDirectoryByPath(projectPath: string): Promise<void> 
 }
 
 /**
- * Copy config directory and create new config 
+ * Copy a specific directory  
  */
 export async function copyDirectoryByPath(existingConfigPath: string, copyConfigPath: string): Promise<void> {
   fse.copy(existingConfigPath, copyConfigPath)
