@@ -35,7 +35,7 @@ it('Open dasboard shows items - Maven', async () => {
   section.expand();
   await utils.delay(6000);
   const menu = await section.getVisibleItems(); 
-  expect(menu).not.empty;  
+  expect(menu).not.empty;     
   item = await section.findItem(constants.MAVEN_PROJECT) as DefaultTreeItem;   
   expect(item).not.undefined;   
   utils.clearMavenPluginCache(); // clearing the cache so initially it uses the latest verison of the plugins and initiate the testing
@@ -246,7 +246,7 @@ it('attach debugger for start with custom parameter event', async () => {
   let attachStatus: Boolean = false;
   try {
     await utils.launchDashboardAction(item,constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
-    await utils.setCustomParameter("-DdebugPort=7777");
+    await utils.setCustomParameter("-DdebugPort=7777");   
     await utils.delay(30000);
     
     isServerRunning = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
