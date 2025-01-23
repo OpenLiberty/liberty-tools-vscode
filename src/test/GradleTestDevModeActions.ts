@@ -95,10 +95,11 @@ it('Run tests for gradle project', async () => {
 
 
 it('start gradle with options from liberty dashboard', async () => {      
-  await utils.delay(30000); 
   const reportPath = path.join(utils.getGradleProjectPath(),"build", "reports", "tests", "test", "index.html");
   const deleteReport = await utils.deleteReports(reportPath);
+  await utils.delay(30000); 
   expect (deleteReport).to.be.true;
+  await utils.delay(30000); 
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
   await utils.setCustomParameter("--hotTests");  
   await utils.delay(100000);  
