@@ -67,7 +67,7 @@ it('Start gradle project from liberty dashboard', async () => {
 }).timeout(350000);
 
 it('Run tests for gradle project', async () => {  
-  await utils.delay(300000);
+  await utils.delay(30000);
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
   await utils.delay(30000);  
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
