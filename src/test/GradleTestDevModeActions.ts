@@ -125,7 +125,7 @@ it('start gradle with options from liberty dashboard', async () => {
 }).timeout(550000);
 
 it('start gradle with history from liberty dashboard', async () => {  
-
+  await utils.delay(30000); 
   const reportPath = path.join(utils.getGradleProjectPath(),"build", "reports", "tests", "test", "index.html");
   const deleteReport = await utils.deleteReports(reportPath);
   expect (deleteReport).to.be.true;  
