@@ -302,4 +302,18 @@ export async function revertPomFile() {
     }
   });
 }
-  
+
+//function to delete the report files in the possible directories
+export async function deleteReportsFiles() {
+  const reportPaths = [
+    path.join(getMvnProjectPath(), "target", "reports", "failsafe.html"),
+    path.join(getMvnProjectPath(), "target", "reports", "surefire.html"),
+    path.join(getMvnProjectPath(), "target", "site", "surefire-report.html"),
+    path.join(getMvnProjectPath(), "target", "site", "failsafe-report.html")
+  ];
+  await Promise.all(
+    reportPaths.map(async (reportPath) => {
+      await deleteReports(reportPath);
+    })
+  );
+}
