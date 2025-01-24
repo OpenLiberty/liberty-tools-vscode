@@ -270,10 +270,6 @@ it('attach debugger for start with custom parameter event', async () => {
     
 }).timeout(350000);
 
-it('false method', async () => {  
-  expect(false).to.be.true;
-}).timeout(10000);
-
   /**
    * The following after hook copies the screenshot from the temporary folder in which it is saved to a known permanent location in the project folder.
    * The MavenTestDevModeAction is the last test file that will be executed. Hence the after hook placed here
