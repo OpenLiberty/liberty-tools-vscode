@@ -98,7 +98,10 @@ it('start gradle with docker from liberty dashboard', async () => {
 }).timeout(350000);
 
 it('Run tests for gradle project', async () => {  
-  
+
+  /* Adding delay before executing command in the terminal, to ensure 
+  the directory path loads completely in macOS terminal before the command is printed.*/
+  await utils.delay(30000);
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
   await utils.delay(30000);  
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
@@ -126,13 +129,16 @@ it('Run tests for gradle project', async () => {
 
 
 it('start gradle with options from liberty dashboard', async () => {      
-    
   const reportPath = path.join(utils.getGradleProjectPath(),"build", "reports", "tests", "test", "index.html");
   const deleteReport = await utils.deleteReports(reportPath);
+  await utils.delay(30000); 
   expect (deleteReport).to.be.true;
+  /* Adding delay before executing command in the terminal, to ensure 
+  the directory path loads completely in macOS terminal before the command is printed.*/
+  await utils.delay(30000); 
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
   await utils.setCustomParameter("--hotTests");  
-  await utils.delay(30000);  
+  await utils.delay(100000);  
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
   if(!serverStartStatus)
     console.log("Server started with params message not found in terminal ");
@@ -155,7 +161,9 @@ it('start gradle with options from liberty dashboard', async () => {
 }).timeout(550000);
 
 it('start gradle with history from liberty dashboard', async () => {  
-
+  /* Adding delay before executing command in the terminal, to ensure 
+  the directory path loads completely in macOS terminal before the command is printed.*/
+  await utils.delay(30000); 
   const reportPath = path.join(utils.getGradleProjectPath(),"build", "reports", "tests", "test", "index.html");
   const deleteReport = await utils.deleteReports(reportPath);
   expect (deleteReport).to.be.true;  
@@ -163,7 +171,7 @@ it('start gradle with history from liberty dashboard', async () => {
   const foundCommand = await utils.chooseCmdFromHistory("--hotTests");
   console.log("foundcmd:" + foundCommand);
   expect (foundCommand).to.be.true;  
-  await utils.delay(30000);
+  await utils.delay(100000);  
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
   if(!serverStartStatus)
     console.log("Server started with params message not found in the terminal ");
