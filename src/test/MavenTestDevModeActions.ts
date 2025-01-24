@@ -277,6 +277,7 @@ it('attach debugger for start with custom parameter event', async () => {
    */
   after(() => {
     const sourcePath = VSBrowser.instance.getScreenshotsDir();
+    console.log("source path: ", sourcePath);
     const destinationPath = './screenshots';
 
     copyFolderContents(sourcePath, destinationPath);
