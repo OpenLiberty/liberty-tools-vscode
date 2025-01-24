@@ -3,6 +3,7 @@ import { InputBox, Workbench,SideBarView, ViewSection,EditorView,DefaultTreeItem
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
+import { viewTestReportForMac } from './utils/macUtils';
 
 describe('Devmode action tests for Gradle Project', () => {
     let sidebar: SideBarView;
@@ -184,6 +185,24 @@ it('start gradle with history from liberty dashboard', async () => {
     
 }).timeout(350000);
 
+
+it('View test report for gradle project', async () => {
+
+  if ((process.platform === 'darwin')) {
+    //Function call to enter corresponding command in the command prompt to display test report for gradle project in mac
+    await viewTestReportForMac();
+  } else {
+    await utils.launchDashboardAction(item, constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
+    // expect (tabs[1]], "Gradle test report not found").to.equal(constants.GRADLE_TEST_REPORT_TITLE);
+  }
+  tabs = await new EditorView().getOpenEditorTitles();
+  await utils.delay(1000);
+  console.log("Tabs opened: " + tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE));
+
+  expect(tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE) > -1, "Gradle test report not found").to.equal(true);
+}).timeout(60000);
+
+
 /**
  * All future test cases should be written before the test that attaches the debugger, as this will switch the UI to the debugger view.
  * If, for any reason, a test case needs to be written after the debugger test, ensure that the UI is switched back to the explorer view before executing the subsequent tests.
@@ -236,21 +255,6 @@ it('attach debugger for gradle with custom parameter event', async () => {
   }
   expect(attachStatus).to.be.true;
 }).timeout(550000);
-
-it('View test report for gradle project', async () => {      
-
-  if((process.platform === 'darwin' ) || (process.platform === 'win32') || (process.platform == 'linux'))
-  {
-    //skip running for platforms , enable once https://github.com/OpenLiberty/liberty-tools-vscode/issues/266 is resolved
-    return true;
-  }
-    
-  await utils.launchDashboardAction(item,constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);   
-  tabs = await new EditorView().getOpenEditorTitles();
- // expect (tabs[1]], "Gradle test report not found").to.equal(constants.GRADLE_TEST_REPORT_TITLE);
- expect (tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE)>-1, "Gradle test report not found").to.equal(true); 
-    
-}).timeout(30000);
 
   // Based on the UI testing code, it sometimes selects the wrong command in "command palette", such as choosing "Liberty: Start ..." instead of "Liberty: Start" from the recent suggestions. This discrepancy occurs because we specifically need "Liberty: Start" at that moment.
   // Now, clear the command history of the "command palette" to avoid receiving "recently used" suggestions. This action should be performed at the end of Gradle Project tests.
