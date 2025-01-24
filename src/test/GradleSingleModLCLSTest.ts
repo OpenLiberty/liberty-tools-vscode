@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-import { By, EditorView, SideBarView, TextEditor, VSBrowser } from "vscode-extension-tester";
+import { By, EditorView, TextEditor, VSBrowser } from "vscode-extension-tester";
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 
