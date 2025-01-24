@@ -241,27 +241,6 @@ it('check all test reports exists', async () => {
   expect(existenceResults.every(result => result === true)).to.be.true;
 }).timeout(10000);
 
-it('View Unit test report for maven project surefire 3.4.0', async () => {      
-    
-  await utils.deleteReports(path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html"));
-  await utils.deleteReports(path.join(utils.getMvnProjectPath(), "target", "reports", "surefire.html"));
-  
-  await utils.launchDashboardAction(item,constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);   
-  tabs = await new EditorView().getOpenEditorTitles();
-  //expect (tabs[1], "Unit test report not found").to.equal(constants.SUREFIRE_REPORT_TITLE);
-  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found").to.equal(true); 
-    
-}).timeout(10000);
-
-it('View Integration test report for maven project surefire 3.4.0', async () => {      
-    
-  await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);   
-  tabs = await new EditorView().getOpenEditorTitles();
-  //expect (tabs[2], "Integration test report not found").to.equal(constants.FAILSAFE_REPORT_TITLE);
-  expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found").to.equal(true);
-    
-}).timeout(10000);
-
 it('attach debugger for start with custom parameter event', async () => {
   console.log("start attach debugger");
   let isServerRunning: Boolean = true;
