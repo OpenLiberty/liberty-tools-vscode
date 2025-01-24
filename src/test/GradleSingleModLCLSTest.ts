@@ -45,8 +45,8 @@ describe('LCLS tests for Gradle Project', function () {
         focusTargetedElement.click();
         await editor.click();
 
-        const actionList = VSBrowser.instance.driver.actions();
-        await actionList.move({ origin: focusTargetedElement }).perform();
+        const driverActionList = VSBrowser.instance.driver.actions();
+        await driverActionList.move({ origin: focusTargetedElement }).perform();
         await utils.delay(5000);
 
         const hoverContents = editor.findElement(By.className('hover-contents'));
@@ -72,8 +72,8 @@ describe('LCLS tests for Gradle Project', function () {
         const hoverTargetValue = await editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
         await utils.delay(7000);
 
-        const actionList = VSBrowser.instance.driver.actions();
-        await actionList.move({ origin: hoverTargetValue }).perform();
+        const driverActionList = VSBrowser.instance.driver.actions();
+        await driverActionList.move({ origin: hoverTargetValue }).perform();
         await utils.delay(3000);
 
         const driver = VSBrowser.instance.driver;
@@ -118,8 +118,8 @@ describe('LCLS tests for Gradle Project', function () {
         focusTargetedElement.click();
         await editor.click();
 
-        const actionList = VSBrowser.instance.driver.actions();
-        await actionList.move({ origin: focusTargetedElement }).perform();
+        const driverActionList = VSBrowser.instance.driver.actions();
+        await driverActionList.move({ origin: focusTargetedElement }).perform();
         await utils.delay(5000);
 
         const hoverContent = editor.findElement(By.className('hover-contents'));
@@ -148,8 +148,8 @@ describe('LCLS tests for Gradle Project', function () {
         focusTargetElement.click();
         await editor.click();
 
-        const actionList = VSBrowser.instance.driver.actions();
-        await actionList.move({ origin: focusTargetElement }).perform();
+        const driverActionList = VSBrowser.instance.driver.actions();
+        await driverActionList.move({ origin: focusTargetElement }).perform();
         await utils.delay(5000);
 
         const hoverContents = editor.findElement(By.className('hover-contents'));
