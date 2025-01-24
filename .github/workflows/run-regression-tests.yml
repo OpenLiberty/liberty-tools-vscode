@@ -44,7 +44,7 @@ jobs:
       # Archive artifacts
       - name: Archive artifacts
         if: runner.os == 'linux' && matrix.targetVSCode == 'latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.3.4
         with:
           name: liberty-tools-vscode-${{ github.sha }}
           path: ./**/*.vsix
