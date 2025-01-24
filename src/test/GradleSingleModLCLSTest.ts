@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-import { By, EditorView, SideBarView, TextEditor, VSBrowser } from "vscode-extension-tester";
+import { By, EditorView, TextEditor, VSBrowser } from "vscode-extension-tester";
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 
@@ -113,31 +113,31 @@ describe('LCLS tests for Gradle Project', function () {
 
         const hoverOutcome = `Configuration properties for an HTTP endpoint.`;
 
-        const focusTargtElement = editor.findElement(By.xpath("//*[contains(text(), 'httpEndpoint')]"));
+        const focusTargetedElement = editor.findElement(By.xpath("//*[contains(text(), 'httpEndpoint')]"));
         await utils.delay(3000);
-        focusTargtElement.click();
+        focusTargetedElement.click();
         await editor.click();
 
-        const actns = VSBrowser.instance.driver.actions();
-        await actns.move({ origin: focusTargtElement }).perform();
+        const actions = VSBrowser.instance.driver.actions();
+        await actions.move({ origin: focusTargetedElement }).perform();
         await utils.delay(5000);
 
-        const hverContent = editor.findElement(By.className('hover-contents'));
-        const hoveredText = await hverContent.getText();
-        console.log("Hover text:" + hoveredText);
+        const hoverContent = editor.findElement(By.className('hover-contents'));
+        const hoveredTextValue = await hoverContent.getText();
+        console.log("Hover text is: " + hoveredTextValue);
 
-        assert(hoveredText.includes(hoverOutcome), 'Did not get expected hover data Liberty Server Attribute.');
+        assert(hoveredTextValue.includes(hoverOutcome), 'Did not get expected hover data Liberty Server Attribute.');
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
-        console.log("Content restored");
+        console.log("Content is restored");
 
     }).timeout(35000);
 
     it('Should show hover support for server.xml Liberty Server Feature', async () => {
         await utils.openServerXMLFile();
 
-        const hoverExpectedOutcome = `Description: This feature provides support for the MicroProfile Health specification.`;
+        const hoverOutcome = `Description: This feature provides support for the MicroProfile Health specification.`;
         const testHoverTarget = '<feature>mpHealth-4.0</feature>';
 
         await editor.typeTextAt(15, 35, '\n');
@@ -152,10 +152,11 @@ describe('LCLS tests for Gradle Project', function () {
         await actions.move({ origin: focusTargetElement }).perform();
         await utils.delay(5000);
 
-        const hoverContents = editor.findElement(By.className('hover-contents'));
-        const hoveredValue = await hoverContents.getText();
+        const hoverContent = editor.findElement(By.className('hover-contents'));
+        const hoveredValue = await hoverContent.getText();
+        console.log("Hover text is :" + hoveredValue);
 
-        assert(hoveredValue.includes(hoverExpectedOutcome), 'Did not get expected hover data Liberty Server Feature.');
+        assert(hoveredValue.includes(hoverOutcome), 'Did not get expected hover data Liberty Server Feature.');
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
@@ -174,11 +175,11 @@ describe('LCLS tests for Gradle Project', function () {
         await editor.typeTextAt(16, 9, featureTag);
         await utils.delay(5000);
         //open the assistant
-        let assist = await editor.toggleContentAssist(true);
+        let asist = await editor.toggleContentAssist(true);
         // toggle can return void, so we need to make sure the object is present
-        if (assist) {
+        if (asist) {
             // to select an item use
-            await assist.select('feature')
+            await asist.select('feature')
         }
         // close the assistant
         await editor.toggleContentAssist(false);
@@ -187,9 +188,9 @@ describe('LCLS tests for Gradle Project', function () {
         await editor.typeTextAt(16, 18, stanzaSnipet);
         await utils.delay(5000);
 
-        assist = await editor.toggleContentAssist(true);
-        if (assist) {
-            await assist.select('el-3.0')
+        asist = await editor.toggleContentAssist(true);
+        if (asist) {
+            await asist.select('el-3.0')
         }
         await editor.toggleContentAssist(false);
 
