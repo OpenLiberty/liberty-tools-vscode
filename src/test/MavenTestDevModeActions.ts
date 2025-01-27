@@ -67,6 +67,37 @@ it('Start maven project from liberty dashboard', async () => {
     
 }).timeout(550000);
 
+it('start maven with docker from liberty dashboard', async () => {      
+
+  if((process.platform === 'darwin' ) || (process.platform === 'win32'))
+  {
+    //skip running for platforms , enable them for linux after resolving docker setup in GHA
+    return true;
+  }
+    
+  
+  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);  
+  await utils.delay(60000);
+  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
+  if(!serverStartStatus)
+    console.log("Server started message not found in the terminal");
+  else
+  {
+    console.log("Server succuessfully started");  
+    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
+    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
+    if(!serverStopStatus){ 
+    console.error("Server stopped message not found in the terminal");
+    }
+    else
+      console.log("Server stopped successfully");
+    expect (serverStopStatus).to.be.true;
+}
+ expect (serverStartStatus).to.be.true; 
+ 
+    
+}).timeout(350000);
+
 it('Run tests for sample maven project', async () => {  
   
   await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
@@ -188,6 +219,10 @@ it('View Integration test report for maven project', async () => {
     
 }).timeout(10000);
 
+/**
+ * All future test cases should be written before the test that attaches the debugger, as this will switch the UI to the debugger view.
+ * If, for any reason, a test case needs to be written after the debugger test, ensure that the UI is switched back to the explorer view before executing the subsequent tests.
+ */
 it('attach debugger for start with custom parameter event', async () => {
   console.log("start attach debugger");
   let isServerRunning: Boolean = true;
@@ -220,7 +255,7 @@ it('attach debugger for start with custom parameter event', async () => {
       }
     }
 
-    await utils.stopLibertyserver();
+    await utils.stopLibertyserver(constants.MAVEN_PROJECT);
     isServerRunning = !await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING); //negate isServerRunning
     if (!isServerRunning)
       console.log("Server stopped successfully ");
@@ -230,43 +265,12 @@ it('attach debugger for start with custom parameter event', async () => {
   } finally {
     console.log("finally block: is server running -  ", isServerRunning);
     if (isServerRunning) {
-      utils.stopLibertyserver();
+      utils.stopLibertyserver(constants.MAVEN_PROJECT);
     }
     else
       console.log("good to close test - Attach Debugger for start with custom parameter(-DdebugPort=7777) event");
   }
   expect(attachStatus).to.be.true;
-}).timeout(350000);
-
- it('start maven with docker from liberty dashboard', async () => {      
-
-  if((process.platform === 'darwin' ) || (process.platform === 'win32') || (process.platform == 'linux'))
-  {
-    //skip running for platforms , enable them for linux after resolving docker setup in GHA
-    return true;
-  }
-    
-  
-  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);  
-  await utils.delay(60000);
-  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
-  if(!serverStartStatus)
-    console.log("Server started message not found in the terminal");
-  else
-  {
-    console.log("Server succuessfully started");  
-    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
-    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
-    if(!serverStopStatus){ 
-    console.error("Server stopped message not found in the terminal");
-    }
-    else
-      console.log("Server stopped successfully");
-    expect (serverStopStatus).to.be.true;
-}
- expect (serverStartStatus).to.be.true; 
- 
-    
 }).timeout(350000);
 
 
