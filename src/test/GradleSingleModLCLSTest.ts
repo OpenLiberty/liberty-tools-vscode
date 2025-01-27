@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-import { By, EditorView, SideBarView, TextEditor, VSBrowser } from "vscode-extension-tester";
+import { By, EditorView, TextEditor, VSBrowser } from "vscode-extension-tester";
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 
@@ -23,13 +23,12 @@ describe('LCLS tests for Gradle Project', function () {
     });
 
     it('Should copy content of server.xml', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML);
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
         actualServerXMLContent = await editor.getText();
-
         assert(actualServerXMLContent.length !== 0, 'Content of server.xml is not in copied.');
-        console.log('Sever.xml content:', actualServerXMLContent);
+        console.log('Sever.xml content is:', actualServerXMLContent);
 
     }).timeout(25000);
 
@@ -57,14 +56,14 @@ describe('LCLS tests for Gradle Project', function () {
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
-        console.log("server.xml content restored");
+        console.log("server.xml content is restored");
 
-    }).timeout(35000);
+    }).timeout(38000);
 
     it('Should apply quick fix for invalid value in server.xml', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML);
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
         const stanzaSnippet = "<logging appsWriteJson = \"wrong\" />";
         const hoverExpectedSnippet = "<logging appsWriteJson = \"true\" />";
         await editor.typeTextAt(17, 5, stanzaSnippet);
@@ -99,12 +98,12 @@ describe('LCLS tests for Gradle Project', function () {
 
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after Quick fix : ", updatedSeverXMLContent);
+        console.log("Content after Quick fix is: ", updatedSeverXMLContent);
         assert(updatedSeverXMLContent.includes(hoverExpectedSnippet), 'Quick fix not applied correctly for the invalid value in server.xml.');
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
-        console.log("server.xml content restored");
+        console.log("server.xml content is restored");
 
     }).timeout(38000);
 
@@ -126,11 +125,11 @@ describe('LCLS tests for Gradle Project', function () {
         const hoveredTextValue = await hoverContent.getText();
         console.log("Hover text is: " + hoveredTextValue);
 
-        assert(hoveredTextValue.includes(hoverExpectedOutcome), 'Did not get expected hover data Liberty Server Attribute.');
+        assert(hoveredTextValue.includes(hoverExpectedOutcome), 'Did not get expected hover data for Liberty Server Attribute.');
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
-        console.log("server.xml content restored");
+        console.log("server.xml content is restored");
 
     }).timeout(35000);
 
@@ -156,11 +155,11 @@ describe('LCLS tests for Gradle Project', function () {
         const hoveredValue = await hoverContents.getText();
         console.log("Hover text is :" + hoveredValue);
 
-        assert(hoveredValue.includes(hoverOutcome), 'Did not get expected hover data Liberty Server Feature.');
+        assert(hoveredValue.includes(hoverOutcome), 'Did not get expected hover data for Liberty Server Feature.');
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
-        console.log("server.xml content restored");
+        console.log("server.xml content is restored");
 
     }).timeout(33000);
 
@@ -175,22 +174,15 @@ describe('LCLS tests for Gradle Project', function () {
         await editor.typeTextAt(16, 9, featureTag);
         await utils.delay(5000);
         //open the assistant
-        let assist = await editor.toggleContentAssist(true);
-        // toggle can return void, so we need to make sure the object is present
-        if (assist) {
-            // to select an item use
-            await assist.select('feature')
-        }
+        await utils.callAssitantAction(editor, 'feature');
 
         const stanzaSnippet = "el-3";
-
         await editor.typeTextAt(16, 18, stanzaSnippet);
         await utils.delay(5000);
 
-        assist = await editor.toggleContentAssist(true);
-        if (assist) {
-            await assist.select('el-3.0')
-        }
+        await utils.callAssitantAction(editor, 'el-3.0');
+
+        // close the assistant
         await editor.toggleContentAssist(false);
 
         const updatedServerxmlContent = await editor.getText();
@@ -200,7 +192,7 @@ describe('LCLS tests for Gradle Project', function () {
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
-        console.log("server.xml content restored");
+        console.log("server.xml content is restored");
 
     }).timeout(35000);
 
@@ -226,7 +218,7 @@ describe('LCLS tests for Gradle Project', function () {
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
-        console.log("server.xml content restored");
+        console.log("server.xml content is restored");
 
     }).timeout(25000);
 
