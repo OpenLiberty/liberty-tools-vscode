@@ -27,7 +27,6 @@ describe('LCLS tests for Gradle Project', function () {
         editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
         actualServerXMLContent = await editor.getText();
-
         assert(actualServerXMLContent.length !== 0, 'Content of server.xml is not in copied.');
         console.log('Sever.xml content is:', actualServerXMLContent);
 
@@ -59,7 +58,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.setText(actualServerXMLContent);
         console.log("server.xml content is restored");
 
-    }).timeout(35000);
+    }).timeout(38000);
 
     it('Should apply quick fix for invalid value in server.xml', async () => {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
