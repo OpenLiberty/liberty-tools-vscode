@@ -70,6 +70,7 @@ installBaseSoftware() {
         sudo apt-get install curl unzip 
         installXDisplaySoftwareOnLinux
         installDockerOnLinux
+        updateKernelParameter
     elif [[ $OS == "Darwin" ]]; then
         brew update
         brew install curl unzip || true
@@ -200,6 +201,12 @@ installDockerOnLinux() {
     # Install the docker engine.
     sudo apt-get update
     sudo apt-get install docker-ce docker-ce-cli containerd.io
+}
+
+updateKernelParameter() {
+    # The `openResources()` method does not work properly on Ubuntu 24.04 due to restrictions imposed by the system's AppArmor security framework.
+    # The following command will temporarily adjust the kernel parameter and bypass the restriction
+    sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 }
 
 main "$@"
