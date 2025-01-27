@@ -40,3 +40,7 @@ export const ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION = "Liberty: Attach debugger";
 export const  MAVEN_DEVMODE_DEBUG_PORT_PARM = "-DdebugPort";
 /** Gradle: Dev mode debug port argument key. */
 export const GRADLE_DEVMODE_DEBUG_PORT_PARM = "--libertyDebugPort";
+export const CONFIG = "config";
+export const CONFIG_TWO = "config2";
+export const BOOTSTRAP_PROPERTIES = "bootstrap.properties";
+export const SERVER_XML = "server.xml";
