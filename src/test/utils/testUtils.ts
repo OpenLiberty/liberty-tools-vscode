@@ -193,7 +193,7 @@ export async function clearCommandPalette() {
   await dialog.pushButton('Clear');
 }
 
-export async function clearMavenPluginCache(): Promise<boolean> {
+export async function clearMavenPluginCache(): Promise<void> {
   // Check if the platform is Linux or macOS
   const homeDirectory = process.platform === 'linux' || process.platform === 'darwin' ? process.env.HOME // For Linux/macOS, use HOME
     : process.platform === 'win32' ? process.env.USERPROFILE // For Windows, use USERPROFILE
@@ -204,33 +204,27 @@ export async function clearMavenPluginCache(): Promise<boolean> {
   }
 
   const mavenRepoPath = path.join(homeDirectory, '.m2', 'repository', 'org', 'apache', 'maven', 'plugins');
-  return deleteDirectory(mavenRepoPath);
+  removeDirectoryByPath(mavenRepoPath);
 }
 
-function deleteDirectory(directoryPath: string): boolean {
+export async function removeDirectoryByPath(projectPath: string): Promise<void> {
   try {
-    // Read all the contents of the directory
-    const files = fs.readdirSync(directoryPath);
-
-    for (const file of files) {
-      const currentPath = path.join(directoryPath, file);
-      const stat = fs.statSync(currentPath);
-
-      if (stat.isDirectory()) {
-        // Recursively delete directories
-        deleteDirectory(currentPath);
-      } else {
-        // Delete the file
-        fs.unlinkSync(currentPath);
-      }
-    }
-
-    // Once all files and subdirectories are deleted, remove the directory itself
-    fs.rmdirSync(directoryPath);
-    return true;
-  } catch (err) {
-    console.error(`Error while deleting directory: ${err}`);
-    return false;
+    fs.accessSync(projectPath);
+    const projectContent = fs.readdirSync(projectPath);
+    await Promise.all(
+      projectContent.map(async (projectFiles) => {
+        const projectContentPath = path.join(projectPath, projectFiles);
+        const stats = fs.lstatSync(projectContentPath);
+        if (stats.isDirectory()) {
+          await removeDirectoryByPath(projectContentPath);
+        } else {
+          fs.unlinkSync(projectContentPath);
+        }
+      })
+    );
+    fs.rmdirSync(projectPath);
+  } catch (error) {
+    console.error(`Error removing new project: ${error}`);
   }
 }
 
@@ -303,17 +297,4 @@ export async function revertPomFile() {
   });
 }
 
-//function to delete the report files in the possible directories
-export async function deleteReportsFiles() {
-  const reportPaths = [
-    path.join(getMvnProjectPath(), "target", "reports", "failsafe.html"),
-    path.join(getMvnProjectPath(), "target", "reports", "surefire.html"),
-    path.join(getMvnProjectPath(), "target", "site", "surefire-report.html"),
-    path.join(getMvnProjectPath(), "target", "site", "failsafe-report.html")
-  ];
-  await Promise.all(
-    reportPaths.map(async (reportPath) => {
-      await deleteReports(reportPath);
-    })
-  );
-}
+
