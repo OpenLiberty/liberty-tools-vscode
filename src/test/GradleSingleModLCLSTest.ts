@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-import { By, EditorView, SideBarView, TextEditor, VSBrowser } from "vscode-extension-tester";
+import { By, EditorView, TextEditor, VSBrowser } from "vscode-extension-tester";
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 
@@ -16,81 +16,75 @@ const assert = require('assert');
 
 describe('LCLS tests for Gradle Project', function () {
     let editor: TextEditor;
-    let actualSeverXMLContent: string;
+    let actualServerXMLContent: string;
 
     before(() => {
-        utils.copyConfig(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'), path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
+        utils.copyDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'), path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
     });
 
     it('Should copy content of server.xml', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        actualSeverXMLContent = await editor.getText();
+        actualServerXMLContent = await editor.getText();
 
-        assert(actualSeverXMLContent.length !== 0, 'Content of server.xml is not in copied.');
-        console.log('Sever.xml content:', actualSeverXMLContent);
+        assert(actualServerXMLContent.length !== 0, 'Content of server.xml is not in copied.');
+        console.log('Sever.xml content is:', actualServerXMLContent);
 
-    }).timeout(15000);
+    }).timeout(25000);
 
     it('Should show diagnostic for server.xml invalid value', async () => {
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML);
 
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
+        const expectedOutcomeValue = `'wrong' is not a valid value of union type 'booleanType'.`;
+        const hoverTargetValue = '<logging appsWriteJson = \"wrong\" />';
 
-        const hverExpectdOutcome = `'wrong' is not a valid value of union type 'booleanType'.`;
-        const testHverTarget = '<logging appsWriteJson = \"wrong\" />';
-
-        await editor.typeTextAt(17, 5, testHverTarget);
-        const focusTargtElemnt = editor.findElement(By.xpath("//*[contains(text(), 'wrong')]"));
+        await editor.typeTextAt(17, 5, hoverTargetValue);
+        const focusTargetedElement = editor.findElement(By.xpath("//*[contains(text(), 'wrong')]"));
         await utils.delay(3000);
-        focusTargtElemnt.click();
+        focusTargetedElement.click();
         await editor.click();
 
-        const actns = VSBrowser.instance.driver.actions();
-        await actns.move({ origin: focusTargtElemnt }).perform();
+        const driverActionList = VSBrowser.instance.driver.actions();
+        await driverActionList.move({ origin: focusTargetedElement }).perform();
         await utils.delay(5000);
 
-        const hverContent = editor.findElement(By.className('hover-contents'));
-        const hverValue = await hverContent.getText();
-        console.log("Hover text:" + hverValue);
+        const hoverContents = editor.findElement(By.className('hover-contents'));
+        const hoverFoundOutcome = await hoverContents.getText();
+        console.log("Hover text is:" + hoverFoundOutcome);
 
-        assert(hverValue.includes(hverExpectdOutcome), 'Did not get expected diagnostic in server.xml');
+        assert(hoverFoundOutcome.includes(expectedOutcomeValue), 'Did not get expected diagnostic in server.xml');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
-        console.log("Content restored");
+        editor.setText(actualServerXMLContent);
+        console.log("server.xml content is restored");
 
     }).timeout(35000);
 
     it('Should apply quick fix for invalid value in server.xml', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const stanzaSnipet = "<logging appsWriteJson = \"wrong\" />";
-        const expectedHoverData = "<logging appsWriteJson = \"true\" />";
-        await editor.typeTextAt(17, 5, stanzaSnipet);
+        const stanzaSnippet = "<logging appsWriteJson = \"wrong\" />";
+        const hoverExpectedSnippet = "<logging appsWriteJson = \"true\" />";
+        await editor.typeTextAt(17, 5, stanzaSnippet);
         await utils.delay(2000);
-        const flagedString = await editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
+        const hoverTargetValue = await editor.findElement(By.xpath("//*[contains(text(), '\"wrong\"')]"));
         await utils.delay(7000);
 
-        const actions = VSBrowser.instance.driver.actions();
-        await actions.move({ origin: flagedString }).perform();
+        const driverActionList = VSBrowser.instance.driver.actions();
+        await driverActionList.move({ origin: hoverTargetValue }).perform();
         await utils.delay(3000);
 
         const driver = VSBrowser.instance.driver;
-        const hoverTxt = await editor.findElement(By.className('hover-row status-bar'));
+        const hoverRowStatusBar = await editor.findElement(By.className('hover-row status-bar'));
         await utils.delay(2000);
 
-        const qckFixPopupLink = await hoverTxt.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
-        await qckFixPopupLink.click();
+        const quickFixPopupLink = await hoverRowStatusBar.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
+        await quickFixPopupLink.click();
 
-        const hoverTaskBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
-        await hoverTaskBar.findElement(By.className('actionList'));
+        const hoverWindowTaskBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
+        await hoverWindowTaskBar.findElement(By.className('actionList'));
         await utils.delay(2000);
 
         const pointerBlockedElement = await driver.findElement(By.css('.context-view-pointerBlock'));
@@ -98,110 +92,104 @@ describe('LCLS tests for Gradle Project', function () {
         if (pointerBlockedElement) {
             await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockedElement);
         } else {
-            console.log('pointerBlockElementt not found!');
+            console.log('pointerBlockElement is not found!');
         }
-        const qckfixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'true'\")]"));
-        await qckfixOption.click();
+        const quickfixOptionValues = await editor.findElement(By.xpath("//*[contains(text(), \"Replace with 'true'\")]"));
+        await quickfixOptionValues.click();
 
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after Quick fix : ", updatedSeverXMLContent);
-        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly for the invalid value in server.xml.');
+        console.log("Content after Quick fix is: ", updatedSeverXMLContent);
+        assert(updatedSeverXMLContent.includes(hoverExpectedSnippet), 'Quick fix not applied correctly for the invalid value in server.xml.');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
-        console.log("Content restored");
+        editor.setText(actualServerXMLContent);
+        console.log("server.xml content is restored");
 
     }).timeout(38000);
 
     it('Should show hover text in server.xml for server platform', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const stanzaSnipet = "<platform>jakartaee-11.0</platform>";
+        const stanzaSnippet = "<platform>jakartaee-11.0</platform>";
         const expectedDiagnosticData = `Description: This platform resolves the Liberty features that support the Jakarta EE 11.0 platform.`;
         await editor.typeTextAt(15, 35, '\n');
-        await editor.typeTextAt(16, 9, stanzaSnipet);
+        await editor.typeTextAt(16, 9, stanzaSnippet);
         await utils.delay(2000);
-        const focusTargtElemnt = await editor.findElement(By.xpath("//*[contains(text(), '\jakarta\')]"));
+        const focusTargetedElement = await editor.findElement(By.xpath("//*[contains(text(), '\jakarta\')]"));
         await utils.delay(3000);
-        focusTargtElemnt.click();
+        focusTargetedElement.click();
         await editor.click();
 
-        const actns = VSBrowser.instance.driver.actions();
-        await actns.move({ origin: focusTargtElemnt }).perform();
+        const driverActionList = VSBrowser.instance.driver.actions();
+        await driverActionList.move({ origin: focusTargetedElement }).perform();
         await utils.delay(5000);
 
-        const hverContent = editor.findElement(By.className('hover-contents'));
-        const hverValue = await hverContent.getText();
-        console.log("Hover text:" + hverValue);
+        const hoverContents = editor.findElement(By.className('hover-contents'));
+        const hoverValue = await hoverContents.getText();
+        console.log("Hover text is:" + hoverValue);
 
-        assert(hverValue.includes(expectedDiagnosticData), 'Did not get expected hover text in server.xml server platform');
+        assert(hoverValue.includes(expectedDiagnosticData), 'Did not get expected hover text in server.xml server platform');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
-        console.log("Content restored");
+        editor.setText(actualServerXMLContent);
+        console.log("Content is restored");
 
     }).timeout(38000);
 
     it('Should show diagnostic for invalid value in server.xml for server platform', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const stanzaSnipet = "<platform>jakarta</platform>";
+        const stanzaSnippet = "<platform>jakarta</platform>";
         const expectedDiagnosticData = `ERROR: The platform "jakarta" does not exist.`;
         await editor.typeTextAt(15, 35, '\n');
-        await editor.typeTextAt(16, 9, stanzaSnipet);
+        await editor.typeTextAt(16, 9, stanzaSnippet);
         await utils.delay(2000);
-        const focusTargtElemnt = await editor.findElement(By.xpath("//*[contains(text(), '\jakarta\')]"));
+        const focusTargetedElement = await editor.findElement(By.xpath("//*[contains(text(), '\jakarta\')]"));
         await utils.delay(3000);
-        focusTargtElemnt.click();
+        focusTargetedElement.click();
         await editor.click();
 
-        const actns = VSBrowser.instance.driver.actions();
-        await actns.move({ origin: focusTargtElemnt }).perform();
+        const driverActionList = VSBrowser.instance.driver.actions();
+        await driverActionList.move({ origin: focusTargetedElement }).perform();
         await utils.delay(5000);
 
-        const hverContent = editor.findElement(By.className('hover-contents'));
-        const hverValue = await hverContent.getText();
-        console.log("Hover text:" + hverValue);
+        const hoverContents = editor.findElement(By.className('hover-contents'));
+        const hoverValue = await hoverContents.getText();
+        console.log("Hover text:" + hoverValue);
 
-        assert(hverValue.includes(expectedDiagnosticData), 'Did not get expected diagnostic in server.xml server platform');
+        assert(hoverValue.includes(expectedDiagnosticData), 'Did not get expected diagnostic in server.xml server platform');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
-        console.log("Content restored");
+        editor.setText(actualServerXMLContent);
+        console.log("Content is restored");
 
     }).timeout(38000);
 
     it('Should apply quick fix for invalid value in server.xml for server platform', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
         const stanzaSnipet = "<platform>jakarta</platform>";
         const expectedHoverData = "<platform>jakartaee-11.0</platform>";
         await editor.typeTextAt(15, 35, '\n');
         await editor.typeTextAt(16, 9, stanzaSnipet);
         await utils.delay(2000);
-        const flagedString = await editor.findElement(By.xpath("//*[contains(text(), '\jakarta\')]"));
+        const flaggedString = await editor.findElement(By.xpath("//*[contains(text(), '\jakarta\')]"));
         await utils.delay(7000);
 
-        const actions = VSBrowser.instance.driver.actions();
-        await actions.move({ origin: flagedString }).perform();
+        const driverActionList = VSBrowser.instance.driver.actions();
+        await driverActionList.move({ origin: flaggedString }).perform();
         await utils.delay(3000);
 
         const driver = VSBrowser.instance.driver;
-        const hoverTxt = await editor.findElement(By.className('hover-row status-bar'));
+        const hoverRowStatusBar = await editor.findElement(By.className('hover-row status-bar'));
         await utils.delay(2000);
 
-        const qckFixPopupLink = await hoverTxt.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
-        await qckFixPopupLink.click();
+        const quickFixPopupLink = await hoverRowStatusBar.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
+        await quickFixPopupLink.click();
 
         const hoverTaskBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
         await hoverTaskBar.findElement(By.className('actionList'));
@@ -212,10 +200,10 @@ describe('LCLS tests for Gradle Project', function () {
         if (pointerBlockedElement) {
             await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockedElement);
         } else {
-            console.log('pointerBlockElementt not found!');
+            console.log('PointerBlockedElement is not found!');
         }
-        const qckfixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace platform with jakartaee-11.0\")]"));
-        await qckfixOption.click();
+        const quickfixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace platform with jakartaee-11.0\")]"));
+        await quickfixOption.click();
 
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
@@ -223,67 +211,63 @@ describe('LCLS tests for Gradle Project', function () {
         assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly for the invalid value in server.xml server platform.');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
-        console.log("Content restored");
+        editor.setText(actualServerXMLContent);
+        console.log("Content is restored");
 
     }).timeout(38000);
 
     it('Should show diagnostic for invalid value in server.xml for server feature', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const stanzaSnipet = "<feature>servlet</feature>";
+        const stanzaSnippet = "<feature>servlet</feature>";
         const expectedDiagnosticData = `ERROR: The "servlet" versionless feature cannot be resolved since there are more than one common platform. Specify a platform or a feature with a version to enable resolution`;
         await editor.typeTextAt(15, 35, '\n');
-        await editor.typeTextAt(16, 9, stanzaSnipet);
+        await editor.typeTextAt(16, 9, stanzaSnippet);
         await utils.delay(2000);
-        const focusTargtElemnt = await editor.findElement(By.xpath("//*[contains(text(), '\servlet\')]"));
+        const focusTargetedElement = await editor.findElement(By.xpath("//*[contains(text(), '\servlet\')]"));
         await utils.delay(3000);
-        focusTargtElemnt.click();
+        focusTargetedElement.click();
         await editor.click();
 
-        const actns = VSBrowser.instance.driver.actions();
-        await actns.move({ origin: focusTargtElemnt }).perform();
+        const driverActionList = VSBrowser.instance.driver.actions();
+        await driverActionList.move({ origin: focusTargetedElement }).perform();
         await utils.delay(5000);
 
-        const hverContent = editor.findElement(By.className('hover-contents'));
-        const hverValue = await hverContent.getText();
-        console.log("Hover text:" + hverValue);
+        const hoverContents = editor.findElement(By.className('hover-contents'));
+        const hoverValue = await hoverContents.getText();
+        console.log("Hover text:" + hoverValue);
 
-        assert(hverValue.includes(expectedDiagnosticData), 'Did not get expected diagnostic in server.xml server feature');
+        assert(hoverValue.includes(expectedDiagnosticData), 'Did not get expected diagnostic in server.xml server feature');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
-        console.log("Content restored");
+        editor.setText(actualServerXMLContent);
+        console.log("Content is restored");
 
     }).timeout(38000);
 
     it('Should apply quick fix for invalid value in server.xml for server feature', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const stanzaSnipet = "<feature>servlet</feature>";
+        const stanzaSnippet = "<feature>servlet</feature>";
         const expectedHoverData = "<feature>servlet-3.1</feature>";
         await editor.typeTextAt(15, 35, '\n');
-        await editor.typeTextAt(16, 9, stanzaSnipet);
+        await editor.typeTextAt(16, 9, stanzaSnippet);
         await utils.delay(2000);
-        const flagedString = await editor.findElement(By.xpath("//*[contains(text(), '\servlet\')]"));
+        const flaggedString = await editor.findElement(By.xpath("//*[contains(text(), '\servlet\')]"));
         await utils.delay(7000);
 
-        const actions = VSBrowser.instance.driver.actions();
-        await actions.move({ origin: flagedString }).perform();
+        const driverActionList = VSBrowser.instance.driver.actions();
+        await driverActionList.move({ origin: flaggedString }).perform();
         await utils.delay(3000);
 
         const driver = VSBrowser.instance.driver;
-        const hoverTxt = await editor.findElement(By.className('hover-row status-bar'));
+        const hoverRowStatusBar = await editor.findElement(By.className('hover-row status-bar'));
         await utils.delay(2000);
 
-        const qckFixPopupLink = await hoverTxt.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
-        await qckFixPopupLink.click();
+        const quickFixPopupLink = await hoverRowStatusBar.findElement(By.xpath("//*[contains(text(), 'Quick Fix')]"));
+        await quickFixPopupLink.click();
 
         const hoverTaskBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
         await hoverTaskBar.findElement(By.className('actionList'));
@@ -296,105 +280,91 @@ describe('LCLS tests for Gradle Project', function () {
         } else {
             console.log('pointerBlockElementt not found!');
         }
-        const qckfixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace feature with servlet-3.1\")]"));
-        await qckfixOption.click();
+        const quickfixOption = await editor.findElement(By.xpath("//*[contains(text(), \"Replace feature with servlet-3.1\")]"));
+        await quickfixOption.click();
 
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after Quick fix : ", updatedSeverXMLContent);
-        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix not applied correctly for the invalid value in server.xml server feature.');
+        console.log("Content after Quick fix is: ", updatedSeverXMLContent);
+        assert(updatedSeverXMLContent.includes(expectedHoverData), 'Quick fix is not applied correctly for the invalid value in server.xml server feature.');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
-        console.log("Content restored");
+        editor.setText(actualServerXMLContent);
+        console.log("Content is restored");
 
     }).timeout(38000);
 
     it('Should show type ahead support in server.xml Liberty Server platform', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
         const featureTag = "<p";
-
         const addFeature = "<platform>jakartaee-11.0</platform>";
         await editor.typeTextAt(15, 35, '\n');
         await editor.typeTextAt(16, 9, featureTag);
         await utils.delay(5000);
-        //open the assistant
-        let asist = await editor.toggleContentAssist(true);
-        // toggle can return void, so we need to make sure the object is present
-        if (asist) {
-            // to select an item use
-            await asist.select('platform')
-        }
-        // close the assistant
-        await editor.toggleContentAssist(false);
-        const stanzaSnipet = "jakar";
+        await utils.callAssitantAction(editor, 'platform');
 
-        await editor.typeTextAt(16, 19, stanzaSnipet);
+        await editor.toggleContentAssist(false);
+        const stanzaSnippet = "jakar";
+
+        await editor.typeTextAt(16, 19, stanzaSnippet);
         await utils.delay(5000);
 
-        asist = await editor.toggleContentAssist(true);
-        if (asist) {
-            await asist.select('jakartaee-11.0')
-        }
+        await utils.callAssitantAction(editor, 'jakartaee-11.0')
         await editor.toggleContentAssist(false);
 
         const updatedServerxmlContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after type ahead support : ", updatedServerxmlContent);
+        console.log("Content after type ahead support is: ", updatedServerxmlContent);
         assert(updatedServerxmlContent.includes(addFeature), 'Type ahead support is not worked as expected in server.xml Liberty Server platform');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
-        console.log("Content restored");
+        editor.setText(actualServerXMLContent);
+        console.log("Content is restored");
 
-    }).timeout(35000);
+    }).timeout(38000);
 
     it('Valid server feature entry with platform entry in server.xml', async () => {
-        const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
-        section.expand();
-        await VSBrowser.instance.openResources(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
-        const stanzaSnipetFeature = "<feature>servlet</feature>";
-        const stanzaSnipetPlatform = "<platform>jakartaee-9.1</platform>";
+        const stanzaSnippetFeature = "<feature>servlet</feature>";
+        const stanzaSnippetPlatform = "<platform>jakartaee-9.1</platform>";
         const expectedDiagnosticData = `ERROR: The "servlet" versionless feature cannot be resolved since there are more than one common platform. Specify a platform or a feature with a version to enable resolution`;
         await editor.typeTextAt(15, 35, '\n');
-        await editor.typeTextAt(16, 9, stanzaSnipetFeature);
+        await editor.typeTextAt(16, 9, stanzaSnippetFeature);
         await utils.delay(2000);
-        const focusTargtElemnt = await editor.findElement(By.xpath("//*[contains(text(), '\servlet\')]"));
+        const focusTargetedElement = await editor.findElement(By.xpath("//*[contains(text(), '\servlet\')]"));
         await utils.delay(3000);
-        focusTargtElemnt.click();
+        focusTargetedElement.click();
         await editor.click();
 
-        const actns = VSBrowser.instance.driver.actions();
-        await actns.move({ origin: focusTargtElemnt }).perform();
+        const driverActionList = VSBrowser.instance.driver.actions();
+        await driverActionList.move({ origin: focusTargetedElement }).perform();
         await utils.delay(5000);
 
-        const hverContent = editor.findElement(By.className('hover-contents'));
-        const hverValue = await hverContent.getText();
-        console.log("Hover text:" + hverValue);
-        if (hverValue.includes(expectedDiagnosticData)) {
+        const holverContents = editor.findElement(By.className('hover-contents'));
+        const hoverValue = await holverContents.getText();
+        console.log("Hover text is:" + hoverValue);
+        if (hoverValue.includes(expectedDiagnosticData)) {
             await editor.typeTextAt(16, 35, '\n');
-            await editor.typeTextAt(17, 9, stanzaSnipetPlatform);
+            await editor.typeTextAt(17, 9, stanzaSnippetPlatform);
             await utils.delay(2000);
         }
         const updatedServerxmlContent = await editor.getText();
-        console.log("Updated server.xml content:" + updatedServerxmlContent);
+        console.log("Updated server.xml content is:" + updatedServerxmlContent);
 
-        assert(updatedServerxmlContent.includes(stanzaSnipetFeature) && updatedServerxmlContent.includes(stanzaSnipetPlatform), 'Did not get expected entries in server.xml for versionless combination for server feature and platform');
+        assert(updatedServerxmlContent.includes(stanzaSnippetFeature) && updatedServerxmlContent.includes(stanzaSnippetPlatform), 'Did not get expected entries in server.xml for versionless combination for server feature and platform');
 
         editor.clearText();
-        editor.setText(actualSeverXMLContent);
-        console.log("Content restored");
+        editor.setText(actualServerXMLContent);
+        console.log("Content is restored");
 
     }).timeout(38000);
 
     after(() => {
-        utils.removeConfigDir(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
+        utils.removeDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         console.log("Removed new config folder:");
     });
 
