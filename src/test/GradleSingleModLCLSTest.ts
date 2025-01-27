@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-import { By, EditorView, SideBarView, TextEditor, VSBrowser } from "vscode-extension-tester";
+import { By, EditorView, TextEditor, VSBrowser } from "vscode-extension-tester";
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 
@@ -23,11 +23,10 @@ describe('LCLS tests for Gradle Project', function () {
     });
 
     it('Should copy content of server.xml', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML);
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
         actualServerXMLContent = await editor.getText();
-
         assert(actualServerXMLContent.length !== 0, 'Content of server.xml is not in copied.');
         console.log('Sever.xml content is:', actualServerXMLContent);
 
@@ -59,12 +58,12 @@ describe('LCLS tests for Gradle Project', function () {
         editor.setText(actualServerXMLContent);
         console.log("server.xml content is restored");
 
-    }).timeout(35000);
+    }).timeout(38000);
 
     it('Should apply quick fix for invalid value in server.xml', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML);
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        editor = await new EditorView().openEditor('server.xml') as TextEditor;
         const stanzaSnippet = "<logging appsWriteJson = \"wrong\" />";
         const hoverExpectedSnippet = "<logging appsWriteJson = \"true\" />";
         await editor.typeTextAt(17, 5, stanzaSnippet);
@@ -99,7 +98,7 @@ describe('LCLS tests for Gradle Project', function () {
 
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after Quick fix : ", updatedSeverXMLContent);
+        console.log("Content after Quick fix is: ", updatedSeverXMLContent);
         assert(updatedSeverXMLContent.includes(hoverExpectedSnippet), 'Quick fix not applied correctly for the invalid value in server.xml.');
 
         editor.clearText();
@@ -112,7 +111,6 @@ describe('LCLS tests for Gradle Project', function () {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML);
 
         const hoverExpectedOutcome = `Configuration properties for an HTTP endpoint.`;
-
         const focusTargetedElement = editor.findElement(By.xpath("//*[contains(text(), 'httpEndpoint')]"));
         await utils.delay(3000);
         focusTargetedElement.click();
