@@ -1,11 +1,10 @@
 import path = require('path');
 import { Workbench, InputBox, DefaultTreeItem, ModalDialog } from 'vscode-extension-tester';
 import * as fs from 'fs';
-import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
+import { STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
-import * as fse from 'fs-extra';
 
 export function delay(millisec: number) {
     return new Promise( resolve => setTimeout(resolve, millisec) );
@@ -169,13 +168,13 @@ export function getMvnProjectPath(): string {
 
 /* Stop Server Liberty dashboard post Attach Debugger*/
 /* As the Window view changes using command to stop server instead of devmode action */
-export async function stopLibertyserver() {
-  console.log("Stop Server action for MAVEN_PROJECT : " + MAVEN_PROJECT);
+export async function stopLibertyserver(projectName: string) {
+  console.log("Stop Server action for Project : " + projectName);
   const workbench = new Workbench();
   await workbench.executeCommand(STOP_DASHBOARD_MAC_ACTION);
   const input = InputBox.create();
   (await input).clear();
-  (await input).setText(MAVEN_PROJECT);
+  (await input).setText(projectName);
   (await input).confirm();
   (await input).click();
   await delay(10000);
@@ -194,36 +193,4 @@ export async function clearCommandPalette() {
   await dialog.pushButton('Clear');
 }
 
-/**
- * Remove newly created Project folder with content
- */
-export async function removeConfigDir(projectPath: string): Promise<void> {
-  try {
-    fs.accessSync(projectPath);
-    const projectContent = fs.readdirSync(projectPath);
-    await Promise.all(
-      projectContent.map(async (projectFiles) => {
-        const projectContentPath = path.join(projectPath, projectFiles);
-        const stats = fs.lstatSync(projectContentPath);
-        if (stats.isDirectory()) {
-          await removeConfigDir(projectContentPath);
-        } else {
-          fs.unlinkSync(projectContentPath);
-        }
-      })
-    );
-    fs.rmdirSync(projectPath);
-  } catch (error) {
-    console.error(`Error removing new project: ${error}`);
-  }
-}
-
-/**
- * Copy config directory and create new config 
- */
-export async function copyConfig(existingConfigPath: string, copyConfigPath: string): Promise<void> {
-  fse.copy(existingConfigPath, copyConfigPath)
-    .then(() => console.log("New config folder created :" + copyConfigPath))
-    .catch(err => console.log("Error creating config folder"));
-}
   
