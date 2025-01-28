@@ -32,11 +32,11 @@ export async function setInputBox(MapActionString: string): Promise<boolean> {
  */
 export async function viewTestReportForMac() {
     const workbench = new Workbench();
-      await workbench.openCommandPrompt();
-      await utils.delay(3000);
-      await workbench.executeCommand(constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
-      await utils.delay(3000);
+    await workbench.openCommandPrompt();
+    await utils.delay(3000);
+    await workbench.executeCommand(constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
+    await utils.delay(3000);
 
-      setInputBox(constants.GRADLE_PROJECT);
-      await utils.delay(2500);
+    setInputBox(constants.GRADLE_PROJECT);
+    await utils.delay(2500);
 }
