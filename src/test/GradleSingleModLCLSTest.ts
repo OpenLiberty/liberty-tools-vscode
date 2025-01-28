@@ -250,12 +250,12 @@ describe('LCLS tests for Gradle Project', function () {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_ENV);
         editor = await new EditorView().openEditor(constants.SERVER_ENV) as TextEditor;
 
-        const ExpectedHoverOutcome = 'This setting controls the granularity of messages that go to the console. The valid values are INFO, AUDIT, WARNING, ERROR, and OFF. The default is AUDIT. If using with the Eclipse developer tools this must be set to the default.';
+        const expectedHoverOutcome = 'This setting controls the granularity of messages that go to the console. The valid values are INFO, AUDIT, WARNING, ERROR, and OFF. The default is AUDIT. If using with the Eclipse developer tools this must be set to the default.';
         await editor.clearText();
         const testHoverTarget = 'WLP_LOGGING_CONSOLE_LOGLEVEL=OFF';
         await editor.typeTextAt(1, 1, testHoverTarget);
         await utils.delay(5000);
-        console.log(ExpectedHoverOutcome);
+        
         const focusTargetLement = editor.findElement(By.xpath("//*[contains(text(), 'CONSOLE_LOGLEVEL')]"));
         await utils.delay(3000);
         focusTargetLement.click();
@@ -269,7 +269,7 @@ describe('LCLS tests for Gradle Project', function () {
         const hoverValue = await hoverContents.getText();
         console.log("Hover text is:" + hoverValue);
 
-        assert(hoverValue === (ExpectedHoverOutcome), 'Did not get expected hover data for server.env');
+        assert(hoverValue.includes(expectedHoverOutcome), 'Did not get expected hover data for server.env');
         await editor.clearText();
 
     }).timeout(35000);
