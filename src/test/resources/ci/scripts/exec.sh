@@ -27,7 +27,7 @@ currentTime=(date +"%Y/%m/%d-%H:%M:%S:%3N")
 OS=$(uname -s)
 
 # Array to store exit status of commands
-declare -a exitStatus
+exitStatus=(0)
 
 main() {
 
