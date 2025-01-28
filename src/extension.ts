@@ -204,7 +204,7 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
             }
 
             // Check if the path includes 'target' or 'build' directly under the project root
-            if (!/^target\/|^build\//.test(relativePath)) {
+            if (!/(target\/|build\/)/.test(relativePath)) {
                 // Refresh the project for any build file update outside of the 'target' and 'build' folders
                 projectProvider.refresh();
             }
