@@ -92,7 +92,7 @@ main() {
 
     # If there were any errors, gather some debug data before exiting.
     # rc=$?
-    for i in "${array[@]}"; do
+    for i in "${exitStatus[@]}"; do
         echo "i value: $i"
         if [ $i -ne 0 ]; then
             # echo "ERROR: Failure while driving npm install on plugin. rc: ${rc}."
