@@ -90,8 +90,6 @@ main() {
         fi
     fi
 
-    echo "exit status: ${exitStatus[*]}"
-
     # If there were any errors, gather some debug data before exiting.
     # rc=$?
     for i in "${array[@]}"
@@ -163,9 +161,9 @@ setVscodeVersionToTest() {
 
 # Finding the exit status of a command
 checkExitStatus() {
-    "$@"
     status=$?
     exitStatus+=(${status})
+    echo "exit status: ${exitStatus[*]}"
 }
 
 main "$@"
