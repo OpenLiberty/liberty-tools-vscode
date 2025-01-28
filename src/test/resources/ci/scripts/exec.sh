@@ -26,6 +26,9 @@ currentTime=(date +"%Y/%m/%d-%H:%M:%S:%3N")
 # Operating system.
 OS=$(uname -s)
 
+# Array to store exit status of commands
+declare -a exitStatus
+
 main() {
 
     setVscodeVersionToTest
@@ -65,27 +68,34 @@ main() {
              if [ $OS = "Darwin" ]; then
                 chown -R runner src/test/resources/maven
               chown -R runner  src/test/resources/gradle
+              checkExitStatus
                 npm run test -- -u
+                checkExitStatus
             else
                 npm run test -- -u
+                checkExitStatus
             fi
         else
             # Run the plugin's install goal against the target vscode version
             if [ $OS = "Darwin" ]; then
               chown -R runner src/test/resources/maven
               chown -R runner  src/test/resources/gradle
+              checkExitStatus
               npm run test -- -u -c $VSCODE_VERSION_TO_RUN
-
+              checkExitStatus
             else
             npm run test -- -u -c $VSCODE_VERSION_TO_RUN
+            checkExitStatus
             fi
         fi
     fi
 
+    echo "exit status: ${exitStatus[@]}"
+
     # If there were any errors, gather some debug data before exiting.
-    rc=$?
-    if [ "$rc" -ne 0 ]; then
-        echo "ERROR: Failure while driving npm install on plugin. rc: ${rc}."
+    # rc=$?
+    if [ ${exitStatus[@]} -ne 0 ]; then
+        # echo "ERROR: Failure while driving npm install on plugin. rc: ${rc}."
 
         if [ $TYPE = "TEST" ]; then
             echo "DEBUG: Maven Liberty messages.log:\n"
@@ -146,6 +156,13 @@ setVscodeVersionToTest() {
         else
                 VSCODE_VERSION_TO_RUN="$previousMinusOne.0"
         fi
+}
+
+# Finding the exit status of a command
+checkExitStatus() {
+    "$@"
+    status=$?
+    set -- ${exitStatus[@]} "$status"
 }
 
 main "$@"
