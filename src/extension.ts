@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, 2024 IBM Corporation.
+ * Copyright (c) 2020, 2025 IBM Corporation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -20,6 +20,7 @@ import { localize } from "./util/i18nUtil";
 import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "./util/requirements";
 import { prepareExecutable } from "./util/javaServerStarter";
 import * as helperUtil from "./util/helperUtil";
+import path = require('path');
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
@@ -183,16 +184,35 @@ export function deactivate(): Promise<void[]> {
  * @param projectProvider Liberty Dev projects
  */
 export function registerFileWatcher(projectProvider: ProjectProvider): void {
-	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
-	watcher.onDidCreate(async () => {
-		projectProvider.refresh();
-	});
-	watcher.onDidChange(async () => {
-		projectProvider.refresh();
-	});
-	watcher.onDidDelete(async () => {
-		projectProvider.refresh();
-	});
+    const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
+    const handleUri = async (uri: vscode.Uri) => {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders) {
+            return;
+        }
+        for (let folder of workspaceFolders) {
+            // Get the absolute path of the workspace folder (project root)
+            const projectRoot = folder.uri.fsPath;
+
+            // Get the relative path of the URI from the project root
+            const relativePath = path.relative(projectRoot, uri.fsPath);
+
+            // Ensure that the file belongs to this project (starts with the projectRoot path)
+            if (!uri.fsPath.startsWith(projectRoot)) {
+                // If the file is outside the current project, skip this folder
+                continue;
+            }
+
+            // Check if the path includes 'target' or 'build' directly under the project root
+            if (!/(target\/|build\/)/.test(relativePath)) {
+                // Refresh the project for any build file update outside of the 'target' and 'build' folders
+                projectProvider.refresh();
+            }
+        }
+    };
+    watcher.onDidCreate(handleUri);
+    watcher.onDidChange(handleUri);
+    watcher.onDidDelete(handleUri);
 }
 
 function startLangServer(context: ExtensionContext, requirements: RequirementsData, isLiberty: boolean) {
