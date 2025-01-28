@@ -1,11 +1,10 @@
 import path = require('path');
 import { Workbench, InputBox, DefaultTreeItem, ModalDialog } from 'vscode-extension-tester';
 import * as fs from 'fs';
-import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
+import { STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
-import * as fse from 'fs-extra';
 
 export function delay(millisec: number) {
     return new Promise( resolve => setTimeout(resolve, millisec) );
@@ -169,13 +168,13 @@ export function getMvnProjectPath(): string {
 
 /* Stop Server Liberty dashboard post Attach Debugger*/
 /* As the Window view changes using command to stop server instead of devmode action */
-export async function stopLibertyserver() {
-  console.log("Stop Server action for MAVEN_PROJECT : " + MAVEN_PROJECT);
+export async function stopLibertyserver(projectName: string) {
+  console.log("Stop Server action for Project : " + projectName);
   const workbench = new Workbench();
   await workbench.executeCommand(STOP_DASHBOARD_MAC_ACTION);
   const input = InputBox.create();
   (await input).clear();
-  (await input).setText(MAVEN_PROJECT);
+  (await input).setText(projectName);
   (await input).confirm();
   (await input).click();
   await delay(10000);
@@ -193,54 +192,5 @@ export async function clearCommandPalette() {
   expect(buttons.length).equals(2);
   await dialog.pushButton('Clear');
 }
-/**
- * Function return project name with space
- */
-export function getGradleProjectPathWithSpace(): any {
-  const gradleProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "gradle project", "liberty.gradle.te st.wrapper.app");
 
-  return gradleProjectPath;
-}
-
-/**
- * Create new gradle project name with space in the directory
- */
-
-export async function getProjectWithSpaceInDir(existingProjectPath: string, copyProjectPath: string): Promise<void> {
-  fse.copy(existingProjectPath, copyProjectPath)
-    .then(() => console.log("Project renamed.,  Gradle Project path is :" + copyProjectPath))
-    .catch(err => console.log("Error renaming the project"));
-}
-
-/**
- * Remove newly created Project folder with content
- */
-export async function removeProjectFolderWithContent(projectPath: string): Promise<void> {
-  try {
-    fs.accessSync(projectPath);
-    const projectContent = fs.readdirSync(projectPath);
-    await Promise.all(
-      projectContent.map(async (projectFiles) => {
-        const projectContentPath = path.join(projectPath, projectFiles);
-        const stats = fs.lstatSync(projectContentPath);
-        if (stats.isDirectory()) {
-          await removeProjectFolderWithContent(projectContentPath);
-        } else {
-          fs.unlinkSync(projectContentPath);
-        }
-      })
-    );
-    fs.rmdirSync(projectPath);
-  } catch (error) {
-    console.error(`Error removing new project: ${error}`);
-  }
-}
-
-/**
- * Function return project path with space
- */
-export function getMvnProjectDirWithSpace(): any {
-  const mavenProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "maven project", "liberty.maven.test.wrapper.app");
-  console.log("Maven project path is  ", mavenProjectPath);
-  return mavenProjectPath;
-}
+  
