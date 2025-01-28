@@ -213,7 +213,7 @@ describe('Devmode action tests for Maven Project - path with space', () => {
           }
         }
 
-        await utils.stopLibertyserver();
+        await utils.stopLibertyserver(constants.MAVEN_PROJECT);
         isServerRunning = !await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING); //negate isServerRunning
         if (!isServerRunning)
           console.log("Server stopped successfully ");
@@ -223,7 +223,7 @@ describe('Devmode action tests for Maven Project - path with space', () => {
     } finally {
       console.log("finally block: is server running -  ", isServerRunning);
       if (isServerRunning) {
-        utils.stopLibertyserver();
+        utils.stopLibertyserver(constants.MAVEN_PROJECT);
       }
       else
         console.log("good to close test - Attach Debugger for start with custom parameter(-DdebugPort=7777) event");
