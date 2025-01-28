@@ -27,7 +27,7 @@ currentTime=(date +"%Y/%m/%d-%H:%M:%S:%3N")
 OS=$(uname -s)
 
 # Array to store exit status of commands
-exitStatus=(0)
+exitStatus=()
 
 main() {
 
@@ -90,26 +90,29 @@ main() {
         fi
     fi
 
-    echo "exit status: ${exitStatus[@]}"
+    echo "exit status: ${exitStatus[*]}"
 
     # If there were any errors, gather some debug data before exiting.
     # rc=$?
-    if [ ${exitStatus[@]} -ne 0 ]; then
-        # echo "ERROR: Failure while driving npm install on plugin. rc: ${rc}."
+    for i in "${array[@]}"
+    do
+        if [ $i -ne 0 ]; then
+            # echo "ERROR: Failure while driving npm install on plugin. rc: ${rc}."
 
-        if [ $TYPE = "TEST" ]; then
-            echo "DEBUG: Maven Liberty messages.log:\n"
-            cat src/test/resources/maven/liberty.maven.test.wrapper.app/target/liberty/wlp/usr/servers/defaultServer/logs/messages.log
+            if [ $TYPE = "TEST" ]; then
+                echo "DEBUG: Maven Liberty messages.log:\n"
+                cat src/test/resources/maven/liberty.maven.test.wrapper.app/target/liberty/wlp/usr/servers/defaultServer/logs/messages.log
 
-            echo "DEBUG: Gradle Liberty messages.log:\n"
-            cat src/test/resources/gradle/liberty.gradle.test.wrapper.app/build/wlp/usr/servers/defaultServer/logs/messages.log
+                echo "DEBUG: Gradle Liberty messages.log:\n"
+                cat src/test/resources/gradle/liberty.gradle.test.wrapper.app/build/wlp/usr/servers/defaultServer/logs/messages.log
+            fi
+
+            echo "DEBUG: Environment variables:\n"
+            env
+
+            exit -1
         fi
-
-        echo "DEBUG: Environment variables:\n"
-        env
-
-        exit -1
-    fi
+    done
 }
 
 #start docker and display
@@ -162,7 +165,7 @@ setVscodeVersionToTest() {
 checkExitStatus() {
     "$@"
     status=$?
-    set -- ${exitStatus[@]} "$status"
+    exitStatus+=(${status})
 }
 
 main "$@"
