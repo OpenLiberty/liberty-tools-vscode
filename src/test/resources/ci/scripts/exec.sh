@@ -94,6 +94,7 @@ main() {
     # rc=$?
     for i in "${array[@]}"
     do
+        echo "i value: $i"
         if [ $i -ne 0 ]; then
             # echo "ERROR: Failure while driving npm install on plugin. rc: ${rc}."
 
