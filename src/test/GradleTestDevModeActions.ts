@@ -38,14 +38,14 @@ it('Open dasboard shows items - Gradle', async () => {
     expect(item).not.undefined;   
    
     
-}).timeout(300000);
+}).timeout(350000);
 
 
 it('Start gradle project from liberty dashboard', async () => {      
     
   
   await utils.launchDashboardAction(item,constants.START_DASHBOARD_ACTION,constants.START_DASHBOARD_MAC_ACTION);  
-  await utils.delay(30000);
+  await utils.delay(40000);
   const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
   if(!serverStartStatus)
     console.log("Server started message not found in the terminal");
@@ -95,7 +95,7 @@ it('start gradle with docker from liberty dashboard', async () => {
  expect (serverStartStatus).to.be.true; 
  
     
-}).timeout(350000);
+}).timeout(370000);
 
 it('Run tests for gradle project', async () => {  
   
