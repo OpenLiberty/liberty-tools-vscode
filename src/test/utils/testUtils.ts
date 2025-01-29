@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
 import clipboard = require('clipboardy');
-import { expect } from 'chai';
+import { expect, util } from 'chai';
 import * as constants from '../definitions/constants';
 
 export function delay(millisec: number) {
@@ -116,7 +116,8 @@ export function getMvnProjectPath(): string {
     let count=0;    
     do{
       clipboard.writeSync('');//clean slate for clipboard      
-      await workbench.executeCommand('terminal select all');       
+      await workbench.executeCommand('terminal select all');   
+      await delay(10000);    
       const text = clipboard.readSync();        
       console.log("debug:" + text)      ;
       if( text.includes(serverStatusCode)){
