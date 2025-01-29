@@ -69,7 +69,9 @@ main() {
              if [ $OS = "Darwin" ]; then
                 chown -R runner src/test/resources/maven
               chown -R runner  src/test/resources/gradle
-                npm run test -- -u
+                npm run test-mac-gradle -- -u
+                updateExitStatus
+                npm run test-mac-maven -- -u
                 updateExitStatus
             else
                 npm run test -- -u
@@ -80,7 +82,9 @@ main() {
             if [ $OS = "Darwin" ]; then
               chown -R runner src/test/resources/maven
               chown -R runner  src/test/resources/gradle
-              npm run test -- -u -c $VSCODE_VERSION_TO_RUN
+              npm run test-mac-gradle -- -u -c $VSCODE_VERSION_TO_RUN
+              updateExitStatus
+              npm run test-mac-maven -- -u -c $VSCODE_VERSION_TO_RUN
               updateExitStatus
             else
             npm run test -- -u -c $VSCODE_VERSION_TO_RUN
