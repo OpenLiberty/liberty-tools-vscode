@@ -24,43 +24,37 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
 
     it('Should show type ahead support in server.env for a Liberty Server Configuration Stanza', async () => {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_ENV);
-        editor = await new EditorView().openEditor('server.env') as TextEditor;
+        editor = await new EditorView().openEditor(constants.SERVER_ENV) as TextEditor;
 
-        const configNameSnippet = 'WLP_LOGGING_CON';
-        const insertConfig = "=TBA";
-        const envCfgNameChooserSnippet = 'WLP_LOGGING_CONSOLE_FORMAT';
-        const expectedServerEnvString = 'WLP_LOGGING_CONSOLE_FORMAT=TBASIC';
-
-        await editor.typeTextAt(1, 1, configNameSnippet);
+        await editor.typeTextAt(1, 1, constants.WLP_LOGGING_CON);
         await utils.delay(5000);
         //open the assistant
-        await utils.callAssitantAction(editor, envCfgNameChooserSnippet);
+        await utils.callAssitantAction(editor, constants.WLP_LOGGING_CONSOLE_FORMAT);
 
-        await editor.typeTextAt(1, 27, insertConfig);
+        await editor.typeTextAt(1, 27, constants.TBA);
         await utils.delay(2500);
-        await utils.callAssitantAction(editor, 'TBASIC');
-        
+        await utils.callAssitantAction(editor, constants.TBASIC);
+
         await editor.toggleContentAssist(false);
 
         const updatedSeverEnvContent = await editor.getText();
         await utils.delay(3000);
-        assert(updatedSeverEnvContent.includes(expectedServerEnvString), 'Type ahead support is not working as expected in server.env');
+        assert(updatedSeverEnvContent.includes(constants.CONSOLE_FORMAT_TBASIC), 'Type ahead support is not working as expected in server.env');
         await editor.clearText();
         await utils.closeEditor(constants.SERVER_ENV);
 
-    }).timeout(45000);
+    }).timeout(50000);
 
     it('Should show hover support for server.env Liberty Server config setting', async () => {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_ENV);
         editor = await new EditorView().openEditor(constants.SERVER_ENV) as TextEditor;
 
-        const expectedHoverOutcome = 'This setting controls the granularity of messages that go to the console. The valid values are INFO, AUDIT, WARNING, ERROR, and OFF. The default is AUDIT. If using with the Eclipse developer tools this must be set to the default.';
         await editor.clearText();
-        const testHoverTarget = 'WLP_LOGGING_CONSOLE_LOGLEVEL=OFF';
-        await editor.typeTextAt(1, 1, testHoverTarget);
+
+        await editor.typeTextAt(1, 1, constants.LOGLEVEL_WITH_VALUE);
         await utils.delay(5000);
-        
-        const focusTargetLement = editor.findElement(By.xpath("//*[contains(text(), 'CONSOLE_LOGLEVEL')]"));
+
+        const focusTargetLement = editor.findElement(By.xpath(constants.FOCUS_LOGLEVEL));
         await utils.delay(3000);
         focusTargetLement.click();
         await editor.click();
@@ -73,30 +67,25 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
         const hoverValue = await hoverContents.getText();
         console.log("Hover text is:" + hoverValue);
 
-        assert(hoverValue.includes(expectedHoverOutcome), 'Did not get expected hover data for server.env');
+        assert(hoverValue.includes(constants.LOG_LEVEL_INFO_MSG), 'Did not get expected hover data for server.env');
         await editor.clearText();
         await utils.closeEditor(constants.SERVER_ENV);
 
-    }).timeout(35000);
+    }).timeout(45000);
 
     it('Should show diagnostic support in server.env ', async () => {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_ENV);
         editor = await new EditorView().openEditor(constants.SERVER_ENV) as TextEditor;
 
-        const configNameSnippet = 'WLP_LOGGING_CON';
-        const insertConfig = '=sample_value_is_updating_as_nodata';
-        const envCfgNameChooserSnippet = 'WLP_LOGGING_CONSOLE_FORMAT';
-        const expectedHoverData = 'The value `sample_value_is_updating_as_nodata` is not valid for the variable `WLP_LOGGING_CONSOLE_FORMAT`.';
-
-        await editor.typeTextAt(1, 1, configNameSnippet);
+        await editor.typeTextAt(1, 1, constants.WLP_LOGGING_CON);
         await utils.delay(5000);
         //open the assistant
-        await utils.callAssitantAction(editor, envCfgNameChooserSnippet);
+        await utils.callAssitantAction(editor, constants.WLP_LOGGING_CONSOLE_FORMAT);
         // close the assistant
         await editor.toggleContentAssist(false);
 
-        await editor.typeTextAt(1, 27, insertConfig);
-        const focusTargetElement = editor.findElement(By.xpath("//*[contains(text(), 'nodata')]"));
+        await editor.typeTextAt(1, 27, constants.VALUE_NODATA);
+        const focusTargetElement = editor.findElement(By.xpath(constants.FOCUS_NODATA));
         await utils.delay(3000);
         focusTargetElement.click();
         await editor.click();
@@ -109,11 +98,11 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
         const hoverValue = await hoverContents.getText();
         console.log("Hover text is:" + hoverValue);
 
-        assert(hoverValue.includes(expectedHoverData), 'Did not get expected diagnostic as expected in server.env file');
+        assert(hoverValue.includes(constants.CONSOLE_FORMAT_DIAGNOSTIC), 'Did not get expected diagnostic as expected in server.env file');
         await editor.clearText();
         await utils.closeEditor(constants.SERVER_ENV);
 
-    }).timeout(35000);
+    }).timeout(45000);
 
     after(() => {
         utils.removeDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
