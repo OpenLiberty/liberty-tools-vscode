@@ -238,6 +238,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
+        await utils.closeEditor(constants.SERVER_XML);
 
     }).timeout(45000);
 
@@ -266,6 +267,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
+        await utils.closeEditor(constants.SERVER_XML);
 
     }).timeout(45000);
 
@@ -301,7 +303,7 @@ describe('LCLS tests for Gradle Project', function () {
         } else {
             console.log('PointerBlockedElement is not found!');
         }
-        const quickfixOption = await editor.findElement(By.xpath(constants.JAKARTA_ELEVEN));
+        const quickfixOption = await editor.findElement(By.xpath(constants.FOCUS_JAKARTA_ELEVEN));
         await quickfixOption.click();
 
         const updatedSeverXMLContent = await editor.getText();
@@ -312,6 +314,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
+        await utils.closeEditor(constants.SERVER_XML);
 
     }).timeout(45000);
 
@@ -340,6 +343,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
+        await utils.closeEditor(constants.SERVER_XML);
 
     }).timeout(45000);
 
@@ -387,6 +391,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
+        await utils.closeEditor(constants.SERVER_XML);
 
     }).timeout(45000);
 
@@ -417,6 +422,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
+        await utils.closeEditor(constants.SERVER_XML);
 
     }).timeout(45000);
 
@@ -452,6 +458,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
+        await utils.closeEditor(constants.SERVER_XML);
 
     }).timeout(45000);
 
