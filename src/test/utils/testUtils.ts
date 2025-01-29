@@ -1,5 +1,5 @@
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
@@ -116,7 +116,7 @@ export function getMvnProjectPath(): string {
     let count=0;    
     do{
       clipboard.writeSync('');//clean slate for clipboard   
-      await delay(10000);   
+      //await delay(10000);   
       await workbench.executeCommand('terminal select all');       
       const text = clipboard.readSync();        
       console.log("debug:" + text)      ;
@@ -302,6 +302,13 @@ export async function revertPomFile() {
 export async function closeEditor() {
   const workbench = new Workbench();
   await workbench.executeCommand(constants.CLOSE_EDITOR);
+}
+
+export async function executeMvnClean() {
+  await VSBrowser.instance.openResources(path.join(getMvnProjectPath(), 'ForTest.md'));
+  const workbench = new Workbench();
+  await workbench.executeCommand('workbench.action.terminal.runSelectedText');
+  await clearMavenPluginCache();
 }
 
 
