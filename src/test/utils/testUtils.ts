@@ -1,5 +1,5 @@
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog, SideBarView, VSBrowser } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, SideBarView, VSBrowser, TextEditor } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import * as constants from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
@@ -195,15 +195,17 @@ export async function clearCommandPalette() {
 }
 
 /**
- * Remove specific directory
+ * 
+ * @param projectPath 
+ *  Remove specific directory with contents
  */
-export async function removeDirectoryByPath(projectPath: string): Promise<void> {
+export async function removeDirectoryByPath(dirPath: string): Promise<void> {
   try {
-    fs.accessSync(projectPath);
-    const projectContent = fs.readdirSync(projectPath);
+    fs.accessSync(dirPath);
+    const dirContent = fs.readdirSync(dirPath);
     await Promise.all(
-      projectContent.map(async (projectFiles) => {
-        const projectContentPath = path.join(projectPath, projectFiles);
+      dirContent.map(async (dirFiles) => {
+        const projectContentPath = path.join(dirPath, dirFiles);
         const stats = fs.lstatSync(projectContentPath);
         if (stats.isDirectory()) {
           await removeDirectoryByPath(projectContentPath);
@@ -212,26 +214,66 @@ export async function removeDirectoryByPath(projectPath: string): Promise<void> 
         }
       })
     );
-    fs.rmdirSync(projectPath);
+    fs.rmdirSync(dirPath);
   } catch (error) {
-    console.error(`Error removing new project: ${error}`);
+    console.error(`Error removing directory: ${error}`);
   }
 }
 
 /**
- * Copy a specific directory  
+ * 
+ * @param existingConfigPath 
+ * @param copyConfigPath 
+ * Copy a specific directory 
  */
-export async function copyDirectoryByPath(existingConfigPath: string, copyConfigPath: string): Promise<void> {
-  fse.copy(existingConfigPath, copyConfigPath)
-    .then(() => console.log("New config folder created :" + copyConfigPath))
-    .catch(err => console.log("Error creating config folder"));
+export async function copyDirectoryByPath(existingDirPath: string, copyDirPath: string): Promise<void> {
+  fse.copy(existingDirPath, copyDirPath)
+    .then(() => console.log("Folder content copied :" + copyDirPath))
+    .catch(err => console.log("Error occuried while copying content"));
 }
 
-export async function openServerXMLFile() {
+/**
+ * 
+ * @param parentDir 
+ * @param configFileName 
+ * Open specific config file from parent directory
+ */
+export async function openConfigFile(parentDir: string, configFileName: string) {
   const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
   section.expand();
-  await VSBrowser.instance.openResources(path.join(getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
+  await VSBrowser.instance.openResources(path.join(getGradleProjectPath(), 'src', 'main', 'liberty', parentDir, configFileName));
 }
 
+/**
+ * Function to close currently opened config file tab
+ */
+export async function closeEditor(fileType: string) {
+  const workbench = new Workbench();
+  await workbench.openCommandPrompt();
+  await delay(3000);
+  await workbench.executeCommand(constants.CLOSE_EDITOR);
+  await delay(3000);
+  const dialog = new ModalDialog();
+  const message = await dialog.getMessage();
 
-  
+  if (fileType in constants.CONFIRM_MESSAGES) {
+    expect(message).contains(constants.CONFIRM_MESSAGES[fileType as keyof typeof constants.CONFIRM_MESSAGES]);
+  }
+  const buttons = await dialog.getButtons();
+  expect(buttons.length).equals(3);
+  await dialog.pushButton('Don\'t Save');
+}
+/**
+ * 
+ * @param editor 
+ * @param selectValue 
+ * Function to call toggle assistant to select value from suggestion list
+ */
+export async function callAssitantAction(editor: TextEditor, selectValue: string) {
+  let assist = await editor.toggleContentAssist(true);
+  // toggle can return void, so we need to make sure the object is present
+  if (assist) {
+    // to select an item use
+    await assist.select(selectValue);
+  }
+}

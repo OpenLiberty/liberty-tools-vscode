@@ -1,3 +1,4 @@
+
 /**
  * Copyright (c) 2020, 2022 IBM Corporation.
  *
@@ -9,7 +10,7 @@
  */
 
 export const MAVEN_PROJECT = "liberty.maven.test.wrapper.app";
-export const GRADLE_PROJECT= "liberty.gradle.test.wrapper.app";
+export const GRADLE_PROJECT = "liberty.gradle.test.wrapper.app";
 export const START_DASHBOARD_ACTION = "Start";
 export const STOP_DASHBOARD_ACTION = "Stop";
 export const START_DASHBOARD_MAC_ACTION = "Liberty: Start";
@@ -37,6 +38,34 @@ export const GRADLE_TEST_REPORT_TITLE = "liberty.gradle.test.wrapper.app test re
 export const ATTACH_DEBUGGER_DASHBOARD_ACTION = "Attach debugger";
 export const ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION = "Liberty: Attach debugger";
 /** Maven: Dev mode debug port argument key. */
-export const  MAVEN_DEVMODE_DEBUG_PORT_PARM = "-DdebugPort";
+export const MAVEN_DEVMODE_DEBUG_PORT_PARM = "-DdebugPort";
 /** Gradle: Dev mode debug port argument key. */
 export const GRADLE_DEVMODE_DEBUG_PORT_PARM = "--libertyDebugPort";
+export const CONFIG = "config";
+export const CONFIG_TWO = "config2";
+export const BOOTSTRAP_PROPERTIES = "bootstrap.properties";
+export const SERVER_XML = "server.xml";
+export const SERVER_ENV = "server.env";
+export const CLOSE_EDITOR = "View: Close Editor";
+export const CONFIRM_MESSAGES = {
+  [SERVER_XML]: 'Do you want to save the changes you made to server.xml?',
+  [SERVER_ENV]: 'Do you want to save the changes you made to server.env?',
+  [BOOTSTRAP_PROPERTIES]: 'Do you want to save the changes you made to bootstrap.properties?'
+};
+export const EXPECTED_OUTCOME_WRONG = "'wrong' is not a valid value of union type 'booleanType'.";
+export const TARGETED_VALUE_LOGGING = '<logging appsWriteJson = \"wrong\" />';
+export const FOCUS_WRONG = "//*[contains(text(), 'wrong')]";
+export const SNIPPET_LOGGING = "<logging appsWriteJson = \"true\" />";
+export const FOCUS_QUICKFIX = "//*[contains(text(), 'Quick Fix')]";
+export const LOGGING_TRUE = "//*[contains(text(), \"Replace with 'true'\")]";
+export const FOCUS_HTTPENDPOINT = "//*[contains(text(), 'httpEndpoint')]";
+export const FOCUS_MPHEALTH = "//*[contains(text(), 'mpHealth')]";
+export const FEATURE_MPHEALTH = '<feature>mpHealth-4.0</feature>';
+export const NEWLINE = '\n';
+export const DESCRIPTION_MPHEALTH = "Description: This feature provides support for the MicroProfile Health specification.";
+export const DESCRIPTION_HTTPENDPOINT = `Configuration properties for an HTTP endpoint.`;
+export const FEATURE_EL = "<feature>el-3.0</feature>";
+export const LOGGING_TAG = "<logging></logging>";
+export const LOGGING = 'logging';
+export const FEATURE_TAG = 'feature';
+export const EL_VALUE = 'el-3.0';
