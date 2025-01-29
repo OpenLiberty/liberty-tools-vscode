@@ -269,10 +269,5 @@ it('Clear Command Palatte', async () => {
   await utils.clearCommandPalette();
 }).timeout(100000);
 
-
-it('false method', async () => {  
-  expect(false).to.be.true;
-}).timeout(10000);
-
 });
 

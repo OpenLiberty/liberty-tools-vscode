@@ -68,7 +68,6 @@ main() {
             # Run the plugin's install goal against the latest vscode version
              if [ $OS = "Darwin" ]; then
                 chown -R runner src/test/resources/maven
-                updateExitStatus
               chown -R runner  src/test/resources/gradle
                 npm run test -- -u
                 updateExitStatus
@@ -81,7 +80,6 @@ main() {
             if [ $OS = "Darwin" ]; then
               chown -R runner src/test/resources/maven
               chown -R runner  src/test/resources/gradle
-              updateExitStatus
               npm run test -- -u -c $VSCODE_VERSION_TO_RUN
               updateExitStatus
             else
