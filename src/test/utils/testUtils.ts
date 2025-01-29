@@ -245,6 +245,25 @@ export async function openConfigFile(parentDir: string, configFileName: string) 
 }
 
 /**
+ * Function to close currently opened config file tab
+ */
+export async function closeEditor(fileType: string) {
+  const workbench = new Workbench();
+  await workbench.openCommandPrompt();
+  await delay(3000);
+  await workbench.executeCommand(constants.CLOSE_EDITOR);
+  await delay(3000);
+  const dialog = new ModalDialog();
+  const message = await dialog.getMessage();
+
+  if (fileType in constants.CONFIRM_MESSAGES) {
+    expect(message).contains(constants.CONFIRM_MESSAGES[fileType as keyof typeof constants.CONFIRM_MESSAGES]);
+  }
+  const buttons = await dialog.getButtons();
+  expect(buttons.length).equals(3);
+  await dialog.pushButton('Don\'t Save');
+}
+/**
  * 
  * @param editor 
  * @param selectValue 
