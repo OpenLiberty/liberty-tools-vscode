@@ -30,8 +30,8 @@ it('getViewControl works with the correct label',  async() => {
 
 it('Open dasboard shows items - Maven', async () => {
 
-  await utils.executeMvnClean();
-  await utils.clearMavenPluginCache();
+  await utils.executeMvnClean();// executing the mvn clean to remove the target directory before the main tests
+  await utils.clearMavenPluginCache();// clear the cache before the tests , ensuring latest plugins will be used for the tests
   // Wait for the Liberty Dashboard to load and expand. The dashboard only expands after using the 'expand()' method.  
   await utils.delay(65000);
   section.expand();
@@ -210,7 +210,7 @@ it('View Unit test report for maven project', async () => {
   tabs = await new EditorView().getOpenEditorTitles();
   //expect (tabs[1], "Unit test report not found").to.equal(constants.SUREFIRE_REPORT_TITLE);
   expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found").to.equal(true); 
-  await utils.closeEditor();
+  await utils.closeEditor();// closing the tab after view unit test report is successful
     
 }).timeout(10000);
 
@@ -220,7 +220,7 @@ it('View Integration test report for maven project', async () => {
   tabs = await new EditorView().getOpenEditorTitles();
   //expect (tabs[2], "Integration test report not found").to.equal(constants.FAILSAFE_REPORT_TITLE);
   expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found").to.equal(true);
-  await utils.closeEditor();
+  await utils.closeEditor();// closing the tab after view Integration test report is successful
     
 }).timeout(10000);
 
@@ -239,7 +239,7 @@ it('Run tests for sample maven project with surefire version 3.4.0', async () =>
     console.log("Server succuessfully started");
     await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
     const serverStopStatus = await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
-    await utils.revertPomFile();// Removes specific verison of the surefire plugin added for testing
+    await utils.revertPomFile();// Removes specific verison of the surefire plugin added in pom file for testing
     await utils.clearMavenPluginCache();// Clear the plugin cache to remove the current versions and ensure the latest plugins are used for the next tests.
     if (!serverStopStatus) {
       console.error("Server stopped message not found in the terminal");
@@ -286,7 +286,7 @@ it('View Unit test report for maven project with surefire 3.4.0', async () => {
   tabs = await new EditorView().getOpenEditorTitles();
   //expect (tabs[1], "Unit test report not found").to.equal(constants.SUREFIRE_REPORT_TITLE);
   expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found").to.equal(true); 
-  await utils.closeEditor();
+  await utils.closeEditor();// closing the tab after view unit test report with surefire 3.4.0 is successful
     
 }).timeout(10000);
 
@@ -296,9 +296,7 @@ it('View Integration test report for maven project  with surefire 3.4.0', async 
   tabs = await new EditorView().getOpenEditorTitles();
   //expect (tabs[2], "Integration test report not found").to.equal(constants.FAILSAFE_REPORT_TITLE);
   expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found").to.equal(true);
-  await utils.closeEditor();
-  new EditorView().closeAllEditors();
-  item.click();
+  await utils.closeEditor();// closing the tab after view Integration test report with surefire 3.4.0 is successful
     
 }).timeout(10000);
 
@@ -306,7 +304,6 @@ it('View Integration test report for maven project  with surefire 3.4.0', async 
  * All future test cases should be written before the test that attaches the debugger, as this will switch the UI to the debugger view.
  * If, for any reason, a test case needs to be written after the debugger test, ensure that the UI is switched back to the explorer view before executing the subsequent tests.
  */
-
 it('attach debugger for start with custom parameter event', async () => {
   console.log("start attach debugger");
   let isServerRunning: Boolean = true;
