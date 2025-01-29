@@ -45,7 +45,7 @@ jobs:
       # Archive artifacts
       - name: Archive artifacts
         if: runner.os == 'linux' && matrix.targetVSCode == 'latest'
-        uses: actions/upload-artifact@v4.3.4
+        uses: actions/upload-artifact@v3
         with:
           name: liberty-tools-vscode-${{ github.sha }}
           path: ./**/*.vsix
@@ -54,5 +54,4 @@ jobs:
 
       # Build the plugin.
       - name: 'Test: RunTests'
-        id: run_tests
         run: bash ./src/test/resources/ci/scripts/exec.sh TEST ${{ matrix.targetVSCode }}

@@ -1,9 +1,8 @@
 import { expect } from 'chai';
-import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView, VSBrowser } from 'vscode-extension-tester';
+import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
-import * as fs from 'fs';
 
 describe('Devmode action tests for Maven Project', () => {
     let sidebar: SideBarView;
@@ -269,6 +268,7 @@ it('attach debugger for start with custom parameter event', async () => {
  
     
 }).timeout(350000);
+
 
 });
 
