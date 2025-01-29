@@ -83,3 +83,14 @@ export const FOCUS_SERVLET_VALUE = "//*[contains(text(), \"Replace feature with 
 export const PLATFORM ="platform";
 export const JAKARTA_ELEVEN ='jakartaee-11.0';
 export const PLATFORM_JAKARTA_NINE= "<platform>jakartaee-9.1</platform>";
+export const WLP_LOGGING_CONSOLE_FORMAT='WLP_LOGGING_CONSOLE_FORMAT';
+export const CONSOLE_FORMAT_TBASIC='WLP_LOGGING_CONSOLE_FORMAT=TBASIC';
+export const TBASIC='TBASIC';
+export const TBA="=TBA";
+export const WLP_LOGGING_CON= 'WLP_LOGGING_CON';
+export const LOG_LEVEL_INFO_MSG= 'This setting controls the granularity of messages that go to the console. The valid values are INFO, AUDIT, WARNING, ERROR, and OFF. The default is AUDIT. If using with the Eclipse developer tools this must be set to the default.';
+export const FOCUS_LOGLEVEL ="//*[contains(text(), 'CONSOLE_LOGLEVEL')]";
+export const LOGLEVEL_WITH_VALUE= 'WLP_LOGGING_CONSOLE_LOGLEVEL=OFF';
+export const CONSOLE_FORMAT_DIAGNOSTIC ='The value `sample_value_is_updating_as_nodata` is not valid for the variable `WLP_LOGGING_CONSOLE_FORMAT`.';
+export const FOCUS_NODATA = "//*[contains(text(), 'nodata')]";
+export const VALUE_NODATA = '=sample_value_is_updating_as_nodata'
