@@ -233,7 +233,7 @@ describe('LCLS tests for Gradle Project', function () {
         const hoverValue = await hoverContents.getText();
         console.log("Hover text is:" + hoverValue);
 
-        assert(hoverValue.includes(constants.DESCRIPTION_PLATFORM), 'Did not get expected hover text in server.xml server platform');
+        assert(hoverValue.includes(constants.DESCRIPTION_PLATFORM), 'Did not get expected hover text in server.xml for server platform');
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
@@ -261,7 +261,7 @@ describe('LCLS tests for Gradle Project', function () {
         const hoverValue = await hoverContents.getText();
         console.log("Hover text is:" + hoverValue);
 
-        assert(hoverValue.includes(constants.PLATFORM_JAKARTA_ERROR), 'Did not get expected diagnostic in server.xml server platform');
+        assert(hoverValue.includes(constants.PLATFORM_JAKARTA_ERROR), 'Did not get expected diagnostic in server.xml for server platform');
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
@@ -307,7 +307,7 @@ describe('LCLS tests for Gradle Project', function () {
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
         console.log("Content after Quick fix : ", updatedSeverXMLContent);
-        assert(updatedSeverXMLContent.includes(constants.PLATFORM_JAKARTA_VALUE), 'Quick fix not applied correctly for the invalid value in server.xml server platform.');
+        assert(updatedSeverXMLContent.includes(constants.PLATFORM_JAKARTA_VALUE), 'Quick fix not applied correctly for the invalid value in server.xml for server platform.');
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
@@ -335,7 +335,7 @@ describe('LCLS tests for Gradle Project', function () {
         const hoverValue = await hoverContents.getText();
         console.log("Hover text is:" + hoverValue);
 
-        assert(hoverValue.includes(constants.SERVLET_ERROR), 'Did not get expected diagnostic in server.xml server feature');
+        assert(hoverValue.includes(constants.SERVLET_ERROR), 'Did not get expected diagnostic in server.xml for server feature');
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
@@ -382,7 +382,7 @@ describe('LCLS tests for Gradle Project', function () {
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
         console.log("Content after Quick fix is: ", updatedSeverXMLContent);
-        assert(updatedSeverXMLContent.includes(constants.SERVLET_VALUE), 'Quick fix is not applied correctly for the invalid value in server.xml server feature.');
+        assert(updatedSeverXMLContent.includes(constants.SERVLET_VALUE), 'Quick fix is not applied correctly for the invalid value in server.xml for server feature.');
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
@@ -412,7 +412,7 @@ describe('LCLS tests for Gradle Project', function () {
         const updatedServerxmlContent = await editor.getText();
         await utils.delay(3000);
         console.log("Content after type ahead support is: ", updatedServerxmlContent);
-        assert(updatedServerxmlContent.includes(constants.PLATFORM_JAKARTA_VALUE), 'Type ahead support is not worked as expected in server.xml Liberty Server platform');
+        assert(updatedServerxmlContent.includes(constants.PLATFORM_JAKARTA_VALUE), 'Type ahead support is not worked as expected in server.xml for Liberty Server platform');
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
