@@ -193,8 +193,6 @@ export async function clearCommandPalette() {
   await dialog.pushButton('Clear');
 }
 
-
-
 export async function clearMavenPluginCache(): Promise<void> {
   // Check if the platform is Linux or macOS
   const homeDirectory = process.platform === 'linux' || process.platform === 'darwin' ? process.env.HOME // For Linux/macOS, use HOME
