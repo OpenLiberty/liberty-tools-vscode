@@ -4,6 +4,7 @@ import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
 import { viewTestReportForMac } from './utils/macUtils';
+import { assert } from 'console';
 
 describe('Devmode action tests for Gradle Project', () => {
     let sidebar: SideBarView;
@@ -199,7 +200,7 @@ it('View test report for gradle project', async () => {
   await utils.delay(1000);
   console.log("Tabs opened: " + tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE));
 
-  expect(tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE) > -1, "Gradle test report not found").to.equal(true);
+  assert(tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE) > -1, "Gradle test report not found");
 }).timeout(60000);
 
 
