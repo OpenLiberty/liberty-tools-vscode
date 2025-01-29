@@ -45,9 +45,9 @@ it('Open dasboard shows items - Maven', async () => {
   const menu = await section.getVisibleItems(); 
   expect(menu).not.empty;     
   item = await section.findItem(constants.MAVEN_PROJECT) as DefaultTreeItem;   
-  expect(item).not.undefined; 
-  
-  
+  expect(item).not.undefined;   
+   
+    
 }).timeout(275000);
 
 
