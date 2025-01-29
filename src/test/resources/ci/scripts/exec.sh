@@ -26,8 +26,8 @@ currentTime=(date +"%Y/%m/%d-%H:%M:%S:%3N")
 # Operating system.
 OS=$(uname -s)
 
-# Array to store exit status of commands
-exitStatus=()
+# Boolean to see if any failure has occured while executing commands
+failure=false
 
 main() {
 
@@ -67,50 +67,46 @@ main() {
             # Run the plugin's install goal against the latest vscode version
              if [ $OS = "Darwin" ]; then
                 chown -R runner src/test/resources/maven
+                updateExitStatus
               chown -R runner  src/test/resources/gradle
-              checkExitStatus
                 npm run test -- -u
-                checkExitStatus
+                updateExitStatus
             else
                 npm run test -- -u
-                checkExitStatus
+                updateExitStatus
             fi
         else
             # Run the plugin's install goal against the target vscode version
             if [ $OS = "Darwin" ]; then
               chown -R runner src/test/resources/maven
               chown -R runner  src/test/resources/gradle
-              checkExitStatus
+              updateExitStatus
               npm run test -- -u -c $VSCODE_VERSION_TO_RUN
-              checkExitStatus
+              updateExitStatus
             else
             npm run test -- -u -c $VSCODE_VERSION_TO_RUN
-            checkExitStatus
+            updateExitStatus
             fi
         fi
     fi
 
     # If there were any errors, gather some debug data before exiting.
-    # rc=$?
-    for i in "${exitStatus[@]}"; do
-        echo "i value: $i"
-        if [ $i -ne 0 ]; then
-            # echo "ERROR: Failure while driving npm install on plugin. rc: ${rc}."
+    if [ $failure ]; then
+        echo "ERROR: Failure while driving npm install on plugin."
 
-            if [ $TYPE = "TEST" ]; then
-                echo "DEBUG: Maven Liberty messages.log:\n"
-                cat src/test/resources/maven/liberty.maven.test.wrapper.app/target/liberty/wlp/usr/servers/defaultServer/logs/messages.log
+        if [ $TYPE = "TEST" ]; then
+            echo "DEBUG: Maven Liberty messages.log:\n"
+            cat src/test/resources/maven/liberty.maven.test.wrapper.app/target/liberty/wlp/usr/servers/defaultServer/logs/messages.log
 
-                echo "DEBUG: Gradle Liberty messages.log:\n"
-                cat src/test/resources/gradle/liberty.gradle.test.wrapper.app/build/wlp/usr/servers/defaultServer/logs/messages.log
-            fi
-
-            echo "DEBUG: Environment variables:\n"
-            env
-
-            exit -1
+            echo "DEBUG: Gradle Liberty messages.log:\n"
+            cat src/test/resources/gradle/liberty.gradle.test.wrapper.app/build/wlp/usr/servers/defaultServer/logs/messages.log
         fi
-    done
+
+        echo "DEBUG: Environment variables:\n"
+        env
+
+        exit -1
+    fi
 }
 
 #start docker and display
@@ -159,11 +155,13 @@ setVscodeVersionToTest() {
         fi
 }
 
-# Finding the exit status of a command
-checkExitStatus() {
+# Finding the exit status of a command and updating failure boolean.
+# Need to call this method after executing each npm command to store the status.
+updateExitStatus() {
     status=$?
-    exitStatus+=(${status})
-    echo "exit status: ${exitStatus[*]}"
+    if [ !$failure && $status -ne 0 ]; then
+        failure=true
+    fi
 }
 
 main "$@"
