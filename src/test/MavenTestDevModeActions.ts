@@ -279,6 +279,30 @@ it('check all test reports exists', async () => {
   expect(existenceResults.every(result => result === true)).to.be.true;
 }).timeout(10000);
 
+
+it('View Unit test report for maven project with surefire 3.4.0', async () => {  
+  
+  let deleteFailsafeReport = await utils.deleteReports(path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html")); 
+  let deleteSurefireReport = await utils.deleteReports(path.join(utils.getMvnProjectPath(), "target", "reports", "surefire.html")); 
+  expect(deleteFailsafeReport && deleteSurefireReport).to.be.true;
+  await utils.launchDashboardAction(item,constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);   
+  tabs = await new EditorView().getOpenEditorTitles();
+  //expect (tabs[1], "Unit test report not found").to.equal(constants.SUREFIRE_REPORT_TITLE);
+  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found").to.equal(true); 
+  utils.closeEditor();
+    
+}).timeout(10000);
+
+it('View Integration test report for maven project  with surefire 3.4.0', async () => {      
+    
+  await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);   
+  tabs = await new EditorView().getOpenEditorTitles();
+  //expect (tabs[2], "Integration test report not found").to.equal(constants.FAILSAFE_REPORT_TITLE);
+  expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found").to.equal(true);
+  utils.closeEditor();
+    
+}).timeout(10000);
+
 /**
  * All future test cases should be written before the test that attaches the debugger, as this will switch the UI to the debugger view.
  * If, for any reason, a test case needs to be written after the debugger test, ensure that the UI is switched back to the explorer view before executing the subsequent tests.

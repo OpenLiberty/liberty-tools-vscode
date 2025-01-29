@@ -5,6 +5,7 @@ import { STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
+import * as constants from '../definitions/constants';
 
 export function delay(millisec: number) {
     return new Promise( resolve => setTimeout(resolve, millisec) );
@@ -295,6 +296,11 @@ export async function revertPomFile() {
       console.log('Plugin block not found, nothing to revert.');
     }
   });
+}
+
+export async function closeEditor() {
+  const workbench = new Workbench();
+  await workbench.executeCommand(constants.CLOSE_EDITOR);
 }
 
 
