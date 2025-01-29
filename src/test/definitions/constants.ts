@@ -46,3 +46,40 @@ export const CONFIG_TWO = "config2";
 export const BOOTSTRAP_PROPERTIES = "bootstrap.properties";
 export const SERVER_XML = "server.xml";
 export const SERVER_ENV = "server.env";
+export const CLOSE_EDITOR = "View: Close Editor";
+export const CONFIRM_MESSAGES = {
+  [SERVER_XML]: 'Do you want to save the changes you made to server.xml?',
+  [SERVER_ENV]: 'Do you want to save the changes you made to server.env?',
+  [BOOTSTRAP_PROPERTIES]: 'Do you want to save the changes you made to bootstrap.properties?'
+};
+export const EXPECTED_OUTCOME_WRONG = "'wrong' is not a valid value of union type 'booleanType'.";
+export const TARGETED_VALUE_LOGGING = '<logging appsWriteJson = \"wrong\" />';
+export const FOCUS_WRONG = "//*[contains(text(), 'wrong')]";
+export const SNIPPET_LOGGING = "<logging appsWriteJson = \"true\" />";
+export const FOCUS_QUICKFIX = "//*[contains(text(), 'Quick Fix')]";
+export const LOGGING_TRUE = "//*[contains(text(), \"Replace with 'true'\")]";
+export const FOCUS_HTTPENDPOINT = "//*[contains(text(), 'httpEndpoint')]";
+export const FOCUS_MPHEALTH = "//*[contains(text(), 'mpHealth')]";
+export const FEATURE_MPHEALTH = '<feature>mpHealth-4.0</feature>';
+export const NEWLINE = '\n';
+export const DESCRIPTION_MPHEALTH = "Description: This feature provides support for the MicroProfile Health specification.";
+export const DESCRIPTION_HTTPENDPOINT = `Configuration properties for an HTTP endpoint.`;
+export const FEATURE_EL = "<feature>el-3.0</feature>";
+export const LOGGING_TAG = "<logging></logging>";
+export const LOGGING = 'logging';
+export const FEATURE_TAG = 'feature';
+export const EL_VALUE = 'el-3.0';
+export const PLATFORM_JAKARTA_VALUE = "<platform>jakartaee-11.0</platform>";
+export const DESCRIPTION_PLATFORM = `Description: This platform resolves the Liberty features that support the Jakarta EE 11.0 platform.`;
+export const FOCUS_JAKARTA = "//*[contains(text(), '\jakarta\')]";
+export const PLATFORM_JAKARTA = "<platform>jakarta</platform>";
+export const PLATFORM_JAKARTA_ERROR = `ERROR: The platform "jakarta" does not exist.`;
+export const FOCUS_JAKARTA_ELEVEN= "//*[contains(text(), \"Replace platform with jakartaee-11.0\")]";
+export const FEATURE_SERVLET = "<feature>servlet</feature>";
+export const SERVLET_ERROR = `ERROR: The "servlet" versionless feature cannot be resolved since there are more than one common platform. Specify a platform or a feature with a version to enable resolution`;
+export const FOCUS_SERVLET ="//*[contains(text(), '\servlet\')]";
+export const SERVLET_VALUE= "<feature>servlet-3.1</feature>";
+export const FOCUS_SERVLET_VALUE = "//*[contains(text(), \"Replace feature with servlet-3.1\")]";
+export const PLATFORM ="platform";
+export const JAKARTA_ELEVEN ='jakartaee-11.0';
+export const PLATFORM_JAKARTA_NINE= "<platform>jakartaee-9.1</platform>";
