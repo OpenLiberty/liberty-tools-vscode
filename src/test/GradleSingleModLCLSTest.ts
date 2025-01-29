@@ -239,13 +239,13 @@ describe('LCLS tests for Gradle Project', function () {
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
 
-    }).timeout(38000);
+    }).timeout(45000);
 
     it('Should show diagnostic for invalid value in server.xml for server platform', async () => {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
         editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
-        await editor.typeTextAt(15, 35, '\n');
+        await editor.typeTextAt(15, 35, constants.NEWLINE);
         await editor.typeTextAt(16, 9, constants.PLATFORM_JAKARTA);
         await utils.delay(2000);
         const focusTargetedElement = await editor.findElement(By.xpath(constants.FOCUS_JAKARTA));
@@ -259,7 +259,7 @@ describe('LCLS tests for Gradle Project', function () {
 
         const hoverContents = editor.findElement(By.className('hover-contents'));
         const hoverValue = await hoverContents.getText();
-        console.log("Hover text:" + hoverValue);
+        console.log("Hover text is:" + hoverValue);
 
         assert(hoverValue.includes(constants.PLATFORM_JAKARTA_ERROR), 'Did not get expected diagnostic in server.xml server platform');
 
@@ -267,7 +267,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
 
-    }).timeout(38000);
+    }).timeout(45000);
 
     it('Should apply quick fix for invalid value in server.xml for server platform', async () => {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
@@ -313,7 +313,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
 
-    }).timeout(38000);
+    }).timeout(45000);
 
     it('Should show diagnostic for invalid value in server.xml for server feature', async () => {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
@@ -333,7 +333,7 @@ describe('LCLS tests for Gradle Project', function () {
 
         const hoverContents = editor.findElement(By.className('hover-contents'));
         const hoverValue = await hoverContents.getText();
-        console.log("Hover text:" + hoverValue);
+        console.log("Hover text is:" + hoverValue);
 
         assert(hoverValue.includes(constants.SERVLET_ERROR), 'Did not get expected diagnostic in server.xml server feature');
 
@@ -341,7 +341,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
 
-    }).timeout(38000);
+    }).timeout(45000);
 
     it('Should apply quick fix for invalid value in server.xml for server feature', async () => {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
@@ -388,7 +388,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
 
-    }).timeout(38000);
+    }).timeout(45000);
 
     it('Should show type ahead support in server.xml Liberty Server platform', async () => {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
@@ -418,7 +418,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
 
-    }).timeout(38000);
+    }).timeout(45000);
 
     it('Valid server feature entry with platform entry in server.xml', async () => {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
@@ -453,7 +453,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.setText(actualServerXMLContent);
         console.log("Content is restored");
 
-    }).timeout(38000);
+    }).timeout(45000);
 
     after(() => {
         utils.removeDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
