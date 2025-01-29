@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView } from 'vscode-extension-tester';
+import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView, TextEditor, VSBrowser, TitleBar } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
@@ -27,13 +27,14 @@ it('getViewControl works with the correct label',  async() => {
  
 }).timeout(10000);
 
-it('delete target directory and clear maven plugin Cache', async() =>{
+it('Execute mvn clean and clear maven plugin cache', async() =>{
 
-   utils.removeDirectoryByPath(path.join(utils.getMvnProjectPath(),"target")); // removing the target directory before running tests
-   utils.clearMavenPluginCache(); // clearing the cache so initially it uses the latest verison of the plugins and initiate the testing
-
+  await VSBrowser.instance.openResources(path.join(utils.getMvnProjectPath(), 'ForTest.md'));
+  const workbench = new Workbench();
+  await workbench.executeCommand('workbench.action.terminal.runSelectedText');
+  await utils.clearMavenPluginCache();
+ 
 }).timeout(10000);
-
 
 it('Open dasboard shows items - Maven', async () => {
 
