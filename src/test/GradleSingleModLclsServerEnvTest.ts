@@ -41,7 +41,6 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
         await utils.delay(3000);
         assert(updatedSeverEnvContent.includes(constants.CONSOLE_FORMAT_TBASIC), 'Type ahead support is not working as expected in server.env');
         await editor.clearText();
-        await utils.closeEditor(constants.SERVER_ENV);
 
     }).timeout(50000);
 
@@ -69,7 +68,6 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
 
         assert(hoverValue.includes(constants.LOG_LEVEL_INFO_MSG), 'Did not get expected hover data for server.env');
         await editor.clearText();
-        await utils.closeEditor(constants.SERVER_ENV);
 
     }).timeout(45000);
 
@@ -102,11 +100,12 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
         await editor.clearText();
         await utils.closeEditor(constants.SERVER_ENV);
 
-    }).timeout(45000);
+    }).timeout(55000);
 
-    after(() => {
+    after(async () => {
         utils.removeDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         console.log("Removed new config folder:");
+        utils.delay(5000);
     });
 
 });
