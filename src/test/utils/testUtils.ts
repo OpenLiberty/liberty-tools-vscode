@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
 import clipboard = require('clipboardy');
-import { expect, util } from 'chai';
+import { expect } from 'chai';
 import * as constants from '../definitions/constants';
 
 export function delay(millisec: number) {
@@ -115,7 +115,7 @@ export function getMvnProjectPath(): string {
     let  foundText = false;
     let count=0;    
     do{
-      clipboard.writeSync('');//clean slate for clipboard    
+      clipboard.writeSync('');//clean slate for clipboard      
       await workbench.executeCommand('terminal select all');       
       const text = clipboard.readSync();        
       console.log("debug:" + text)      ;
@@ -265,7 +265,7 @@ export async function modifyPomFile() {
   });
 }
 
-// Function to revert changes made by modifyPomFile()
+// Function to revert changes made on the pom file for including surefire 3.4.0 
 export async function revertPomFile() {
   //path to pom.xml in the test project
   const pomFilePath = 'src/test/resources/maven/liberty.maven.test.wrapper.app/pom.xml';
@@ -298,16 +298,17 @@ export async function revertPomFile() {
   });
 }
 
+// Method to close the open tabs 
 export async function closeEditor() {
   const workbench = new Workbench();
   await workbench.executeCommand(constants.CLOSE_EDITOR);
 }
 
+// Method to execute the maven clean before the tests are executed
 export async function executeMvnClean() {
   await VSBrowser.instance.openResources(path.join(getMvnProjectPath(), 'ForTest.md'));
   const workbench = new Workbench();
   await workbench.executeCommand('workbench.action.terminal.runSelectedText');
-  await clearMavenPluginCache();
 }
 
 
