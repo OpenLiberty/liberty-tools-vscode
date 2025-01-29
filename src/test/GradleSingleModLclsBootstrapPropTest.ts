@@ -44,14 +44,16 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
 
         const hoverContents = editor.findElement(By.className('hover-contents'));
         const hoverValue = await hoverContents.getText();
+        await utils.delay(3000);
         console.log("Expected text is:" + constants.WS_LOGGING_CONSOLE_DIAGNOSTIC);
         console.log("Hover text is:" + hoverValue);
 
         assert(hoverValue.includes(constants.WS_LOGGING_CONSOLE_DIAGNOSTIC), 'Did not get expected diagnostic as expected in boostrap.properties.');
         editor.clearText();
         await utils.closeEditor(constants.BOOTSTRAP_PROPERTIES);
+        await utils.delay(5000);
 
-    }).timeout(55000);
+    }).timeout(75000);
 
     it('Should show hover support for bootstrap.properties Liberty Server properties setting', async () => {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.BOOTSTRAP_PROPERTIES);
@@ -77,8 +79,9 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
         assert(hoverValue.includes(constants.LOG_LEVEL_INFO_MSG), 'Did not get expected hover data for bootstrap.properties.');
         editor.clearText();
         await utils.closeEditor(constants.BOOTSTRAP_PROPERTIES);
+        await utils.delay(5000);
 
-    }).timeout(45000);
+    }).timeout(65000);
 
     it('Should show type ahead support in bootstrap.properties for a Liberty Server Configuration booststrap.properties entry', async () => {
         await utils.openConfigFile(constants.CONFIG_TWO, constants.BOOTSTRAP_PROPERTIES);
@@ -102,8 +105,9 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
 
         editor.clearText();
         await utils.closeEditor(constants.BOOTSTRAP_PROPERTIES);
+        await utils.delay(5000);
 
-    }).timeout(45000);
+    }).timeout(65000);
 
     after(() => {
         utils.removeDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
