@@ -65,6 +65,7 @@ main() {
              if [ $OS = "Darwin" ]; then
                 chown -R runner src/test/resources/maven
               chown -R runner  src/test/resources/gradle
+                # Gradle tests should be run before Maven tests because the after hook for copying the screeshots from temporary to a  permananet location is written in the Maven tests so that the copying will be done at the end of every test cases.
                 npm run test-mac-gradle -- -u
                 npm run test-mac-maven -- -u
             else
@@ -75,6 +76,7 @@ main() {
             if [ $OS = "Darwin" ]; then
               chown -R runner src/test/resources/maven
               chown -R runner  src/test/resources/gradle
+              # Gradle tests should be run before Maven tests because the after hook for copying the screeshots from temporary to a  permananet location is written in the Maven tests so that the copying will be done at the end of every test cases.
               npm run test-mac-gradle -- -u -c $VSCODE_VERSION_TO_RUN
               npm run test-mac-maven -- -u -c $VSCODE_VERSION_TO_RUN
 

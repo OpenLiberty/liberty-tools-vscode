@@ -59,7 +59,7 @@ jobs:
       # Archive screenshots
       - name: Archive screenshots
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.3.4
         with:
           name: liberty-run-tests-screenshots-${{ runner.os }}-${{ matrix.targetVSCode }}
           path: ./screenshots/*.png
