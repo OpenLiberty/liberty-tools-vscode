@@ -198,7 +198,6 @@ it('View test report for gradle project', async () => {
   }
   tabs = await new EditorView().getOpenEditorTitles();
   await utils.delay(1000);
-  console.log("Tabs opened: " + tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE));
   assert.equal(tabs[0], constants.GRADLE_TEST_REPORT_TITLE, 'Gradle test report not found');
 }).timeout(60000);
 
