@@ -300,6 +300,8 @@ it('View Integration test report for maven project  with surefire 3.4.0', async 
   //expect (tabs[2], "Integration test report not found").to.equal(constants.FAILSAFE_REPORT_TITLE);
   expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found").to.equal(true);
   utils.closeEditor();
+  new EditorView().closeAllEditors();
+  item.click();
     
 }).timeout(10000);
 
