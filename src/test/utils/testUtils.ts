@@ -299,9 +299,5 @@ export async function revertPomFile() {
   });
 }
 
-export async function closeEditor() {
-  const workbench = new Workbench();
-  await workbench.executeCommand(constants.CLOSE_EDITOR);
-}
 
 
