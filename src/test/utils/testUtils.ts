@@ -233,4 +233,17 @@ export async function openServerXMLFile() {
   await VSBrowser.instance.openResources(path.join(getGradleProjectPath(), 'src', 'main', 'liberty', 'config2', 'server.xml'));
 }
 
+export async function closeEditor() {
+  const workbench = new Workbench();
+  await workbench.openCommandPrompt();
+  await delay(3000);
+  await workbench.executeCommand(constants.CLOSE_EDITOR);
+  await delay(3000);
+  const dialog = new ModalDialog();
+  const message = await dialog.getMessage();
+  expect(message).contains('Do you want to save the changes you made to server.xml?');
   
+  const buttons =  await dialog.getButtons();
+  expect(buttons.length).equals(3);
+  await dialog.pushButton('Don\'t Save');
+}

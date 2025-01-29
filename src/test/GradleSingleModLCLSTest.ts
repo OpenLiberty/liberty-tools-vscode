@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-import { By, EditorView, SideBarView, TextEditor, VSBrowser } from "vscode-extension-tester";
+import { By, EditorView, TextEditor, VSBrowser, Workbench } from "vscode-extension-tester";
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 
@@ -30,8 +30,10 @@ describe('LCLS tests for Gradle Project', function () {
 
         assert(actualServerXMLContent.length !== 0, 'Content of server.xml is not in copied.');
         console.log('Sever.xml content:', actualServerXMLContent);
+        await utils.delay(3000);
+        
 
-    }).timeout(25000);
+    }).timeout(28000);
 
     it('Should show diagnostic for server.xml invalid value', async () => {
         await utils.openServerXMLFile();
@@ -58,6 +60,7 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("Content restored");
+        await utils.closeEditor();
 
     }).timeout(35000);
 
@@ -105,12 +108,15 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("Content restored");
+        await utils.closeEditor();
 
     }).timeout(38000);
 
-    after(() => {
+    after(async () => {
         utils.removeDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         console.log("Removed new config folder:");
+        
+
     });
 
 });
