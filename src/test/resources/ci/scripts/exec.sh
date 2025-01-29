@@ -27,7 +27,7 @@ currentTime=(date +"%Y/%m/%d-%H:%M:%S:%3N")
 OS=$(uname -s)
 
 # Boolean to see if any failure has occured while executing commands
-failure=false
+failure="false"
 
 main() {
 
@@ -92,7 +92,7 @@ main() {
     fi
 
     # If there were any errors, gather some debug data before exiting.
-    if [ $failure -eq true ]; then
+    if [ "$failure" = "true" ]; then
         echo "ERROR: Failure while driving npm install on plugin."
 
         if [ $TYPE = "TEST" ]; then
@@ -160,8 +160,8 @@ setVscodeVersionToTest() {
 # Need to call this method after executing each npm command to store the status.
 updateExitStatus() {
     status=$?
-    if [ $failure -eq false && $status -ne 0 ]; then
-        failure=true
+    if [ "$failure" = "false" ] && [ $status -ne 0 ]; then
+        failure="true"
     fi
 }
 
