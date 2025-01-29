@@ -1,10 +1,9 @@
-import { expect } from 'chai';
+import { assert, expect } from 'chai';
 import { InputBox, Workbench,SideBarView, ViewSection,EditorView,DefaultTreeItem, DebugView } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
 import { viewTestReportForMac } from './utils/macUtils';
-import { assert } from 'console';
 
 describe('Devmode action tests for Gradle Project', () => {
     let sidebar: SideBarView;
@@ -188,21 +187,20 @@ it('start gradle with history from liberty dashboard', async () => {
 
 
 it('View test report for gradle project', async () => {
-
+  // Close all the tabs in editor.
+  await new EditorView().closeAllEditors();
+  utils.delay(5000);
   if ((process.platform === 'darwin')) {
     //Function call to enter corresponding command in the command prompt to display test report for gradle project in mac
     await viewTestReportForMac();
   } else {
     await utils.launchDashboardAction(item, constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
-    // expect (tabs[1]], "Gradle test report not found").to.equal(constants.GRADLE_TEST_REPORT_TITLE);
   }
   tabs = await new EditorView().getOpenEditorTitles();
   await utils.delay(1000);
   console.log("Tabs opened: " + tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE));
-
-  assert(tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE) > -1, "Gradle test report not found");
+  assert.equal(tabs[0], constants.GRADLE_TEST_REPORT_TITLE, 'Gradle test report not found');
 }).timeout(60000);
-
 
 /**
  * All future test cases should be written before the test that attaches the debugger, as this will switch the UI to the debugger view.
