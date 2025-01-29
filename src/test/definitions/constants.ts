@@ -10,7 +10,7 @@
  */
 
 export const MAVEN_PROJECT = "liberty.maven.test.wrapper.app";
-export const GRADLE_PROJECT= "liberty.gradle.test.wrapper.app";
+export const GRADLE_PROJECT = "liberty.gradle.test.wrapper.app";
 export const START_DASHBOARD_ACTION = "Start";
 export const STOP_DASHBOARD_ACTION = "Stop";
 export const START_DASHBOARD_MAC_ACTION = "Liberty: Start";
@@ -38,7 +38,7 @@ export const GRADLE_TEST_REPORT_TITLE = "liberty.gradle.test.wrapper.app test re
 export const ATTACH_DEBUGGER_DASHBOARD_ACTION = "Attach debugger";
 export const ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION = "Liberty: Attach debugger";
 /** Maven: Dev mode debug port argument key. */
-export const  MAVEN_DEVMODE_DEBUG_PORT_PARM = "-DdebugPort";
+export const MAVEN_DEVMODE_DEBUG_PORT_PARM = "-DdebugPort";
 /** Gradle: Dev mode debug port argument key. */
 export const GRADLE_DEVMODE_DEBUG_PORT_PARM = "--libertyDebugPort";
 export const CONFIG = "config";
@@ -74,23 +74,23 @@ export const DESCRIPTION_PLATFORM = `Description: This platform resolves the Lib
 export const FOCUS_JAKARTA = "//*[contains(text(), '\jakarta\')]";
 export const PLATFORM_JAKARTA = "<platform>jakarta</platform>";
 export const PLATFORM_JAKARTA_ERROR = `ERROR: The platform "jakarta" does not exist.`;
-export const FOCUS_JAKARTA_ELEVEN= "//*[contains(text(), \"Replace platform with jakartaee-11.0\")]";
+export const FOCUS_JAKARTA_ELEVEN = "//*[contains(text(), \"Replace platform with jakartaee-11.0\")]";
 export const FEATURE_SERVLET = "<feature>servlet</feature>";
 export const SERVLET_ERROR = `ERROR: The "servlet" versionless feature cannot be resolved since there are more than one common platform. Specify a platform or a feature with a version to enable resolution`;
-export const FOCUS_SERVLET ="//*[contains(text(), '\servlet\')]";
-export const SERVLET_VALUE= "<feature>servlet-3.1</feature>";
+export const FOCUS_SERVLET = "//*[contains(text(), '\servlet\')]";
+export const SERVLET_VALUE = "<feature>servlet-3.1</feature>";
 export const FOCUS_SERVLET_VALUE = "//*[contains(text(), \"Replace feature with servlet-3.1\")]";
-export const PLATFORM ="platform";
-export const JAKARTA_ELEVEN ='jakartaee-11.0';
-export const PLATFORM_JAKARTA_NINE= "<platform>jakartaee-9.1</platform>";
-export const WLP_LOGGING_CONSOLE_FORMAT='WLP_LOGGING_CONSOLE_FORMAT';
-export const CONSOLE_FORMAT_TBASIC='WLP_LOGGING_CONSOLE_FORMAT=TBASIC';
-export const TBASIC='TBASIC';
-export const TBA="=TBA";
-export const WLP_LOGGING_CON= 'WLP_LOGGING_CON';
-export const LOG_LEVEL_INFO_MSG= 'This setting controls the granularity of messages that go to the console. The valid values are INFO, AUDIT, WARNING, ERROR, and OFF. The default is AUDIT. If using with the Eclipse developer tools this must be set to the default.';
-export const FOCUS_LOGLEVEL ="//*[contains(text(), 'CONSOLE_LOGLEVEL')]";
-export const LOGLEVEL_WITH_VALUE= 'WLP_LOGGING_CONSOLE_LOGLEVEL=OFF';
-export const CONSOLE_FORMAT_DIAGNOSTIC ='The value `sample_value_is_updating_as_nodata` is not valid for the variable `WLP_LOGGING_CONSOLE_FORMAT`.';
+export const PLATFORM = "platform";
+export const JAKARTA_ELEVEN = 'jakartaee-11.0';
+export const PLATFORM_JAKARTA_NINE = "<platform>jakartaee-9.1</platform>";
+export const WLP_LOGGING_CONSOLE_FORMAT = 'WLP_LOGGING_CONSOLE_FORMAT';
+export const CONSOLE_FORMAT_TBASIC = 'WLP_LOGGING_CONSOLE_FORMAT=TBASIC';
+export const TBASIC = 'TBASIC';
+export const TBA = "=TBA";
+export const WLP_LOGGING_CON = 'WLP_LOGGING_CON';
+export const LOG_LEVEL_INFO_MSG = 'This setting controls the granularity of messages that go to the console. The valid values are INFO, AUDIT, WARNING, ERROR, and OFF. The default is AUDIT. If using with the Eclipse developer tools this must be set to the default.';
+export const FOCUS_LOGLEVEL = "//*[contains(text(), 'CONSOLE_LOGLEVEL')]";
+export const LOGLEVEL_WITH_VALUE = 'WLP_LOGGING_CONSOLE_LOGLEVEL=OFF';
+export const CONSOLE_FORMAT_DIAGNOSTIC = 'The value `sample_value_is_updating_as_nodata` is not valid for the variable `WLP_LOGGING_CONSOLE_FORMAT`.';
 export const FOCUS_NODATA = "//*[contains(text(), 'nodata')]";
 export const VALUE_NODATA = '=sample_value_is_updating_as_nodata'
