@@ -43,6 +43,7 @@ main() {
         npm run build
         npm run compile
         vsce package
+        updateExitStatus
     else
 
         #Initialisation step
@@ -91,7 +92,7 @@ main() {
     fi
 
     # If there were any errors, gather some debug data before exiting.
-    if [ $failure ]; then
+    if [ $failure -eq true ]; then
         echo "ERROR: Failure while driving npm install on plugin."
 
         if [ $TYPE = "TEST" ]; then
@@ -159,7 +160,7 @@ setVscodeVersionToTest() {
 # Need to call this method after executing each npm command to store the status.
 updateExitStatus() {
     status=$?
-    if [ !$failure && $status -ne 0 ]; then
+    if [ $failure -eq false && $status -ne 0 ]; then
         failure=true
     fi
 }
