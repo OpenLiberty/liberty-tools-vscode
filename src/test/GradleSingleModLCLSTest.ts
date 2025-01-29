@@ -23,7 +23,8 @@ describe('LCLS tests for Gradle Project', function () {
     });
 
     it('Should copy content of server.xml', async () => {
-        await utils.openServerXMLFile();
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
         actualServerXMLContent = await editor.getText();
@@ -36,7 +37,8 @@ describe('LCLS tests for Gradle Project', function () {
     }).timeout(28000);
 
     it('Should show diagnostic for server.xml invalid value', async () => {
-        await utils.openServerXMLFile();
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
         const hoverExpectedOutcome = `'wrong' is not a valid value of union type 'booleanType'.`;
         const testHverTarget = '<logging appsWriteJson = \"wrong\" />';
@@ -60,12 +62,13 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("Content restored");
-        await utils.closeEditor();
+        await utils.closeEditor(constants.SERVER_XML);
 
     }).timeout(35000);
 
     it('Should apply quick fix for invalid value in server.xml', async () => {
-        await utils.openServerXMLFile();
+        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
         editor = await new EditorView().openEditor('server.xml') as TextEditor;
         const stanzaSnippet = "<logging appsWriteJson = \"wrong\" />";
@@ -108,7 +111,44 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("Content restored");
-        await utils.closeEditor();
+        await utils.closeEditor(constants.SERVER_XML);
+
+    }).timeout(40000);
+
+    it('Should show diagnostic support in boostrap.properties ', async () => {
+        await utils.openConfigFile(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
+        editor = await new EditorView().openEditor(constants.BOOTSTRAP_PROPERTIES) as TextEditor;
+
+        // const configNameSnippet = "com.ibm.ws.logging.con";;
+        // const insertConfig = "=wrong";
+        // const envCfgNameChooserSnippet = "com.ibm.ws.logging.console.format";
+        // const expectedHoverData = "The value `wrong` is not valid for the property `com.ibm.ws.logging.console.format`.";
+
+        // await editor.typeTextAt(1, 1, configNameSnippet);
+        // await utils.delay(5000);
+        // //open the assistant
+        // await utils.callAssitantAction(editor, envCfgNameChooserSnippet);
+        // // close the assistant
+        // await editor.toggleContentAssist(false);
+
+        // await editor.typeTextAt(1, 34, insertConfig);
+        // const focusTargetedElement = editor.findElement(By.xpath("//*[contains(text(), 'wrong')]"));
+        // await utils.delay(3000);
+        // focusTargetedElement.click();
+        // await editor.click();
+
+        // const actions = VSBrowser.instance.driver.actions();
+        // await actions.move({ origin: focusTargetedElement }).perform();
+        // await utils.delay(5000);
+
+        // const hoverContents = editor.findElement(By.className('hover-contents'));
+        // const hoverValue = await hoverContents.getText();
+        // console.log("Expected text is:" + expectedHoverData);
+        // console.log("Hover text is:" + hoverValue);
+
+        // assert(hoverValue.includes(expectedHoverData), 'Did not get expected diagnostic as expected in boostrap.properties.');
+        editor.clearText();
+        await utils.closeEditor(constants.BOOTSTRAP_PROPERTIES);
 
     }).timeout(38000);
 

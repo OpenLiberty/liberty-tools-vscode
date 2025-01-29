@@ -1,3 +1,4 @@
+
 /**
  * Copyright (c) 2020, 2022 IBM Corporation.
  *
@@ -40,4 +41,14 @@ export const ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION = "Liberty: Attach debugger";
 export const  MAVEN_DEVMODE_DEBUG_PORT_PARM = "-DdebugPort";
 /** Gradle: Dev mode debug port argument key. */
 export const GRADLE_DEVMODE_DEBUG_PORT_PARM = "--libertyDebugPort";
-export const CLOSE_EDITOR =">View: Close Editor";
+export const CONFIG = "config";
+export const CONFIG_TWO = "config2";
+export const BOOTSTRAP_PROPERTIES = "bootstrap.properties";
+export const SERVER_XML = "server.xml";
+export const SERVER_ENV = "server.env";
+export const CLOSE_EDITOR = "View: Close Editor";
+export const messages = {
+    [SERVER_XML]: 'Do you want to save the changes you made to server.xml?',
+    [SERVER_ENV]: 'Do you want to save the changes you made to server.env?',
+    [BOOTSTRAP_PROPERTIES]: 'Do you want to save the changes you made to bootstrap.properties?'
+  };
