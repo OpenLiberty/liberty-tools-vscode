@@ -93,4 +93,13 @@ export const FOCUS_LOGLEVEL = "//*[contains(text(), 'CONSOLE_LOGLEVEL')]";
 export const LOGLEVEL_WITH_VALUE = 'WLP_LOGGING_CONSOLE_LOGLEVEL=OFF';
 export const CONSOLE_FORMAT_DIAGNOSTIC = 'The value `sample_value_is_updating_as_nodata` is not valid for the variable `WLP_LOGGING_CONSOLE_FORMAT`.';
 export const FOCUS_NODATA = "//*[contains(text(), 'nodata')]";
-export const VALUE_NODATA = '=sample_value_is_updating_as_nodata'
+export const VALUE_NODATA = '=sample_value_is_updating_as_nodata';
+export const WS_LOGGING_CON = "com.ibm.ws.logging.con";
+export const VALUE_WRONG = "=wrong";
+export const WS_LOGGING_CONSOLE_FORMAT = "com.ibm.ws.logging.console.format";
+export const WS_LOGGING_CONSOLE_DIAGNOSTIC = "The value `wrong` is not valid for the property `com.ibm.ws.logging.console.format`.";
+export const WS_LOGGING_CONSOLE_VALUE = "com.ibm.ws.logging.console.log.level=OFF";
+export const FOCUS_WS_LOGLEVEL = "//*[contains(text(), 'ws.logging.console.log.level')]";
+export const WS_LOGLEVEL_TBASIC = 'com.ibm.ws.logging.trace.format=TBASIC';
+export const WS_LOG_TRACE_FORMAT = 'com.ibm.ws.logging.trace.format';
+export const WS_LOGGING_T = "com.ibm.ws.logging.t";
