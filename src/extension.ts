@@ -184,32 +184,53 @@ export function deactivate(): Promise<void[]> {
  * @param projectProvider Liberty Dev projects
  */
 export function registerFileWatcher(projectProvider: ProjectProvider): void {
+
     const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
+
+    // Async handler for the file system events (create, change, delete)
     const handleUri = async (uri: vscode.Uri) => {
         const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders) {
-            return;
-        }
-        for (let folder of workspaceFolders) {
-            // Get the absolute path of the workspace folder (project root)
-            const projectRoot = folder.uri.fsPath;
 
-            // Get the relative path of the URI from the project root
+        if (!workspaceFolders) {
+            return; // No workspace folders to process
+        }
+
+        // Loop through all workspace folders
+        for (let folder of workspaceFolders) {
+            const projectRoot = folder.uri.fsPath;
             const relativePath = path.relative(projectRoot, uri.fsPath);
 
             // Ensure that the file belongs to this project (starts with the projectRoot path)
             if (!uri.fsPath.startsWith(projectRoot)) {
-                // If the file is outside the current project, skip this folder
-                continue;
+                continue; // Skip if the file is outside the current project folder
             }
 
             // Check if the path includes 'target' or 'build' directly under the project root
-            if (!/(target\/|build\/)/.test(relativePath)) {
-                // Refresh the project for any build file update outside of the 'target' and 'build' folders
-                projectProvider.refresh();
+            if (/(target\/|build\/)/.test(relativePath)) {
+
+                const excludeDir = path.dirname(uri.fsPath);
+                const fileType = path.basename(uri.fsPath);
+                //checks if there are any sibling files in the target/build parent folder.
+                const siblingPomExists = await helperUtil.checkSiblingFilesInTargetOrBuildParent(excludeDir,fileType);
+
+                // If no other pom.xml is found, refresh the project
+                if (siblingPomExists) {
+                    console.log(`Skipping refresh: Sibling ${fileType} found in the parent directory of target. for ` + excludeDir);
+                    return; // Do not refresh
+                } else {
+                    console.log(`No sibling ${fileType} found, refreshing project... for  ` + excludeDir);
+                    // Refresh the project if no sibling file is found
+                    await projectProvider.refresh();
+                }
+            } else {
+                // If the file generated is **outside** the `target` directory, always refresh
+                console.log('Refreshing project...');
+                await projectProvider.refresh();
             }
         }
     };
+
+
     watcher.onDidCreate(handleUri);
     watcher.onDidChange(handleUri);
     watcher.onDidDelete(handleUri);
