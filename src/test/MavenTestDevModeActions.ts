@@ -209,7 +209,7 @@ it('View Unit test report for maven project', async () => {
   await utils.launchDashboardAction(item,constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
   //expect (tabs[1], "Unit test report not found").to.equal(constants.SUREFIRE_REPORT_TITLE);
-  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found").to.equal(true); 
+  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found");
   await utils.closeEditor();// closing the tab after view unit test report is successful
     
 }).timeout(10000);
@@ -219,7 +219,7 @@ it('View Integration test report for maven project', async () => {
   await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
   //expect (tabs[2], "Integration test report not found").to.equal(constants.FAILSAFE_REPORT_TITLE);
-  expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found").to.equal(true);
+  expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found");
   await utils.closeEditor();// closing the tab after view Integration test report is successful
     
 }).timeout(10000);
@@ -284,7 +284,7 @@ it('View Unit test report for maven project with surefire 3.4.0', async () => {
   expect(deleteFailsafeReport && deleteSurefireReport).to.be.true;
   await utils.launchDashboardAction(item,constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
-  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found").to.equal(true); 
+  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found");
   await utils.closeEditor();// closing the tab after view unit test report with surefire 3.4.0 is successful
     
 }).timeout(10000);
@@ -293,7 +293,7 @@ it('View Integration test report for maven project  with surefire 3.4.0', async 
     
   await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
-  expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found").to.equal(true);
+  expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found");
   await utils.closeEditor();// closing the tab after view Integration test report with surefire 3.4.0 is successful
     
 }).timeout(10000);
