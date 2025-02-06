@@ -211,10 +211,10 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
                 const excludeDir = path.dirname(uri.fsPath);
                 const fileType = path.basename(uri.fsPath);
                 //checks if there are any sibling files in the target/build parent folder.
-                const siblingPomExists = await helperUtil.checkSiblingFilesInTargetOrBuildParent(excludeDir,fileType);
+                const siblingFileExists = await helperUtil.checkSiblingFilesInTargetOrBuildParent(excludeDir,fileType);
 
-                // If no other pom.xml is found, refresh the project
-                if (siblingPomExists) {
+                // If no other file is found, refresh the project
+                if (siblingFileExists) {
                     console.log(`Skipping refresh: Sibling ${fileType} found in the parent directory of target. for ` + excludeDir);
                     return; // Do not refresh
                 } else {
