@@ -294,7 +294,7 @@ export async function revertPomFile() {
     }
   });
 }
-
+ 
 // Method to close the open tabs 
 export async function closeEditor() {
   const workbench = new Workbench();
