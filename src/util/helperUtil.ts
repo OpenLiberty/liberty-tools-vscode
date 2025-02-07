@@ -90,9 +90,8 @@ export function clearDataSavedInGlobalState(context: vscode.ExtensionContext) {
 export async function checkSiblingFilesInTargetOrBuildParent(excludeDir: string, fileType: string): Promise<boolean> {
 
 	try {
-		console.log(`excludeDir ::` + excludeDir);
 
-		// Get parentDir based on whether 'target' or 'build' exists in the path
+        // Get parentDir based on whether 'target' or 'build' exists in the path
         const pathParts = excludeDir.split(path.sep);
         const targetIndex = pathParts.lastIndexOf('target');
         const buildIndex = pathParts.lastIndexOf('build');
@@ -100,8 +99,6 @@ export async function checkSiblingFilesInTargetOrBuildParent(excludeDir: string,
         const parentDir = targetIndex !== -1 ? pathParts.slice(0, targetIndex).join(path.sep)
                          : buildIndex !== -1 ? pathParts.slice(0, buildIndex).join(path.sep)
                          : path.dirname(path.dirname(excludeDir));
-
-        console.log(`Using parentDir for checking: ${parentDir}`);
 
         // Read all files in the parent directory
         const files = await fs.promises.readdir(parentDir);
