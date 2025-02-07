@@ -310,5 +310,4 @@ export async function executeMvnClean() {
   const workbench = new Workbench();
   await workbench.executeCommand('workbench.action.terminal.runSelectedText');
 }
-
-
+ 
