@@ -264,7 +264,7 @@ export async function modifyPomFile() {
     }
   });
 }
-
+ 
 // Function to revert changes made on the pom file for including surefire 3.4.0 
 export async function revertPomFile() {
   //path to pom.xml in the test project
