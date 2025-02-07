@@ -249,7 +249,6 @@ export async function modifyPomFile() {
     // Check if the comment is found
     if (commentRegex.test(data)) {
       const updatedData = data.replace(commentRegex, `<!-- replace this content -->\n${newContent}\n<!-- replace this content end -->`);
-
       //Write the modified content back to the POM file
       fs.writeFile('src/test/resources/maven/liberty.maven.test.wrapper.app/pom.xml', updatedData, 'utf8', (err) => {
         if (err) {
