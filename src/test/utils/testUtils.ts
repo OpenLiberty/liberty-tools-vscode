@@ -278,11 +278,9 @@ export async function revertPomFile() {
 
     //Find the inserted plugin block and revert it back to the original comment
     const pluginBlockRegex = /<!--\s*replace this content\s*-->([\s\S]*?)<!--\s*replace this content end\s*-->/;
-
     // Check if the inserted plugin block exists
     if (pluginBlockRegex.test(data)) {
       const revertedData = data.replace(pluginBlockRegex, `<!-- Test report insertion point, do not remove -->`);
-
       //Write the reverted content back to the POM file
       fs.writeFile(pomFilePath, revertedData, 'utf8', (err) => {
         if (err) {
