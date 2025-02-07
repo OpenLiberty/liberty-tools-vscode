@@ -199,7 +199,6 @@ export async function clearMavenPluginCache(): Promise<void> {
   const homeDirectory = process.platform === 'linux' || process.platform === 'darwin' ? process.env.HOME // For Linux/macOS, use HOME
     : process.platform === 'win32' ? process.env.USERPROFILE // For Windows, use USERPROFILE
       : undefined; // In case the platform is unknown
-
   if (!homeDirectory) {
     throw new Error('Home directory not found');
   }
