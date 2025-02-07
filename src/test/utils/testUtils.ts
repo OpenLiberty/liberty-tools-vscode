@@ -203,7 +203,6 @@ export async function clearMavenPluginCache(): Promise<void> {
   if (!homeDirectory) {
     throw new Error('Home directory not found');
   }
-
   const mavenRepoPath = path.join(homeDirectory, '.m2', 'repository', 'org', 'apache', 'maven', 'plugins');
   removeDirectoryByPath(mavenRepoPath);
 }
@@ -238,7 +237,6 @@ export async function modifyPomFile() {
       console.error('Error reading the file:', err);
       return;
     }
-
     //Find the specific comment and replace its content
     const commentRegex = /<!--\s*Test report insertion point, do not remove\s*-->/;
     const newContent = `<plugin>
@@ -268,14 +266,12 @@ export async function modifyPomFile() {
 export async function revertPomFile() {
   //path to pom.xml in the test project
   const pomFilePath = 'src/test/resources/maven/liberty.maven.test.wrapper.app/pom.xml';
-
   //Read the POM file
   fs.readFile(pomFilePath, 'utf8', (err, data) => {
     if (err) {
       console.error('Error reading the file:', err);
       return;
     }
-
     //Find the inserted plugin block and revert it back to the original comment
     const pluginBlockRegex = /<!--\s*replace this content\s*-->([\s\S]*?)<!--\s*replace this content end\s*-->/;
     // Check if the inserted plugin block exists
