@@ -227,7 +227,7 @@ export async function removeDirectoryByPath(projectPath: string): Promise<void> 
     console.error(`Error removing new project: ${error}`);
   }
 }
-
+ 
 // Function to modify content inside pom XML to add surefire version 3.4.0 plugin
 export async function modifyPomFile() {
   //Read the POM file
