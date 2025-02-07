@@ -300,7 +300,7 @@ export async function closeEditor() {
   const workbench = new Workbench();
   await workbench.executeCommand(constants.CLOSE_EDITOR);
 }
-
+ 
 // Method to execute the maven clean before the tests are executed
 export async function executeMvnClean() {
   await VSBrowser.instance.openResources(path.join(getMvnProjectPath(), 'ForTest.md'));
