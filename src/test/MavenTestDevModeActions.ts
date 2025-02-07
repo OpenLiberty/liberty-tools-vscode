@@ -1,8 +1,9 @@
 import { expect } from 'chai';
-import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView } from 'vscode-extension-tester';
+import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView, VSBrowser } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
+import * as fs from 'fs';
 
 describe('Devmode action tests for Maven Project', () => {
     let sidebar: SideBarView;
@@ -66,6 +67,37 @@ it('Start maven project from liberty dashboard', async () => {
  
     
 }).timeout(550000);
+
+it('start maven with docker from liberty dashboard', async () => {      
+
+  if((process.platform === 'darwin' ) || (process.platform === 'win32'))
+  {
+    //skip running for platforms , enable them for linux after resolving docker setup in GHA
+    return true;
+  }
+    
+  
+  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);  
+  await utils.delay(60000);
+  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
+  if(!serverStartStatus)
+    console.log("Server started message not found in the terminal");
+  else
+  {
+    console.log("Server succuessfully started");  
+    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
+    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
+    if(!serverStopStatus){ 
+    console.error("Server stopped message not found in the terminal");
+    }
+    else
+      console.log("Server stopped successfully");
+    expect (serverStopStatus).to.be.true;
+}
+ expect (serverStartStatus).to.be.true; 
+ 
+    
+}).timeout(350000);
 
 it('Run tests for sample maven project', async () => {  
   
@@ -188,6 +220,10 @@ it('View Integration test report for maven project', async () => {
     
 }).timeout(10000);
 
+/**
+ * All future test cases should be written before the test that attaches the debugger, as this will switch the UI to the debugger view.
+ * If, for any reason, a test case needs to be written after the debugger test, ensure that the UI is switched back to the explorer view before executing the subsequent tests.
+ */
 it('attach debugger for start with custom parameter event', async () => {
   console.log("start attach debugger");
   let isServerRunning: Boolean = true;
@@ -238,37 +274,38 @@ it('attach debugger for start with custom parameter event', async () => {
   expect(attachStatus).to.be.true;
 }).timeout(350000);
 
- it('start maven with docker from liberty dashboard', async () => {      
+  /**
+   * The following after hook copies the screenshot from the temporary folder in which it is saved to a known permanent location in the project folder.
+   * The MavenTestDevModeAction is the last test file that will be executed. Hence the after hook placed here
+   * ensures that all the screenshots will be copied to a known permanent location in the project folder.
+   */
+  after(() => {
+    const sourcePath = VSBrowser.instance.getScreenshotsDir();
+    const destinationPath = './screenshots';
 
-  if((process.platform === 'darwin' ) || (process.platform === 'win32') || (process.platform == 'linux'))
-  {
-    //skip running for platforms , enable them for linux after resolving docker setup in GHA
-    return true;
-  }
-    
-  
-  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);  
-  await utils.delay(60000);
-  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
-  if(!serverStartStatus)
-    console.log("Server started message not found in the terminal");
-  else
-  {
-    console.log("Server succuessfully started");  
-    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
-    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
-    if(!serverStopStatus){ 
-    console.error("Server stopped message not found in the terminal");
+    copyFolderContents(sourcePath, destinationPath);
+  });
+
+  function copyFolderContents(sourceFolder: string, destinationFolder: string): void {
+    if (!fs.existsSync(sourceFolder)) {
+      return;
     }
-    else
-      console.log("Server stopped successfully");
-    expect (serverStopStatus).to.be.true;
-}
- expect (serverStartStatus).to.be.true; 
- 
-    
-}).timeout(350000);
 
+    if (!fs.existsSync(destinationFolder)) {
+      fs.mkdirSync(destinationFolder);
+    }
 
+    const files = fs.readdirSync(sourceFolder);
+    for (const file of files) {
+      const sourcePath = path.join(sourceFolder, file);
+      const destinationPath = path.join(destinationFolder, file);
+
+      if (fs.statSync(sourcePath).isDirectory()) {
+          copyFolderContents(sourcePath, destinationPath);
+      } else {
+          fs.copyFileSync(sourcePath, destinationPath);
+      }
+    }
+  }
 });
 
