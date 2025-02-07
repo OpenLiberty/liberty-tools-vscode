@@ -206,7 +206,7 @@ export async function clearMavenPluginCache(): Promise<void> {
   const mavenRepoPath = path.join(homeDirectory, '.m2', 'repository', 'org', 'apache', 'maven', 'plugins');
   removeDirectoryByPath(mavenRepoPath);
 }
-
+ 
 export async function removeDirectoryByPath(projectPath: string): Promise<void> {
   try {
     fs.accessSync(projectPath);
