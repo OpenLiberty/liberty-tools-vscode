@@ -48,4 +48,3 @@ export const FAILSAFE_HTML = "failsafe.html";
 export const SUREFIRE_HTML = "surefire.html";
 export const SUREFIRE_REPORT_HTML ="surefire-report.html";
 export const FAILSAFE_REPORT_HTML ="failsafe-report.html";
- 
