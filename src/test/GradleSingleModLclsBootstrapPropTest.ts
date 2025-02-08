@@ -34,7 +34,7 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
      }).timeout(30000);
      
     it('Should show diagnostic support in boostrap.properties ', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.BOOTSTRAP_PROPERTIES);
+        await utils.openConfigFile(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
         editor = await new EditorView().openEditor(constants.BOOTSTRAP_PROPERTIES) as TextEditor;
 
         await editor.typeTextAt(1, 1, constants.WS_LOGGING_CON);
@@ -68,7 +68,7 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
     }).timeout(85000);
 
     it('Should show hover support for bootstrap.properties Liberty Server properties setting', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.BOOTSTRAP_PROPERTIES);
+        await utils.openConfigFile(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
         editor = await new EditorView().openEditor(constants.BOOTSTRAP_PROPERTIES) as TextEditor;
 
         await editor.clearText();
@@ -96,7 +96,7 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
     }).timeout(85000);
 
     it('Should show type ahead support in bootstrap.properties for a Liberty Server Configuration booststrap.properties entry', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.BOOTSTRAP_PROPERTIES);
+        await utils.openConfigFile(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
         editor = await new EditorView().openEditor(constants.BOOTSTRAP_PROPERTIES) as TextEditor;
 
         await editor.typeTextAt(1, 1, constants.WS_LOGGING_T);
