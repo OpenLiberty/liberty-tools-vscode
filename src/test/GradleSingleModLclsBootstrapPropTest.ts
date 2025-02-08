@@ -38,7 +38,7 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
         editor = await new EditorView().openEditor(constants.BOOTSTRAP_PROPERTIES) as TextEditor;
 
         await editor.typeTextAt(1, 1, constants.WS_LOGGING_CON);
-        await utils.delay(5000);
+        await utils.delay(8000);
         //open the assistant
         await utils.callAssitantAction(editor, constants.WS_LOGGING_CONSOLE_FORMAT);
         // close the assistant
@@ -46,7 +46,7 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
 
         await editor.typeTextAt(1, 34, constants.VALUE_WRONG);
         const focusTargetedElement = editor.findElement(By.xpath(constants.FOCUS_WRONG));
-        await utils.delay(3000);
+        await utils.delay(6000);
         focusTargetedElement.click();
         await editor.click();
 
@@ -73,10 +73,10 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
 
         await editor.clearText();
         await editor.typeTextAt(1, 1, constants.WS_LOGGING_CONSOLE_VALUE);
-        await utils.delay(5000);
+        await utils.delay(8000);
 
         const focusTargetLement = editor.findElement(By.xpath(constants.FOCUS_WS_LOGLEVEL));
-        await utils.delay(3000);
+        await utils.delay(6000);
         focusTargetLement.click();
         await editor.click();
 
