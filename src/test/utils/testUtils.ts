@@ -210,20 +210,23 @@ export async function clearMavenPluginCache(): Promise<void> {
  
 export async function removeDirectoryByPath(projectPath: string): Promise<void> {
   try {
-    fs.accessSync(projectPath);
-    const projectContent = fs.readdirSync(projectPath);
+    await fs.promises.access(projectPath);
+    const projectContent = await fs.promises.readdir(projectPath);
+
     await Promise.all(
       projectContent.map(async (projectFiles) => {
         const projectContentPath = path.join(projectPath, projectFiles);
-        const stats = fs.lstatSync(projectContentPath);
+        const stats = await fs.promises.lstat(projectContentPath);
+
         if (stats.isDirectory()) {
           await removeDirectoryByPath(projectContentPath);
         } else {
-          fs.unlinkSync(projectContentPath);
+          await fs.promises.unlink(projectContentPath);
         }
       })
     );
-    fs.rmdirSync(projectPath);
+
+    await fs.promises.rmdir(projectPath);
   } catch (error) {
     console.error(`Error removing new project: ${error}`);
   }
