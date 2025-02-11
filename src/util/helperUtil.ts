@@ -13,6 +13,7 @@ import * as fs from "fs";
 import * as vscode from "vscode";
 import { LibertyProject } from "./../liberty/libertyProject";
 import { COMMAND_AND_PROJECT_TYPE_MAP, LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY } from "../definitions/constants";
+import path = require('path');
 
 
 export async function getAllPaths(projectRootPath: string, pattern: string): Promise<string[]> {
@@ -79,4 +80,54 @@ export function clearDataSavedInGlobalState(context: vscode.ExtensionContext) {
 	context.globalState.update('workspaceSaveInProgress', false);
 	context.globalState.update('selectedProject', undefined);
 }
+
+/**
+ * Checks if sibling files exist in the parent directory of the 'target' or 'build' folder, excluding the current directory.
+ * @param excludeDir - The directory where the file is generated, which will be excluded from the search.
+ * @param fileType - The type of file being watched.
+ * @returns - true if a sibling file is found, otherwise false.
+ */
+export async function checkSiblingFilesInTargetOrBuildParent(excludeDir: string, fileType: string): Promise<boolean> {
+
+	try {
+
+        // Get parentDir based on whether 'target' or 'build' exists in the path
+        const pathParts = excludeDir.split(path.sep);
+        const targetIndex = pathParts.lastIndexOf('target');
+        const buildIndex = pathParts.lastIndexOf('build');
+        
+        const parentDir = targetIndex !== -1 ? pathParts.slice(0, targetIndex).join(path.sep)
+                         : buildIndex !== -1 ? pathParts.slice(0, buildIndex).join(path.sep)
+                         : path.dirname(path.dirname(excludeDir));
+
+        // Read all entries (files and directories) in the parent directory with type information
+        const entries = await fs.promises.readdir(parentDir, { withFileTypes: true });
+
+        // Check if 'fileType' is directly in the parent directory
+        if (entries.some(entry => entry.isFile() && entry.name === fileType)) {
+            console.log(`Found ${fileType} directly in the parent directory: ${parentDir}`);
+            return true;
+        }
+
+        // Loop through subdirectories and check for the file
+        for (const entry of entries) {
+            const filePath = path.join(parentDir, entry.name);
+            if (entry.isDirectory()) {
+                // Read entries in the subdirectory
+                const subdirEntries = await fs.promises.readdir(filePath, { withFileTypes: true });
+
+                // Check if 'fileType' exists in the subdirectory
+                if (subdirEntries.some(subentry => subentry.isFile() && subentry.name === fileType)) {
+                    console.log(`Found sibling ${fileType} in directory: ${filePath}`);
+                    return true;
+                }
+            }
+        }
+    } catch (err) {
+        console.error('Error reading directory:', err);
+    }
+    
+    return false;
+}
+
 
