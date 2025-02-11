@@ -100,21 +100,24 @@ export async function checkSiblingFilesInTargetOrBuildParent(excludeDir: string,
                          : buildIndex !== -1 ? pathParts.slice(0, buildIndex).join(path.sep)
                          : path.dirname(path.dirname(excludeDir));
 
-        // Read all files in the parent directory
-        const files = await fs.promises.readdir(parentDir);
+        // Read all entries (files and directories) in the parent directory with type information
+        const entries = await fs.promises.readdir(parentDir, { withFileTypes: true });
 
-        // Check if 'fileType' is in the parent directory or its subdirectories
-        if (files.includes(fileType)) {
+        // Check if 'fileType' is directly in the parent directory
+        if (entries.some(entry => entry.isFile() && entry.name === fileType)) {
             console.log(`Found ${fileType} directly in the parent directory: ${parentDir}`);
-            return true; 
+            return true;
         }
 
         // Loop through subdirectories and check for the file
-        for (const file of files) {
-            const filePath = path.join(parentDir, file);
-            if ((await fs.promises.stat(filePath)).isDirectory()) {
-                const subdirFiles = await fs.promises.readdir(filePath);
-                if (subdirFiles.includes(fileType)) {
+        for (const entry of entries) {
+            const filePath = path.join(parentDir, entry.name);
+            if (entry.isDirectory()) {
+                // Read entries in the subdirectory
+                const subdirEntries = await fs.promises.readdir(filePath, { withFileTypes: true });
+
+                // Check if 'fileType' exists in the subdirectory
+                if (subdirEntries.some(subentry => subentry.isFile() && subentry.name === fileType)) {
                     console.log(`Found sibling ${fileType} in directory: ${filePath}`);
                     return true;
                 }
