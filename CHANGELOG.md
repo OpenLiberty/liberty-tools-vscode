@@ -2,6 +2,30 @@
 
 All notable changes to the Liberty Tools extension will be documented below.
 
+## 24.0.12
+
+Version 24.0.12 of Liberty Tools for Visual Studio Code is a fix release that contains minor enhancements and fixes. Version 24.0.12 requires Visual Studio Code version 1.78+ and requires Java 17 or later.
+
+Notable changes:
+
+- Updated [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta) version to 0.2.2, which resolves the following bugs:
+  - Quick fix NullPointerException failures - https://github.com/OpenLiberty/liberty-tools-vscode/issues/336
+  - UnsupportedOperationException in the output tabs for language servers - https://github.com/OpenLiberty/liberty-tools-vscode/issues/207
+  - Incorrect behaviour for @Dependent quick fix - https://github.com/OpenLiberty/liberty-tools-vscode/issues/362
+  - For more information regarding changes for version 0.2.2, refer to the release notes: https://github.com/eclipse/lsp4jakarta/releases/tag/0.2.2.
+- Updated [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) version to 2.2, which adds support for versionless features in server configuration and includes several bug fixes. For more information regarding changes for version 2.2, refer to the release notes:
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/liberty-langserver-2.2
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/lemminx-liberty-2.2
+- The Liberty dashboard now refreshes when a project is added to a workspace.
+  - https://github.com/OpenLiberty/liberty-tools-vscode/issues/371
+- Support has been added to the “Start”, “Start…”, and “Start in container” actions for project paths that contain spaces.
+  - https://github.com/OpenLiberty/liberty-tools-vscode/issues/337
+- Support has been added for various terminal shell types for the “Start”, “Start…”, and “Start in container” actions. For more information regarding support for terminal shell types, refer to the “Terminal shell support” section of the user guide: https://github.com/OpenLiberty/liberty-tools-vscode/blob/main/docs/user-guide.md#terminal-shell-support.
+- Support has been added for the new test report location following the update of the Maven Surefire Report Plugin.
+  - https://github.com/OpenLiberty/liberty-tools-vscode/issues/340
+
+See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/24.0.3...24.0.12) for the full set of changes since the previous release.
+
 ## 24.0.3
 
 Version 24.0.3 of Liberty Tools for Visual Studio Code is a fix release that contains minor enhancements and fixes. Version 24.0.3 requires Visual Studio Code version 1.78+ and requires Java 17 or later.

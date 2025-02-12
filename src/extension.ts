@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, 2022 IBM Corporation.
+ * Copyright (c) 2020, 2024 IBM Corporation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -19,11 +19,12 @@ import { JAVA_EXTENSION_ID, waitForStandardMode } from "./util/javaServerMode";
 import { localize } from "./util/i18nUtil";
 import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "./util/requirements";
 import { prepareExecutable } from "./util/javaServerStarter";
+import * as helperUtil from "./util/helperUtil";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
-export const LIBERTY_LS_JAR = "liberty-langserver-2.1.1-jar-with-dependencies.jar";
-export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.2.1-jar-with-dependencies.jar";
+export const LIBERTY_LS_JAR = "liberty-langserver-2.2-jar-with-dependencies.jar";
+export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.2.2-jar-with-dependencies.jar";
 
 let libertyClient: LanguageClient;
 let jakartaClient: LanguageClient;
@@ -62,7 +63,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             item.text = localize("liberty.ls.thumbs.up");
             item.tooltip = localize("liberty.ls.started");
             toggleItem(window.activeTextEditor, item);
-    
+            handleWorkspaceSaveInProgress(context);
             registerCommands(context);
         }, (error: any) => {
             console.log("Liberty client was not ready. Did not initialize");
@@ -104,11 +105,7 @@ function bindRequest(request: string) {
 }
 
 function registerCommands(context: ExtensionContext) {
-    let projectProvider = ProjectProvider.getInstance();
-	if ( !projectProvider ) {
-		projectProvider = new ProjectProvider(context);
-		ProjectProvider.setInstance(projectProvider);
-	}
+    let projectProvider = getProjectProvider(context);
 
     if (vscode.workspace.workspaceFolders !== undefined) {
         registerFileWatcher(projectProvider);
@@ -165,6 +162,10 @@ function registerCommands(context: ExtensionContext) {
             devCommands.deleteTerminal(closedTerminal);
         })
     );
+     // Listens for any new folders are added to the workspace
+     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+        projectProvider.refresh();
+    }));
 }
 
 // this method is called when your extension is deactivated
@@ -256,4 +257,22 @@ async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
         throw new Error("VSCode java api not found");
     }
     return Promise.resolve(api);
+}
+
+function handleWorkspaceSaveInProgress(context: vscode.ExtensionContext) {
+    let projectProvider = getProjectProvider(context);
+    if (projectProvider.getContext().globalState.get('workspaceSaveInProgress') &&
+        projectProvider.getContext().globalState.get('selectedProject') !== undefined) {
+        devCommands.addProjectsToTheDashBoard(projectProvider, projectProvider.getContext().globalState.get('selectedProject') as string);
+        helperUtil.clearDataSavedInGlobalState(projectProvider.getContext());
+    }
+}
+
+function getProjectProvider(context: vscode.ExtensionContext): ProjectProvider {
+    let projectProvider = ProjectProvider.getInstance();
+    if (!projectProvider) {
+        projectProvider = new ProjectProvider(context);
+        ProjectProvider.setInstance(projectProvider);
+    }
+    return projectProvider;
 }

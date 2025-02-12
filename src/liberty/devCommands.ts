@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, 2022 IBM Corporation.
+ * Copyright (c) 2020, 2024 IBM Corporation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -18,9 +18,9 @@ import { LibertyProject, ProjectProvider } from "./libertyProject";
 import { getReport, filterProjects } from "../util/helperUtil";
 import { COMMAND_TITLES, LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_SERVER_ENV_PORT_REGEX } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
-import { pathExists } from "fs-extra";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
+import { getCommandForMaven, getCommandForGradle, defaultWindowsShell } from "../util/commandUtils";
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 
@@ -99,22 +99,17 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         console.log(localize("starting.liberty.dev.on", libProject.getLabel()));
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
-            const path = Path.dirname(libProject.getPath());
-            terminal = libProject.createTerminal(path);
-            if (terminal !== undefined) {
-                terminals[Number(terminal.processId)] = libProject;
-            }
+            //function call to create new terminal for LTV
+            terminal = createTerminalforLiberty(libProject, terminal);
         }
         if (terminal !== undefined) {
             terminal.show();
             libProject.setTerminal(terminal);
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                const mvnCmdStart = await mvnCmd(libProject.getPath());
-                const cmd = `${mvnCmdStart} io.openliberty.tools:liberty-maven-plugin:dev -f "${libProject.getPath()}"`;
+                const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType());
                 terminal.sendText(cmd); // start dev mode on current project
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                const gradleCmdStart = await gradleCmd(libProject.getPath());
-                const cmd = `${gradleCmdStart} libertyDev -b="${libProject.getPath()}"`;
+                const cmd = await getCommandForGradle(libProject.getPath(), "libertyDev", libProject.getTerminalType());
                 terminal.sendText(cmd); // start dev mode on current project
             }
         }
@@ -173,10 +168,18 @@ function showListOfPathsToAdd(uris: string[]) {
         if (!selection) {
             return;
         }
-        const result = await projectProvider.addUserSelectedPath(selection, projectProvider.getProjects());
-        const message = localize(`add.project.manually.message.${result}`, selection);
-        (result !== 0) ? console.error(message) : console.info(message); projectProvider.fireChangeEvent();
-        vscode.window.showInformationMessage(message);
+        if (projectProvider.isMultiProjectUntitledWorkspace()) {
+            /**
+             * Saving the selected project to globalstate for adding it to the dashboard after 
+             * reinitialization of the extension when workspace is saved
+             */
+            await projectProvider.getContext().globalState.update('selectedProject', selection);
+            /*
+            if the workspace is untitled suggest the user to save the workspace first 
+            */
+            await projectProvider.checkUntitledWorkspaceAndSaveIt();
+        }
+        await addProjectsToTheDashBoard(projectProvider, selection);
     });
 }
 
@@ -358,11 +361,8 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
     if (libProject !== undefined) {
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
-            const path = Path.dirname(libProject.getPath());
-            terminal = libProject.createTerminal(path);
-            if (terminal !== undefined) {
-                terminals[Number(terminal.processId)] = libProject;
-            }
+            //function call to create new terminal for LTV
+            terminal = createTerminalforLiberty(libProject, terminal);
         }
         if (terminal !== undefined) {
             terminal.show();
@@ -408,12 +408,10 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
                 }
 
                 if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                    const mvnCmdStart = await mvnCmd(libProject.getPath());
-                    const cmd = `${mvnCmdStart} io.openliberty.tools:liberty-maven-plugin:dev ${customCommand} -f "${libProject.getPath()}"`;
+                    const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType(), customCommand);
                     terminal.sendText(cmd);
                 } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                    const gradleCmdStart = await gradleCmd(libProject.getPath());
-                    const cmd = `${gradleCmdStart} libertyDev ${customCommand} -b="${libProject.getPath()}"`;
+                    const cmd = await getCommandForGradle(libProject.getPath(), "libertyDev", libProject.getTerminalType(), customCommand);
                     terminal.sendText(cmd);
                 }
             }
@@ -433,22 +431,17 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
     if (libProject !== undefined) {
         let terminal = libProject.getTerminal();
         if (terminal === undefined) {
-            const path = Path.dirname(libProject.getPath());
-            terminal = libProject.createTerminal(path);
-            if (terminal !== undefined) {
-                terminals[Number(terminal.processId)] = libProject;
-            }
+            //function call to create new terminal for LTV
+            terminal = createTerminalforLiberty(libProject, terminal);
         }
         if (terminal !== undefined) {
             terminal.show();
             libProject.setTerminal(terminal);
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                const mvnCmdStart = await mvnCmd(libProject.getPath());
-                const cmd = `${mvnCmdStart} io.openliberty.tools:liberty-maven-plugin:devc -f "${libProject.getPath()}"`;
+                const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:devc", libProject.getTerminalType());
                 terminal.sendText(cmd);
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                const gradleCmdStart = await gradleCmd(libProject.getPath());
-                const cmd = `${gradleCmdStart} libertyDevc -b="${libProject.getPath()}"`;
+                const cmd = await getCommandForGradle(libProject.getPath(), "libertyDevc", libProject.getTerminalType());
                 terminal.sendText(cmd);
             }
         }
@@ -489,29 +482,27 @@ export async function openReport(reportType: string, libProject?: LibertyProject
         const path = Path.dirname(libProject.getPath());
         if (path !== undefined) {
             let report: any;
-            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                report = Path.join(path, "target", "site", reportType + "-report.html");
-            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                report = await getGradleTestReport(libProject.path, path);
-            }
             let reportTypeLabel = reportType;
             if (reportType === "gradle") {
                 reportTypeLabel = "test";
             }
-            fs.exists(report, (exists) => {
-                if (exists) {
-                    const panel = vscode.window.createWebviewPanel(
-                        reportType, // Identifies the type of the webview. Used internally
-                        libProject.getLabel() + " " + reportTypeLabel + " report", // Title of the panel displayed to the user
-                        vscode.ViewColumn.Two, // Open the panel in the second window
-                        {}, // Webview options
-                    );
-                    panel.webview.html = getReport(report); // display HTML content
-                } else {
-                    const message = localize("test.report.does.not.exist.run.test.first", report);
-                    vscode.window.showInformationMessage(message);
+            let showErrorMessage: boolean = true;
+            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+                report = getReportFile(path, "reports", reportType + ".html");
+                // show the error message only if both "reports" and "site" dirs do not contain the test reports
+                // set to false since this will be the first location checked
+                showErrorMessage = false; 
+                if (!await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage)) {
+                    report = getReportFile(path, "site", reportType + "-report.html");
+                    // show the error message only if both "reports" and "site" dirs do not contain the test reports
+                    // set to true since this will be the second location checked
+                    showErrorMessage = true; 
+                    await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage);
                 }
-            });
+            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+                report = await getGradleTestReport(libProject.path, path);
+                await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage);
+            }
         }
     } else if (ProjectProvider.getInstance() && reportType) {
         showProjects(reportType, openReport, reportType);
@@ -531,83 +522,65 @@ export function deleteTerminal(terminal: vscode.Terminal): void {
         console.error(localize("unable.to.delete.terminal", terminal.name));
     }
 }
-
-
-// return Maven executable path, Maven wrapper, or mvn
-export async function mvnCmd(pomPath: string): Promise<string> {
-
-    // attempt to use the Maven executable path, if empty try using mvn or mvnw according to the preferMavenWrapper setting
-    const mavenExecutablePath: string | undefined = vscode.workspace.getConfiguration("maven").get<string>("executable.path");
-    if (mavenExecutablePath) {
-        return mavenExecutablePath;
-    }
-    const preferMavenWrapper: boolean | undefined = vscode.workspace.getConfiguration("maven").get<boolean>("executable.preferMavenWrapper");
-    if (preferMavenWrapper) {
-        const localMvnwPath: string | undefined = await getLocalMavenWrapper(Path.dirname(pomPath));
-        if (localMvnwPath) {
-            return localMvnwPath;
-        }
-    }
-    return "mvn";
-}
-
-export async function gradleCmd(buildGradle: string): Promise<string> {
-    const preferGradleWrapper: boolean | undefined = vscode.workspace.getConfiguration("java").get<boolean>("import.gradle.wrapper.enabled");
-    if (preferGradleWrapper) {
-        const localGradlewPath: string | undefined = await getLocalGradleWrapper(Path.dirname(buildGradle));
-        if (localGradlewPath) {
-            return localGradlewPath;
-        }
-    }
-    return "gradle";
-}
-
 /**
- * Search for potential Maven wrapper, return undefined if does not exist
- *
- * Reused from vscode-maven
- * https://github.com/microsoft/vscode-maven/blob/2ab8f392f418c8e0fe2903387f2b0013a1c50e78/src/utils/mavenUtils.ts
- * @param projectFolder
+ * function to create new terminal of default type 
  */
-async function getLocalMavenWrapper(projectFolder: string): Promise<string | undefined> {
-    const mvnw: string = isWin() ? "mvnw.cmd" : "mvnw";
-
-    // walk up parent folders
-    let current: string = projectFolder;
-    while (Path.basename(current)) {
-        const potentialMvnwPath: string = Path.join(current, mvnw);
-        if (await pathExists(potentialMvnwPath)) {
-            return potentialMvnwPath;
-        }
-        current = Path.dirname(current);
+function createTerminalforLiberty(libProject: LibertyProject, terminal: vscode.Terminal | undefined) {
+    const path = Path.dirname(libProject.getPath());
+    //fetch the default terminal details and store it in LibertyProject object 
+    const terminalType = defaultWindowsShell();
+    libProject.setTerminalType(terminalType);
+    terminal = libProject.createTerminal(path);
+    if (terminal !== undefined) {
+        terminals[Number(terminal.processId)] = libProject;
     }
-    return undefined;
+    return terminal;
 }
 
-/**
- * Search for potential Gradle wrapper, return undefined if it does not exist
- * Modified from vscode-maven, see getLocalMavenWrapper method above
- * @param projectFolder
- */
-async function getLocalGradleWrapper(projectFolder: string): Promise<string | undefined> {
-    const gradlew: string = isWin() ? "gradlew.bat" : "gradlew";
-
-    // walk up parent folders
-    let current: string = projectFolder;
-    while (Path.basename(current)) {
-        const potentialGradlewPath: string = Path.join(current, gradlew);
-        if (await pathExists(potentialGradlewPath)) {
-            return potentialGradlewPath;
-        }
-        current = Path.dirname(current);
-    }
-    return undefined;
+/*
+will return the path of the report, since there are diffrent folders to look into and the file names can be different 
+we need to get the paths to look for dynamically
+*/
+function getReportFile(path: any, dir: string, filename: string): any {
+    return Path.join(path, "target", dir, filename);
 }
 
-/**
- * Reused from vscode-maven
- * https://github.com/microsoft/vscode-maven/blob/2ab8f392f418c8e0fe2903387f2b0013a1c50e78/src/utils/mavenUtils.ts
- */
-function isWin(): boolean {
-    return process.platform.startsWith("win");
+/*
+Function will check if the report is available within the given path and returns a boolean based on it and also 
+the report will be displayed if it is available
+*/
+function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel: string, libProject: LibertyProject, showErrorMessage: boolean): Promise<boolean> {
+    return new Promise((resolve) => {
+        fs.exists(report, (exists) => {
+            if (exists) {
+                const panel = vscode.window.createWebviewPanel(
+                    reportType, // Identifies the type of the webview. Used internally
+                    libProject.getLabel() + " " + reportTypeLabel + " report", // Title of the panel displayed to the user
+                    vscode.ViewColumn.Two, // Open the panel in the second window
+                    {}, // Webview options
+                );
+                panel.webview.html = getReport(report); // display HTML content
+                /*
+                For Maven projects we need to check for the test report in the 'reports' and 'site' dirs. 
+                We only need to show the message if it is not available in both locations. 
+                The `showErrorMessage` flag will only be set to true when checking the second location.
+                */
+            } else if (showErrorMessage) {
+                const message = localize("test.report.does.not.exist.run.test.first", report);
+                vscode.window.showInformationMessage(message);
+            }
+            resolve(exists);
+        });
+    });
+}
+
+/*
+Method adds a project which is selected by the user from the list to the liberty dashboard 
+*/
+export async function addProjectsToTheDashBoard(projectProvider: ProjectProvider, selection: string): Promise<void> {
+    const result = await projectProvider.addUserSelectedPath(selection, projectProvider.getProjects());
+    const message = localize(`add.project.manually.message.${result}`, selection);
+    (result !== 0) ? console.error(message) : console.info(message); projectProvider.fireChangeEvent();
+    vscode.window.showInformationMessage(message);
+    return Promise.resolve();
 }
