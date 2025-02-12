@@ -232,65 +232,30 @@ export async function removeDirectoryByPath(projectPath: string): Promise<void> 
   }
 }
  
-// Function to modify content inside pom XML to add surefire version 3.4.0 plugin
-export async function modifyPomFile() {
-  //Read the POM file
-  fs.readFile('src/test/resources/maven/liberty.maven.test.wrapper.app/pom.xml', 'utf8', (err, data) => {
-    if (err) {
-      console.log('Error reading the file:', err);
-      console.error('Error reading the file:', err);
-      return;
-    }
-    //Find the specific comment and replace its content
-    const commentRegex = /<!--\s*Test report insertion point, do not remove\s*-->/;
-    const newContent = `<plugin>
-                                <groupId>org.apache.maven.plugins</groupId>
-                                <artifactId>maven-surefire-report-plugin</artifactId>
-                                <version>3.4.0</version>
-                          </plugin>`;
-    // Check if the comment is found
-    if (commentRegex.test(data)) {
-      const updatedData = data.replace(commentRegex, `<!-- replace this content -->\n${newContent}\n<!-- replace this content end -->`);
-      //Write the modified content back to the POM file
-      fs.writeFile('src/test/resources/maven/liberty.maven.test.wrapper.app/pom.xml', updatedData, 'utf8', (err) => {
-        if (err) {
-          console.log('Error writing to the file:', err);
-          console.error('Error writing to the file:', err);
-        } else {
-          console.log('POM file updated successfully');
-        }
-      });
-    } else {
-      console.log('Comment with the specified marker not found in the POM file');
-    }
-  });
-}
- 
-// Function to revert changes made on the pom file for including surefire 3.4.0 
-export async function revertPomFile() {
-  //path to pom.xml in the test project
-  const pomFilePath = 'src/test/resources/maven/liberty.maven.test.wrapper.app/pom.xml';
-  //Read the POM file
-  fs.readFile(pomFilePath, 'utf8', (err, data) => {
+// General function to modify any file content using RegExp for searching
+export async function modifyFileContent(filePath: string, searchPattern: RegExp, replaceString: string) {
+  // Read the file
+  fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
       console.error('Error reading the file:', err);
       return;
     }
-    //Find the inserted plugin block and revert it back to the original comment
-    const pluginBlockRegex = /<!--\s*replace this content\s*-->([\s\S]*?)<!--\s*replace this content end\s*-->/;
-    // Check if the inserted plugin block exists
-    if (pluginBlockRegex.test(data)) {
-      const revertedData = data.replace(pluginBlockRegex, `<!-- Test report insertion point, do not remove -->`);
-      //Write the reverted content back to the POM file
-      fs.writeFile(pomFilePath, revertedData, 'utf8', (err) => {
+
+    // Check if the searchPattern matches any content in the file
+    if (searchPattern.test(data)) {
+      // Replace the matched content with the replaceString
+      const updatedData = data.replace(searchPattern, replaceString);
+
+      // Write the modified content back to the file
+      fs.writeFile(filePath, updatedData, 'utf8', (err) => {
         if (err) {
           console.error('Error writing to the file:', err);
         } else {
-          console.log('POM file reverted successfully');
+          console.log('File updated successfully');
         }
       });
     } else {
-      console.log('Plugin block not found, nothing to revert.');
+      console.log(`The pattern "${searchPattern}" was not found in the file.`);
     }
   });
 }

@@ -48,3 +48,14 @@ export const FAILSAFE_HTML = "failsafe.html";
 export const SUREFIRE_HTML = "surefire.html";
 export const SUREFIRE_REPORT_HTML ="surefire-report.html";
 export const FAILSAFE_REPORT_HTML ="failsafe-report.html";
+export const COMMENT_REGEX = /<!--\s*Test report insertion point, do not remove\s*-->/;
+export const PLUGIN_BLOCK_REGEX = /<!--\s*replace this content\s*-->([\s\S]*?)<!--\s*replace this content end\s*-->/;
+export const SUREFIRE_3_4_0_PLUGIN_CONTENT = `<!-- replace this content -->
+                                                 <plugin>
+                                                    <groupId>org.apache.maven.plugins</groupId>
+                                                    <artifactId>maven-surefire-report-plugin</artifactId>
+                                                    <version>3.4.0</version>
+                                                 </plugin>
+                                              <!-- replace this content end -->`;
+export const POM_COMMENT = '<!-- Test report insertion point, do not remove -->';
+export const MAVEN_TEST_WRAPPER_APP_POM_PATH = 'src/test/resources/maven/liberty.maven.test.wrapper.app/pom.xml'; 
