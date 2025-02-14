@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, ViewSection, TreeItem, SideBarView } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
@@ -31,8 +31,12 @@ export function getMvnProjectPath(): string {
     return gradleProjectPath; 
   }
 
- 
- 
+  export function getMvnServerXmlProjectPath(): string {
+    const mvnProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "maven-serverxml", "liberty.maven.serverxml.test.wrapper.app");
+    console.log("Path is : " + mvnProjectPath);
+    return mvnProjectPath;
+  }
+  
   export async function launchDashboardAction(item: DefaultTreeItem, action: string, actionMac: string) {
 
     console.log("Launching action:" + action);  
@@ -202,4 +206,55 @@ export async function clearCommandPalette() {
   await dialog.pushButton('Clear');
 }
 
+export async function isViewSectionEmpty(section: ViewSection): Promise<boolean> {
+  try {
+    const items = await section.getVisibleItems();
+    return items.length === 0;
+  } catch (error) {
+    // if there is no visible elements, getVisibleItems() method will throw timeout error.
+    const err = error as Error;
+    if (err.name === "TimeoutError") {
+      return true;
+    }
+    return false;
+  }
+}
+
+export async function findFileRecursively(name: string, parentItem?: TreeItem): Promise<TreeItem | undefined> {
+  let explorerSection;
+  if (!parentItem) {
+    explorerSection = await new SideBarView().getContent().getSection('liberty.maven.test.wrapper.app');
+  }
+
+  const items = parentItem
+    ? await parentItem.getChildren()
+    : await explorerSection?.getVisibleItems();
+
+  if (!items) return undefined;
+
+  for (let item of items) {
+    let treeItem = item as TreeItem;
+    if (await treeItem.getLabel() === name) {
+      return treeItem; // File found
+    }
+
+    if (await treeItem.hasChildren()) {
+      // Search inside this directory
+      const foundItem = await findFileRecursively(name, treeItem);
+      if (foundItem) {
+        return foundItem; // File found in a sub-directory
+      }
+    }
+  }
+
+  return undefined; // File not found
+}
+
+export async function copyFile(source: string, target: string): Promise<void> {
+  if (fs.existsSync(source)) {
+    await delay(5000);
+    fs.copyFileSync(source, target);
+  }
+
+}
   
