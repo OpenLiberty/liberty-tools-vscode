@@ -23,17 +23,16 @@ describe('LCLS tests for Gradle Project', function () {
     });
 
     it('Should copy content of server.xml', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_XML)
         editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
         actualServerXMLContent = await editor.getText();
         assert(actualServerXMLContent.length !== 0, 'Content of server.xml is not in copied.');
-        console.log('Sever.xml content is:', actualServerXMLContent);
 
     }).timeout(30000);
 
     it('Should show diagnostic for server.xml invalid value', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML);
+        await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_XML);
 
         await editor.typeTextAt(17, 5, constants.TARGETED_VALUE_LOGGING);
         const focusTargetedElement = editor.findElement(By.xpath(constants.FOCUS_WRONG));
@@ -54,12 +53,12 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("server.xml content is restored");
-        await utils.closeEditor(constants.SERVER_XML);
+        await utils.closeFileTab(constants.SERVER_XML);
 
     }).timeout(38000);
 
     it('Should apply quick fix for invalid value in server.xml', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML)
+        await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_XML)
         editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
         await editor.typeTextAt(17, 5, constants.TARGETED_VALUE_LOGGING);
@@ -100,12 +99,12 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("server.xml content is restored");
-        await utils.closeEditor(constants.SERVER_XML);
+        await utils.closeFileTab(constants.SERVER_XML);
 
     }).timeout(45000);
 
     it('Should show hover support for server.xml Liberty Server Attribute', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML);
+        await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_XML);
 
         const focusTargetedElement = editor.findElement(By.xpath(constants.FOCUS_HTTPENDPOINT));
         await utils.delay(3000);
@@ -125,12 +124,12 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("server.xml content is restored");
-        await utils.closeEditor(constants.SERVER_XML);
+        await utils.closeFileTab(constants.SERVER_XML);
 
     }).timeout(45000);
 
     it('Should show hover support for server.xml Liberty Server Feature', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML);
+        await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_XML);
 
         await editor.typeTextAt(15, 35, constants.NEWLINE);
         await utils.delay(1000);
@@ -153,12 +152,12 @@ describe('LCLS tests for Gradle Project', function () {
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("server.xml content is restored");
-        await utils.closeEditor(constants.SERVER_XML);
+        await utils.closeFileTab(constants.SERVER_XML);
 
     }).timeout(45000);
 
-    it('Should show type ahead support in server.xml Liberty Server Feature', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML);
+    it('Should show completion support in server.xml Liberty Server Feature', async () => {
+        await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_XML);
         editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
 
         const featureTag = "<f";
@@ -177,18 +176,18 @@ describe('LCLS tests for Gradle Project', function () {
 
         const updatedServerxmlContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after type ahead support : ", updatedServerxmlContent);
-        assert(updatedServerxmlContent.includes(constants.FEATURE_EL), 'Type ahead support is not worked as expected in server.xml for Liberty Server Feature - el-3.0.');
+        console.log("Content after completion support : ", updatedServerxmlContent);
+        assert(updatedServerxmlContent.includes(constants.FEATURE_EL), 'Completion support is not worked as expected in server.xml for Liberty Server Feature - el-3.0.');
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("server.xml content is restored");
-        await utils.closeEditor(constants.SERVER_XML);
+        await utils.closeFileTab(constants.SERVER_XML);
 
     }).timeout(45000);
 
-    it('Should show type ahead support in server.xml Liberty Server Configuration Stanza', async () => {
-        await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_XML);
+    it('Should show completion support in server.xml Liberty Server Configuration Stanza', async () => {
+        await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_XML);
 
         editor = await new EditorView().openEditor(constants.SERVER_XML) as TextEditor;
         const stanzaSnippet = "log";
@@ -204,12 +203,12 @@ describe('LCLS tests for Gradle Project', function () {
         const updatedServerxmlContent = await editor.getText();
         await utils.delay(3000);
         console.log("Updated content in Sever.xml : ", updatedServerxmlContent);
-        assert(updatedServerxmlContent.includes(constants.LOGGING_TAG), 'Type ahead support is not worked as expected in server.xml for Liberty Server Configuration Stanza');
+        assert(updatedServerxmlContent.includes(constants.LOGGING_TAG), 'Completion support is not worked as expected in server.xml for Liberty Server Configuration Stanza');
 
         editor.clearText();
         editor.setText(actualServerXMLContent);
         console.log("server.xml content is restored");
-        await utils.closeEditor(constants.SERVER_XML);
+        await utils.closeFileTab(constants.SERVER_XML);
 
     }).timeout(45000);
 

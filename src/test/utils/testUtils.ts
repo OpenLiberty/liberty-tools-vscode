@@ -245,18 +245,18 @@ export async function copyDirectoryByPath(existingDirPath: string, copyDirPath: 
  * 
  * @param parentDir 
  * @param configFileName 
- * Open specific config file from parent directory
+ * Open specific file from parent directory
  */
-export async function openConfigFile(parentDir: string, configFileName: string) {
+export async function openFileByPath(parentDir: string, fileName: string) {
   const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
   section.expand();
-  await VSBrowser.instance.openResources(path.join(getGradleProjectPath(), 'src', 'main', 'liberty', parentDir, configFileName));
+  await VSBrowser.instance.openResources(path.join(getGradleProjectPath(), 'src', 'main', 'liberty', parentDir, fileName));
 }
 
 /**
- * Function to close currently opened config file tab
+ * Function to close currently opened file tab
  */
-export async function closeEditor(fileType: string) {
+export async function closeFileTab(fileType: string) {
   const workbench = new Workbench();
   await workbench.openCommandPrompt();
   await delay(3000);
