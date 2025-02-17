@@ -34,7 +34,7 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
      }).timeout(30000);
      
     it('Should show diagnostic support in boostrap.properties ', async () => {
-        await utils.openConfigFile(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
+        await utils.openFileByPath(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
         editor = await new EditorView().openEditor(constants.BOOTSTRAP_PROPERTIES) as TextEditor;
 
         await editor.typeTextAt(1, 1, constants.WS_LOGGING_CON);
@@ -62,13 +62,13 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
 
         assert(hoverValue.includes(constants.WS_LOGGING_CONSOLE_DIAGNOSTIC), 'Did not get expected diagnostic as expected in boostrap.properties.');
         editor.clearText();
-        await utils.closeEditor(constants.BOOTSTRAP_PROPERTIES);
+        await utils.closeFileTab(constants.BOOTSTRAP_PROPERTIES);
         await utils.delay(8000);
 
     }).timeout(85000);
 
     it('Should show hover support for bootstrap.properties Liberty Server properties setting', async () => {
-        await utils.openConfigFile(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
+        await utils.openFileByPath(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
         editor = await new EditorView().openEditor(constants.BOOTSTRAP_PROPERTIES) as TextEditor;
 
         await editor.clearText();
@@ -90,13 +90,13 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
 
         assert(hoverValue.includes(constants.LOG_LEVEL_INFO_MSG), 'Did not get expected hover data for bootstrap.properties.');
         editor.clearText();
-        await utils.closeEditor(constants.BOOTSTRAP_PROPERTIES);
+        await utils.closeFileTab(constants.BOOTSTRAP_PROPERTIES);
         await utils.delay(8000);
 
     }).timeout(85000);
 
-    it('Should show type ahead support in bootstrap.properties for a Liberty Server Configuration booststrap.properties entry', async () => {
-        await utils.openConfigFile(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
+    it('Should show completion support in bootstrap.properties for a Liberty Server Configuration booststrap.properties entry', async () => {
+        await utils.openFileByPath(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
         editor = await new EditorView().openEditor(constants.BOOTSTRAP_PROPERTIES) as TextEditor;
 
         await editor.typeTextAt(1, 1, constants.WS_LOGGING_T);
@@ -112,11 +112,11 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
 
         const updatedBootstrapContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after type ahead support : ", updatedBootstrapContent);
-        assert(updatedBootstrapContent.includes(constants.WS_LOGLEVEL_TBASIC), 'Type ahead support is not worked as expected in bootstrap.properties');
+        console.log("Content after completion support : ", updatedBootstrapContent);
+        assert(updatedBootstrapContent.includes(constants.WS_LOGLEVEL_TBASIC), 'Completion support is not worked as expected in bootstrap.properties');
 
         editor.clearText();
-        await utils.closeEditor(constants.BOOTSTRAP_PROPERTIES);
+        await utils.closeFileTab(constants.BOOTSTRAP_PROPERTIES);
         await utils.delay(8000);
 
     }).timeout(85000);
