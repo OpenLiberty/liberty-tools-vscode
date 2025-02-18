@@ -35,7 +35,7 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
 
     it('Should show hover support for server.env Liberty Server config setting', async () => {
         await utils.delay(8000);
-        await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_ENV);
+        await utils.openFileByPath(constants.CONFIG, constants.SERVER_ENV);
         editor = await new EditorView().openEditor(constants.SERVER_ENV) as TextEditor;
 
         const expectedHoverOutcome = 'This setting controls the granularity of messages that go to the console. The valid values are INFO, AUDIT, WARNING, ERROR, and OFF. The default is AUDIT. If using with the Eclipse developer tools this must be set to the default.';
@@ -66,7 +66,7 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
     }).timeout(85000);
 
     it('Should show completion support in server.env for a Liberty Server Configuration Stanza', async () => {
-        await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_ENV);
+        await utils.openFileByPath(constants.CONFIG, constants.SERVER_ENV);
         editor = await new EditorView().openEditor('server.env') as TextEditor;
 
         const configNameSnippet = 'WLP_LOGGING_CON';
@@ -96,7 +96,7 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
     }).timeout(85000);
 
     it('Should show diagnostic support in server.env ', async () => {
-        await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_ENV);
+        await utils.openFileByPath(constants.CONFIG, constants.SERVER_ENV);
         editor = await new EditorView().openEditor(constants.SERVER_ENV) as TextEditor;
 
         const configNameSnippet = 'WLP_LOGGING_CON';
