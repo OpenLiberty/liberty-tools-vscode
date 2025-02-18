@@ -35,6 +35,7 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
      
     it('Should show diagnostic support in boostrap.properties ', async () => {
         await utils.openFileByPath(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
+        await utils.delay(8000);
         editor = await new EditorView().openEditor(constants.BOOTSTRAP_PROPERTIES) as TextEditor;
 
         await editor.typeTextAt(1, 1, constants.WS_LOGGING_CON);
