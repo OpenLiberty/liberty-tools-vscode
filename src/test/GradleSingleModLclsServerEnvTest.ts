@@ -7,22 +7,34 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-import { By, EditorView, TextEditor, VSBrowser } from "vscode-extension-tester";
+import { By, EditorView, SideBarView, TextEditor, ViewSection, VSBrowser } from "vscode-extension-tester";
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
+import { expect } from "chai";
 
 const path = require('path');
 const assert = require('assert');
 
 describe('LCLS tests for Gradle Project - Server.env', function () {
     let editor: TextEditor;
-    let actualServerXMLContent: string;
+    let sidebar: SideBarView;
+    let section: ViewSection;
 
     before(() => {
+        sidebar = new SideBarView();
         utils.copyDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'), path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
     });
 
-    it('Should show type ahead support in server.env for a Liberty Server Configuration Stanza', async () => {
+    it('getViewControl works with the correct label',  async() => { 
+        const contentPart = sidebar.getContent();
+        section = await contentPart.getSection('Liberty Dashboard');   
+        console.log("Found Liberty Dashboard....");
+        expect(section).not.undefined; 
+      
+     }).timeout(30000);
+
+    it('Should show completion support in server.env for a Liberty Server Configuration Stanza', async () => {
+        await utils.delay(8000);
         await utils.openConfigFile(constants.CONFIG_TWO, constants.SERVER_ENV);
         editor = await new EditorView().openEditor('server.env') as TextEditor;
 
@@ -44,7 +56,7 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
 
         const updatedSeverEnvContent = await editor.getText();
         await utils.delay(3000);
-        assert(updatedSeverEnvContent.includes(expectedServerEnvString), 'Type ahead support is not working as expected in server.env');
+        assert(updatedSeverEnvContent.includes(expectedServerEnvString), 'Completion support is not working as expected in server.env');
         await editor.clearText();
 
     }).timeout(35000);
