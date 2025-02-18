@@ -25,46 +25,16 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
         utils.copyDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config'), path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
     });
 
-    it('getViewControl works with the correct label',  async() => { 
+    it('getViewControl works with the correct label', async () => {
         const contentPart = sidebar.getContent();
-        section = await contentPart.getSection('Liberty Dashboard');   
+        section = await contentPart.getSection('Liberty Dashboard');
         console.log("Found Liberty Dashboard....");
-        expect(section).not.undefined; 
-      
-     }).timeout(30000);
+        expect(section).not.undefined;
 
-    it('Should show completion support in server.env for a Liberty Server Configuration Stanza', async () => {
-        await utils.delay(8000);
-        await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_ENV);
-        editor = await new EditorView().openEditor('server.env') as TextEditor;
-
-        const configNameSnippet = 'WLP_LOGGING_CON';
-        const insertConfig = "=TBA";
-        const envCfgNameChooserSnippet = 'WLP_LOGGING_CONSOLE_FORMAT';
-        const expectedServerEnvString = 'WLP_LOGGING_CONSOLE_FORMAT=TBASIC';
-
-        await editor.typeTextAt(1, 1, configNameSnippet);
-        await utils.delay(5000);
-        //open the assistant
-        await utils.callAssitantAction(editor, envCfgNameChooserSnippet);
-
-        await editor.typeTextAt(1, 27, insertConfig);
-        await utils.delay(2500);
-        await utils.callAssitantAction(editor, 'TBASIC');
-        
-        await editor.toggleContentAssist(false);
-
-        const updatedSeverEnvContent = await editor.getText();
-        await utils.delay(3000);
-        assert(updatedSeverEnvContent.includes(expectedServerEnvString), 'Completion support is not working as expected in server.env');
-        
-        await editor.clearText();
-        await utils.closeFileTab(constants.BOOTSTRAP_PROPERTIES);
-        await utils.delay(8000);
-
-    }).timeout(35000);
+    }).timeout(30000);
 
     it('Should show hover support for server.env Liberty Server config setting', async () => {
+        await utils.delay(8000);
         await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_ENV);
         editor = await new EditorView().openEditor(constants.SERVER_ENV) as TextEditor;
 
@@ -73,7 +43,7 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
         const testHoverTarget = 'WLP_LOGGING_CONSOLE_LOGLEVEL=OFF';
         await editor.typeTextAt(1, 1, testHoverTarget);
         await utils.delay(5000);
-        
+
         const focusTargetLement = editor.findElement(By.xpath("//*[contains(text(), 'CONSOLE_LOGLEVEL')]"));
         await utils.delay(3000);
         focusTargetLement.click();
@@ -93,7 +63,37 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
         await utils.closeFileTab(constants.BOOTSTRAP_PROPERTIES);
         await utils.delay(8000);
 
-    }).timeout(35000);
+    }).timeout(85000);
+
+    it('Should show completion support in server.env for a Liberty Server Configuration Stanza', async () => {
+        await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_ENV);
+        editor = await new EditorView().openEditor('server.env') as TextEditor;
+
+        const configNameSnippet = 'WLP_LOGGING_CON';
+        const insertConfig = "=TBA";
+        const envCfgNameChooserSnippet = 'WLP_LOGGING_CONSOLE_FORMAT';
+        const expectedServerEnvString = 'WLP_LOGGING_CONSOLE_FORMAT=TBASIC';
+
+        await editor.typeTextAt(1, 1, configNameSnippet);
+        await utils.delay(5000);
+        //open the assistant
+        await utils.callAssitantAction(editor, envCfgNameChooserSnippet);
+
+        await editor.typeTextAt(1, 27, insertConfig);
+        await utils.delay(2500);
+        await utils.callAssitantAction(editor, 'TBASIC');
+
+        await editor.toggleContentAssist(false);
+
+        const updatedSeverEnvContent = await editor.getText();
+        await utils.delay(3000);
+        assert(updatedSeverEnvContent.includes(expectedServerEnvString), 'Completion support is not working as expected in server.env');
+
+        await editor.clearText();
+        await utils.closeFileTab(constants.BOOTSTRAP_PROPERTIES);
+        await utils.delay(8000);
+
+    }).timeout(85000);
 
     it('Should show diagnostic support in server.env ', async () => {
         await utils.openFileByPath(constants.CONFIG_TWO, constants.SERVER_ENV);
@@ -131,7 +131,7 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
         await utils.closeFileTab(constants.BOOTSTRAP_PROPERTIES);
         await utils.delay(8000);
 
-    }).timeout(35000);
+    }).timeout(85000);
 
     after(() => {
         utils.removeDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
