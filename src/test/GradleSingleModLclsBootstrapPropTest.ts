@@ -34,6 +34,7 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
      }).timeout(30000);
 
     it('Should show hover support for bootstrap.properties Liberty Server properties setting', async () => {
+        await utils.delay(8000);
         await utils.openFileByPath(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
         editor = await new EditorView().openEditor(constants.BOOTSTRAP_PROPERTIES) as TextEditor;
 
@@ -52,7 +53,7 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
 
         const hoverContents = editor.findElement(By.className('hover-contents'));
         const hoverValue = await hoverContents.getText();
-        console.log("Hover text:" + hoverValue);
+        console.log("Hover text is:" + hoverValue);
 
         assert(hoverValue.includes(constants.LOG_LEVEL_INFO_MSG), 'Did not get expected hover data for bootstrap.properties.');
         editor.clearText();
