@@ -34,7 +34,7 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
     }).timeout(30000);
 
     it('Should show hover support for server.env Liberty Server config setting', async () => {
-        await utils.delay(8000);
+        await utils.delay(15000);
         await utils.openFileByPath(constants.CONFIG, constants.SERVER_ENV);
         editor = await new EditorView().openEditor(constants.SERVER_ENV) as TextEditor;
 
@@ -60,7 +60,7 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
         assert(hoverValue.includes(expectedHoverOutcome), 'Did not get expected hover data for server.env');
 
         await editor.clearText();
-        await utils.closeFileTab(constants.BOOTSTRAP_PROPERTIES);
+        await utils.closeFileTab(constants.SERVER_ENV);
         await utils.delay(8000);
 
     }).timeout(85000);
@@ -90,7 +90,7 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
         assert(updatedSeverEnvContent.includes(expectedServerEnvString), 'Completion support is not working as expected in server.env');
 
         await editor.clearText();
-        await utils.closeFileTab(constants.BOOTSTRAP_PROPERTIES);
+        await utils.closeFileTab(constants.SERVER_ENV);
         await utils.delay(8000);
 
     }).timeout(85000);
@@ -128,7 +128,7 @@ describe('LCLS tests for Gradle Project - Server.env', function () {
         assert(hoverValue.includes(expectedHoverData), 'Did not get expected diagnostic as expected in server.env file');
 
         await editor.clearText();
-        await utils.closeFileTab(constants.BOOTSTRAP_PROPERTIES);
+        await utils.closeFileTab(constants.SERVER_ENV);
         await utils.delay(8000);
 
     }).timeout(85000);
