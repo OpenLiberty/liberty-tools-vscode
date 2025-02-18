@@ -32,7 +32,35 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
         expect(section).not.undefined; 
       
      }).timeout(30000);
-     
+
+    it('Should show hover support for bootstrap.properties Liberty Server properties setting', async () => {
+        await utils.openFileByPath(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
+        editor = await new EditorView().openEditor(constants.BOOTSTRAP_PROPERTIES) as TextEditor;
+
+        await editor.clearText();
+        await editor.typeTextAt(1, 1, constants.WS_LOGGING_CONSOLE_VALUE);
+        await utils.delay(8000);
+
+        const focusTargetLement = editor.findElement(By.xpath(constants.FOCUS_WS_LOGLEVEL));
+        await utils.delay(6000);
+        focusTargetLement.click();
+        await editor.click();
+
+        const actions = VSBrowser.instance.driver.actions();
+        await actions.move({ origin: focusTargetLement }).perform();
+        await utils.delay(5000);
+
+        const hoverContents = editor.findElement(By.className('hover-contents'));
+        const hoverValue = await hoverContents.getText();
+        console.log("Hover text:" + hoverValue);
+
+        assert(hoverValue.includes(constants.LOG_LEVEL_INFO_MSG), 'Did not get expected hover data for bootstrap.properties.');
+        editor.clearText();
+        await utils.closeFileTab(constants.BOOTSTRAP_PROPERTIES);
+        await utils.delay(8000);
+
+    }).timeout(85000);
+
     it('Should show diagnostic support in boostrap.properties ', async () => {
         await utils.openFileByPath(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
         await utils.delay(8000);
@@ -62,34 +90,6 @@ describe('LCLS tests for Gradle Project - bootstrap.properties', function () {
         console.log("Hover text is:" + hoverValue);
 
         assert(hoverValue.includes(constants.WS_LOGGING_CONSOLE_DIAGNOSTIC), 'Did not get expected diagnostic as expected in boostrap.properties.');
-        editor.clearText();
-        await utils.closeFileTab(constants.BOOTSTRAP_PROPERTIES);
-        await utils.delay(8000);
-
-    }).timeout(85000);
-
-    it('Should show hover support for bootstrap.properties Liberty Server properties setting', async () => {
-        await utils.openFileByPath(constants.CONFIG, constants.BOOTSTRAP_PROPERTIES);
-        editor = await new EditorView().openEditor(constants.BOOTSTRAP_PROPERTIES) as TextEditor;
-
-        await editor.clearText();
-        await editor.typeTextAt(1, 1, constants.WS_LOGGING_CONSOLE_VALUE);
-        await utils.delay(8000);
-
-        const focusTargetLement = editor.findElement(By.xpath(constants.FOCUS_WS_LOGLEVEL));
-        await utils.delay(6000);
-        focusTargetLement.click();
-        await editor.click();
-
-        const actions = VSBrowser.instance.driver.actions();
-        await actions.move({ origin: focusTargetLement }).perform();
-        await utils.delay(5000);
-
-        const hoverContents = editor.findElement(By.className('hover-contents'));
-        const hoverValue = await hoverContents.getText();
-        console.log("Hover text:" + hoverValue);
-
-        assert(hoverValue.includes(constants.LOG_LEVEL_INFO_MSG), 'Did not get expected hover data for bootstrap.properties.');
         editor.clearText();
         await utils.closeFileTab(constants.BOOTSTRAP_PROPERTIES);
         await utils.delay(8000);
