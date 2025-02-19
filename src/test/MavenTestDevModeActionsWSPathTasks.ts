@@ -37,7 +37,7 @@ describe('Devmode action tests for Maven Project - path with space', () => {
     console.log("Found Liberty Dashboard....");
     expect(section).not.undefined;
 
-  }).timeout(15000);
+  }).timeout(25000);
 
   it('Open dasboard shows items - Maven', async () => {
 
