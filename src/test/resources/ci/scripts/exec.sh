@@ -97,7 +97,7 @@ main() {
 
     # If there were any errors, gather some debug data before exiting.
     if [ "$failure" = "true" ]; then
-        echo "ERROR: Failure occurred while running the tests."
+        echo "ERROR: Failure occurred while running ${TYPE} step."
 
         if [ $TYPE = "TEST" ]; then
             echo "DEBUG: Maven Liberty messages.log:\n"
