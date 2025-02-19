@@ -26,6 +26,9 @@ currentTime=(date +"%Y/%m/%d-%H:%M:%S:%3N")
 # Operating system.
 OS=$(uname -s)
 
+# Boolean to see if any failure has occured while executing commands
+failure="false"
+
 main() {
 
     setVscodeVersionToTest
@@ -150,6 +153,15 @@ setVscodeVersionToTest() {
         else
                 VSCODE_VERSION_TO_RUN="$previousMinusOne.0"
         fi
+}
+
+# Finding the exit status of a command and updating failure boolean.
+# Need to call this method after executing each npm command to store the status.
+updateExitStatus() {
+    status=$?
+    if [ "$failure" = "false" ] && [ $status -ne 0 ]; then
+        failure="true"
+    fi
 }
 
 main "$@"
