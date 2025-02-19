@@ -96,9 +96,8 @@ main() {
     fi
 
     # If there were any errors, gather some debug data before exiting.
-    rc=$?
-    if [ "$rc" -ne 0 ]; then
-        echo "ERROR: Failure while driving npm install on plugin. rc: ${rc}."
+    if [ "$failure" = "true" ]; then
+        echo "ERROR: Failure occurred while running the tests."
 
         if [ $TYPE = "TEST" ]; then
             echo "DEBUG: Maven Liberty messages.log:\n"
