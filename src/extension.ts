@@ -168,8 +168,8 @@ function registerCommands(context: ExtensionContext) {
         projectProvider.refresh();
     }));
 
-    // Create an Output Channel named "My Extension Output"
-    outputChannel = vscode.window.createOutputChannel('My Extension Output');
+    // Create an Output Channel named "Liberty tools Extension Output"
+    outputChannel = vscode.window.createOutputChannel('Liberty tools Extension Output');
     // Example: Register a command to print a value when executed
     let disposable = vscode.commands.registerCommand('extension.printMessage', (message:string) => {
         outputChannel.appendLine(message);

@@ -284,25 +284,25 @@ it('check all test reports exists', async () => {
   expect(existenceResults.every(result => result === true)).to.be.true;
 }).timeout(10000);
 
-  it('View latest Unit test report when all the reports exists', async () => {
-    const outputView = await new BottomBarPanel().openOutputView();
-    outputView.clearText();
-    await utils.launchDashboardAction(item, constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);
-    await outputView.selectChannel("My Extension Output");
-    const text = await outputView.getText();
-    assert(text.includes('/target/reports/surefire.html'));
-    await utils.closeEditor();
-  }).timeout(10000);
+it('View latest Unit test report when all the reports exists', async () => {
+  const outputView = await new BottomBarPanel().openOutputView();
+  outputView.clearText();
+  await utils.launchDashboardAction(item, constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);
+  await outputView.selectChannel("Liberty tools Extension Output");
+  const text = await outputView.getText();
+  assert(text.includes('/target/reports/surefire.html'));
+  await utils.closeEditor();
+}).timeout(10000);
 
-  it('View latest Integration test report when all the reports exists', async () => {
-    const outputView = await new BottomBarPanel().openOutputView();
-    outputView.clearText();
-    await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);
-    await outputView.selectChannel("My Extension Output");
-    const text = await outputView.getText();
-    assert(text.includes('/target/reports/failsafe.html'));
-    await utils.closeEditor();
-  }).timeout(10000);
+it('View latest Integration test report when all the reports exists', async () => {
+  const outputView = await new BottomBarPanel().openOutputView();
+  outputView.clearText();
+  await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);
+  await outputView.selectChannel("Liberty tools Extension Output");
+  const text = await outputView.getText();
+  assert(text.includes('/target/reports/failsafe.html'));
+  await utils.closeEditor();
+}).timeout(10000);
 
 it('View Unit test report for maven project with surefire 3.4.0', async () => {  
   

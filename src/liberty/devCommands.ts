@@ -561,7 +561,6 @@ function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel:
                     {}, // Webview options
                 );
                 panel.webview.html = getReport(report); // display HTML content
-                outputChannel.clear();
                 outputChannel.appendLine(reportType+" path is "+report);
                 /*
                 For Maven projects we need to check for the test report in the 'reports' and 'site' dirs. 
