@@ -289,8 +289,8 @@ it('View latest Unit test report when all the reports exists', async () => {
   outputView.clearText();
   await utils.launchDashboardAction(item, constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);
   await outputView.selectChannel("Liberty tools Extension Output");
-  const text = await outputView.getText();
-  assert(text.includes('/target/reports/surefire.html'));
+  const text = await outputView.getText();// Read the text from Liberty tools Extension Output channel
+  assert(text.includes('/target/reports/surefire.html'));//check the path fetched from channel belong to the latest test report 
   await utils.closeEditor();
 }).timeout(10000);
 

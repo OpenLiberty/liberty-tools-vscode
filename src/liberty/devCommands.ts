@@ -561,7 +561,8 @@ function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel:
                     {}, // Webview options
                 );
                 panel.webview.html = getReport(report); // display HTML content
-                outputChannel.appendLine(reportType+" path is "+report);
+                outputChannel.clear();// clear the content from Liberty tools Extension Output channel
+                outputChannel.appendLine(reportType+" path is "+report);// writing the path to Liberty tools Extension Output channel
                 /*
                 For Maven projects we need to check for the test report in the 'reports' and 'site' dirs. 
                 We only need to show the message if it is not available in both locations. 
