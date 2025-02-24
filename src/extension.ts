@@ -32,6 +32,7 @@ let jakartaClient: LanguageClient;
 export type JavaExtensionAPI = any;
 
 const SUPPORTED_LANGUAGE_IDS = ["java-properties", "properties", "plaintext"];
+export let outputChannel: vscode.OutputChannel;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 
     /**
@@ -166,6 +167,15 @@ function registerCommands(context: ExtensionContext) {
      context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
         projectProvider.refresh();
     }));
+
+    // Create an Output Channel named "My Extension Output"
+    outputChannel = vscode.window.createOutputChannel('My Extension Output');
+    // Example: Register a command to print a value when executed
+    let disposable = vscode.commands.registerCommand('extension.printMessage', (message:string) => {
+        outputChannel.appendLine(message);
+    });
+    // Add the disposable command to subscriptions
+    context.subscriptions.push(disposable);
 }
 
 // this method is called when your extension is deactivated

@@ -8,12 +8,12 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 import { expect } from 'chai';
-import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView, VSBrowser } from 'vscode-extension-tester';
+import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView, VSBrowser, BottomBarPanel } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
 import * as fs from 'fs';
-
+import { assert } from 'console';
 describe('Devmode action tests for Maven Project', () => {
     let sidebar: SideBarView;
     let debugView: DebugView;
@@ -283,6 +283,30 @@ it('check all test reports exists', async () => {
   // All report files should exist
   expect(existenceResults.every(result => result === true)).to.be.true;
 }).timeout(10000);
+
+it('View latest Unit test report when all the reports exists',async () =>{
+      const outputView = await new BottomBarPanel().openOutputView();
+      outputView.clearText();
+      await utils.launchDashboardAction(item,constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);
+      utils.delay(5000);
+      await outputView.selectChannel("My Extension Output"); 
+      const text = await outputView.getText();
+      assert(text.includes('/target/reports/surefire.html'));
+      await utils.closeEditor();
+      
+}).timeout(20000);
+
+it('View latest Integration test report when all the reports exists',async () =>{
+
+  const outputView = await new BottomBarPanel().openOutputView();
+  outputView.clearText();
+  await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);
+  utils.delay(5000);
+  await outputView.selectChannel("My Extension Output"); 
+  const text = await outputView.getText();
+  assert(text.includes('/target/reports/failsafe.html'));
+  await utils.closeEditor();
+}).timeout(20000);
 
 
 it('View Unit test report for maven project with surefire 3.4.0', async () => {  
