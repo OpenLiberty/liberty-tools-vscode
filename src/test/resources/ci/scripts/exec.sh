@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ############################################################################
-# Copyright (c) 2022 IBM Corporation and others.
+# Copyright (c) 2022, 2025 IBM Corporation and others.
 # 
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License v. 2.0 which is available at
@@ -26,6 +26,9 @@ currentTime=(date +"%Y/%m/%d-%H:%M:%S:%3N")
 # Operating system.
 OS=$(uname -s)
 
+# Boolean to see if any failure has occured while executing commands
+failure="false"
+
 main() {
 
     setVscodeVersionToTest
@@ -40,6 +43,7 @@ main() {
         npm run build
         npm run compile
         vsce package
+        updateExitStatus
     else
 
         #Initialisation step
@@ -63,16 +67,17 @@ main() {
         if [ $VSCODE_VERSION_TO_RUN == "latest" ]; then
             # Run the plugin's install goal against the latest vscode version
             npm run test -- -u
+            updateExitStatus
         else
             # Run the plugin's install goal against the target vscode version
             npm run test -- -u -c $VSCODE_VERSION_TO_RUN
+            updateExitStatus
         fi
     fi
 
     # If there were any errors, gather some debug data before exiting.
-    rc=$?
-    if [ "$rc" -ne 0 ]; then
-        echo "ERROR: Failure while driving npm install on plugin. rc: ${rc}."
+    if [ "$failure" = "true" ]; then
+        echo "ERROR: Failure occurred while running ${TYPE} step."
 
         if [ $TYPE = "TEST" ]; then
             echo "DEBUG: Maven Liberty messages.log:\n"
@@ -133,6 +138,15 @@ setVscodeVersionToTest() {
         else
                 VSCODE_VERSION_TO_RUN="$previousMinusOne.0"
         fi
+}
+
+# Finding the exit status of a command and updating failure boolean.
+# Need to call this method after executing each npm command to store the status.
+updateExitStatus() {
+    status=$?
+    if [ "$failure" = "false" ] && [ $status -ne 0 ]; then
+        failure="true"
+    fi
 }
 
 main "$@"
