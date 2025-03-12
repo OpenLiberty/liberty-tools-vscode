@@ -50,7 +50,7 @@
 	],
 	"contributes": {
 		"javaExtensions": [
-			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.2.2.jar"
+			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.2.3.jar"
 		],
 		"xml.javaExtensions": [
 			"./jars/liberty-langserver-lemminx-2.2-jar-with-dependencies.jar"
