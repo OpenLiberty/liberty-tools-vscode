@@ -96,12 +96,14 @@
 			{
 				"command": "liberty.dev.add.project",
 				"category": "Liberty",
-				"title": "%commands.title.add.project%"
+				"title": "%commands.title.add.project%",
+				"icon": "$(add)"
 			},
 			{
 				"command": "liberty.dev.remove.project",
 				"category": "Liberty",
-				"title": "%commands.title.remove.project%"
+				"title": "%commands.title.remove.project%",
+				"icon": "$(remove)"
 			},
 			{
 				"command": "liberty.dev.stop",
@@ -157,6 +159,16 @@
 					"command": "liberty.explorer.refresh",
 					"when": "view == liberty-dev",
 					"group": "navigation@1"
+				},
+				{
+					"command": "liberty.dev.add.project",
+					"when": "view == liberty-dev",
+					"group": "navigation@2"
+				},
+				{
+					"command": "liberty.dev.remove.project",
+					"when": "view == liberty-dev",
+					"group": "navigation@3"
 				}
 			],
 			"view/item/context": [
