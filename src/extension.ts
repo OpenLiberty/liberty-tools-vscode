@@ -106,9 +106,12 @@ function bindRequest(request: string) {
 
 function registerCommands(context: ExtensionContext) {
     let projectProvider = getProjectProvider(context);
+    const refreshEnabled: any = helperUtil.getConfiguration("refresh.enabled");
 
-    if (vscode.workspace.workspaceFolders !== undefined) {
-        registerFileWatcher(projectProvider);
+    if (vscode.workspace.workspaceFolders !== undefined) {    
+        if(refreshEnabled) {
+            registerFileWatcher(projectProvider);
+        }
         vscode.window.registerTreeDataProvider("liberty-dev", projectProvider);
     }
 
@@ -163,9 +166,11 @@ function registerCommands(context: ExtensionContext) {
         })
     );
      // Listens for any new folders are added to the workspace
-     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
-        projectProvider.refresh();
-    }));
+     if(refreshEnabled) {
+        context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+            projectProvider.refresh();
+        }));
+     }
 }
 
 // this method is called when your extension is deactivated
