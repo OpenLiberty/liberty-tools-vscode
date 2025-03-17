@@ -40,3 +40,22 @@ export const ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION = "Liberty: Attach debugger";
 export const  MAVEN_DEVMODE_DEBUG_PORT_PARM = "-DdebugPort";
 /** Gradle: Dev mode debug port argument key. */
 export const GRADLE_DEVMODE_DEBUG_PORT_PARM = "--libertyDebugPort";
+export const CLOSE_EDITOR = "View: Close Editor";
+export const TARGET = "target";
+export const REPORTS = "reports";
+export const SITE = "site";
+export const FAILSAFE_HTML = "failsafe.html";
+export const SUREFIRE_HTML = "surefire.html";
+export const SUREFIRE_REPORT_HTML ="surefire-report.html";
+export const FAILSAFE_REPORT_HTML ="failsafe-report.html";
+export const COMMENT_REGEX = /<!--\s*Test report insertion point, do not remove\s*-->/;
+export const PLUGIN_BLOCK_REGEX = /<!--\s*replace this content\s*-->([\s\S]*?)<!--\s*replace this content end\s*-->/;
+export const SUREFIRE_3_4_0_PLUGIN_CONTENT = `<!-- replace this content -->
+                                                 <plugin>
+                                                    <groupId>org.apache.maven.plugins</groupId>
+                                                    <artifactId>maven-surefire-report-plugin</artifactId>
+                                                    <version>3.4.0</version>
+                                                 </plugin>
+                                              <!-- replace this content end -->`;
+export const POM_COMMENT = '<!-- Test report insertion point, do not remove -->';
+export const MAVEN_TEST_WRAPPER_APP_POM_PATH = 'src/test/resources/maven/liberty.maven.test.wrapper.app/pom.xml'; 
