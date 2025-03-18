@@ -99,10 +99,10 @@ export async function checkSiblingFilesInTargetOrBuildParent(filePath: string): 
 			// Determine the file type to look for (either pom.xml or build.gradle)
 			if (filePath.endsWith('pom.xml')) {
 				outputDir = 'target';  // For Maven projects, look for target directory
-				siblingFilePath = path.join(currentDir, outputDir, 'pom.xml');
+				siblingFilePath = path.join(currentDir, 'pom.xml');
 			} else if (filePath.endsWith('build.gradle') || filePath.endsWith('settings.gradle')) {
 				outputDir = 'build';  // For Gradle projects, look for build directory
-				siblingFilePath = path.join(currentDir, outputDir, 'build.gradle');
+				siblingFilePath = path.join(currentDir, 'build.gradle');
 			} else {
 				console.log("Invalid file type. Only 'pom.xml' or 'build.gradle' are supported.");
 				return false;
