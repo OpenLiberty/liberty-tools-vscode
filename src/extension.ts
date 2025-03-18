@@ -185,49 +185,49 @@ export function deactivate(): Promise<void[]> {
  */
 export function registerFileWatcher(projectProvider: ProjectProvider): void {
 	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
-	    // Async handler for the file system events (create, change, delete)
-        const handleUri = async (uri: vscode.Uri) => {
-            const workspaceFolders = vscode.workspace.workspaceFolders;
-    
-            if (!workspaceFolders) {
-                return; // No workspace folders to process
-            }
-    
-            // Loop through all workspace folders
-            for (let folder of workspaceFolders) {
-                const projectRoot = folder.uri.fsPath;
-                const relativePath = path.relative(projectRoot, uri.fsPath);
-    
-                // Ensure that the file belongs to this project (starts with the projectRoot path)
-                if (!uri.fsPath.startsWith(projectRoot)) {
-                    continue; // Skip if the file is outside the current project folder
-                }
-    
-                // Check if the path includes 'target' or 'build' directly under the project root
-                if (/(target\/|build\/)/.test(relativePath)) { 
+    // Async handler for the file system events (create, change, delete)
+    const handleUri = async (uri: vscode.Uri) => {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
 
-                    const fileType = path.basename(uri.fsPath);
-                    const siblingFileExists = await helperUtil.checkSiblingFilesInTargetOrBuildParent(uri.fsPath);
-                    if(!siblingFileExists){
-                        console.log(`No sibling ${fileType} found, refreshing project... for  ` + uri.fsPath);
-                        // Refresh the project if no sibling file is found
-                        await projectProvider.refresh();
-                    }else{
-                        console.log(`Skipping refresh: Sibling ${fileType} found for `+uri.fsPath);
-                        return; // Do not refresh
-                    }
-                } else {
-                    // If the file generated is **outside** the `target` directory, always refresh
-                    console.log('Refreshing project...');
+        if (!workspaceFolders) {
+            return; // No workspace folders to process
+        }
+
+        // Loop through all workspace folders
+        for (let folder of workspaceFolders) {
+            const projectRoot = folder.uri.fsPath;
+            const relativePath = path.relative(projectRoot, uri.fsPath);
+
+            // Ensure that the file belongs to this project (starts with the projectRoot path)
+            if (!uri.fsPath.startsWith(projectRoot)) {
+                continue; // Skip if the file is outside the current project folder
+            }
+
+            // Check if the path includes 'target' or 'build' directly under the project root
+            if (/(target\/|build\/)/.test(relativePath)) {
+
+                const fileType = path.basename(uri.fsPath);
+                const siblingFileExists = await helperUtil.checkSiblingFilesInTargetOrBuildParent(uri.fsPath);
+                if (!siblingFileExists) {
+                    console.log(`No sibling ${fileType} found, refreshing project... for  ` + uri.fsPath);
+                    // Refresh the project if no sibling file is found
                     await projectProvider.refresh();
+                } else {
+                    console.log(`Skipping refresh: Sibling ${fileType} found for ` + uri.fsPath);
+                    return; // Do not refresh
                 }
-           }
-        };
-    
-    
-        watcher.onDidCreate(handleUri);
-        watcher.onDidChange(handleUri);
-        watcher.onDidDelete(handleUri);
+            } else {
+                // If the file generated is **outside** the `target` directory, always refresh
+                console.log('Refreshing project...');
+                await projectProvider.refresh();
+            }
+        }
+    };
+
+
+    watcher.onDidCreate(handleUri);
+    watcher.onDidChange(handleUri);
+    watcher.onDidDelete(handleUri);
 }
 
 function startLangServer(context: ExtensionContext, requirements: RequirementsData, isLiberty: boolean) {

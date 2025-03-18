@@ -88,53 +88,53 @@ export function clearDataSavedInGlobalState(context: vscode.ExtensionContext) {
  */
 export async function checkSiblingFilesInTargetOrBuildParent(filePath: string): Promise<boolean> {
 
-    try {
-        let currentDir = path.dirname(filePath);  // Start with the directory of the provided file
+	try {
+		let currentDir = path.dirname(filePath);  // Start with the directory of the provided file
 
-        // Traverse upwards through the directories
-        while (currentDir !== path.parse(currentDir).root) {
-            let targetDir: string | undefined;
-            let siblingFilePath: string | undefined;
+		// Traverse upwards through the directories
+		while (currentDir !== path.parse(currentDir).root) {
+			let targetDir: string | undefined;
+			let siblingFilePath: string | undefined;
 
-            // Determine the file type to look for (either pom.xml or build.gradle)
-            if (filePath.endsWith('pom.xml')) {
-                targetDir = 'target';  // For Maven projects, look for target directory
-                siblingFilePath = path.join(currentDir, targetDir, 'pom.xml');
-            } else if (filePath.endsWith('build.gradle') || filePath.endsWith('settings.gradle')) {
-                targetDir = 'build';  // For Gradle projects, look for build directory
-                siblingFilePath = path.join(currentDir, targetDir, 'build.gradle');
-            } else {
-                console.log("Invalid file type. Only 'pom.xml' or 'build.gradle' are supported.");
-                return false;
-            }
+			// Determine the file type to look for (either pom.xml or build.gradle)
+			if (filePath.endsWith('pom.xml')) {
+				targetDir = 'target';  // For Maven projects, look for target directory
+				siblingFilePath = path.join(currentDir, targetDir, 'pom.xml');
+			} else if (filePath.endsWith('build.gradle') || filePath.endsWith('settings.gradle')) {
+				targetDir = 'build';  // For Gradle projects, look for build directory
+				siblingFilePath = path.join(currentDir, targetDir, 'build.gradle');
+			} else {
+				console.log("Invalid file type. Only 'pom.xml' or 'build.gradle' are supported.");
+				return false;
+			}
 
-            // Ensure that targetDir and siblingFilePath are assigned before proceeding
-            if (!targetDir || !siblingFilePath) {
-                console.error("Error: targetDir or siblingFilePath not properly assigned.");
-                return false;
-            }
+			// Ensure that targetDir and siblingFilePath are assigned before proceeding
+			if (!targetDir || !siblingFilePath) {
+				console.error("Error: targetDir or siblingFilePath not properly assigned.");
+				return false;
+			}
 
-            // Check if the target/build directory exists
-            const currentTargetDir = path.join(currentDir, targetDir);
-            if (fs.existsSync(currentTargetDir) && fs.statSync(currentTargetDir).isDirectory()) {
+			// Check if the target/build directory exists
+			const currentTargetDir = path.join(currentDir, targetDir);
+			if (fs.existsSync(currentTargetDir) && fs.statSync(currentTargetDir).isDirectory()) {
 
-                // Check if the expected sibling file (pom.xml or build.gradle) exists
-                if (fs.existsSync(siblingFilePath) && fs.statSync(siblingFilePath).isFile()) {
-                    console.log(`Found sibling ${filePath.endsWith('pom.xml') ? 'pom.xml' : 'build.gradle'} in directory: ${currentTargetDir}`);
-                    return true; // Found the sibling file, return true to indicate file should be ignored
-                }
-            }
+				// Check if the expected sibling file (pom.xml or build.gradle) exists
+				if (fs.existsSync(siblingFilePath) && fs.statSync(siblingFilePath).isFile()) {
+					console.log(`Found sibling ${filePath.endsWith('pom.xml') ? 'pom.xml' : 'build.gradle'} in directory: ${currentTargetDir}`);
+					return true; // Found the sibling file, return true to indicate file should be ignored
+				}
+			}
 
-            // Move up to the parent directory
-            currentDir = path.dirname(currentDir);
-        }
+			// Move up to the parent directory
+			currentDir = path.dirname(currentDir);
+		}
 
-        // If no sibling file was found and we reached the root, return false to allow refresh
-        console.log("Reached project root, no sibling file found. Allowing refresh.");
-        return false;
-    } catch (err) {
-        console.error('Error during directory traversal:', err);
-        return false;
-    }
+		// If no sibling file was found and we reached the root, return false to allow refresh
+		console.log("Reached project root, no sibling file found. Allowing refresh.");
+		return false;
+	} catch (err) {
+		console.error('Error during directory traversal:', err);
+		return false;
+	}
 }
 
