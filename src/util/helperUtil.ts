@@ -93,29 +93,29 @@ export async function checkSiblingFilesInTargetOrBuildParent(filePath: string): 
 
 		// Traverse upwards through the directories
 		while (currentDir !== path.parse(currentDir).root) {
-			let targetDir: string | undefined;
+			let outputDir: string | undefined;
 			let siblingFilePath: string | undefined;
 
 			// Determine the file type to look for (either pom.xml or build.gradle)
 			if (filePath.endsWith('pom.xml')) {
-				targetDir = 'target';  // For Maven projects, look for target directory
-				siblingFilePath = path.join(currentDir, targetDir, 'pom.xml');
+				outputDir = 'target';  // For Maven projects, look for target directory
+				siblingFilePath = path.join(currentDir, outputDir, 'pom.xml');
 			} else if (filePath.endsWith('build.gradle') || filePath.endsWith('settings.gradle')) {
-				targetDir = 'build';  // For Gradle projects, look for build directory
-				siblingFilePath = path.join(currentDir, targetDir, 'build.gradle');
+				outputDir = 'build';  // For Gradle projects, look for build directory
+				siblingFilePath = path.join(currentDir, outputDir, 'build.gradle');
 			} else {
 				console.log("Invalid file type. Only 'pom.xml' or 'build.gradle' are supported.");
 				return false;
 			}
 
 			// Ensure that targetDir and siblingFilePath are assigned before proceeding
-			if (!targetDir || !siblingFilePath) {
+			if (!outputDir || !siblingFilePath) {
 				console.error("Error: targetDir or siblingFilePath not properly assigned.");
 				return false;
 			}
 
 			// Check if the target/build directory exists
-			const currentTargetDir = path.join(currentDir, targetDir);
+			const currentTargetDir = path.join(currentDir, outputDir);
 			if (fs.existsSync(currentTargetDir) && fs.statSync(currentTargetDir).isDirectory()) {
 
 				// Check if the expected sibling file (pom.xml or build.gradle) exists
