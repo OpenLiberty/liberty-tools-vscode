@@ -217,7 +217,7 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
                 let projectRootParent = path.dirname(projectRoot);
                 if (!(fs.existsSync(projectRootParent) && fs.statSync(projectRootParent).isDirectory())) {
                     projectRootParent = projectRoot;// If the parent directory of the project root doesn't exist, set projectRootParent to projectRoot.
-                    console.debug("project root parent is not found ")
+                    console.debug("project root parent is not found");
                 }
                 const siblingFileExists = await helperUtil.checkSiblingFilesInTargetOrBuildParent(uri.fsPath, projectRootParent);
                 if (!siblingFileExists) {
@@ -230,7 +230,7 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
                     return; // Do not refresh
                 }
             } else {
-                // If the file generated is **outside** the `target` directory, always refresh
+                // If the file being processed is **outside** the `target` or `build` directory, always refresh
                 console.debug('Refreshing project...');
                 await projectProvider.refresh();
                 return;

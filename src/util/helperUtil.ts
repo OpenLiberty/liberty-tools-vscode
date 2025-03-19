@@ -83,7 +83,7 @@ export function clearDataSavedInGlobalState(context: vscode.ExtensionContext) {
 
 /**
  * Traverse upwards to check for target/build directory and its corresponding sibling build file (pom.xml or build.gradle).
- * @param filePath The path where the file is generated
+ * @param filePath The path of the file being processed
  * @param projectRootParent parent path for the project root
  * @returns true if sibling file found, false otherwise.
  */
@@ -106,7 +106,7 @@ export async function checkSiblingFilesInTargetOrBuildParent(filePath: string, p
 			return false;
 		}
 
-		while (currentDir !== projectRootParent) { //checks upto and including the project root folder 
+		while (currentDir !== projectRootParent) { //checks up to and including the project root folder 
 			let siblingFilePath = path.join(currentDir, siblingFileType);
 			// Ensure that targetDir and siblingFilePath are assigned before proceeding
 			if (!outputDir || !siblingFilePath) {
@@ -154,7 +154,7 @@ async function checkOutputDirAndSiblingBuildFile(currentDir: string, filePath: s
 			} else {
 				console.debug(" sibling not found " + siblingFilePath + " for " + filePath);
 			}
-		} else{
+		} else {
 			console.debug(currentOutputDir + " is not found");
 		}
 		return false; // No sibling file found
