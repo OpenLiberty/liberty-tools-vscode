@@ -20,6 +20,8 @@ import { localize } from "./util/i18nUtil";
 import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "./util/requirements";
 import { prepareExecutable } from "./util/javaServerStarter";
 import * as helperUtil from "./util/helperUtil";
+import path = require('path');
+import * as fs from "fs";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
@@ -184,15 +186,62 @@ export function deactivate(): Promise<void[]> {
  */
 export function registerFileWatcher(projectProvider: ProjectProvider): void {
 	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
-	watcher.onDidCreate(async () => {
-		projectProvider.refresh();
-	});
-	watcher.onDidChange(async () => {
-		projectProvider.refresh();
-	});
-	watcher.onDidDelete(async () => {
-		projectProvider.refresh();
-	});
+    // Async handler for the file system events (create, change, delete)
+    const handleUri = async (uri: vscode.Uri) => {
+        if (uri.fsPath.endsWith("server.xml")) {
+            await projectProvider.refresh();
+            return;
+        }
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+
+        if (!workspaceFolders) {
+            return; // No workspace folders to process
+        }
+
+        // Loop through all workspace folders
+        for (let folder of workspaceFolders) {
+            let projectRoot = folder.uri.fsPath;
+            const relativePath = path.relative(projectRoot, uri.fsPath);
+
+            // Ensure that the file belongs to this project (starts with the projectRoot path)
+            if (!uri.fsPath.startsWith(projectRoot)) {
+                continue; // Skip if the file is outside the current project folder
+            }
+
+            // Check if the path includes 'target' or 'build' directly under the project root
+            if (/(target\/|build\/)/.test(relativePath)) {
+                /**
+                 * Determines the parent directory of the project root. 
+                 * If a valid parent exists, use its path for searching. Otherwise, use the project root path itself.
+                 */
+                let projectRootParent = path.dirname(projectRoot);
+                if (!(fs.existsSync(projectRootParent) && fs.statSync(projectRootParent).isDirectory())) {
+                    projectRootParent = projectRoot;// If the parent directory of the project root doesn't exist, set projectRootParent to projectRoot.
+                    console.debug("project root parent is not found");
+                }
+                const siblingFileExists = await helperUtil.checkSiblingFilesInTargetOrBuildParent(uri.fsPath, projectRootParent);
+                if (!siblingFileExists) {
+                    console.debug(`No sibling build file found, refreshing project... for  ` + uri.fsPath);
+                    // Refresh the project if no sibling file is found
+                    await projectProvider.refresh();
+                    return;
+                } else {
+                    console.debug(`Skipping refresh: Sibling build file found for ` + uri.fsPath);
+                    return; // Do not refresh
+                }
+            } else {
+                // If the file being processed is **outside** the `target` or `build` directory, always refresh
+                console.debug('Refreshing project...');
+                await projectProvider.refresh();
+                return;
+            }
+        }
+    };
+
+
+    watcher.onDidCreate(handleUri);
+    watcher.onDidChange(handleUri);
+    watcher.onDidDelete(handleUri);
 }
 
 function startLangServer(context: ExtensionContext, requirements: RequirementsData, isLiberty: boolean) {
