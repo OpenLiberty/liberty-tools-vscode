@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, 2024 IBM Corporation.
+ * Copyright (c) 2020, 2025 IBM Corporation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -102,7 +102,7 @@ export async function checkSiblingFilesInTargetOrBuildParent(filePath: string, p
 			outputDir = 'build';  // For Gradle projects, look for build directory
 			siblingFileType = 'build.gradle';
 		} else {
-			console.debug("Invalid file type. Only 'pom.xml' or 'build.gradle' are supported.");
+			console.debug("Invalid file type. Only 'pom.xml' or 'build.gradle' or 'settings.gradle' are supported.");
 			return false;
 		}
 
@@ -154,8 +154,9 @@ async function checkOutputDirAndSiblingBuildFile(currentDir: string, filePath: s
 			} else {
 				console.debug(" sibling not found " + siblingFilePath + " for " + filePath);
 			}
-		} else
+		} else{
 			console.debug(currentOutputDir + " is not found");
+		}
 		return false; // No sibling file found
 	} catch (err) {
 		console.error('Error during directory traversal in checkSiblingFileInDir:', err);

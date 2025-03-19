@@ -188,6 +188,10 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
 	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
     // Async handler for the file system events (create, change, delete)
     const handleUri = async (uri: vscode.Uri) => {
+        if (uri.fsPath.endsWith("server.xml")) {
+            await projectProvider.refresh();
+            return;
+        }
         const workspaceFolders = vscode.workspace.workspaceFolders;
 
         if (!workspaceFolders) {
@@ -210,16 +214,12 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
                  * Determines the parent directory of the project root. 
                  * If a valid parent exists, use its path for searching. Otherwise, use the project root path itself.
                  */
-                try {
-                    let projectRootParent = path.dirname(projectRoot);
-                    if (fs.existsSync(projectRootParent) && fs.statSync(projectRootParent).isDirectory())
-                        projectRoot = projectRootParent;
-                    else
-                        console.debug("project root parent is not found ")
-                } catch (error) {
-                    console.error("project root parent is not found ");
+                let projectRootParent = path.dirname(projectRoot);
+                if (!(fs.existsSync(projectRootParent) && fs.statSync(projectRootParent).isDirectory())) {
+                    projectRootParent = projectRoot;// If the parent directory of the project root doesn't exist, set projectRootParent to projectRoot.
+                    console.debug("project root parent is not found ")
                 }
-                const siblingFileExists = await helperUtil.checkSiblingFilesInTargetOrBuildParent(uri.fsPath, projectRoot);
+                const siblingFileExists = await helperUtil.checkSiblingFilesInTargetOrBuildParent(uri.fsPath, projectRootParent);
                 if (!siblingFileExists) {
                     console.debug(`No sibling build file found, refreshing project... for  ` + uri.fsPath);
                     // Refresh the project if no sibling file is found
