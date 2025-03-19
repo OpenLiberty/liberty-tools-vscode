@@ -21,6 +21,7 @@ import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "
 import { prepareExecutable } from "./util/javaServerStarter";
 import * as helperUtil from "./util/helperUtil";
 import path = require('path');
+import * as fs from "fs";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
@@ -195,7 +196,7 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
 
         // Loop through all workspace folders
         for (let folder of workspaceFolders) {
-            const projectRoot = folder.uri.fsPath;
+            let projectRoot = folder.uri.fsPath;
             const relativePath = path.relative(projectRoot, uri.fsPath);
 
             // Ensure that the file belongs to this project (starts with the projectRoot path)
@@ -205,21 +206,34 @@ export function registerFileWatcher(projectProvider: ProjectProvider): void {
 
             // Check if the path includes 'target' or 'build' directly under the project root
             if (/(target\/|build\/)/.test(relativePath)) {
-
-                const fileType = path.basename(uri.fsPath);
-                const siblingFileExists = await helperUtil.checkSiblingFilesInTargetOrBuildParent(uri.fsPath);
+                /**
+                 * Determines the parent directory of the project root. 
+                 * If a valid parent exists, use its path for searching. Otherwise, use the project root path itself.
+                 */
+                try {
+                    let projectRootParent = path.dirname(projectRoot);
+                    if (fs.existsSync(projectRootParent) && fs.statSync(projectRootParent).isDirectory())
+                        projectRoot = projectRootParent;
+                    else
+                        console.debug("project root parent is not found ")
+                } catch (error) {
+                    console.error("project root parent is not found ");
+                }
+                const siblingFileExists = await helperUtil.checkSiblingFilesInTargetOrBuildParent(uri.fsPath, projectRoot);
                 if (!siblingFileExists) {
-                    console.log(`No sibling ${fileType} found, refreshing project... for  ` + uri.fsPath);
+                    console.debug(`No sibling build file found, refreshing project... for  ` + uri.fsPath);
                     // Refresh the project if no sibling file is found
                     await projectProvider.refresh();
+                    return;
                 } else {
-                    console.log(`Skipping refresh: Sibling ${fileType} found for ` + uri.fsPath);
+                    console.debug(`Skipping refresh: Sibling build file found for ` + uri.fsPath);
                     return; // Do not refresh
                 }
             } else {
                 // If the file generated is **outside** the `target` directory, always refresh
-                console.log('Refreshing project...');
+                console.debug('Refreshing project...');
                 await projectProvider.refresh();
+                return;
             }
         }
     };
