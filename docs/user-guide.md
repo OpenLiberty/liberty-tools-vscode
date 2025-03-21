@@ -206,6 +206,10 @@ In the event that your Liberty project is not automatically detected by the Libe
 
 ![Liberty add project to tool window](/docs/user-guide-screenshots/add_liberty_project.png)
 
+You can also manually add and remove liberty projects from the dashboard using dashboard icons `+` and `-` respectively.
+
+![Liberty add project to tool window through dashboard icons](/docs/user-guide-screenshots/add_liberty_project_dashboardIcon.png)
+
 You are prompted with a list of projects that are not already displayed in the in the Liberty dashboard.
 
 ![Liberty add project to tool window selection](/docs/user-guide-screenshots/add_liberty_project_2.png)
