@@ -203,28 +203,28 @@ When the debugger is attached, the Visual Studio Code [debug options](https://co
 
 ## Manually add your Liberty project to the Liberty dashboard
 
-In the event that your Liberty project is not automatically detected by the Liberty dashboard, you can manually add your Liberty project to the Liberty dashboard in one of four ways:<br>
-1. Right-click into an empty space in the Explorer view and select **Add project to Liberty Dashboard**.<br>
+If your Liberty project is not automatically detected by the Liberty dashboard, you can manually add your Liberty project to the Liberty dashboard in one of four ways:<br>
+* Right-click into an empty space in the Explorer view and select **Add project to Liberty Dashboard**.<br>
   ![Add Liberty project from Explorer view empty space](/docs/user-guide-screenshots/add_from_empty_space.png)<br>
-2. If you have a workspace open, you can right-click into an empty space in the Explorer view as shown above, or you can right-click on a project root folder in the Explorer view and select **Add project to Liberty Dashboard**.<br>
+* If you have a workspace open, you also have the option to right-click on a project root folder in the Explorer view and select **Add project to Liberty Dashboard**.<br>
   ![Add Liberty project from Explorer view project root](/docs/user-guide-screenshots/add_from_project_root_folder.png)<br>
-3. Click on the **'+'** icon in the Liberty dashboard.<br>
+* Click the plus icon (+) in the Liberty dashboard.<br>
   ![Add Liberty project from Liberty dashboard](/docs/user-guide-screenshots/add_from_liberty_dashboard.png)<br>
-4. Use the Command Palette to select the **Liberty: Add project to Liberty Dashboard** command.<br>
+* Use the Command Palette to select the **Liberty: Add project to Liberty Dashboard** command.<br>
   ![Add Liberty project from Command Palette](/docs/user-guide-screenshots/add_from_command_palette.png)<br>
 
-In all the cases above, you will be prompted in the Command Palette to select a project to add from a list of projects that are currently not displayed in the Liberty dashboard.<br>
+In each of these cases, you are prompted in the Command Palette to select a project from a list of projects that are currently not displayed in the Liberty dashboard.<br>
 ![Liberty add project selection](/docs/user-guide-screenshots/add_project_selection.png)<br>
 
 ### Manually remove project
 
-To remove manually added Liberty projects from the Liberty dashboard, you can follow the same steps shown above for adding a project with the following differences:
-1. Select **Remove project from Liberty Dashboard**.
-2. Select **Remove project from Liberty Dashboard**.
-3. Click the **'-'** icon.
-4. Select **Liberty: Remove project from Liberty Dashboard**.
+To remove manually added Liberty projects from the Liberty dashboard, you have a similar set of four options:
+* Right-click into an empty space in the Explorer view and select **Remove project from Liberty Dashboard**.
+* If you have a workspace open, you also have the option to right-click on a project root folder in the Explorer view and select  **Remove project from Liberty Dashboard**.
+3. * Click the minus icon (-) in the Liberty dashboard.
+* Use the Command Palette to select the  **Liberty: Remove project from Liberty Dashboard** command.
 
-Similar to adding the project, you will be prompted in the Command Palette to select a project to remove from a list of projects in the Liberty dashboard that can be removed.
+Similar to adding the project, you are prompted in the Command Palette to select a project from a list of projects in the Liberty dashboard that can be removed.
 
 ## Configure a Liberty server
 
