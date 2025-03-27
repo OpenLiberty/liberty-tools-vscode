@@ -221,7 +221,7 @@ In each of these cases, you are prompted in the Command Palette to select a proj
 To remove manually added Liberty projects from the Liberty dashboard, you have a similar set of four options:
 * Right-click into an empty space in the Explorer view and select **Remove project from Liberty Dashboard**.
 * If you have a workspace open, you also have the option to right-click on a project root folder in the Explorer view and select  **Remove project from Liberty Dashboard**.
-3. * Click the minus icon (-) in the Liberty dashboard.
+* Click the minus icon (-) in the Liberty dashboard.
 * Use the Command Palette to select the  **Liberty: Remove project from Liberty Dashboard** command.
 
 Similar to adding the project, you are prompted in the Command Palette to select a project from a list of projects in the Liberty dashboard that can be removed.
