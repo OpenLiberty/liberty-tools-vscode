@@ -185,7 +185,7 @@ function showListOfPathsToAdd(uris: string[]) {
 
 export async function addProject(uri: vscode.Uri): Promise<void> {
     const projectProvider: ProjectProvider = ProjectProvider.getInstance();
-    if (undefined !== uri && undefined !== uri.fsPath) {
+    if (uri !== undefined && uri !== null && uri.fsPath !== undefined) {
         // Right mouse clicked on a root folder, or on empty space with only one folder in workspace.
         // Add project if:
         // 1. Not in liberty dashboard
@@ -204,7 +204,7 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
 
     } else {
         // clicked on the empty space and workspace has more than one folders, or
-        // from command palette
+        // from command palette or clicked on (+) button in Liberty dashboard
         // Display the list of workspace folders for user to select.
         // The list should not contain any existing projects
         let uris: string[] = [];
