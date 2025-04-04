@@ -8,12 +8,12 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 import { expect } from 'chai';
-import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView, VSBrowser } from 'vscode-extension-tester';
+import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView, VSBrowser, BottomBarPanel } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import path = require('path');
 import * as fs from 'fs';
-
+import { assert } from 'console';
 describe('Devmode action tests for Maven Project', () => {
     let sidebar: SideBarView;
     let debugView: DebugView;
@@ -39,6 +39,8 @@ it('getViewControl works with the correct label',  async() => {
 
 it('Open dasboard shows items - Maven', async () => {
 
+  await utils.executeMvnClean();// executing the mvn clean to remove the target directory before the main tests
+  await utils.clearMavenPluginCache();// clear the cache before the tests , ensuring latest plugins will be used for the tests
   // Wait for the Liberty Dashboard to load and expand. The dashboard only expands after using the 'expand()' method.  
   await utils.delay(65000);
   section.expand();
@@ -216,7 +218,8 @@ it('View Unit test report for maven project', async () => {
   await utils.launchDashboardAction(item,constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
   //expect (tabs[1], "Unit test report not found").to.equal(constants.SUREFIRE_REPORT_TITLE);
-  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found").to.equal(true); 
+  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found");
+  await utils.closeEditor();// closing the tab after view unit test report is successful
     
 }).timeout(10000);
 
@@ -225,7 +228,101 @@ it('View Integration test report for maven project', async () => {
   await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);   
   tabs = await new EditorView().getOpenEditorTitles();
   //expect (tabs[2], "Integration test report not found").to.equal(constants.FAILSAFE_REPORT_TITLE);
-  expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found").to.equal(true);
+  expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found");
+  await utils.closeEditor();// closing the tab after view Integration test report is successful
+    
+}).timeout(10000);
+
+it('Run tests for sample maven project with surefire version 3.4.0', async () => {
+
+  await utils.clearMavenPluginCache();// Clears the cache to ensure the specific surefire versions are downloaded for the next test
+  await utils.modifyPomFile();// Modifies pom.xml to inlcude surefire version 3.4.0
+  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
+  const foundCommand = await utils.chooseCmdFromHistory("-DhotTests=true");
+  expect(foundCommand).to.be.true;
+  await utils.delay(30000);
+  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
+  if (!serverStartStatus)
+    console.log("Server started with params message not found in the terminal ");
+  else {
+    console.log("Server succuessfully started");
+    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+    const serverStopStatus = await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
+    await utils.revertPomFile();// Removes specific verison of the surefire plugin added in pom file for testing
+    await utils.clearMavenPluginCache();// Clear the plugin cache to remove the current versions and ensure the latest plugins are used for the next tests.
+    if (!serverStopStatus) {
+      console.error("Server stopped message not found in the terminal");
+    }
+    else {
+      console.log("Server stopped successfully");
+    }
+    expect(serverStopStatus).to.be.true;
+  }
+  expect(serverStartStatus).to.be.true;
+}).timeout(350000);
+
+it('check all test reports exists', async () => {
+  // Define the report paths
+  const reportPaths = [
+    path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html"),
+    path.join(utils.getMvnProjectPath(), "target", "reports", "surefire.html"),
+    path.join(utils.getMvnProjectPath(), "target", "site", "surefire-report.html"),
+    path.join(utils.getMvnProjectPath(), "target", "site", "failsafe-report.html")
+  ];
+  // Check if all reports exist
+  const checkPromises = reportPaths.map(reportPath => {
+    return new Promise(resolve => {
+      const exists = fs.existsSync(reportPath);
+      resolve(exists);
+    });
+  });
+
+  // Wait for all checks to complete
+  const existenceResults = await Promise.all(checkPromises);
+
+  // All report files should exist
+  expect(existenceResults.every(result => result === true)).to.be.true;
+}).timeout(10000);
+
+it('View latest Unit test report when all the reports exists', async () => {
+  const outputView = await new BottomBarPanel().openOutputView();
+  outputView.clearText();
+  await utils.launchDashboardAction(item, constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);
+  await outputView.selectChannel("Liberty tools Extension Output");
+  const text = await outputView.getText();// Read the text from Liberty tools Extension Output channel
+  assert(text.includes('/target/reports/surefire.html'));//check the path fetched from channel belong to the latest test report 
+  await utils.closeEditor();
+}).timeout(10000);
+
+it('View latest Integration test report when all the reports exists', async () => {
+  const outputView = await new BottomBarPanel().openOutputView();
+  outputView.clearText();
+  await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);
+  await outputView.selectChannel("Liberty tools Extension Output");
+  const text = await outputView.getText();
+  assert(text.includes('/target/reports/failsafe.html'));
+  await utils.closeEditor();
+}).timeout(10000);
+
+it('View Unit test report for maven project with surefire 3.4.0', async () => {  
+  
+  //Deleting the reports generated by the latest version of the surefire plugin
+  let deleteFailsafeReport = await utils.deleteReports(path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html"));
+  let deleteSurefireReport = await utils.deleteReports(path.join(utils.getMvnProjectPath(), "target", "reports", "surefire.html")); 
+  expect(deleteFailsafeReport && deleteSurefireReport).to.be.true;
+  await utils.launchDashboardAction(item,constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);   
+  tabs = await new EditorView().getOpenEditorTitles();
+  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found");
+  await utils.closeEditor();// closing the tab after view unit test report with surefire 3.4.0 is successful
+    
+}).timeout(10000);
+
+it('View Integration test report for maven project  with surefire 3.4.0', async () => {      
+    
+  await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);   
+  tabs = await new EditorView().getOpenEditorTitles();
+  expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found");
+  await utils.closeEditor();// closing the tab after view Integration test report with surefire 3.4.0 is successful
     
 }).timeout(10000);
 
