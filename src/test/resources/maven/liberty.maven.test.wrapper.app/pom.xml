@@ -70,6 +70,7 @@
                     <stripVersion>true</stripVersion>
                 </configuration>
             </plugin>
+            <!-- Test report insertion point, do not remove -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
