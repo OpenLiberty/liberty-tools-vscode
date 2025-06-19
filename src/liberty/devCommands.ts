@@ -285,7 +285,8 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
                     "request": "attach",
                     "hostName": "localhost",
                     "port": port,
-                    "cwd": path
+                    "cwd": path,
+                    "projectName": libProject.getLabel()
                 }).then(() => {
                     // do not show any message
                 }, err => {
