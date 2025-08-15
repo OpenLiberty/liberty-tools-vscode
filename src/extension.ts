@@ -25,7 +25,7 @@ import * as fs from "fs";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
-export const LIBERTY_LS_JAR = "liberty-langserver-2.3.1-jar-with-dependencies.jar";
+export const LIBERTY_LS_JAR = "liberty-langserver-2.3.2-jar-with-dependencies.jar";
 export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.2.3-jar-with-dependencies.jar";
 
 let libertyClient: LanguageClient;
