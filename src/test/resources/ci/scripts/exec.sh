@@ -66,32 +66,12 @@ main() {
 
         if [ $VSCODE_VERSION_TO_RUN == "latest" ]; then
             # Run the plugin's install goal against the latest vscode version
-             if [ $OS = "Darwin" ]; then
-                chown -R runner src/test/resources/maven
-              chown -R runner  src/test/resources/gradle
-                # Gradle tests should be run before Maven tests because the after hook for copying the screeshots from temporary to a  permananet location is written in the Maven tests so that the copying will be done at the end of every test cases.
-                npm run test-mac-gradle -- -u
-                updateExitStatus
-                npm run test-mac-maven -- -u
-                updateExitStatus
-            else
-                npm run test -- -u
-                updateExitStatus
-            fi
+            npm run test -- -u
+            updateExitStatus
         else
             # Run the plugin's install goal against the target vscode version
-            if [ $OS = "Darwin" ]; then
-              chown -R runner src/test/resources/maven
-              chown -R runner  src/test/resources/gradle
-              # Gradle tests should be run before Maven tests because the after hook for copying the screeshots from temporary to a  permananet location is written in the Maven tests so that the copying will be done at the end of every test cases.
-              npm run test-mac-gradle -- -u -c $VSCODE_VERSION_TO_RUN
-              updateExitStatus
-              npm run test-mac-maven -- -u -c $VSCODE_VERSION_TO_RUN
-              updateExitStatus
-            else
             npm run test -- -u -c $VSCODE_VERSION_TO_RUN
             updateExitStatus
-            fi
         fi
     fi
 
