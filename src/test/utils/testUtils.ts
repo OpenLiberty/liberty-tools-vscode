@@ -8,12 +8,13 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, SideBarView, VSBrowser, TextEditor } from 'vscode-extension-tester';
 import * as fs from 'fs';
-import { STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
+import * as constants from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
+import * as fse from 'fs-extra';
 
 export function delay(millisec: number) {
     return new Promise( resolve => setTimeout(resolve, millisec) );
@@ -180,7 +181,7 @@ export function getMvnProjectPath(): string {
 export async function stopLibertyserver(projectName: string) {
   console.log("Stop Server action for Project : " + projectName);
   const workbench = new Workbench();
-  await workbench.executeCommand(STOP_DASHBOARD_MAC_ACTION);
+  await workbench.executeCommand(constants.STOP_DASHBOARD_MAC_ACTION);
   const input = InputBox.create();
   (await input).clear();
   (await input).setText(projectName);
@@ -202,4 +203,87 @@ export async function clearCommandPalette() {
   await dialog.pushButton('Clear');
 }
 
-  
+/**
+ * 
+ * @param projectPath 
+ *  Remove specific directory with contents
+ */
+export async function removeDirectoryByPath(dirPath: string): Promise<void> {
+  try {
+    fs.accessSync(dirPath);
+    const dirContent = fs.readdirSync(dirPath);
+    await Promise.all(
+      dirContent.map(async (dirFiles) => {
+        const projectContentPath = path.join(dirPath, dirFiles);
+        const stats = fs.lstatSync(projectContentPath);
+        if (stats.isDirectory()) {
+          await removeDirectoryByPath(projectContentPath);
+        } else {
+          fs.unlinkSync(projectContentPath);
+        }
+      })
+    );
+    fs.rmdirSync(dirPath);
+  } catch (error) {
+    console.error(`Error removing directory: ${error}`);
+  }
+}
+
+/**
+ * 
+ * @param existingConfigPath 
+ * @param copyConfigPath 
+ * Copy a specific directory 
+ */
+export async function copyDirectoryByPath(existingDirPath: string, copyDirPath: string): Promise<void> {
+  fse.copy(existingDirPath, copyDirPath)
+    .then(() => console.log("Folder content copied :" + copyDirPath))
+    .catch(err => console.log("Error occuried while copying content"));
+}
+
+/**
+ * 
+ * @param parentDir 
+ * @param configFileName 
+ * Open specific file from parent directory
+ */
+export async function openFileByPath(parentDir: string, fileName: string) {
+  const section = await new SideBarView().getContent().getSection(constants.GRADLE_PROJECT);
+  section.expand();
+  await VSBrowser.instance.openResources(path.join(getGradleProjectPath(), 'src', 'main', 'liberty', parentDir, fileName));
+}
+
+/**
+ * Function to close currently opened file tab
+ */
+export async function closeFileTab(fileType: string) {
+  const workbench = new Workbench();
+  await workbench.openCommandPrompt();
+  await delay(3000);
+  await workbench.executeCommand(constants.CLOSE_EDITOR);
+  await delay(3000);
+  const dialog = new ModalDialog();
+  const message = await dialog.getMessage();
+
+  if (fileType in constants.CONFIRM_MESSAGES) {
+    expect(message).contains(constants.CONFIRM_MESSAGES[fileType as keyof typeof constants.CONFIRM_MESSAGES]);
+  }
+  const buttons = await dialog.getButtons();
+  expect(buttons.length).equals(3);
+  await dialog.pushButton('Don\'t Save');
+}
+
+/**
+ * 
+ * @param editor 
+ * @param selectValue 
+ * Function to call toggle assistant to select value from suggestion list
+ */
+export async function callAssitantAction(editor: TextEditor, selectValue: string) {
+  let assist = await editor.toggleContentAssist(true);
+  // toggle can return void, so we need to make sure the object is present
+  if (assist) {
+    // to select an item use
+    await assist.select(selectValue);
+  }
+}
