@@ -139,6 +139,11 @@
 				"command": "liberty.dev.open.gradle.test.report",
 				"category": "Liberty",
 				"title": "%commands.title.view.test.report%"
+			},
+			{
+				"command": "extension.printMessage",
+				"category": "Liberty",
+				"title": "Print Message"
 			}
 		],
 		"menus": {

@@ -21,6 +21,7 @@ import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
 import { getCommandForMaven, getCommandForGradle, defaultWindowsShell } from "../util/commandUtils";
+import { outputChannel } from "../extension";
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 
@@ -561,6 +562,8 @@ function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel:
                     {}, // Webview options
                 );
                 panel.webview.html = getReport(report); // display HTML content
+                outputChannel.clear();// clear the content from Liberty tools Extension Output channel
+                outputChannel.appendLine(reportType+" path is "+report);// writing the path to Liberty tools Extension Output channel
                 /*
                 For Maven projects we need to check for the test report in the 'reports' and 'site' dirs. 
                 We only need to show the message if it is not available in both locations. 
