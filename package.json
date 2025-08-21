@@ -285,12 +285,13 @@
 		"@types/fs-extra": "^8.1.0",
 		"@types/semver": "^7.3.2",
 		"@types/xml2js": "^0.4.5",
+		"brace-expansion": "^4.0.1",
 		"expand-home-dir": "0.0.3",
 		"find-java-home": "^1.2.2",
 		"fs-extra": "^9.0.0",
 		"gradle-to-js": "^2.0.0",
 		"jsonpath-plus": "^10.3.0",
-		"vscode-languageclient": "^8.1.0",
+		"vscode-languageclient": "^9.0.1",
 		"xml2js": "^0.5.0"
 	}
 }
