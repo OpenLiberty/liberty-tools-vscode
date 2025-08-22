@@ -2,6 +2,19 @@
 
 All notable changes to the Liberty Tools extension will be documented below.
 
+## 25.0.8
+
+Version 25.0.8 of Liberty Tools for Visual Studio Code is a fix release that contains minor enhancements and fixes. Version 25.0.8 requires Visual Studio Code version 1.78+ and requires Java 17 or later.
+
+Notable changes:
+- Updated [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) version to 2.3.2, which includes multiple enhancements and bug fixes. For more information regarding changes for version 2.3.2, refer to the release notes:
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/liberty-langserver-2.3.2
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/lemminx-liberty-2.3.2
+- Fixed an issue when connecting a debugger using the "Attach Debugger" context menu feature
+  - https://github.com/OpenLiberty/liberty-tools-vscode/issues/544
+
+See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/25.0.3...25.0.8) for the full set of changes since the previous release.
+
 ## 25.0.3
 
 Version 25.0.3 of Liberty Tools for Visual Studio Code is a fix release that contains minor enhancements and fixes. Version 25.0.3 requires Visual Studio Code version 1.78+ and requires Java 17 or later.
