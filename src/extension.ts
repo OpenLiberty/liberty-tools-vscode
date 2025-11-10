@@ -10,13 +10,14 @@ import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
 import { LanguageClientOptions } from "vscode-languageclient";
 import { LanguageClient } from "vscode-languageclient/node";
 import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor } from "vscode";
-import { JAVA_EXTENSION_ID, waitForStandardMode } from "./util/javaServerMode";
 import { localize } from "./util/i18nUtil";
 import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "./util/requirements";
 import { prepareExecutable } from "./util/javaServerStarter";
 import * as helperUtil from "./util/helperUtil";
 import path = require('path');
 import * as fs from "fs";
+
+const JAVA_EXTENSION_ID = "redhat.java";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
@@ -37,7 +38,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
      * If java ls was started in lightweight mode, It will prompt user to switch
      */
     const api: JavaExtensionAPI = await getJavaExtensionAPI();
-    await waitForStandardMode(api);
 
     const item = window.createStatusBarItem(StatusBarAlignment.Right, Number.MIN_VALUE);
     // item.name = "Liberty Language Server";
