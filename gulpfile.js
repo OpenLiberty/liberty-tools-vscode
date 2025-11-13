@@ -17,9 +17,9 @@ const MC_SNAPSHOT_BASE_URL = "https://central.sonatype.com/repository/maven-snap
 const libertyGroupId = "io.openliberty.tools";
 const libertyLemminxArtifactId = "liberty-langserver-lemminx";
 const libertyLSArtifactId = "liberty-langserver";
-const libertyVersion = "2.3.2";
+const libertyVersion = "2.4";
 const jakartaGroupId = "org.eclipse.lsp4jakarta";
-const jakartaVersion = "0.2.3";
+const jakartaVersion = "0.2.5";
 var lclsReleaseLevel = "releases";  //snapshots or releases
 var jakartaReleaseLevel = "releases";
 
