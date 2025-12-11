@@ -3,8 +3,8 @@
  * Copyright IBM Corp. 2020, 2022
  */
 
-export const MAVEN_PROJECT = "liberty.maven.test.wrapper.app";
-export const GRADLE_PROJECT= "liberty.gradle.test.wrapper.app";
+export const MAVEN_PROJECT = "liberty-maven-test-wrapper-app";
+export const GRADLE_PROJECT= "liberty-gradle-test-wrapper-app";
 export const START_DASHBOARD_ACTION = "Start";
 export const STOP_DASHBOARD_ACTION = "Stop";
 export const START_DASHBOARD_MAC_ACTION = "Liberty: Start";
@@ -26,9 +26,9 @@ export const ITR_DASHBOARD_ACTION = "View integration test report";
 export const GRADLE_TR_DASHABOARD_ACTION = "View test report";
 export const GRADLE_TR_DASHABOARD_MAC_ACTION = "Liberty: View test report";
 export const ITR_DASHBOARD_MAC_ACTION = "Liberty: View integration test report";
-export const SUREFIRE_REPORT_TITLE = "liberty.maven.test.wrapper.app surefire report";
-export const FAILSAFE_REPORT_TITLE = "liberty.maven.test.wrapper.app failsafe report";
-export const GRADLE_TEST_REPORT_TITLE = "liberty.gradle.test.wrapper.app test report";
+export const SUREFIRE_REPORT_TITLE = "liberty-maven-test-wrapper-app surefire report";
+export const FAILSAFE_REPORT_TITLE = "liberty-maven-test-wrapper-app failsafe report";
+export const GRADLE_TEST_REPORT_TITLE = "liberty-gradle-test-wrapper-app test report";
 export const ATTACH_DEBUGGER_DASHBOARD_ACTION = "Attach debugger";
 export const ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION = "Liberty: Attach debugger";
 /** Maven: Dev mode debug port argument key. */

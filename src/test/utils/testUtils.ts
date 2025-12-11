@@ -15,13 +15,13 @@ export function delay(millisec: number) {
 }
 
 export function getMvnProjectPath(): string {
-    const mvnProjectPath = path.join(__dirname, "..","..","..","src", "test","resources", "maven","liberty.maven.test.wrapper.app");  
+    const mvnProjectPath = path.join(__dirname, "..","..","..","src", "test","resources", "maven","liberty-maven-test-wrapper-app");  
     console.log("Path is : "+mvnProjectPath)  ;
     return mvnProjectPath; 
   }
 
   export function getGradleProjectPath(): string {
-    const gradleProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","gradle", "liberty.gradle.test.wrapper.app");  
+    const gradleProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","gradle", "liberty-gradle-test-wrapper-app");  
     console.log("Path is : "+gradleProjectPath)  ;
     return gradleProjectPath; 
   }
