@@ -105,8 +105,6 @@ export async function checkIfTestReportExists(reportPath: string): Promise<Boole
     return foundReport;
 }
 
-
-
 export async function checkTerminalforServerState(serverStatusCode: string): Promise<Boolean> {
     const workbench = new Workbench();
     let foundText = false;
@@ -136,7 +134,6 @@ export async function checkTerminalforServerState(serverStatusCode: string): Pro
     await workbench.executeCommand('terminal clear');
     return foundText;
 }
-
 
 export async function checkTestStatus(testStatus: string): Promise<Boolean> {
     const workbench = new Workbench();

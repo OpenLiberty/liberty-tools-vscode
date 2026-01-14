@@ -10,7 +10,6 @@ import {
     InputBox,
 } from "vscode-extension-tester";
 
-
 // NOTE: For MAC OS, Open issue with vscode-extension-tester for ContextMenu Click -> https://github.com/redhat-developer/vscode-extension-tester/issues/444
 // So workaround using InputBOx to Map the contextmenu input to its corresponding Action for MAC till the issue is resolved in tool
 export async function MapContextMenuforMac(item: DefaultTreeItem, MapAction: string): Promise<boolean> {
