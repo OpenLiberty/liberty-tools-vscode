@@ -250,9 +250,9 @@
 		"build": "gulp downloadLibertyLSJars downloadLSP4JakartaJars",
 		"buildLcls": "gulp buildLemminxLiberty buildLibertyServer",
 		"buildJakarta": "gulp buildJakartaJdt buildJakartaLs",
-		"test": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/*.js'",
-		"test-mac-maven": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/M*.js'",
-		"test-mac-gradle": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js'"
+		"test": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/*.js' --code_settings src/test/resources/settings.json",
+		"test-mac-maven": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/M*.js' --code_settings src/test/resources/settings.json",
+		"test-mac-gradle": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js' --code_settings src/test/resources/settings.json"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.3.4",
