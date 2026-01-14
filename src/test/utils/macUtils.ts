@@ -1,6 +1,6 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2023, 2025
+ * Copyright IBM Corp. 2023, 2026
  */
 
 'use strict';
@@ -23,8 +23,10 @@ export async function setInputBox(MapActionString: string): Promise<boolean> {
     const input = await InputBox.create();
     if (typeof MapActionString === "string") {
         await input.setText(MapActionString);
+        // Confirm input text (hitting enter)
         await input.confirm();
-        await input.click();
+        // Confirm second time instead of clicking to select the test project
+        await input.confirm();
         return true;
     } else {
         return false;
