@@ -21,7 +21,7 @@ jobs:
           os: ubuntu-latest
 
         - runtime: mac
-          os: macOS-13
+          os: macOS-15
 
       #  - runtime: windows
       #    os: windows-latest
