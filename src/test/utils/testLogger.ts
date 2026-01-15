@@ -7,31 +7,37 @@
 
 /**
  * Test logger that provides structured output for test execution.
- * Logs are written immediately to stdout, errors to stderr.
+ * Uses synchronous writes to prevent interleaving.
  */
 class TestLogger {
     /**
-     * Log a message to stdout
+     * Log a message to stdout using synchronous write
      */
     log(message: string): void {
-        console.log(message);
+        process.stdout.write(message + '\n');
     }
 
     /**
      * Log an error message to stderr with clear separation
+     * Uses a single synchronous write to prevent interleaving
      */
     error(message: string, error?: any): void {
-        // Write to stderr with clear separation
-        process.stderr.write('\n' + '='.repeat(80) + '\n');
-        process.stderr.write(`[ERROR] ${message}\n`);
+        // Build the entire error message as a single string
+        let errorOutput = '\n' + '='.repeat(80) + '\n';
+        errorOutput += `[ERROR] ${message}\n`;
+        
         if (error) {
             if (error.stack) {
-                process.stderr.write(error.stack + '\n');
+                errorOutput += error.stack + '\n';
             } else {
-                process.stderr.write(String(error) + '\n');
+                errorOutput += String(error) + '\n';
             }
         }
-        process.stderr.write('='.repeat(80) + '\n\n');
+        
+        errorOutput += '='.repeat(80) + '\n\n';
+        
+        // Write the entire error message in one synchronous operation
+        process.stderr.write(errorOutput);
     }
 
     /**
