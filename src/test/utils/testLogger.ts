@@ -1,6 +1,6 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2023, 2026
+ * Copyright IBM Corp. 2026
  */
 
 'use strict';
@@ -22,14 +22,14 @@ class TestLogger {
      */
     error(message: string, error?: any): void {
         // Just log the error message - Mocha will display the full error
-        console.error(`[ERROR] ${message}`);
+        console.error(`  [ERROR] ${message}`);
     }
 
     /**
      * Log an info message with special formatting
      */
     info(message: string): void {
-        console.log(`[INFO] ${message}`);
+        console.log(`  [INFO] ${message}`);
     }
 
     /**
