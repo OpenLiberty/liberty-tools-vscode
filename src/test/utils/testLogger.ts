@@ -6,37 +6,32 @@
 'use strict';
 
 /**
- * Test logger that buffers console output to prevent interleaving with error messages.
- * Logs are buffered during test execution and flushed at appropriate times.
+ * Test logger that provides structured output for test execution.
+ * Logs are written immediately to stdout, errors to stderr.
  */
 class TestLogger {
-    private buffer: string[] = [];
-    private isBuffering: boolean = true;
-
     /**
-     * Log a message. If buffering is enabled, the message is stored.
-     * Otherwise, it's printed immediately.
+     * Log a message to stdout
      */
     log(message: string): void {
-        if (this.isBuffering) {
-            this.buffer.push(`[LOG] ${message}`);
-        } else {
-            console.log(message);
-        }
+        console.log(message);
     }
 
     /**
-     * Log an error message. Errors are always printed immediately
-     * to ensure they're visible, preceded by flushing any buffered logs.
+     * Log an error message to stderr with clear separation
      */
     error(message: string, error?: any): void {
-        this.flush();
-        console.error('\n' + '='.repeat(80));
-        console.error(`[ERROR] ${message}`);
+        // Write to stderr with clear separation
+        process.stderr.write('\n' + '='.repeat(80) + '\n');
+        process.stderr.write(`[ERROR] ${message}\n`);
         if (error) {
-            console.error(error);
+            if (error.stack) {
+                process.stderr.write(error.stack + '\n');
+            } else {
+                process.stderr.write(String(error) + '\n');
+            }
         }
-        console.error('='.repeat(80) + '\n');
+        process.stderr.write('='.repeat(80) + '\n\n');
     }
 
     /**
@@ -61,14 +56,13 @@ class TestLogger {
     testComplete(testName: string): void {
         this.log(`[TEST COMPLETE] ${testName} passed`);
         this.log('='.repeat(80) + '\n');
-        this.flush();
     }
 
     /**
      * Log a test failure message
      */
     testFailed(testName: string, error: any): void {
-        this.error(`[TEST FAILED] ${testName} failed`, error);
+        this.error(`Test failed: ${testName}`, error);
     }
 
     /**
@@ -90,34 +84,6 @@ class TestLogger {
      */
     skip(message: string): void {
         this.log(`[SKIP] ${message}`);
-        this.flush();
-    }
-
-    /**
-     * Flush all buffered logs to console
-     */
-    flush(): void {
-        if (this.buffer.length > 0) {
-            this.buffer.forEach(msg => console.log(msg));
-            this.buffer = [];
-        }
-    }
-
-    /**
-     * Enable or disable buffering
-     */
-    setBuffering(enabled: boolean): void {
-        if (!enabled) {
-            this.flush();
-        }
-        this.isBuffering = enabled;
-    }
-
-    /**
-     * Clear the buffer without printing
-     */
-    clear(): void {
-        this.buffer = [];
     }
 }
 
