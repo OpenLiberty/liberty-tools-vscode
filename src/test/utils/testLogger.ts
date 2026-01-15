@@ -7,89 +7,72 @@
 
 /**
  * Test logger that provides structured output for test execution.
- * Uses synchronous writes to prevent interleaving.
+ * Works with Mocha's test output - logs go to stdout, errors to stderr.
  */
 class TestLogger {
     /**
-     * Log a message to stdout using synchronous write
+     * Log a message to stdout
      */
     log(message: string): void {
-        process.stdout.write(message + '\n');
+        console.log(message);
     }
 
     /**
-     * Log an error message to stderr with clear separation
-     * Uses a single synchronous write to prevent interleaving
+     * Log an error message - just log it, let Mocha handle the error display
      */
     error(message: string, error?: any): void {
-        // Build the entire error message as a single string
-        let errorOutput = '\n' + '='.repeat(80) + '\n';
-        errorOutput += `[ERROR] ${message}\n`;
-        
-        if (error) {
-            if (error.stack) {
-                errorOutput += error.stack + '\n';
-            } else {
-                errorOutput += String(error) + '\n';
-            }
-        }
-        
-        errorOutput += '='.repeat(80) + '\n\n';
-        
-        // Write the entire error message in one synchronous operation
-        process.stderr.write(errorOutput);
+        // Just log the error message - Mocha will display the full error
+        console.error(`[ERROR] ${message}`);
     }
 
     /**
      * Log an info message with special formatting
      */
     info(message: string): void {
-        this.log(`[INFO] ${message}`);
+        console.log(`[INFO] ${message}`);
     }
 
     /**
-     * Log a test start message
+     * Log a test start message - minimal output since Mocha shows test names
      */
     testStart(testName: string): void {
-        this.log(`\n${'='.repeat(80)}`);
-        this.log(`[TEST START] ${testName}`);
-        this.log('='.repeat(80));
+        console.log(`[TEST START] ${testName}`);
     }
 
     /**
      * Log a test completion message
      */
     testComplete(testName: string): void {
-        this.log(`[TEST COMPLETE] ${testName} passed`);
-        this.log('='.repeat(80) + '\n');
+        console.log(`[TEST COMPLETE] ${testName}`);
     }
 
     /**
-     * Log a test failure message
+     * Log a test failure message - let Mocha handle the error display
      */
     testFailed(testName: string, error: any): void {
-        this.error(`Test failed: ${testName}`, error);
+        // Don't log here - just throw the error so Mocha can display it properly
+        throw error;
     }
 
     /**
      * Log a step in the test
      */
     step(stepNumber: number, description: string): void {
-        this.log(`[STEP ${stepNumber}] ${description}`);
+        console.log(`  [STEP ${stepNumber}] ${description}`);
     }
 
     /**
      * Log a successful step completion
      */
     stepSuccess(stepNumber: number, description: string): void {
-        this.log(`[STEP ${stepNumber} - SUCCESS] ${description}`);
+        console.log(`  [STEP ${stepNumber} ✓] ${description}`);
     }
 
     /**
      * Log a skip message
      */
     skip(message: string): void {
-        this.log(`[SKIP] ${message}`);
+        console.log(`[SKIP] ${message}`);
     }
 }
 
