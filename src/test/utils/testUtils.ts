@@ -7,6 +7,7 @@ import { Workbench, InputBox, DefaultTreeItem, ModalDialog } from 'vscode-extens
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
+import { logger } from './testLogger';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
 
@@ -16,25 +17,25 @@ export function delay(millisec: number) {
 
 export function getMvnProjectPath(): string {
     const mvnProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "maven", "liberty-maven-test-wrapper-app");
-    console.log("Path is : " + mvnProjectPath);
+    logger.info("Path is : " + mvnProjectPath);
     return mvnProjectPath;
 }
 
 export function getGradleProjectPath(): string {
     const gradleProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "gradle", "liberty-gradle-test-wrapper-app");
-    console.log("Path is : " + gradleProjectPath);
+    logger.info("Path is : " + gradleProjectPath);
     return gradleProjectPath;
 }
 
 export async function launchDashboardAction(item: DefaultTreeItem, action: string, actionMac: string) {
 
-    console.log("Launching action: " + action);
-    if (process.platform === 'darwin') {//Only for MAC platform      
+    logger.info("Launching action: " + action);
+    if (process.platform === 'darwin') {//Only for MAC platform
         await MapContextMenuforMac(item, actionMac);
-    } else {  // NON MAC platforms    
-        console.log("before contextmenu");
+    } else {  // NON MAC platforms
+        logger.info("before contextmenu");
         const menuItem = await item.openContextMenu();
-        console.log("before select");
+        logger.info("before select");
         await menuItem.select(action);
     }
 
@@ -42,7 +43,7 @@ export async function launchDashboardAction(item: DefaultTreeItem, action: strin
 
 export async function setCustomParameter(customParam: string) {
 
-    console.log("Setting custom Parameter");
+    logger.info("Setting custom Parameter");
     const input = new InputBox();
     await input.click();
     await input.setText(customParam);
@@ -52,7 +53,7 @@ export async function setCustomParameter(customParam: string) {
 
 export async function chooseCmdFromHistory(command: string): Promise<Boolean> {
 
-    console.log("Choosing command from history");
+    logger.info("Choosing command from history");
     const input = new InputBox();
     const pick = await input.findQuickPick(command);
     if (pick) {
@@ -72,7 +73,7 @@ export async function deleteReports(reportPath: string): Promise<Boolean> {
             if (err)
                 return false;
             else {
-                console.log(reportPath + ' was deleted');
+                logger.info(reportPath + ' was deleted');
                 return true;
             }
         });
@@ -98,7 +99,7 @@ export async function checkIfTestReportExists(reportPath: string): Promise<Boole
             }
         }
         catch (e) {
-            console.error("Caught exception when checking for test report", e);
+            logger.error("Caught exception when checking for test report", e);
 
         }
     }
@@ -110,22 +111,21 @@ export async function checkTerminalforServerState(serverStatusCode: string): Pro
     let foundText = false;
     let count = 0;
     do {
-        clipboard.writeSync('');//clean slate for clipboard      
+        clipboard.writeSync('');//clean slate for clipboard
         await workbench.executeCommand('terminal select all');
         const text = clipboard.readSync();
-        // console.log("debug:" + text);
         if (text.includes(serverStatusCode)) {
             foundText = true;
-            console.log("Found text " + serverStatusCode);
+            logger.info("Found text " + serverStatusCode);
             break;
         }
         else if (text.includes("FAILURE")) {
-            console.log("Found failure " + text);
+            logger.info("Found failure " + text);
             foundText = false;
             break;
         }
         else {
-            console.log("test is running ...")
+            logger.info("test is running ...");
             foundText = false;
         }
         count++;
@@ -145,7 +145,7 @@ export async function checkTestStatus(testStatus: string): Promise<Boolean> {
         const text = clipboard.readSync();
         if (text.includes(testStatus)) {
             foundText = true;
-            console.log("Found text " + testStatus);
+            logger.info("Found text " + testStatus);
             break;
         }
         else
@@ -160,7 +160,7 @@ export async function checkTestStatus(testStatus: string): Promise<Boolean> {
 /* Stop Server Liberty dashboard post Attach Debugger*/
 /* As the Window view changes using command to stop server instead of devmode action */
 export async function stopLibertyserver(projectName: string) {
-    console.log("Stop Server action for Project : " + projectName);
+    logger.info("Stop Server action for Project : " + projectName);
     const workbench = new Workbench();
     await workbench.executeCommand(STOP_DASHBOARD_MAC_ACTION);
     const input = InputBox.create();
