@@ -22,28 +22,31 @@ class TestLogger {
      */
     error(message: string, error?: any): void {
         // Just log the error message - Mocha will display the full error
-        console.error(`  [ERROR] ${message}`);
+        console.error(`[ERROR] ${message}`);
     }
 
     /**
      * Log an info message with special formatting
      */
     info(message: string): void {
-        console.log(`  [INFO] ${message}`);
+        console.log(`       [INFO] ${message}`);
     }
 
     /**
-     * Log a test start message - minimal output since Mocha shows test names
+     * Log a test start message - use gray color like Mocha's test names
      */
     testStart(testName: string): void {
-        console.log(`[TEST START] ${testName}`);
+        const YELLOW = '\x1b[33m';
+        const GRAY = '\x1b[90m';
+        const RESET = '\x1b[0m';
+        console.log(`    ${YELLOW}▶${RESET} ${GRAY}${testName}${RESET}`);
     }
 
     /**
      * Log a test completion message
      */
     testComplete(testName: string): void {
-        console.log(`[TEST COMPLETE] ${testName}`);
+        // No output needed - Mocha shows the checkmark
     }
 
     /**
@@ -58,21 +61,21 @@ class TestLogger {
      * Log a step in the test
      */
     step(stepNumber: number, description: string): void {
-        console.log(`  [STEP ${stepNumber}] ${description}`);
+        console.log(`      [STEP ${stepNumber}] ${description}`);
     }
 
     /**
      * Log a successful step completion
      */
     stepSuccess(stepNumber: number, description: string): void {
-        console.log(`  [STEP ${stepNumber} ✓] ${description}`);
+        console.log(`      [STEP ${stepNumber} ✓] ${description}`);
     }
 
     /**
      * Log a skip message
      */
     skip(message: string): void {
-        console.log(`[SKIP] ${message}`);
+        console.log(`    [SKIP] ${message}`);
     }
 }
 
