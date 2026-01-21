@@ -53,7 +53,7 @@ describe('Devmode action tests for Maven Project', () => {
             section.expand();
 
             logger.step(3, 'Waiting for expansion to update');
-            await utils.delay(6000);
+            await utils.delay(15000);
 
             logger.step(4, 'Getting visible items from section');
             const menu = await section.getVisibleItems();
