@@ -27,7 +27,7 @@ jobs:
       #  - runtime: windows
       #    os: windows-latest
 
-    name: Test ${{ matrix.runtime }} - ${{ matrix.buildTool }} - VSCode ${{ matrix.targetVSCode }}
+    name: Test ${{ matrix.runtime }} - ${{ matrix.buildTool }} - ${{ matrix.targetVSCode }}
     runs-on: ${{ matrix.os }}
 
     steps:
