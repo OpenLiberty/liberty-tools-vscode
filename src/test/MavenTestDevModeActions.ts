@@ -468,36 +468,9 @@ describe('Devmode action tests for Maven Project', () => {
 
     /**
      * The following after hook copies the screenshot from the temporary folder in which it is saved to a known permanent location in the project folder.
-     * The MavenTestDevModeAction is the last test file that will be executed. Hence the after hook placed here
-     * ensures that all the screenshots will be copied to a known permanent location in the project folder.
      */
     after(() => {
-        const sourcePath = VSBrowser.instance.getScreenshotsDir();
-        const destinationPath = './screenshots';
-
-        copyFolderContents(sourcePath, destinationPath);
+        utils.copyScreenshotsToProjectFolder('maven');
     });
-
-    function copyFolderContents(sourceFolder: string, destinationFolder: string): void {
-        if (!fs.existsSync(sourceFolder)) {
-            return;
-        }
-
-        if (!fs.existsSync(destinationFolder)) {
-            fs.mkdirSync(destinationFolder);
-        }
-
-        const files = fs.readdirSync(sourceFolder);
-        for (const file of files) {
-            const sourcePath = path.join(sourceFolder, file);
-            const destinationPath = path.join(destinationFolder, file);
-
-            if (fs.statSync(sourcePath).isDirectory()) {
-                copyFolderContents(sourcePath, destinationPath);
-            } else {
-                fs.copyFileSync(sourcePath, destinationPath);
-            }
-        }
-    }
 });
 

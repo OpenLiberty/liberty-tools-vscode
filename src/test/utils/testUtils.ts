@@ -183,3 +183,43 @@ export async function clearCommandPalette() {
     expect(buttons.length).equals(2);
     await dialog.pushButton('Clear');
 }
+
+/**
+ * Copies screenshots from the temporary VSCode screenshots directory to a permanent location
+ * organized by build tool (maven or gradle).
+ * @param buildTool The build tool name ('maven' or 'gradle') to organize screenshots
+ */
+export function copyScreenshotsToProjectFolder(buildTool: string): void {
+    const VSBrowser = require('vscode-extension-tester').VSBrowser;
+    const sourcePath = VSBrowser.instance.getScreenshotsDir();
+    const destinationPath = path.join('./screenshots', buildTool);
+
+    copyFolderContents(sourcePath, destinationPath);
+}
+
+/**
+ * Recursively copies all files from source folder to destination folder.
+ * @param sourceFolder Source directory path
+ * @param destinationFolder Destination directory path
+ */
+function copyFolderContents(sourceFolder: string, destinationFolder: string): void {
+    if (!fs.existsSync(sourceFolder)) {
+        return;
+    }
+
+    if (!fs.existsSync(destinationFolder)) {
+        fs.mkdirSync(destinationFolder, { recursive: true });
+    }
+
+    const files = fs.readdirSync(sourceFolder);
+    for (const file of files) {
+        const sourcePath = path.join(sourceFolder, file);
+        const destinationPath = path.join(destinationFolder, file);
+
+        if (fs.statSync(sourcePath).isDirectory()) {
+            copyFolderContents(sourcePath, destinationPath);
+        } else {
+            fs.copyFileSync(sourcePath, destinationPath);
+        }
+    }
+}

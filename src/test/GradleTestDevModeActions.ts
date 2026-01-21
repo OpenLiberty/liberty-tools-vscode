@@ -7,6 +7,8 @@ import { InputBox, Workbench, SideBarView, ViewSection, EditorView, DefaultTreeI
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import { logger } from './utils/testLogger';
+import * as fs from 'fs';
+import { VSBrowser } from 'vscode-extension-tester';
 import path = require('path');
 
 describe('Devmode action tests for Gradle Project', () => {
@@ -447,4 +449,11 @@ describe('Devmode action tests for Gradle Project', () => {
             throw error;
         }
     }).timeout(100000);
+
+    /**
+     * The following after hook copies the screenshot from the temporary folder in which it is saved to a known permanent location in the project folder.
+     */
+    after(() => {
+        utils.copyScreenshotsToProjectFolder('gradle');
+    });
 });
