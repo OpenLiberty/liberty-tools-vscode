@@ -75,43 +75,30 @@ main() {
             :
         fi
 
-        if [ $VSCODE_VERSION_TO_RUN == "latest" ]; then
-            # Run the plugin's install goal against the latest vscode version
-            if [ $OS = "Darwin" ]; then
-                if [ "$BUILD_TOOL" = "maven" ]; then
-                    chown -R runner src/test/resources/maven
-                fi
-                if [ "$BUILD_TOOL" = "gradle" ]; then
-                    chown -R runner src/test/resources/gradle
-                fi
+        # Run the plugin's install goal against the latest vscode version
+        if [ $OS = "Darwin" ]; then
+            if [ "$BUILD_TOOL" = "maven" ]; then
+                chown -R runner src/test/resources/maven
             fi
-            
             if [ "$BUILD_TOOL" = "gradle" ]; then
-                npm run test-gradle -- -u
-                updateExitStatus
-            elif [ "$BUILD_TOOL" = "maven" ]; then
-                npm run test-maven -- -u
-                updateExitStatus
-            fi
-        else
-            # Run the plugin's install goal against the target vscode version
-            if [ $OS = "Darwin" ]; then
-                if [ "$BUILD_TOOL" = "maven" ]; then
-                    chown -R runner src/test/resources/maven
-                fi
-                if [ "$BUILD_TOOL" = "gradle" ]; then
-                    chown -R runner src/test/resources/gradle
-                fi
-            fi
-            
-            if [ "$BUILD_TOOL" = "gradle" ]; then
-                npm run test-gradle -- -u -c $VSCODE_VERSION_TO_RUN
-                updateExitStatus
-            elif [ "$BUILD_TOOL" = "maven" ]; then
-                npm run test-maven -- -u -c $VSCODE_VERSION_TO_RUN
-                updateExitStatus
+                chown -R runner src/test/resources/gradle
             fi
         fi
+
+        if [ $VSCODE_VERSION_TO_RUN == "latest" ]; then
+            if [ "$BUILD_TOOL" = "gradle" ]; then
+                npm run test-gradle -- -u
+            elif [ "$BUILD_TOOL" = "maven" ]; then
+                npm run test-maven -- -u
+            fi
+        else
+            if [ "$BUILD_TOOL" = "gradle" ]; then
+                npm run test-gradle -- -u -c $VSCODE_VERSION_TO_RUN
+            elif [ "$BUILD_TOOL" = "maven" ]; then
+                npm run test-maven -- -u -c $VSCODE_VERSION_TO_RUN
+            fi
+        fi
+        updateExitStatus
     fi
 
     # If there were any errors, gather some debug data before exiting.
