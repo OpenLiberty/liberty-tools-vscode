@@ -60,22 +60,18 @@ main() {
 
             #Docker test initialisation step for Maven
             if [ $OS = "Linux" ]; then
-                #Start Display and Docker-Daemon
-                startDisplayAndDocker
-
                 mvn package
                 docker build --pull -f ./Dockerfile -t inventory-dev-mode .
             fi
             cd -
         fi
 
-        # Initialize Gradle project if needed
-        if [ "$BUILD_TOOL" = "gradle" ]; then
-            # Gradle initialization if needed (currently none required)
-            :
+         #Start Display and Docker-Daemon
+        if [ $OS = "Linux" ]; then
+            startDisplayAndDocker
         fi
 
-        # Run the plugin's install goal against the latest vscode version
+        # Run Tests
         if [ $OS = "Darwin" ]; then
             if [ "$BUILD_TOOL" = "maven" ]; then
                 chown -R runner src/test/resources/maven
