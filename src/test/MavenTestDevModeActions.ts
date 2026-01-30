@@ -26,6 +26,8 @@ describe('Devmode action tests for Maven Project', () => {
     it('Find Liberty Dashboard in sidebar', async () => {
         logger.testStart('Find Liberty Dashboard in sidebar');
         try {
+            //Wait for VS-Code to load
+            await utils.delay(15000);
             logger.step(1, 'Getting sidebar content');
             const contentPart = sidebar.getContent();
 
