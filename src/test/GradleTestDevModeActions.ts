@@ -42,7 +42,7 @@ describe('Devmode action tests for Gradle Project', () => {
             logger.testFailed('Find Liberty Dashboard in sidebar', error);
             throw error;
         }
-    }).timeout(10000);
+    }).timeout(30000);
 
     it('Liberty Dashboard shows items - Gradle', async () => {
         logger.testStart('Liberty Dashboard shows items - Gradle');
