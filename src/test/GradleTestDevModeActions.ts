@@ -28,21 +28,26 @@ describe('Devmode action tests for Gradle Project', () => {
         try {
             //Wait for VS-Code to load
             await utils.delay(15000);
-            logger.step(1, 'Getting sidebar content');
-            const contentPart = sidebar.getContent();
 
-            logger.step(2, 'Attempting to get Liberty Dashboard section');
-            section = await contentPart.getSection('Liberty Dashboard');
-            logger.stepSuccess(2, 'Found Liberty Dashboard section');
+            logger.step(1, 'Attempting to get Liberty Dashboard section');
+            section = await utils.waitForCondition(async () => {
+                const contentPart = sidebar.getContent();
+                const sec = await contentPart.getSection('Liberty Dashboard');
+                if (sec) {
+                    return sec;
+                }
+                return;
+            }, 30);
+            logger.stepSuccess(1, 'Found Liberty Dashboard section');
 
-            logger.step(3, 'Validating sidebar is not undefined');
+            logger.step(2, 'Validating sidebar is not undefined');
             expect(section).not.undefined;
             logger.testComplete('Find Liberty Dashboard in sidebar');
         } catch (error) {
             logger.testFailed('Find Liberty Dashboard in sidebar', error);
             throw error;
         }
-    }).timeout(30000);
+    }).timeout(60000);
 
     it('Liberty Dashboard shows items - Gradle', async () => {
         logger.testStart('Liberty Dashboard shows items - Gradle');
@@ -58,12 +63,20 @@ describe('Devmode action tests for Gradle Project', () => {
             await utils.delay(15000);
 
             logger.step(4, 'Getting visible items from section');
-            const menu = await section.getVisibleItems();
+            const menu = await utils.waitForCondition(async () => {
+                const items = await section.getVisibleItems();
+                if (items && items.length > 0) {
+                    return items;
+                }
+                return;
+            }, 60);
             logger.info(`Found ${menu.length} visible items in dashboard`);
             expect(menu).not.empty;
 
             logger.step(5, `Finding Gradle project item: ${constants.GRADLE_PROJECT}`);
-            item = await section.findItem(constants.GRADLE_PROJECT) as DefaultTreeItem;
+            item = await utils.waitForCondition(async () => {
+                return await section.findItem(constants.GRADLE_PROJECT) as DefaultTreeItem;
+            }, 30);
             logger.stepSuccess(5, 'Gradle project item found');
             expect(item).not.undefined;
 
@@ -398,7 +411,7 @@ describe('Devmode action tests for Gradle Project', () => {
             logger.info(`Finally block - Server running status: ${isServerRunning}`);
             if (isServerRunning) {
                 logger.info('Attempting to stop server in finally block');
-                utils.stopLibertyserver(constants.GRADLE_PROJECT);
+                await utils.stopLibertyserver(constants.GRADLE_PROJECT);
             } else {
                 logger.info('Server already stopped, test cleanup complete');
             }
@@ -421,7 +434,13 @@ describe('Devmode action tests for Gradle Project', () => {
             await utils.launchDashboardAction(item, constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
 
             logger.step(2, 'Getting open editor titles');
-            tabs = await new EditorView().getOpenEditorTitles();
+            tabs = await utils.waitForCondition(async () => {
+                const titles = await new EditorView().getOpenEditorTitles();
+                if (titles && titles.length > 0) {
+                    return titles;
+                }
+                return;
+            }, 10);
             logger.info(`Open editor tabs: ${tabs.join(', ')}`);
 
             logger.step(3, `Checking if Gradle test report tab is open: ${constants.GRADLE_TEST_REPORT_TITLE}`);

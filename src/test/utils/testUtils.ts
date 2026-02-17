@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, createWaitHelper } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
@@ -13,6 +13,41 @@ import { expect } from 'chai';
 
 export function delay(millisec: number) {
     return new Promise(resolve => setTimeout(resolve, millisec));
+}
+
+/**
+ * Utility to retry a function until its value becomes nonnull and nonfalse.
+ * Needed for handling timing issues with UI elements.
+ */
+export async function waitForCondition<T>(func: () => Promise<T>, timeout: number = 30): Promise<NonNullable<T>> {
+    const wait = createWaitHelper(VSBrowser.instance.driver);
+    const result = await wait.forCondition(async () => {
+        try {
+            const value = await func();
+            if (value === null || value === undefined || value === false) {
+                return;
+            }
+            return { value };
+        } catch {
+            return;
+        }
+    }, { timeout: timeout * 1000 });
+    return result!.value;
+}
+
+/**
+ * Utility to retry a function until it doesn't error.
+ * Useful for handling ElementNotInteractableError and other timing issues.
+ */
+export async function waitForSuccess(func: () => Promise<any>, timeout: number = 30): Promise<void> {
+    await waitForCondition(async () => {
+        try {
+            await func();
+            return true;
+        } catch {
+            return;
+        }
+    }, timeout);
 }
 
 export function getMvnProjectPath(): string {
@@ -44,25 +79,35 @@ export async function launchDashboardAction(item: DefaultTreeItem, action: strin
 export async function setCustomParameter(customParam: string) {
 
     logger.info("Setting custom Parameter");
-    const input = new InputBox();
-    await input.click();
-    await input.setText(customParam);
-    await input.confirm();
+    
+    await waitForSuccess(async () => {
+        const input = new InputBox();
+        await input.click();
+        await input.setText(customParam);
+        await input.confirm();
+    });
 
 }
 
 export async function chooseCmdFromHistory(command: string): Promise<Boolean> {
 
     logger.info("Choosing command from history");
-    const input = new InputBox();
-    const pick = await input.findQuickPick(command);
-    if (pick) {
-        await pick.select();
-        await input.confirm();
+    
+    try {
+        await waitForSuccess(async () => {
+            const input = new InputBox();
+            const pick = await input.findQuickPick(command);
+            if (!pick) {
+                throw new Error("Quick pick not found");
+            }
+            await pick.select();
+            await input.confirm();
+        });
         return true;
-    }
-    else
+    } catch (error) {
+        logger.error("Failed to choose command from history", error);
         return false;
+    }
 }
 
 export async function deleteReports(reportPath: string): Promise<Boolean> {
@@ -174,14 +219,17 @@ export async function stopLibertyserver(projectName: string) {
 export async function clearCommandPalette() {
     await new Workbench().executeCommand('Clear Command History');
     await delay(30000);
-    const dialog = new ModalDialog();
-    const message = await dialog.getMessage();
+    
+    await waitForSuccess(async () => {
+        const dialog = new ModalDialog();
+        const message = await dialog.getMessage();
 
-    expect(message).contains('Do you want to clear the history of recently used commands?');
+        expect(message).contains('Do you want to clear the history of recently used commands?');
 
-    const buttons = await dialog.getButtons();
-    expect(buttons.length).equals(2);
-    await dialog.pushButton('Clear');
+        const buttons = await dialog.getButtons();
+        expect(buttons.length).equals(2);
+        await dialog.pushButton('Clear');
+    });
 }
 
 /**

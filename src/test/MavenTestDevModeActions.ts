@@ -28,21 +28,25 @@ describe('Devmode action tests for Maven Project', () => {
         try {
             //Wait for VS-Code to load
             await utils.delay(15000);
-            logger.step(1, 'Getting sidebar content');
-            const contentPart = sidebar.getContent();
+            logger.step(1, 'Attempting to get Liberty Dashboard section');
+            section = await utils.waitForCondition(async () => {
+                const contentPart = sidebar.getContent();
+                const sec = await contentPart.getSection('Liberty Dashboard');
+                if (sec) {
+                    return sec;
+                }
+                return;
+            }, 30);
+            logger.stepSuccess(1, 'Found Liberty Dashboard section');
 
-            logger.step(2, 'Attempting to get Liberty Dashboard section');
-            section = await contentPart.getSection('Liberty Dashboard');
-            logger.stepSuccess(2, 'Found Liberty Dashboard section');
-
-            logger.step(3, 'Validating sidebar is not undefined');
+            logger.step(2, 'Validating sidebar is not undefined');
             expect(section).not.undefined;
             logger.testComplete('Find Liberty Dashboard in sidebar');
         } catch (error) {
             logger.testFailed('Find Liberty Dashboard in sidebar', error);
             throw error;
         }
-    }).timeout(30000);
+    }).timeout(60000);
 
     it('Liberty Dashboard shows items - Maven', async () => {
         logger.testStart('Liberty Dashboard shows items - Maven');
@@ -50,20 +54,43 @@ describe('Devmode action tests for Maven Project', () => {
             logger.step(1, 'Waiting for Liberty Dashboard to load');
             await utils.delay(65000);
 
+            // Ensure section is defined before proceeding
+            if (!section) {
+                logger.info('Section not found from previous test, attempting to retrieve it again');
+                section = await utils.waitForCondition(async () => {
+                    const contentPart = sidebar.getContent();
+                    const sec = await contentPart.getSection('Liberty Dashboard');
+                    if (sec) {
+                        return sec;
+                    }
+                    return;
+                }, 30);
+            }
+
             // Wait for the Liberty Dashboard to load and expand. The dashboard only expands after using the 'expand()' method.
             logger.step(2, 'Expanding Liberty Dashboard section');
-            section.expand();
+            await utils.waitForSuccess(async () => {
+                await section.expand();
+            });
 
             logger.step(3, 'Waiting for expansion to update');
             await utils.delay(15000);
 
             logger.step(4, 'Getting visible items from section');
-            const menu = await section.getVisibleItems();
+            const menu = await utils.waitForCondition(async () => {
+                const items = await section.getVisibleItems();
+                if (items && items.length > 0) {
+                    return items;
+                }
+                return;
+            }, 60);
             logger.info(`Found ${menu.length} visible items in dashboard`);
             expect(menu).not.empty;
 
             logger.step(5, `Finding Maven project item: ${constants.MAVEN_PROJECT}`);
-            item = await section.findItem(constants.MAVEN_PROJECT) as DefaultTreeItem;
+            item = await utils.waitForCondition(async () => {
+                return await section.findItem(constants.MAVEN_PROJECT) as DefaultTreeItem;
+            }, 30);
             logger.stepSuccess(5, 'Maven project item found');
             expect(item).not.undefined;
 
@@ -345,7 +372,13 @@ describe('Devmode action tests for Maven Project', () => {
             await utils.launchDashboardAction(item, constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);
 
             logger.step(2, 'Getting open editor titles');
-            tabs = await new EditorView().getOpenEditorTitles();
+            tabs = await utils.waitForCondition(async () => {
+                const titles = await new EditorView().getOpenEditorTitles();
+                if (titles && titles.length > 0) {
+                    return titles;
+                }
+                return;
+            }, 10);
             logger.info(`Open editor tabs: ${tabs.join(', ')}`);
 
             logger.step(3, `Checking if unit test report tab is open: ${constants.SUREFIRE_REPORT_TITLE}`);
@@ -368,7 +401,13 @@ describe('Devmode action tests for Maven Project', () => {
             await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);
 
             logger.step(2, 'Getting open editor titles');
-            tabs = await new EditorView().getOpenEditorTitles();
+            tabs = await utils.waitForCondition(async () => {
+                const titles = await new EditorView().getOpenEditorTitles();
+                if (titles && titles.length > 0) {
+                    return titles;
+                }
+                return;
+            }, 10);
             logger.info(`Open editor tabs: ${tabs.join(', ')}`);
 
             logger.step(3, `Checking if integration test report tab is open: ${constants.FAILSAFE_REPORT_TITLE}`);
@@ -458,7 +497,7 @@ describe('Devmode action tests for Maven Project', () => {
             logger.info(`Finally block - Server running status: ${isServerRunning}`);
             if (isServerRunning) {
                 logger.info('Attempting to stop server in finally block');
-                utils.stopLibertyserver(constants.MAVEN_PROJECT);
+                await utils.stopLibertyserver(constants.MAVEN_PROJECT);
             } else {
                 logger.info('Server already stopped, test cleanup complete');
             }
@@ -475,4 +514,5 @@ describe('Devmode action tests for Maven Project', () => {
         utils.copyScreenshotsToProjectFolder('maven');
     });
 });
+
 
