@@ -62,7 +62,38 @@ export function getGradleProjectPath(): string {
     return gradleProjectPath;
 }
 
+export async function getDashboardSection(sidebar: any): Promise<any> {
+    logger.info("Getting Liberty Dashboard section");
+    return await waitForCondition(async () => {
+        const contentPart = sidebar.getContent();
+        const sec = await contentPart.getSection('Liberty Dashboard');
+        if (sec) {
+            return sec;
+        }
+        return;
+    }, 30);
+}
+
+export async function getDashboardItem(section: any, projectName: string): Promise<DefaultTreeItem> {
+    logger.info(`Getting dashboard item: ${projectName}`);
+    
+    // Ensure section is expanded
+    await waitForSuccess(async () => {
+        await section.expand();
+    });
+    
+    await delay(5000);
+    
+    // Find the item
+    return await waitForCondition(async () => {
+        return await section.findItem(projectName) as DefaultTreeItem;
+    }, 30);
+}
+
 export async function launchDashboardAction(item: DefaultTreeItem, action: string, actionMac: string) {
+    if (!item) {
+        throw new Error("Cannot launch dashboard action: item is undefined");
+    }
 
     logger.info("Launching action: " + action);
     if (process.platform === 'darwin') {//Only for MAC platform
