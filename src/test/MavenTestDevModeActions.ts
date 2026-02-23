@@ -400,6 +400,12 @@ describe('Devmode action tests for Maven Project', () => {
 
             expect(reportFound, "Unit test report not found").to.equal(true);
             logger.stepSuccess(4, 'Unit test report tab is open');
+
+            logger.step(5, 'Closing unit test report tab');
+            const editorView = new EditorView();
+            await editorView.closeEditor(constants.SUREFIRE_REPORT_TITLE);
+            logger.stepSuccess(5, 'Unit test report tab closed');
+
             logger.testComplete('View unit test report for Maven project');
         } catch (error) {
             logger.testFailed('View unit test report for Maven project', error);
