@@ -1,6 +1,6 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2023, 2025
+ * Copyright IBM Corp. 2023, 2026
  */
 
 import { WebDriver, VSBrowser } from 'vscode-extension-tester';

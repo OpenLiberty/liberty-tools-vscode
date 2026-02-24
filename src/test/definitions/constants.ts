@@ -1,6 +1,6 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2020, 2022
+ * Copyright IBM Corp. 2020, 2026
  */
 
 export const MAVEN_PROJECT = "liberty-maven-test-wrapper-app";
