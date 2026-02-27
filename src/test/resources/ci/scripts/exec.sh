@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ############################################################################
-# Copyright (c) 2022, 2025 IBM Corporation and others.
+# Copyright (c) 2022, 2026 IBM Corporation and others.
 # 
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,11 +14,14 @@
 ############################################################################
 set -Ex
 
-#BUILD OR TEST TO EXECUTE
+#Execute BUILD or TEST
 TYPE=$1
 
-#IF TEST TTYPE HEN RUN WITH VERSION OF VSCODE TO RUN TESTS 1.74.0, LATEST
+#Run with previous or latest version of VSCODE
 VSCODE_VERSION_TO_RUN=$2
+
+#Build tool to test (maven or gradle)
+BUILD_TOOL=${3:-gradle}
 
 # Current time.
 currentTime=(date +"%Y/%m/%d-%H:%M:%S:%3N")
@@ -48,51 +51,50 @@ main() {
 
         #Initialisation step
         npm run test-compile
-        cd src/test/resources/maven/liberty.maven.test.wrapper.app
-        mvn liberty:start
-        mvn liberty:stop
+        
+        # Initialize Maven project if needed
+        if [ "$BUILD_TOOL" = "maven" ]; then
+            cd src/test/resources/maven/liberty-maven-test-wrapper-app
+            mvn liberty:start
+            mvn liberty:stop
 
-
-        #Docker test initialisation step
-        if [ $OS = "Linux" ]; then
-                #Start Display and Docker-Daemon
-                startDisplayAndDocker
-
+            #Docker test initialisation step for Maven
+            if [ $OS = "Linux" ]; then
                 mvn package
                 docker build --pull -f ./Dockerfile -t inventory-dev-mode .
-	fi
-
-        cd -
-
-        if [ $VSCODE_VERSION_TO_RUN == "latest" ]; then
-            # Run the plugin's install goal against the latest vscode version
-             if [ $OS = "Darwin" ]; then
-                chown -R runner src/test/resources/maven
-              chown -R runner  src/test/resources/gradle
-                # Gradle tests should be run before Maven tests because the after hook for copying the screeshots from temporary to a  permananet location is written in the Maven tests so that the copying will be done at the end of every test cases.
-                npm run test-mac-gradle -- -u
-                updateExitStatus
-                npm run test-mac-maven -- -u
-                updateExitStatus
-            else
-                npm run test -- -u
-                updateExitStatus
             fi
-        else
-            # Run the plugin's install goal against the target vscode version
-            if [ $OS = "Darwin" ]; then
-              chown -R runner src/test/resources/maven
-              chown -R runner  src/test/resources/gradle
-              # Gradle tests should be run before Maven tests because the after hook for copying the screeshots from temporary to a  permananet location is written in the Maven tests so that the copying will be done at the end of every test cases.
-              npm run test-mac-gradle -- -u -c $VSCODE_VERSION_TO_RUN
-              updateExitStatus
-              npm run test-mac-maven -- -u -c $VSCODE_VERSION_TO_RUN
-              updateExitStatus
-            else
-            npm run test -- -u -c $VSCODE_VERSION_TO_RUN
-            updateExitStatus
+            cd -
+        fi
+
+         #Start Display and Docker-Daemon
+        if [ $OS = "Linux" ]; then
+            startDisplayAndDocker
+        fi
+
+        # Run Tests
+        if [ $OS = "Darwin" ]; then
+            if [ "$BUILD_TOOL" = "maven" ]; then
+                chown -R runner src/test/resources/maven
+            fi
+            if [ "$BUILD_TOOL" = "gradle" ]; then
+                chown -R runner src/test/resources/gradle
             fi
         fi
+
+        if [ $VSCODE_VERSION_TO_RUN == "latest" ]; then
+            if [ "$BUILD_TOOL" = "gradle" ]; then
+                npm run test-gradle -- -u
+            elif [ "$BUILD_TOOL" = "maven" ]; then
+                npm run test-maven -- -u
+            fi
+        else
+            if [ "$BUILD_TOOL" = "gradle" ]; then
+                npm run test-gradle -- -u -c $VSCODE_VERSION_TO_RUN
+            elif [ "$BUILD_TOOL" = "maven" ]; then
+                npm run test-maven -- -u -c $VSCODE_VERSION_TO_RUN
+            fi
+        fi
+        updateExitStatus
     fi
 
     # If there were any errors, gather some debug data before exiting.
@@ -101,10 +103,10 @@ main() {
 
         if [ $TYPE = "TEST" ]; then
             echo "DEBUG: Maven Liberty messages.log:\n"
-            cat src/test/resources/maven/liberty.maven.test.wrapper.app/target/liberty/wlp/usr/servers/defaultServer/logs/messages.log
+            cat src/test/resources/maven/liberty-maven-test-wrapper-app/target/liberty/wlp/usr/servers/defaultServer/logs/messages.log
 
             echo "DEBUG: Gradle Liberty messages.log:\n"
-            cat src/test/resources/gradle/liberty.gradle.test.wrapper.app/build/wlp/usr/servers/defaultServer/logs/messages.log
+            cat src/test/resources/gradle/liberty-gradle-test-wrapper-app/build/wlp/usr/servers/defaultServer/logs/messages.log
         fi
 
         echo "DEBUG: Environment variables:\n"
