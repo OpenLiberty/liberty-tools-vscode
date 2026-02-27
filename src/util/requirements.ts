@@ -29,6 +29,8 @@ import { localize } from './i18nUtil';
 const isWindows = process.platform.indexOf('win') === 0;
 const JAVA_FILENAME = 'java' + (isWindows?'.exe': '');
 
+const REQUIRED_JAVA_VERSION = 21;
+
 export interface RequirementsData {
     tooling_jre: string;
     tooling_jre_version: number;
@@ -50,7 +52,7 @@ export async function resolveRequirements(api: JavaExtensionAPI): Promise<Requir
     const requirementsData = api.javaRequirement;
     // Java check for LSP4Jakarta and LCLS support
     // Reuse the embedded JRE from 'redhat.java' if it exists and passes check
-    if (requirementsData && requirementsData.tooling_jre_version >= 17) {
+    if (requirementsData && requirementsData.tooling_jre_version >= REQUIRED_JAVA_VERSION) {
         return Promise.resolve(requirementsData);
     }
 
@@ -108,16 +110,16 @@ function readJavaHomeConfig(property: string): string|undefined {
     return (javaHome != null) ? javaHome : config.get<string>('java.home');
 }
 
-// Provided javaHome, parse major version and reject sub Java17
+// Provided javaHome, parse major version and reject sub Java21
 function checkJavaVersion(javaHome: string, promptDownload: boolean): Promise<number> {
     return new Promise((resolve, reject) => {
         cp.execFile(javaHome + '/bin/java', ['-version'], {}, (error, stdout, stderr) => {
             const javaVersion = parseMajorVersion(stderr);
-            if (javaVersion < 17) {
+            if (javaVersion < REQUIRED_JAVA_VERSION) {
                 if (promptDownload) {
-                    openJDKDownload(reject, localize("check.java.runtime.version.outdated"));
+                    openJDKDownload(reject, localize("check.java.runtime.version.outdated", REQUIRED_JAVA_VERSION));
                 } else {
-                    defineXmlJavaHome(reject, localize("define.xml.java.home.message"));
+                    defineXmlJavaHome(reject, localize("define.xml.java.home.message", REQUIRED_JAVA_VERSION));
                 }
             } else {
                 resolve(javaVersion);
