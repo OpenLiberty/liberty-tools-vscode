@@ -281,6 +281,11 @@
 		"webpack": "^5.96.1",
 		"webpack-cli": "^4.10.0"
 	},
+	"overrides": {
+		"vscode-languageclient": {
+			"minimatch": "^5.1.8"
+		}
+	},
 	"dependencies": {
 		"@types/fs-extra": "^8.1.0",
 		"@types/semver": "^7.3.2",
