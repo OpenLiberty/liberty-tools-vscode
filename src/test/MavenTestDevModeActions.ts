@@ -47,32 +47,32 @@ describe('Devmode action tests for Maven Project', () => {
         }
     });
 
-    it('Find Liberty Dashboard in sidebar', async () => {
-        logger.testStart('Find Liberty Dashboard in sidebar');
+    it('Find Liberty Tools in sidebar', async () => {
+        logger.testStart('Find Liberty Tools in sidebar');
         try {
-            logger.step(1, 'Attempting to get Liberty Dashboard section');
+            logger.step(1, 'Attempting to get Liberty Tools section');
             section = await utils.getDashboardSection(sidebar);
-            logger.stepSuccess(1, 'Found Liberty Dashboard section');
+            logger.stepSuccess(1, 'Found Liberty Tools section');
 
             logger.step(2, 'Validating sidebar is not undefined');
             expect(section).not.undefined;
-            logger.testComplete('Find Liberty Dashboard in sidebar');
+            logger.testComplete('Find Liberty Tools in sidebar');
         } catch (error) {
-            logger.testFailed('Find Liberty Dashboard in sidebar', error);
+            logger.testFailed('Find Liberty Tools in sidebar', error);
             throw error;
         }
     }).timeout(60000);
 
-    it('Liberty Dashboard shows items - Maven', async () => {
-        logger.testStart('Liberty Dashboard shows items - Maven');
+    it('Liberty Tools shows items - Maven', async () => {
+        logger.testStart('Liberty Tools shows items - Maven');
         try {
             logger.step(1, 'Getting dashboard section');
             section = await utils.getDashboardSection(sidebar);
             logger.stepSuccess(1, 'Dashboard section retrieved');
 
-            logger.step(2, 'Waiting for Liberty Dashboard to load');
+            logger.step(2, 'Waiting for Liberty Tools to load');
             await utils.waitForDashboardToLoad(section);
-            logger.stepSuccess(2, 'Dashboard loaded successfully');
+            logger.stepSuccess(2, 'Liberty Tools loaded successfully');
 
             logger.step(3, 'Getting visible items from section');
             const menu = await utils.waitForCondition(async () => {
@@ -92,15 +92,15 @@ describe('Devmode action tests for Maven Project', () => {
             logger.stepSuccess(4, 'Maven project item found');
             expect(item).not.undefined;
 
-            logger.testComplete('Liberty Dashboard shows items - Maven');
+            logger.testComplete('Liberty Tools shows items - Maven');
         } catch (error) {
-            logger.testFailed('Liberty Dashboard shows items - Maven', error);
+            logger.testFailed('Liberty Tools shows items - Maven', error);
             throw error;
         }
     }).timeout(275000);
 
-    it('Start Maven project from Liberty Dashboard', async () => {
-        logger.testStart('Start Maven project from Liberty Dashboard');
+    it('Start Maven project from Liberty Tools', async () => {
+        logger.testStart('Start Maven project from Liberty Tools');
         try {
             logger.step(1, 'Getting dashboard section and item');
             section = await utils.getDashboardSection(sidebar);
@@ -133,15 +133,15 @@ describe('Devmode action tests for Maven Project', () => {
             }
 
             expect(serverStartStatus).to.be.true;
-            logger.testComplete('Start Maven project from Liberty Dashboard');
+            logger.testComplete('Start Maven project from Liberty Tools');
         } catch (error) {
-            logger.testFailed('Start Maven project from Liberty Dashboard', error);
+            logger.testFailed('Start Maven project from Liberty Tools', error);
             throw error;
         }
     }).timeout(550000);
 
-    it('Start Maven with Docker from Liberty Dashboard', async () => {
-        logger.testStart('Start Maven with Docker from Liberty Dashboard');
+    it('Start Maven with Docker from Liberty Tools', async () => {
+        logger.testStart('Start Maven with Docker from Liberty Tools');
 
         if ((process.platform === 'darwin') || (process.platform === 'win32')) {
             logger.skip(`Test skipped for platform: ${process.platform} (Docker test only runs on Linux)`);
@@ -180,9 +180,9 @@ describe('Devmode action tests for Maven Project', () => {
             }
 
             expect(serverStartStatus).to.be.true;
-            logger.testComplete('Start Maven with Docker from Liberty Dashboard');
+            logger.testComplete('Start Maven with Docker from Liberty Tools');
         } catch (error) {
-            logger.testFailed('Start Maven with Docker from Liberty Dashboard', error);
+            logger.testFailed('Start Maven with Docker from Liberty Tools', error);
             throw error;
         }
     }).timeout(350000);
@@ -237,8 +237,8 @@ describe('Devmode action tests for Maven Project', () => {
         }
     }).timeout(350000);
 
-    it('Start Maven with options from Liberty Dashboard', async () => {
-        logger.testStart('Start Maven with options from Liberty Dashboard');
+    it('Start Maven with options from Liberty Tools', async () => {
+        logger.testStart('Start Maven with options from Liberty Tools');
         try {
             logger.step(1, 'Getting dashboard section and item');
             section = await utils.getDashboardSection(sidebar);
@@ -292,15 +292,15 @@ describe('Devmode action tests for Maven Project', () => {
             }
 
             expect(serverStartStatus).to.be.true;
-            logger.testComplete('Start Maven with options from Liberty Dashboard');
+            logger.testComplete('Start Maven with options from Liberty Tools');
         } catch (error) {
-            logger.testFailed('Start Maven with options from Liberty Dashboard', error);
+            logger.testFailed('Start Maven with options from Liberty Tools', error);
             throw error;
         }
     }).timeout(350000);
 
-    it('Start Maven with history from Liberty Dashboard', async () => {
-        logger.testStart('Start Maven with history from Liberty Dashboard');
+    it('Start Maven with history from Liberty Tools', async () => {
+        logger.testStart('Start Maven with history from Liberty Tools');
         try {
             logger.step(1, 'Getting dashboard section and item');
             section = await utils.getDashboardSection(sidebar);
@@ -356,9 +356,9 @@ describe('Devmode action tests for Maven Project', () => {
             }
 
             expect(serverStartStatus).to.be.true;
-            logger.testComplete('Start Maven with history from Liberty Dashboard');
+            logger.testComplete('Start Maven with history from Liberty Tools');
         } catch (error) {
-            logger.testFailed('Start Maven with history from Liberty Dashboard', error);
+            logger.testFailed('Start Maven with history from Liberty Tools', error);
             throw error;
         }
     }).timeout(550000);

@@ -46,32 +46,32 @@ describe('Devmode action tests for Gradle Project', () => {
         }
     });
 
-    it('Find Liberty Dashboard in sidebar', async () => {
-        logger.testStart('Find Liberty Dashboard in sidebar');
-        try {
-            logger.step(1, 'Attempting to get Liberty Dashboard section');
+    it('Find Liberty Tools in sidebar', async () => {
+        logger.testStart('Find Liberty Tools in sidebar');
+        try {     
+            logger.step(1, 'Attempting to get Liberty Tools section');
             section = await utils.getDashboardSection(sidebar);
-            logger.stepSuccess(1, 'Found Liberty Dashboard section');
+            logger.stepSuccess(1, 'Found Liberty Tools section');
 
             logger.step(2, 'Validating sidebar is not undefined');
             expect(section).not.undefined;
-            logger.testComplete('Find Liberty Dashboard in sidebar');
+            logger.testComplete('Find Liberty Tools in sidebar');
         } catch (error) {
-            logger.testFailed('Find Liberty Dashboard in sidebar', error);
+            logger.testFailed('Find Liberty Tools in sidebar', error);
             throw error;
         }
     }).timeout(60000);
 
-    it('Liberty Dashboard shows items - Gradle', async () => {
-        logger.testStart('Liberty Dashboard shows items - Gradle');
+    it('Liberty Tools shows items - Gradle', async () => {
+        logger.testStart('Liberty Tools shows items - Gradle');
         try {
             logger.step(1, 'Getting dashboard section');
             section = await utils.getDashboardSection(sidebar);
             logger.stepSuccess(1, 'Dashboard section retrieved');
 
-            logger.step(2, 'Waiting for Liberty Dashboard to load');
+            logger.step(2, 'Waiting for Liberty Tools to load');
             await utils.waitForDashboardToLoad(section);
-            logger.stepSuccess(2, 'Dashboard loaded successfully');
+            logger.stepSuccess(2, 'Liberty Tools loaded successfully');
 
             logger.step(3, 'Getting visible items from section');
             const menu = await utils.waitForCondition(async () => {
@@ -91,15 +91,15 @@ describe('Devmode action tests for Gradle Project', () => {
             logger.stepSuccess(4, 'Gradle project item found');
             expect(item).not.undefined;
 
-            logger.testComplete('Liberty Dashboard shows items - Gradle');
+            logger.testComplete('Liberty Tools shows items - Gradle');
         } catch (error) {
-            logger.testFailed('Liberty Dashboard shows items - Gradle', error);
+            logger.testFailed('Liberty Tools shows items - Gradle', error);
             throw error;
         }
     }).timeout(300000);
 
-    it('Start Gradle project from Liberty Dashboard', async () => {
-        logger.testStart('Start Gradle project from Liberty Dashboard');
+    it('Start Gradle project from Liberty Tools', async () => {
+        logger.testStart('Start Gradle project from Liberty Tools');
         try {
             logger.step(1, 'Getting dashboard section and item');
             section = await utils.getDashboardSection(sidebar);
@@ -132,15 +132,15 @@ describe('Devmode action tests for Gradle Project', () => {
             }
 
             expect(serverStartStatus).to.be.true;
-            logger.testComplete('Start Gradle project from Liberty Dashboard');
+            logger.testComplete('Start Gradle project from Liberty Tools');
         } catch (error) {
-            logger.testFailed('Start Gradle project from Liberty Dashboard', error);
+            logger.testFailed('Start Gradle project from Liberty Tools', error);
             throw error;
         }
     }).timeout(350000);
 
-    it('Start Gradle with Docker from Liberty Dashboard', async () => {
-        logger.testStart('Start Gradle with Docker from Liberty Dashboard');
+    it('Start Gradle with Docker from Liberty Tools', async () => {
+        logger.testStart('Start Gradle with Docker from Liberty Tools');
 
         if ((process.platform === 'darwin') || (process.platform === 'win32')) {
             logger.skip(`Test skipped for platform: ${process.platform} (Docker test only runs on Linux)`);
@@ -179,9 +179,9 @@ describe('Devmode action tests for Gradle Project', () => {
             }
 
             expect(serverStartStatus).to.be.true;
-            logger.testComplete('Start Gradle with Docker from Liberty Dashboard');
+            logger.testComplete('Start Gradle with Docker from Liberty Tools');
         } catch (error) {
-            logger.testFailed('Start Gradle with Docker from Liberty Dashboard', error);
+            logger.testFailed('Start Gradle with Docker from Liberty Tools', error);
             throw error;
         }
     }).timeout(350000);
@@ -238,8 +238,8 @@ describe('Devmode action tests for Gradle Project', () => {
     }).timeout(350000);
 
 
-    it('Start Gradle with options from Liberty Dashboard', async () => {
-        logger.testStart('Start Gradle with options from Liberty Dashboard');
+    it('Start Gradle with options from Liberty Tools', async () => {
+        logger.testStart('Start Gradle with options from Liberty Tools');
         try {
             logger.step(1, 'Getting dashboard section and item');
             section = await utils.getDashboardSection(sidebar);
@@ -290,15 +290,15 @@ describe('Devmode action tests for Gradle Project', () => {
             }
 
             expect(serverStartStatus).to.be.true;
-            logger.testComplete('Start Gradle with options from Liberty Dashboard');
+            logger.testComplete('Start Gradle with options from Liberty Tools');
         } catch (error) {
-            logger.testFailed('Start Gradle with options from Liberty Dashboard', error);
+            logger.testFailed('Start Gradle with options from Liberty Tools', error);
             throw error;
         }
     }).timeout(550000);
 
-    it('Start Gradle with history from Liberty Dashboard', async () => {
-        logger.testStart('Start Gradle with history from Liberty Dashboard');
+    it('Start Gradle with history from Liberty Tools', async () => {
+        logger.testStart('Start Gradle with history from Liberty Tools');
         try {
             logger.step(1, 'Getting dashboard section and item');
             section = await utils.getDashboardSection(sidebar);
@@ -351,9 +351,9 @@ describe('Devmode action tests for Gradle Project', () => {
             }
 
             expect(serverStartStatus).to.be.true;
-            logger.testComplete('Start Gradle with history from Liberty Dashboard');
+            logger.testComplete('Start Gradle with history from Liberty Tools');
         } catch (error) {
-            logger.testFailed('Start Gradle with history from Liberty Dashboard', error);
+            logger.testFailed('Start Gradle with history from Liberty Tools', error);
             throw error;
         }
     }).timeout(350000);

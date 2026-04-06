@@ -190,16 +190,16 @@ export function getGradleProjectPath(): string {
 }
 
 export async function getDashboardSection(sidebar: any): Promise<any> {
-    logger.info("Getting Liberty Dashboard section");
+    logger.info("Getting Liberty Tools section");
     return await waitForCondition(async () => {
         // Get fresh content on each iteration to avoid stale references
         const contentPart = sidebar.getContent();
         const sections = await contentPart.getSections();
         
-        // Find the Liberty Dashboard section
+        // Find the Liberty Tools section
         for (const sec of sections) {
             const title = await sec.getTitle();
-            if (title === 'Liberty Dashboard') {
+            if (title === 'Liberty Tools') {
                 return sec;
             }
         }

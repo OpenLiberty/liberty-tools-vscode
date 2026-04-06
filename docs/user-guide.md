@@ -9,9 +9,9 @@ For information regarding known issues and limitations, refer to our [Common Iss
   - [Configure your Java runtime for language servers](#configure-your-java-runtime-for-language-servers)
   - [External extension settings](#external-extension-settings)
   - [Terminal shell support](#terminal-shell-support)
-- [Open the Liberty dashboard](#open-the-liberty-dashboard)
+- [Open Liberty Tools](#open-liberty-tools)
 - [Run your application on Liberty using dev mode](#run-your-application-on-liberty-using-dev-mode)
-  - [Use the Liberty dashboard](#use-the-liberty-dashboard)
+  - [Use Liberty Tools](#use-liberty-tools)
   - [Use the Visual Studio Code Command Palette](#use-the-visual-studio-code-command-palette)
   - [Start your application in dev mode](#start-your-application-in-dev-mode)
   - [Start your application in dev mode in a container](#start-your-application-in-dev-mode-in-a-container)
@@ -20,7 +20,7 @@ For information regarding known issues and limitations, refer to our [Common Iss
 - [View your application test reports](#view-your-application-test-reports)
 - [Stop your application](#stop-your-application)
 - [Debug your application](#debug-your-application)
-- [Manually add your Liberty project to the Liberty dashboard](#manually-add-your-liberty-project-to-the-liberty-dashboard)
+- [Manually add your Liberty project to Liberty Tools](#manually-add-your-liberty-project-to-liberty-tools)
   - [Manually remove project](#manually-remove-project)
 - [Configure a Liberty server](#configure-a-liberty-server)
 - [Develop with Jakarta EE and MicroProfile APIs](#develop-with-jakarta-ee-and-microprofile-apis)
@@ -87,31 +87,31 @@ Liberty Tools supports the default shell types for each OS in the Visual Studio 
 
 It may be possible to use other shell types, but support is not guaranteed. Please feel free to open an enhancement issue if your preferred shell type is not supported: https://github.com/OpenLiberty/liberty-tools-vscode/issues.
 
-## Open the Liberty dashboard
+## Open Liberty Tools
 
-By default, the Liberty dashboard appears in the Project Explorer side bar. Optionally, you can drag the Liberty dashboard into the Activity Bar.
+By default, Liberty Tools appears in the Project Explorer side bar. Optionally, you can drag Liberty Tools into the Activity Bar.
 
 | Side Bar view | Activity Bar view |
 | ------ | ----- |
-| ![Liberty Dashboard Side Bar view](/docs/user-guide-screenshots/liberty_dashboard_side_bar.png) | ![Liberty Dashboard Activity Bar view](/docs/user-guide-screenshots/liberty_dashboard_activity_bar.png)|
+| ![Liberty Tools Side Bar view](/docs/user-guide-screenshots/liberty_dashboard_side_bar.png) | ![Liberty Tools Activity Bar view](/docs/user-guide-screenshots/liberty_dashboard_activity_bar.png)|
 
-Projects that are already properly configured to run on Liberty and use Liberty dev mode are automatically added the Liberty dashboard when it opens. If your Liberty project does not show up in the Liberty dashboard automatically and you have the Liberty Maven or Liberty Gradle plugin configured, check out [how to manually add your project to the Liberty dashboard](#manually-add-your-liberty-project-to-the-dashboard).
+Projects that are already properly configured to run on Liberty and use Liberty dev mode are automatically added to Liberty Tools when it opens. If your Liberty project does not show up in Liberty Tools automatically and you have the Liberty Maven or Liberty Gradle plugin configured, check out [how to manually add your project to Liberty Tools](#manually-add-your-liberty-project-to-liberty-tools).
 
-If you add new projects or make changes, use the refresh icon in the Liberty dashboard toolbar to refresh the dashboard view.
+If you add new projects or make changes, use the refresh icon in the Liberty Tools toolbar to refresh the view.
 
 ![Dashboard Refresh highlighted](/docs/user-guide-screenshots/dashboardToolbarRefresh.png)
 
 ## Run your application on Liberty using dev mode
 
-The following three menu actions are available to start your Liberty application in dev mode through the Liberty dashboard or the Visual Studio Code command palette:
+The following three menu actions are available to start your Liberty application in dev mode through Liberty Tools or the Visual Studio Code command palette:
 
 - [Start your application in dev mode](#start-your-application-in-dev-mode)
 - [Start your application in dev mode with configuration](#start-your-application-in-dev-mode-with-configuration)
 - [Start your application in dev mode in a container](#start-your-application-in-dev-mode-in-a-container)
 
-### Use the Liberty dashboard
+### Use Liberty Tools
 
-The Liberty dashboard provides a context menu for Liberty projects. You can choose different commands from the menu to speed up application development.
+Liberty Tools provides a context menu for Liberty projects. You can choose different commands from the menu to speed up application development.
 
 ![Dashboard context menu](/docs/user-guide-screenshots/liberty_dashboard_contextual.png)
 
@@ -125,7 +125,7 @@ All Liberty Tools commands that are described in the following sections are also
 
 ### Start your application in dev mode
 
-To start your application in dev mode, select the **Start** command for your application in the Liberty dashboard.
+To start your application in dev mode, select the **Start** command for your application in Liberty Tools.
 
 A new terminal tab opens to run the application in dev mode.
 
@@ -133,7 +133,7 @@ A new terminal tab opens to run the application in dev mode.
 
 ### Start your application in dev mode with configuration
 
-To start your application in dev mode with custom configuration, select the **Start...** command for your application in the Liberty dashboard. The command opens an edit dialog where you can specify parameters for the [Liberty Maven dev goal](https://github.com/OpenLiberty/ci.maven/blob/main/docs/dev.md#additional-parameters) or [Liberty Gradle dev task](https://github.com/OpenLiberty/ci.gradle/blob/main/docs/libertyDev.md#command-line-parameters).
+To start your application in dev mode with custom configuration, select the **Start...** command for your application in Liberty Tools. The command opens an edit dialog where you can specify parameters for the [Liberty Maven dev goal](https://github.com/OpenLiberty/ci.maven/blob/main/docs/dev.md#additional-parameters) or [Liberty Gradle dev task](https://github.com/OpenLiberty/ci.gradle/blob/main/docs/libertyDev.md#command-line-parameters).
 
 ![Liberty Start... command](/docs/user-guide-screenshots/devModeStartCustom.png)
 
@@ -147,7 +147,7 @@ The next time you choose to start dev mode with configuration, the menu provides
 
 ### Start your application in dev mode in a container
 
-To use dev mode for containers, select the **Start in container** command for your application in the Liberty dashboard.
+To use dev mode for containers, select the **Start in container** command for your application in Liberty Tools.
 
 ![Liberty Start in container command](/docs/user-guide-screenshots/devModeStartContainer.png)
 
@@ -157,7 +157,7 @@ For more information on dev mode for containers, check out the [Liberty Maven de
 
 After your application is running on Liberty using dev mode, you can easily run the tests provided by your application.
 
-To run tests, select the **Run tests** command for your application in the Liberty dashboard.
+To run tests, select the **Run tests** command for your application in Liberty Tools.
 
 The tests are run in the corresponding terminal.
 
@@ -171,23 +171,23 @@ After you finish running your application tests, you can access the produced tes
 
 ### Maven-built applications
 
-To view the integration test report for Maven-built applications, select the **View integration test report** command for your application in the Liberty dashboard.
+To view the integration test report for Maven-built applications, select the **View integration test report** command for your application in Liberty Tools.
 
 This command looks for the integration test report at the `/target/site/failsafe-report.html` default location.
 
-To view the unit test report for Maven-built applications, select the **View unit test report** command for your application in the Liberty dashboard.
+To view the unit test report for Maven-built applications, select the **View unit test report** command for your application in Liberty Tools.
 
 This command looks for the unit test report at the`/target/site/surefire-report.html` default location.
 
 ### Gradle-built applications
 
-To view the test report for Gradle-built applications, select the **View test report** command for your application in the Liberty dashboard.
+To view the test report for Gradle-built applications, select the **View test report** command for your application in Liberty Tools.
 
 This command looks for the test report at the `build/reports/tests/test/index.html` default location.
 
 ## Stop your application
 
-To stop your application, select the **Stop** command for your application in the Liberty dashboard.
+To stop your application, select the **Stop** command for your application in Liberty Tools.
 
 ![Stop command](/docs/user-guide-screenshots/devModeStop.png)
 
@@ -201,30 +201,30 @@ When the debugger is attached, the Visual Studio Code [debug options](https://co
 
 ![Debug Mode](/docs/user-guide-screenshots/debugger_mode.png)
 
-## Manually add your Liberty project to the Liberty dashboard
+## Manually add your Liberty project to Liberty Tools
 
-If your Liberty project is not automatically detected by the Liberty dashboard, you can manually add your Liberty project to the Liberty dashboard in one of four ways:<br>
-* Click the plus icon (+) in the Liberty dashboard.<br>
-  ![Add Liberty project from Liberty dashboard](/docs/user-guide-screenshots/add_from_liberty_dashboard.png)<br>
-* Right-click into an empty space in the Explorer view and select **Add project to Liberty Dashboard**.<br>
+If your Liberty project is not automatically detected by Liberty Tools, you can manually add your Liberty project to Liberty Tools in one of four ways:<br>
+* Click the plus icon (+) in Liberty Tools.<br>
+  ![Add Liberty project from Liberty Tools](/docs/user-guide-screenshots/add_from_liberty_dashboard.png)<br>
+* Right-click into an empty space in the Explorer view and select **Add project to Liberty Tools**.<br>
   ![Add Liberty project from Explorer view empty space](/docs/user-guide-screenshots/add_from_empty_space.png)<br>
-* If you have a workspace open, you also have the option to right-click on a project root folder in the Explorer view and select **Add project to Liberty Dashboard**.<br>
+* If you have a workspace open, you also have the option to right-click on a project root folder in the Explorer view and select **Add project to Liberty Tools**.<br>
   ![Add Liberty project from Explorer view project root](/docs/user-guide-screenshots/add_from_project_root_folder.png)<br>
-* Use the Command Palette to select the **Liberty: Add project to Liberty Dashboard** command.<br>
+* Use the Command Palette to select the **Liberty: Add project to Liberty Tools** command.<br>
   ![Add Liberty project from Command Palette](/docs/user-guide-screenshots/add_from_command_palette.png)<br>
 
-In each of these cases, you are prompted in the Command Palette to select a project from a list of projects that are currently not displayed in the Liberty dashboard.<br>
+In each of these cases, you are prompted in the Command Palette to select a project from a list of projects that are currently not displayed in Liberty Tools.<br>
 ![Liberty add project selection](/docs/user-guide-screenshots/add_project_selection.png)<br>
 
 ### Manually remove project
 
-To remove manually added Liberty projects from the Liberty dashboard, you have a similar set of four options:
-* Click the minus icon (-) in the Liberty dashboard.
-* Right-click into an empty space in the Explorer view and select **Remove project from Liberty Dashboard**.
-* If you have a workspace open, you also have the option to right-click on a project root folder in the Explorer view and select  **Remove project from Liberty Dashboard**.
-* Use the Command Palette to select the  **Liberty: Remove project from Liberty Dashboard** command.
+To remove manually added Liberty projects from Liberty Tools, you have a similar set of four options:
+* Click the minus icon (-) in Liberty Tools.
+* Right-click into an empty space in the Explorer view and select **Remove project from Liberty Tools**.
+* If you have a workspace open, you also have the option to right-click on a project root folder in the Explorer view and select  **Remove project from Liberty Tools**.
+* Use the Command Palette to select the  **Liberty: Remove project from Liberty Tools** command.
 
-Similar to adding the project, you are prompted in the Command Palette to select a project from a list of projects in the Liberty dashboard that can be removed.
+Similar to adding the project, you are prompted in the Command Palette to select a project from a list of projects in Liberty Tools that can be removed.
 
 ## Configure a Liberty server
 
