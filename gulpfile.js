@@ -13,12 +13,16 @@ const finishedAsync = promisify(finished);
 
 const MC_BASE_URL = "https://repo1.maven.org/maven2";
 const MC_SNAPSHOT_BASE_URL = "https://central.sonatype.com/repository/maven-snapshots";
+const ECLIPSE_BASE_URL = "https://repo.eclipse.org/content/repositories";
+const ECLIPSE_SNAPSHOT_BASE_URL = "https://repo.eclipse.org/content/repositories";
 
 const libertyGroupId = "io.openliberty.tools";
 const libertyLemminxArtifactId = "liberty-langserver-lemminx";
 const libertyLSArtifactId = "liberty-langserver";
-const libertyVersion = "2.4";
+const libertyVersion = "2.4.1";
 const jakartaGroupId = "org.eclipse.lsp4jakarta";
+const jakartaJdtArtifactId = "org.eclipse.lsp4jakarta.jdt.core";
+const jakartaLSArtifactId = "org.eclipse.lsp4jakarta.ls";
 const jakartaVersion = "0.2.5";
 var lclsReleaseLevel = "releases";  //snapshots or releases
 var jakartaReleaseLevel = "releases";
@@ -86,29 +90,22 @@ gulp.task("downloadLibertyLSJars", async function() {
   ]);
 });
 
-//https://repo.eclipse.org/service/local/artifact/maven/content?r=snapshots&g=org.eclipse.lsp4jakarta&a=org.eclipse.lsp4jakarta.jdt.core&v=0.0.1-SNAPSHOT
-//https://repo.eclipse.org/service/local/artifact/maven/content?r=snapshots&g=org.eclipse.lsp4jakarta&a=org.eclipse.lsp4jakarta.ls&c=jar-with-dependencies&v=0.0.1-SNAPSHOT
-const eclipseRepoURL = "https://repo.eclipse.org/service/local/artifact/maven/content";
-const jakartaReleaseLevelString = "?r=" + jakartaReleaseLevel;
-const jakartaGroupIdString = "&g=" + jakartaGroupId;
-const jakartaVersionString = "&v=" + jakartaVersion;
-const jakartaClassifierString = "&c=jar-with-dependencies";
+gulp.task("downloadLSP4JakartaJars", async function() {
+  var jakartaJDTURL;
+  var jakartaLSURL;
 
-const jakartaJDTURL = eclipseRepoURL + jakartaReleaseLevelString + jakartaGroupIdString + "&a=org.eclipse.lsp4jakarta.jdt.core" + jakartaVersionString;
-const jakartaLSURL = eclipseRepoURL + jakartaReleaseLevelString + jakartaGroupIdString + "&a=org.eclipse.lsp4jakarta.ls" + jakartaClassifierString + jakartaVersionString;
+  if (jakartaReleaseLevel === "snapshots") {
+    jakartaJDTURL = getEclipseJarURL(jakartaGroupId, jakartaJdtArtifactId, jakartaVersion, null, true);
+    jakartaLSURL = getEclipseJarURL(jakartaGroupId, jakartaLSArtifactId, jakartaVersion, "jar-with-dependencies", true);
+  } else {
+    jakartaJDTURL = getEclipseJarURL(jakartaGroupId, jakartaJdtArtifactId, jakartaVersion, null, false);
+    jakartaLSURL = getEclipseJarURL(jakartaGroupId, jakartaLSArtifactId, jakartaVersion, "jar-with-dependencies", false);
+  }
 
-gulp.task("downloadLSP4JakartaJars", (done) => {
-  download({
-      url: jakartaJDTURL,
-      file: jakartaJdtName,
-    })
-    .pipe(gulp.dest("./jars", { encoding: false}));
-  download({
-      url: jakartaLSURL,
-      file: jakartaLSName,
-    })
-    .pipe(gulp.dest("./jars", { encoding: false}));
-  done();
+  await Promise.all([
+    downloadJar(jakartaJDTURL, jakartaJdtName, "./jars"),
+    downloadJar(jakartaLSURL, jakartaLSName, "./jars")
+  ]);
 });
 
 function mvnw() {
@@ -130,6 +127,12 @@ async function downloadJar(url, fileName, destDir) {
   });
 
   console.log(`Downloading ${url}`);
+  
+  // Ensure destination directory exists
+  if (!fs.existsSync(destDir)) {
+    fs.mkdirSync(destDir, { recursive: true });
+  }
+  
   const fullPath = path.join(destDir, fileName);
   const writer = fs.createWriteStream(fullPath);
   response.data.pipe(writer);
@@ -143,6 +146,16 @@ function getMavenCentralJarURL (groupId, artifactId, version, classifier) {
   const classifierString = classifier ? `-${classifier}` : '';
   const mavenCentralJarURL = `${MC_BASE_URL}/${groupId.replace(/\./g, '/')}/${artifactId}/${version}/${artifactId}-${version}${classifierString}.jar`;
   return mavenCentralJarURL;
+}
+
+// Generate Eclipse repository artifact URL for specified GAV coordinates
+// Example: https://repo.eclipse.org/content/repositories/lsp4jakarta-maven2-releases/org/eclipse/lsp4jakarta/org.eclipse.lsp4jakarta.jdt.core/0.2.5/org.eclipse.lsp4jakarta.jdt.core-0.2.5.jar
+function getEclipseJarURL (groupId, artifactId, version, classifier, isSnapshot) {
+  const repoName = isSnapshot ? "lsp4jakarta-maven2-snapshots" : "lsp4jakarta-maven2-releases";
+  const baseURL = isSnapshot ? ECLIPSE_SNAPSHOT_BASE_URL : ECLIPSE_BASE_URL;
+  const classifierString = classifier ? `-${classifier}` : '';
+  const eclipseJarURL = `${baseURL}/${repoName}/${groupId.replace(/\./g, '/')}/${artifactId}/${version}/${artifactId}-${version}${classifierString}.jar`;
+  return eclipseJarURL;
 }
 
 // No API provided to retrieve snapshot artifacts hosted on https://central.sonatype.com/repository/maven-snapshots
