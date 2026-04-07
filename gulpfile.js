@@ -127,6 +127,12 @@ async function downloadJar(url, fileName, destDir) {
   });
 
   console.log(`Downloading ${url}`);
+  
+  // Ensure destination directory exists
+  if (!fs.existsSync(destDir)) {
+    fs.mkdirSync(destDir, { recursive: true });
+  }
+  
   const fullPath = path.join(destDir, fileName);
   const writer = fs.createWriteStream(fullPath);
   response.data.pipe(writer);
