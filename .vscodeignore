@@ -11,3 +11,5 @@ webpack.config.js
 node_modules
 **/gulpfile.js
 test-resources/**
+test-tools/**
+screenshots/**

@@ -439,7 +439,7 @@ describe('Devmode action tests for Maven Project', () => {
             logger.testFailed('View integration test report for Maven project', error);
             throw error;
         }
-    }).timeout(10000);
+    }).timeout(90000); // Increased to 90 seconds to allow time for report generation and tab opening
 
     /**
      * All future test cases should be written before the test that attaches the debugger, as this will switch the UI to the debugger view.

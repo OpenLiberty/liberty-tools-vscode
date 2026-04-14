@@ -155,6 +155,11 @@ export async function setCustomParameter(customParam: string) {
         const input = new InputBox();
         await input.click();
         await input.setText(customParam);
+        
+        // Wait for input to be fully ready before confirming
+        const wait = getWaitHelper();
+        await wait.sleep(1000);
+        
         await input.confirm();
     });
 
@@ -236,7 +241,7 @@ export async function checkTerminalforServerState(serverStatusCode: string): Pro
                 logger.info("Found text " + serverStatusCode);
                 return true;
             }
-            else if (text.includes("FAILURE")) {
+            else if (text.includes("FAILURE") || text.includes("BUILD FAILURE")) {
                 logger.info("Found failure in terminal output");
                 throw new Error("Server startup/shutdown failed");
             }
@@ -245,7 +250,7 @@ export async function checkTerminalforServerState(serverStatusCode: string): Pro
                 return;
             }
         }, {
-            timeout: 200000, // 200 seconds max wait
+            timeout: 300000, // 300 seconds (5 minutes) max wait - increased for custom params
             pollInterval: 10000, // check every 10 seconds
             message: `Server state '${serverStatusCode}' not found in terminal`
         });
@@ -275,8 +280,8 @@ export async function checkTestStatus(testStatus: string): Promise<boolean> {
             }
             return;
         }, {
-            timeout: 10000, // 10 seconds max wait
-            pollInterval: 2000, // check every 2 seconds
+            timeout: 120000, // 120 seconds (2 minutes) max wait for tests to complete
+            pollInterval: 5000, // check every 5 seconds
             message: `Test status '${testStatus}' not found in terminal`
         });
         
@@ -465,7 +470,7 @@ export async function waitForEditorTab(tabTitle: string): Promise<string[]> {
             return titles;
         }
         return;
-    }, 10);
+    }, 60); // Increased to 60 seconds to allow time for report generation
 }
 
 /**
