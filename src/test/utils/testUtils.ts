@@ -158,7 +158,7 @@ export async function setCustomParameter(customParam: string) {
         
         // Wait for input to be fully ready before confirming
         const wait = getWaitHelper();
-        await wait.sleep(1000);
+        await wait.sleep(2000);
         
         await input.confirm();
     });
@@ -177,6 +177,11 @@ export async function chooseCmdFromHistory(command: string): Promise<boolean> {
                 throw new Error("Quick pick not found");
             }
             await pick.select();
+            
+            // Wait for selection to be processed before confirming
+            const wait = getWaitHelper();
+            await wait.sleep(2000);
+            
             await input.confirm();
         });
         return true;
