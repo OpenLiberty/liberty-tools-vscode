@@ -1,12 +1,13 @@
 {
-  "typescript.updateImportsOnFileMove.enabled": "always",
-  "workbench.editor.enablePreview": true,
-  "git.autoRepositoryDetection": false,
-  "terminal.integrated.sendKeybindingsToShell": true,
-  "workbench.remoteIndicator.showExtensionRecommendations": false,
+  "chat.disableAIFeatures": true,
   "extensions.ignoreRecommendations": true,
   "files.simpleDialog.enable": true,
-  "window.dialogStyle": "custom",
+  "git.autoRepositoryDetection": false,
   "github.copilot.enable": false,
-  "chat.disableAIFeatures": true
+  "terminal.integrated.sendKeybindingsToShell": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "window.dialogStyle": "custom",
+  "workbench.editor.enablePreview": true,
+  "workbench.remoteIndicator.showExtensionRecommendations": false,
+  "workbench.welcomePage.experimentalOnboarding": false
 }
