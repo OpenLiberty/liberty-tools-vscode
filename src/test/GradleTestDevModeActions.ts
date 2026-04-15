@@ -18,17 +18,32 @@ describe('Devmode action tests for Gradle Project', () => {
     let item: DefaultTreeItem;
     let tabs: string[];
 
-    before(() => {
+    before(async function() {
+        this.timeout(30000);
+        // Wait for workbench to be ready
+        await VSBrowser.instance.waitForWorkbench();
         sidebar = new SideBarView();
         debugView = new DebugView();
+    });
+
+    afterEach(async function() {
+        // Close any open editors after each test
+        if (this.currentTest?.state === 'failed') {
+            const driver = VSBrowser.instance.driver;
+            const screenshot = await driver.takeScreenshot();
+            logger.error(`Test failed: ${this.currentTest.title}`);
+        }
+        
+        try {
+            await new EditorView().closeAllEditors();
+        } catch (error) {
+            logger.error('Failed to close editors in afterEach', error);
+        }
     });
 
     it('Find Liberty Dashboard in sidebar', async () => {
         logger.testStart('Find Liberty Dashboard in sidebar');
         try {
-            //Wait for VS-Code to load
-            await utils.delay(15000);
-
             logger.step(1, 'Attempting to get Liberty Dashboard section');
             section = await utils.getDashboardSection(sidebar);
             logger.stepSuccess(1, 'Found Liberty Dashboard section');
@@ -45,21 +60,15 @@ describe('Devmode action tests for Gradle Project', () => {
     it('Liberty Dashboard shows items - Gradle', async () => {
         logger.testStart('Liberty Dashboard shows items - Gradle');
         try {
-            logger.step(1, 'Waiting for Liberty Dashboard to load');
-            await utils.delay(65000);
-
-            logger.step(2, 'Getting dashboard section');
+            logger.step(1, 'Getting dashboard section');
             section = await utils.getDashboardSection(sidebar);
-            logger.stepSuccess(2, 'Dashboard section retrieved');
+            logger.stepSuccess(1, 'Dashboard section retrieved');
 
-            // Wait for the Liberty Dashboard to load and expand. The dashboard only expands after using the 'expand()' method.
-            logger.step(3, 'Expanding Liberty Dashboard section');
-            await section.expand();
+            logger.step(2, 'Waiting for Liberty Dashboard to load');
+            await utils.waitForDashboardToLoad(section);
+            logger.stepSuccess(2, 'Dashboard loaded successfully');
 
-            logger.step(4, 'Waiting for expansion to update');
-            await utils.delay(15000);
-
-            logger.step(5, 'Getting visible items from section');
+            logger.step(3, 'Getting visible items from section');
             const menu = await utils.waitForCondition(async () => {
                 const items = await section.getVisibleItems();
                 if (items && items.length > 0) {
@@ -70,11 +79,11 @@ describe('Devmode action tests for Gradle Project', () => {
             logger.info(`Found ${menu.length} visible items in dashboard`);
             expect(menu).not.empty;
 
-            logger.step(6, `Finding Gradle project item: ${constants.GRADLE_PROJECT}`);
+            logger.step(4, `Finding Gradle project item: ${constants.GRADLE_PROJECT}`);
             item = await utils.waitForCondition(async () => {
                 return await section.findItem(constants.GRADLE_PROJECT) as DefaultTreeItem;
             }, 30);
-            logger.stepSuccess(6, 'Gradle project item found');
+            logger.stepSuccess(4, 'Gradle project item found');
             expect(item).not.undefined;
 
             logger.testComplete('Liberty Dashboard shows items - Gradle');
@@ -95,27 +104,24 @@ describe('Devmode action tests for Gradle Project', () => {
             logger.step(2, 'Launching dashboard start action');
             await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
 
-            logger.step(3, 'Waiting 30 seconds for server to start');
-            await utils.delay(30000);
-
-            logger.step(4, 'Checking terminal for server start status');
-            const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
+            logger.step(3, 'Waiting for server to start');
+            const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
 
             if (!serverStartStatus) {
                 logger.error('Server started message not found in the terminal');
             } else {
-                logger.stepSuccess(4, 'Server successfully started');
+                logger.stepSuccess(3, 'Server successfully started');
 
-                logger.step(5, 'Launching dashboard stop action');
+                logger.step(4, 'Launching dashboard stop action');
                 await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
-                logger.step(6, 'Checking terminal for server stop status');
-                const serverStopStatus = await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
+                logger.step(5, 'Waiting for server to stop');
+                const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!serverStopStatus) {
                     logger.error('Server stopped message not found in the terminal');
                 } else {
-                    logger.stepSuccess(6, 'Server stopped successfully');
+                    logger.stepSuccess(5, 'Server stopped successfully');
                 }
                 expect(serverStopStatus).to.be.true;
             }
@@ -145,27 +151,24 @@ describe('Devmode action tests for Gradle Project', () => {
             logger.step(2, 'Launching dashboard start action with Docker');
             await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);
 
-            logger.step(3, 'Waiting 60 seconds for Docker container to start');
-            await utils.delay(60000);
-
-            logger.step(4, 'Checking terminal for server start status');
-            const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
+            logger.step(3, 'Waiting for server to start in Docker container');
+            const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
 
             if (!serverStartStatus) {
                 logger.error('Server started message not found in the terminal');
             } else {
-                logger.stepSuccess(4, 'Server successfully started in Docker container');
+                logger.stepSuccess(3, 'Server successfully started in Docker container');
 
-                logger.step(5, 'Launching dashboard stop action');
+                logger.step(4, 'Launching dashboard stop action');
                 await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
-                logger.step(6, 'Checking terminal for server stop status');
-                const serverStopStatus = await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
+                logger.step(5, 'Waiting for server to stop');
+                const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!serverStopStatus) {
                     logger.error('Server stopped message not found in the terminal');
                 } else {
-                    logger.stepSuccess(6, 'Server stopped successfully');
+                    logger.stepSuccess(5, 'Server stopped successfully');
                 }
                 expect(serverStopStatus).to.be.true;
             }
@@ -189,37 +192,34 @@ describe('Devmode action tests for Gradle Project', () => {
             logger.step(2, 'Launching dashboard start action');
             await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
 
-            logger.step(3, 'Waiting 30 seconds for server to start');
-            await utils.delay(30000);
-
-            logger.step(4, 'Checking terminal for server start status');
-            const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
+            logger.step(3, 'Waiting for server to start');
+            const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
 
             if (!serverStartStatus) {
                 logger.error('Server started message not found in the terminal');
             } else {
-                logger.stepSuccess(4, 'Server successfully started');
+                logger.stepSuccess(3, 'Server successfully started');
 
-                logger.step(5, 'Launching run tests dashboard action');
+                logger.step(4, 'Launching run tests dashboard action');
                 await utils.launchDashboardAction(item, constants.RUNTEST_DASHBOARD_ACTION, constants.RUNTEST_DASHBOARD_MAC_ACTION);
 
-                logger.step(6, 'Checking test execution status');
+                logger.step(5, 'Checking test execution status');
                 const testStatus = await utils.checkTestStatus(constants.GRADLE_TEST_RUN_STRING);
                 logger.info(`Test status result: ${testStatus}`);
 
                 expect(testStatus).to.be.true;
-                logger.stepSuccess(6, 'Tests executed successfully');
+                logger.stepSuccess(5, 'Tests executed successfully');
 
-                logger.step(7, 'Launching dashboard stop action');
+                logger.step(6, 'Launching dashboard stop action');
                 await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
-                logger.step(8, 'Checking terminal for server stop status');
-                const serverStopStatus = await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
+                logger.step(7, 'Waiting for server to stop');
+                const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!serverStopStatus) {
                     logger.error('Server stopped message not found in the terminal');
                 } else {
-                    logger.stepSuccess(8, 'Server stopped successfully');
+                    logger.stepSuccess(7, 'Server stopped successfully');
                 }
                 expect(serverStopStatus).to.be.true;
             }
@@ -255,34 +255,31 @@ describe('Devmode action tests for Gradle Project', () => {
             logger.step(4, 'Setting custom parameter: --hotTests');
             await utils.setCustomParameter("--hotTests");
 
-            logger.step(5, 'Waiting 30 seconds for server to start with parameters');
-            await utils.delay(30000);
-
-            logger.step(6, 'Checking terminal for server start status');
-            const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
+            logger.step(5, 'Waiting for server to start with parameters');
+            const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
 
             if (!serverStartStatus) {
                 logger.error('Server started with params message not found in terminal');
             } else {
-                logger.stepSuccess(6, 'Server successfully started with custom parameters');
+                logger.stepSuccess(5, 'Server successfully started with custom parameters');
 
-                logger.step(7, 'Checking if test report exists');
-                let checkFile = await utils.checkIfTestReportExists(reportPath);
+                logger.step(6, 'Waiting for test report');
+                let checkFile = await utils.waitForTestReport(reportPath);
                 logger.info(`Report exists: ${checkFile}`);
 
                 expect(checkFile).to.be.true;
-                logger.stepSuccess(7, 'Test report found');
+                logger.stepSuccess(6, 'Test report found');
 
-                logger.step(8, 'Launching dashboard stop action');
+                logger.step(7, 'Launching dashboard stop action');
                 await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
-                logger.step(9, 'Checking terminal for server stop status');
-                const serverStopStatus = await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
+                logger.step(8, 'Waiting for server to stop');
+                const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!serverStopStatus) {
                     logger.error('Server stopped message not found in the terminal');
                 } else {
-                    logger.stepSuccess(9, 'Server stopped successfully');
+                    logger.stepSuccess(8, 'Server stopped successfully');
                 }
                 expect(serverStopStatus).to.be.true;
             }
@@ -319,34 +316,31 @@ describe('Devmode action tests for Gradle Project', () => {
             logger.info(`Command found in history: ${foundCommand}`);
             expect(foundCommand).to.be.true;
 
-            logger.step(5, 'Waiting 30 seconds for server to start with historical parameters');
-            await utils.delay(30000);
-
-            logger.step(6, 'Checking terminal for server start status');
-            const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
+            logger.step(5, 'Waiting for server to start with historical parameters');
+            const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
 
             if (!serverStartStatus) {
                 logger.error('Server started with params message not found in the terminal');
             } else {
-                logger.stepSuccess(6, 'Server successfully started with historical parameters');
+                logger.stepSuccess(5, 'Server successfully started with historical parameters');
 
-                logger.step(7, 'Checking if test report exists');
-                let checkFile = await utils.checkIfTestReportExists(reportPath);
+                logger.step(6, 'Waiting for test report');
+                let checkFile = await utils.waitForTestReport(reportPath);
                 logger.info(`Report exists: ${checkFile}`);
 
                 expect(checkFile).to.be.true;
-                logger.stepSuccess(7, 'Test report found');
+                logger.stepSuccess(6, 'Test report found');
 
-                logger.step(8, 'Launching dashboard stop action');
+                logger.step(7, 'Launching dashboard stop action');
                 await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
-                logger.step(9, 'Checking terminal for server stop status');
-                const serverStopStatus = await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
+                logger.step(8, 'Waiting for server to stop');
+                const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!serverStopStatus) {
                     logger.error('Server stopped message not found in terminal');
                 } else {
-                    logger.stepSuccess(9, 'Server stopped successfully');
+                    logger.stepSuccess(8, 'Server stopped successfully');
                 }
                 expect(serverStopStatus).to.be.true;
             }
@@ -380,53 +374,35 @@ describe('Devmode action tests for Gradle Project', () => {
             logger.step(3, 'Setting custom debug parameter: -DdebugPort=7777');
             await utils.setCustomParameter("-DdebugPort=7777");
 
-            logger.step(4, 'Waiting 30 seconds for server to start in debug mode');
-            await utils.delay(30000);
-
-            logger.step(5, 'Checking terminal for server start status');
-            isServerRunning = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
+            logger.step(4, 'Waiting for server to start in debug mode');
+            isServerRunning = await utils.waitForServerStart(constants.SERVER_START_STRING);
 
             if (!isServerRunning) {
                 logger.error('Server started with params message not found in terminal');
             } else {
-                logger.stepSuccess(5, 'Server successfully started in debug mode');
+                logger.stepSuccess(4, 'Server successfully started in debug mode');
 
-                logger.step(6, 'Launching attach debugger dashboard action');
+                logger.step(5, 'Launching attach debugger dashboard action');
                 await utils.launchDashboardAction(item, constants.ATTACH_DEBUGGER_DASHBOARD_ACTION, constants.ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION);
                 logger.info('Attach Debugger action completed');
 
-                logger.step(7, 'Waiting 8 seconds for debugger to attach');
-                await utils.delay(8000);
-
-                logger.step(8, 'Getting debug view content');
-                const contentPart = debugView.getContent();
-
-                logger.step(9, 'Checking for BREAKPOINTS section in debug view');
-                let mysecarry: Promise<ViewSection[]> = contentPart.getSections();
-                let mysecmap: IterableIterator<[number, ViewSection]> = (await mysecarry).entries();
-
-                for (const [key, value] of (mysecmap)) {
-                    const sectionText = await value.getEnclosingElement().getText();
-
-                    if (sectionText.includes("BREAKPOINTS")) {
-                        logger.stepSuccess(9, 'Found BREAKPOINTS section - debugger attached successfully');
-                        attachStatus = true;
-                        break;
-                    }
-                }
+                logger.step(6, 'Waiting for debugger to attach');
+                attachStatus = await utils.waitForDebuggerAttach(debugView);
 
                 if (!attachStatus) {
                     logger.error('BREAKPOINTS section not found - debugger may not have attached');
+                } else {
+                    logger.stepSuccess(6, 'Debugger attached successfully');
                 }
 
-                logger.step(10, 'Stopping Liberty server');
+                logger.step(7, 'Stopping Liberty server');
                 await utils.stopLibertyserver(constants.GRADLE_PROJECT);
 
-                logger.step(11, 'Checking terminal for server stop status');
-                isServerRunning = !await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
+                logger.step(8, 'Waiting for server to stop');
+                isServerRunning = !await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!isServerRunning) {
-                    logger.stepSuccess(11, 'Server stopped successfully');
+                    logger.stepSuccess(8, 'Server stopped successfully');
                 } else {
                     logger.error('Server stop message not found in terminal');
                 }
@@ -460,14 +436,8 @@ describe('Devmode action tests for Gradle Project', () => {
             logger.step(1, 'Launching view test report dashboard action');
             await utils.launchDashboardAction(item, constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
 
-            logger.step(2, 'Getting open editor titles');
-            tabs = await utils.waitForCondition(async () => {
-                const titles = await new EditorView().getOpenEditorTitles();
-                if (titles && titles.length > 0) {
-                    return titles;
-                }
-                return;
-            }, 10);
+            logger.step(2, 'Waiting for test report tab to open');
+            tabs = await utils.waitForEditorTab(constants.GRADLE_TEST_REPORT_TITLE);
             logger.info(`Open editor tabs: ${tabs.join(', ')}`);
 
             logger.step(3, `Checking if Gradle test report tab is open: ${constants.GRADLE_TEST_REPORT_TITLE}`);

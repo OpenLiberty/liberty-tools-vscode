@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, createWaitHelper } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
@@ -11,6 +11,23 @@ import { logger } from './testLogger';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
 
+// Singleton WaitHelper instance
+let waitHelper: WaitHelper | undefined;
+
+/**
+ * Get or create the singleton WaitHelper instance.
+ * This should be used for all wait operations in tests.
+ */
+export function getWaitHelper(): WaitHelper {
+    if (!waitHelper) {
+        waitHelper = new WaitHelper(VSBrowser.instance.driver);
+    }
+    return waitHelper;
+}
+
+/**
+ * @deprecated Use getWaitHelper().sleep() or preferably condition-based waiting instead
+ */
 export function delay(millisec: number) {
     return new Promise(resolve => setTimeout(resolve, millisec));
 }
@@ -20,7 +37,7 @@ export function delay(millisec: number) {
  * Needed for handling timing issues with UI elements.
  */
 export async function waitForCondition<T>(func: () => Promise<T>, timeout: number = 30): Promise<NonNullable<T>> {
-    const wait = createWaitHelper(VSBrowser.instance.driver);
+    const wait = getWaitHelper();
     const result = await wait.forCondition(async () => {
         try {
             const value = await func();
@@ -88,7 +105,24 @@ export async function getDashboardItem(section: any, projectName: string): Promi
         await section.expand();
     });
     
-    await delay(5000);
+    // Wait for section container to become stable after expansion
+    const wait = getWaitHelper();
+    await wait.sleep(2000);
+    
+    // Wait for items to be visible after expansion with retry on ElementNotInteractableError
+    await wait.forCondition(async () => {
+        try {
+            const items = await section.getVisibleItems();
+            return items && items.length > 0;
+        } catch (error: any) {
+            // Retry on ElementNotInteractableError
+            if (error.name === 'ElementNotInteractableError') {
+                logger.info('Container not yet interactable, retrying...');
+                return;
+            }
+            throw error;
+        }
+    }, { timeout: 10000, message: 'Dashboard items did not appear after expansion' });
     
     // Find the item
     return await waitForCondition(async () => {
@@ -121,12 +155,17 @@ export async function setCustomParameter(customParam: string) {
         const input = new InputBox();
         await input.click();
         await input.setText(customParam);
+        
+        // Wait for input to be fully ready before confirming
+        const wait = getWaitHelper();
+        await wait.sleep(2000);
+        
         await input.confirm();
     });
 
 }
 
-export async function chooseCmdFromHistory(command: string): Promise<Boolean> {
+export async function chooseCmdFromHistory(command: string): Promise<boolean> {
 
     logger.info("Choosing command from history");
     
@@ -138,6 +177,11 @@ export async function chooseCmdFromHistory(command: string): Promise<Boolean> {
                 throw new Error("Quick pick not found");
             }
             await pick.select();
+            
+            // Wait for selection to be processed before confirming
+            const wait = getWaitHelper();
+            await wait.sleep(2000);
+            
             await input.confirm();
         });
         return true;
@@ -147,7 +191,7 @@ export async function chooseCmdFromHistory(command: string): Promise<Boolean> {
     }
 }
 
-export async function deleteReports(reportPath: string): Promise<Boolean> {
+export async function deleteReports(reportPath: string): Promise<boolean> {
 
     //const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
     if (fs.existsSync(reportPath)) {
@@ -163,7 +207,7 @@ export async function deleteReports(reportPath: string): Promise<Boolean> {
     return true;
 }
 
-export async function checkIfTestReportExists(reportPath: string): Promise<Boolean> {
+export async function checkIfTestReportExists(reportPath: string): Promise<boolean> {
     const maxAttempts = 10;
     let foundReport = false;
     //const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
@@ -188,55 +232,71 @@ export async function checkIfTestReportExists(reportPath: string): Promise<Boole
     return foundReport;
 }
 
-export async function checkTerminalforServerState(serverStatusCode: string): Promise<Boolean> {
+export async function checkTerminalforServerState(serverStatusCode: string): Promise<boolean> {
     const workbench = new Workbench();
-    let foundText = false;
-    let count = 0;
-    do {
-        clipboard.writeSync('');//clean slate for clipboard
-        await workbench.executeCommand('terminal select all');
-        const text = clipboard.readSync();
-        if (text.includes(serverStatusCode)) {
-            foundText = true;
-            logger.info("Found text " + serverStatusCode);
-            break;
-        }
-        else if (text.includes("FAILURE")) {
-            logger.info("Found failure " + text);
-            foundText = false;
-            break;
-        }
-        else {
-            logger.info("test is running ...");
-            foundText = false;
-        }
-        count++;
-        await workbench.getDriver().sleep(10000);
-    } while (!foundText && (count <= 20));
-    await workbench.executeCommand('terminal clear');
-    return foundText;
+    const wait = getWaitHelper();
+    
+    try {
+        await wait.forCondition(async () => {
+            clipboard.writeSync(''); // clean slate for clipboard
+            await workbench.executeCommand('terminal select all');
+            const text = clipboard.readSync();
+            
+            if (text.includes(serverStatusCode)) {
+                logger.info("Found text " + serverStatusCode);
+                return true;
+            }
+            else if (text.includes("FAILURE") || text.includes("BUILD FAILURE")) {
+                logger.info("Found failure in terminal output");
+                throw new Error("Server startup/shutdown failed");
+            }
+            else {
+                logger.info("Waiting for server state...");
+                return;
+            }
+        }, {
+            timeout: 300000, // 300 seconds (5 minutes) max wait - increased for custom params
+            pollInterval: 10000, // check every 10 seconds
+            message: `Server state '${serverStatusCode}' not found in terminal`
+        });
+        
+        await workbench.executeCommand('terminal clear');
+        return true;
+    } catch (error) {
+        logger.error("Failed to find server state in terminal", error);
+        await workbench.executeCommand('terminal clear');
+        return false;
+    }
 }
 
-export async function checkTestStatus(testStatus: string): Promise<Boolean> {
+export async function checkTestStatus(testStatus: string): Promise<boolean> {
     const workbench = new Workbench();
-    let foundText = false;
-    let count = 0;
-    do {
-        clipboard.writeSync('');
-        await workbench.executeCommand('terminal select all');
-        const text = clipboard.readSync();
-        if (text.includes(testStatus)) {
-            foundText = true;
-            logger.info("Found text " + testStatus);
-            break;
-        }
-        else
-            foundText = false;
-        count++;
-        await workbench.getDriver().sleep(2000);
-    } while (!foundText && (count <= 5));
-    await workbench.executeCommand('terminal clear');
-    return foundText;
+    const wait = getWaitHelper();
+    
+    try {
+        await wait.forCondition(async () => {
+            clipboard.writeSync('');
+            await workbench.executeCommand('terminal select all');
+            const text = clipboard.readSync();
+            
+            if (text.includes(testStatus)) {
+                logger.info("Found text " + testStatus);
+                return true;
+            }
+            return;
+        }, {
+            timeout: 120000, // 120 seconds (2 minutes) max wait for tests to complete
+            pollInterval: 5000, // check every 5 seconds
+            message: `Test status '${testStatus}' not found in terminal`
+        });
+        
+        await workbench.executeCommand('terminal clear');
+        return true;
+    } catch (error) {
+        logger.error("Failed to find test status in terminal", error);
+        await workbench.executeCommand('terminal clear');
+        return false;
+    }
 }
 
 /* Stop Server Liberty dashboard post Attach Debugger*/
@@ -250,12 +310,26 @@ export async function stopLibertyserver(projectName: string) {
     (await input).setText(projectName);
     (await input).confirm();
     (await input).click();
-    await delay(10000);
+    
+    // Wait for command to be processed
+    const wait = getWaitHelper();
+    await wait.sleep(5000);
 }
 
 export async function clearCommandPalette() {
+    const wait = getWaitHelper();
     await new Workbench().executeCommand('Clear Command History');
-    await delay(30000);
+    
+    // Wait for dialog to appear
+    await wait.forCondition(async () => {
+        try {
+            const dialog = new ModalDialog();
+            const message = await dialog.getMessage();
+            return message.includes('Do you want to clear the history of recently used commands?');
+        } catch {
+            return;
+        }
+    }, { timeout: 5000, message: 'Clear command history dialog did not appear' });
     
     await waitForSuccess(async () => {
         const dialog = new ModalDialog();
@@ -267,6 +341,141 @@ export async function clearCommandPalette() {
         expect(buttons.length).equals(2);
         await dialog.pushButton('Clear');
     });
+}
+
+/**
+ * Wait for the Liberty Dashboard to load and become ready.
+ * This replaces arbitrary delays with condition-based waiting.
+ */
+export async function waitForDashboardToLoad(section: any): Promise<void> {
+    const wait = getWaitHelper();
+    logger.info('Waiting for Liberty Dashboard to load');
+    
+    // Expand the section
+    await waitForSuccess(async () => {
+        await section.expand();
+    });
+    
+    // Wait for section container to become stable after expansion
+    await wait.sleep(2000);
+    
+    // Wait for items to appear with retry on ElementNotInteractableError
+    await wait.forCondition(async () => {
+        try {
+            const items = await section.getVisibleItems();
+            if (items && items.length > 0) {
+                logger.info(`Dashboard loaded with ${items.length} items`);
+                return true;
+            }
+        } catch (error: any) {
+            // Retry on ElementNotInteractableError
+            if (error.name === 'ElementNotInteractableError') {
+                logger.info('Container not yet interactable, retrying...');
+                return;
+            }
+            throw error;
+        }
+        return;
+    }, {
+        timeout: 120000, // 2 minutes max
+        pollInterval: 5000, // check every 5 seconds
+        message: 'Dashboard items did not load'
+    });
+}
+
+/**
+ * Wait for server to start by checking terminal output.
+ * Replaces fixed 30-second delays with condition-based waiting.
+ */
+export async function waitForServerStart(serverStartString: string): Promise<boolean> {
+    logger.info('Waiting for server to start');
+    const wait = getWaitHelper();
+    
+    // Give server a moment to begin startup
+    await wait.sleep(5000);
+    
+    return await checkTerminalforServerState(serverStartString);
+}
+
+/**
+ * Wait for server to stop by checking terminal output.
+ */
+export async function waitForServerStop(serverStopString: string): Promise<boolean> {
+    logger.info('Waiting for server to stop');
+    return await checkTerminalforServerState(serverStopString);
+}
+
+/**
+ * Wait for test report file to exist on filesystem.
+ * Replaces polling loop with condition-based waiting.
+ */
+export async function waitForTestReport(reportPath: string): Promise<boolean> {
+    const wait = getWaitHelper();
+    logger.info(`Waiting for test report at: ${reportPath}`);
+    
+    try {
+        await wait.forCondition(async () => {
+            return fs.existsSync(reportPath);
+        }, {
+            timeout: 50000, // 50 seconds
+            pollInterval: 5000, // check every 5 seconds
+            message: `Test report not found at ${reportPath}`
+        });
+        logger.info('Test report found');
+        return true;
+    } catch (error) {
+        logger.info('Report not found at primary location. Checking alternate location...');
+        return false;
+    }
+}
+
+/**
+ * Wait for debugger to attach by checking for BREAKPOINTS section.
+ * Replaces fixed 8-second delay with condition-based waiting.
+ */
+export async function waitForDebuggerAttach(debugView: any): Promise<boolean> {
+    const wait = getWaitHelper();
+    logger.info('Waiting for debugger to attach');
+    
+    try {
+        await wait.forCondition(async () => {
+            const contentPart = debugView.getContent();
+            const sections = await contentPart.getSections();
+            
+            for (const section of sections) {
+                const sectionText = await section.getEnclosingElement().getText();
+                if (sectionText.includes("BREAKPOINTS")) {
+                    logger.info('BREAKPOINTS section found - debugger attached');
+                    return true;
+                }
+            }
+            return;
+        }, {
+            timeout: 30000, // 30 seconds
+            pollInterval: 2000, // check every 2 seconds
+            message: 'Debugger did not attach - BREAKPOINTS section not found'
+        });
+        return true;
+    } catch (error) {
+        logger.error('Failed to detect debugger attachment', error);
+        return false;
+    }
+}
+
+/**
+ * Wait for editor tab to open with specific title.
+ * Replaces waitForCondition pattern with specialized helper.
+ */
+export async function waitForEditorTab(tabTitle: string): Promise<string[]> {
+    const EditorView = require('vscode-extension-tester').EditorView;
+    logger.info(`Waiting for editor tab: ${tabTitle}`);
+    return await waitForCondition(async () => {
+        const titles = await new EditorView().getOpenEditorTitles();
+        if (titles && titles.length > 0 && titles.includes(tabTitle)) {
+            return titles;
+        }
+        return;
+    }, 60); // Increased to 60 seconds to allow time for report generation
 }
 
 /**
