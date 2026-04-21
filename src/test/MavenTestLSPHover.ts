@@ -3,9 +3,8 @@
  * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
-import { EditorView, TextEditor, VSBrowser, Workbench, StatusBar } from 'vscode-extension-tester';
+import { EditorView, TextEditor, VSBrowser, Workbench } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
-import * as constants from './definitions/constants';
 import { logger } from './utils/testLogger';
 import * as path from 'path';
 
@@ -41,22 +40,6 @@ describe('LSP Hover tests for Maven Project', () => {
         
         editor = await editorView.openEditor('server.xml') as TextEditor;
         logger.info('Server.xml file opened and editor obtained');
-
-        // Wait for language server to initialize
-        await wait.forCondition(async () => {
-            try {
-                const statusBar = new StatusBar();
-                const languageItem = await statusBar.getItem('Initializing JS/TS language features');
-                return !languageItem;
-            } catch {
-                return true;
-            }
-        }, {
-            timeout: 30000,
-            pollInterval: 2000,
-            message: 'Language server did not initialize'
-        });
-        logger.info('Language server initialized');
     });
 
     afterEach(async function() {
@@ -77,7 +60,24 @@ describe('LSP Hover tests for Maven Project', () => {
             logger.error('Failed to close editors in after hook', error);
         }
         
-        utils.copyScreenshotsToProjectFolder('maven-lsp-hover');
+        utils.copyScreenshotsToProjectFolder('maven');
+    });
+
+    it('Liberty Language Server should initialize', async function() {
+        this.timeout(60000);
+        logger.testStart('Liberty Language Server should initialize');
+        
+        try {
+            await utils.waitForLanguageServerInit(
+                'Language Support for Liberty',
+                'Initialized Liberty Language server',
+                60
+            );
+            logger.testComplete('Liberty Language Server initialized successfully');
+        } catch (error) {
+            logger.testFailed('Liberty Language Server should initialize', error);
+            throw error;
+        }
     });
 
     // Test data for parameterized hover tests
@@ -164,22 +164,23 @@ describe('LSP Hover tests for Maven Project', () => {
             
             javaEditor = await editorView.openEditor('HelloServlet.java') as TextEditor;
             logger.info('HelloServlet.java file opened and editor obtained');
+        });
 
-            // Wait for Java language server to initialize
-            await wait.forCondition(async () => {
-                try {
-                    const statusBar = new StatusBar();
-                    const languageItem = await statusBar.getItem('Initializing JS/TS language features');
-                    return !languageItem;
-                } catch {
-                    return true;
-                }
-            }, {
-                timeout: 30000,
-                pollInterval: 2000,
-                message: 'Java language server did not initialize'
-            });
-            logger.info('Java language server initialized');
+        it('LSP4Jakarta Language Server should initialize', async function() {
+            this.timeout(60000);
+            logger.testStart('LSP4Jakarta Language Server should initialize');
+            
+            try {
+                await utils.waitForLanguageServerInit(
+                    'Language Support for Jakarta EE',
+                    'Initializing Jakarta EE server',
+                    60
+                );
+                logger.testComplete('LSP4Jakarta Language Server initialized successfully');
+            } catch (error) {
+                logger.testFailed('LSP4Jakarta Language Server should initialize', error);
+                throw error;
+            }
         });
 
         // Test data for LSP4Jakarta hover tests

@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
@@ -23,6 +23,73 @@ export function getWaitHelper(): WaitHelper {
         waitHelper = new WaitHelper(VSBrowser.instance.driver);
     }
     return waitHelper;
+}
+
+/**
+ * Wait for a language server to initialize by checking its output channel.
+ * Uses clipboard to read full output content by clicking in output view to focus it.
+ *
+ * @param channelName The name of the output channel (e.g., 'Language Support for Liberty')
+ * @param initMessage The message to look for indicating initialization (e.g., 'Initialized Liberty Language server')
+ * @param timeout Timeout in seconds (default: 60)
+ */
+export async function waitForLanguageServerInit(
+    channelName: string,
+    initMessage: string,
+    timeout: number = 60
+): Promise<void> {
+    const wait = getWaitHelper();
+    const workbench = new Workbench();
+    
+    logger.info(`Checking if the ${channelName} channel has initialized...`);
+    
+    await wait.forCondition(async () => {
+        try {
+            // Open the bottom bar panel (Output)
+            const bottomBar = new BottomBarPanel();
+            await bottomBar.toggle(true);
+            await wait.sleep(500);
+            
+            // Get the OutputView
+            const outputView = await bottomBar.openOutputView();
+            await wait.sleep(500);
+            
+            // Select the specific output channel
+            await outputView.selectChannel(channelName);
+            await wait.sleep(1000);
+            
+            // Click in the output view to focus it, then use clipboard to get content
+            // This is similar to how terminal content is read in checkTerminalforServerState
+            const outputElement = await outputView.getEnclosingElement();
+            await outputElement.click();
+            await wait.sleep(500);
+            
+            clipboard.writeSync(''); // Clear clipboard
+            await workbench.executeCommand('editor.action.selectAll');
+            await wait.sleep(500);
+            await workbench.executeCommand('editor.action.clipboardCopyAction');
+            await wait.sleep(500);
+            const outputText = clipboard.readSync();
+            
+            // Close the output panel
+            await bottomBar.toggle(false);
+            
+            if (outputText.includes(initMessage)) {
+                logger.info(`${channelName} initialized successfully`);
+                return true;
+            }
+            
+            logger.info(`Waiting for the ${channelName} channel initialization message...`);
+            return false;
+        } catch (error) {
+            logger.info(`Error checking the ${channelName} channel: ${error}, retrying...`);
+            return false;
+        }
+    }, {
+        timeout: timeout * 1000,
+        pollInterval: 2000,
+        message: `The ${channelName} output channel did not initialize within ${timeout} seconds`
+    });
 }
 
 /**
