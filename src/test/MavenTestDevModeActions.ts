@@ -3,12 +3,11 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import { expect } from 'chai';
-import { SideBarView, ViewItem, ViewSection, EditorView, DefaultTreeItem, DebugView, VSBrowser } from 'vscode-extension-tester';
+import { DebugView, DefaultTreeItem, EditorView, SideBarView, ViewItem, ViewSection, VSBrowser, Workbench } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import { logger } from './utils/testLogger';
 import path = require('path');
-import * as fs from 'fs';
 
 describe('Devmode action tests for Maven Project', () => {
     let sidebar: SideBarView;
@@ -38,6 +37,14 @@ describe('Devmode action tests for Maven Project', () => {
             await new EditorView().closeAllEditors();
         } catch (error) {
             logger.error('Failed to close editors in afterEach', error);
+        }
+        
+        // Clear terminal between tests to avoid confusion with old output
+        try {
+            const workbench = new Workbench();
+            await workbench.executeCommand('terminal clear');
+        } catch (error) {
+            logger.error('Failed to clear terminal in afterEach', error);
         }
     });
 
@@ -265,33 +272,22 @@ describe('Devmode action tests for Maven Project', () => {
             } else {
                 logger.stepSuccess(5, 'Server successfully started with custom parameters');
 
-                logger.step(6, 'Waiting for test report at primary location');
-                let checkFile = await utils.waitForTestReport(reportPath);
-                logger.info(`Primary report exists: ${checkFile}`);
-
-                if (!checkFile) {
-                    logger.step(7, 'Checking alternate report location');
-                    checkFile = await utils.waitForTestReport(alternateReportPath);
-                    if (checkFile) {
-                        logger.info('Test report found at alternate location');
-                    } else {
-                        logger.error('Test report not found at either location');
-                    }
-                }
+                logger.step(6, 'Waiting for test report at primary or alternate location');
+                const checkFile = await utils.waitForTestReport(reportPath, alternateReportPath);
 
                 expect(checkFile).to.be.true;
-                logger.stepSuccess(7, 'Test report found');
+                logger.stepSuccess(6, 'Test report found');
 
-                logger.step(8, 'Launching dashboard stop action');
+                logger.step(7, 'Launching dashboard stop action');
                 await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
-                logger.step(9, 'Waiting for server to stop');
+                logger.step(8, 'Waiting for server to stop');
                 const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!serverStopStatus) {
                     logger.error('Server stopped message not found in the terminal');
                 } else {
-                    logger.stepSuccess(9, 'Server stopped successfully');
+                    logger.stepSuccess(8, 'Server stopped successfully');
                 }
                 expect(serverStopStatus).to.be.true;
             }
@@ -340,33 +336,22 @@ describe('Devmode action tests for Maven Project', () => {
             } else {
                 logger.stepSuccess(5, 'Server successfully started with historical parameters');
 
-                logger.step(6, 'Waiting for test report at primary location');
-                let checkFile = await utils.waitForTestReport(reportPath);
-                logger.info(`Primary report exists: ${checkFile}`);
-
-                if (!checkFile) {
-                    logger.step(7, 'Checking alternate report location');
-                    checkFile = await utils.waitForTestReport(alternateReportPath);
-                    if (checkFile) {
-                        logger.info('Test report found at alternate location');
-                    } else {
-                        logger.error('Test report not found at either location');
-                    }
-                }
+                logger.step(6, 'Waiting for test report at primary or alternate location');
+                const checkFile = await utils.waitForTestReport(reportPath, alternateReportPath);
 
                 expect(checkFile).to.be.true;
-                logger.stepSuccess(7, 'Test report found');
+                logger.stepSuccess(6, 'Test report found');
 
-                logger.step(8, 'Launching dashboard stop action');
+                logger.step(7, 'Launching dashboard stop action');
                 await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
-                logger.step(9, 'Waiting for server to stop');
+                logger.step(8, 'Waiting for server to stop');
                 const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!serverStopStatus) {
                     logger.error('Server stopped message not found in terminal');
                 } else {
-                    logger.stepSuccess(9, 'Server stopped successfully');
+                    logger.stepSuccess(8, 'Server stopped successfully');
                 }
                 expect(serverStopStatus).to.be.true;
             }
@@ -475,10 +460,10 @@ describe('Devmode action tests for Maven Project', () => {
                 logger.info('Attach Debugger action completed');
 
                 logger.step(6, 'Waiting for debugger to attach');
-                attachStatus = await utils.waitForDebuggerAttach(debugView);
+                attachStatus = await utils.waitForDebuggerAttach();
 
                 if (!attachStatus) {
-                    logger.error('BREAKPOINTS section not found - debugger may not have attached');
+                    logger.error('DebugToolbar not found - debugger may not have attached');
                 } else {
                     logger.stepSuccess(6, 'Debugger attached successfully');
                 }

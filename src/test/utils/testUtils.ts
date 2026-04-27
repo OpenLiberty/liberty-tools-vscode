@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
@@ -327,11 +327,9 @@ export async function checkTerminalforServerState(serverStatusCode: string): Pro
             message: `Server state '${serverStatusCode}' not found in terminal`
         });
         
-        await workbench.executeCommand('terminal clear');
         return true;
     } catch (error) {
         logger.error("Failed to find server state in terminal", error);
-        await workbench.executeCommand('terminal clear');
         return false;
     }
 }
@@ -357,11 +355,9 @@ export async function checkTestStatus(testStatus: string): Promise<boolean> {
             message: `Test status '${testStatus}' not found in terminal`
         });
         
-        await workbench.executeCommand('terminal clear');
         return true;
     } catch (error) {
         logger.error("Failed to find test status in terminal", error);
-        await workbench.executeCommand('terminal clear');
         return false;
     }
 }
@@ -475,56 +471,56 @@ export async function waitForServerStop(serverStopString: string): Promise<boole
 /**
  * Wait for test report file to exist on filesystem.
  * Replaces polling loop with condition-based waiting.
+ * @param reportPath Primary report path to check
+ * @param alternatePath Optional alternate report path to check simultaneously
+ * @returns true if report found at either location, false otherwise
  */
-export async function waitForTestReport(reportPath: string): Promise<boolean> {
+export async function waitForTestReport(reportPath: string, alternatePath?: string): Promise<boolean> {
     const wait = getWaitHelper();
     logger.info(`Waiting for test report at: ${reportPath}`);
+    if (alternatePath) {
+        logger.info(`Also checking alternate location: ${alternatePath}`);
+    }
     
     try {
         await wait.forCondition(async () => {
-            return fs.existsSync(reportPath);
+            if (fs.existsSync(reportPath)) {
+                logger.info('Test report found at primary location');
+                return true;
+            }
+            if (alternatePath && fs.existsSync(alternatePath)) {
+                logger.info('Test report found at alternate location');
+                return true;
+            }
+            return;
         }, {
-            timeout: 50000, // 50 seconds
-            pollInterval: 5000, // check every 5 seconds
-            message: `Test report not found at ${reportPath}`
+            timeout: 50000, // 50 seconds max (for slow systems)
+            pollInterval: 1000, // check every 1 second (faster detection)
+            message: alternatePath
+                ? `Test report not found at either ${reportPath} or ${alternatePath}`
+                : `Test report not found at ${reportPath}`
         });
-        logger.info('Test report found');
         return true;
     } catch (error) {
-        logger.info('Report not found at primary location. Checking alternate location...');
+        logger.error('Test report not found');
         return false;
     }
 }
 
 /**
- * Wait for debugger to attach by checking for BREAKPOINTS section.
- * Replaces fixed 8-second delay with condition-based waiting.
+ * Wait for debugger to attach by checking for the DebugToolbar.
+ * The DebugToolbar only appears when a debug session is successfully connected.
  */
-export async function waitForDebuggerAttach(debugView: any): Promise<boolean> {
-    const wait = getWaitHelper();
-    logger.info('Waiting for debugger to attach');
+export async function waitForDebuggerAttach(): Promise<boolean> {
+    logger.info('Waiting for debugger to attach (checking for DebugToolbar)');
     
     try {
-        await wait.forCondition(async () => {
-            const contentPart = debugView.getContent();
-            const sections = await contentPart.getSections();
-            
-            for (const section of sections) {
-                const sectionText = await section.getEnclosingElement().getText();
-                if (sectionText.includes("BREAKPOINTS")) {
-                    logger.info('BREAKPOINTS section found - debugger attached');
-                    return true;
-                }
-            }
-            return;
-        }, {
-            timeout: 30000, // 30 seconds
-            pollInterval: 2000, // check every 2 seconds
-            message: 'Debugger did not attach - BREAKPOINTS section not found'
-        });
+        // Wait for the debug toolbar to appear, which indicates debugger is attached
+        await DebugToolbar.create(30000);
+        logger.info('DebugToolbar appeared - debugger attached successfully');
         return true;
     } catch (error) {
-        logger.error('Failed to detect debugger attachment', error);
+        logger.error('Failed to detect debugger attachment - DebugToolbar did not appear', error);
         return false;
     }
 }

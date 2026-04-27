@@ -3,12 +3,10 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import { expect } from 'chai';
-import { InputBox, Workbench, SideBarView, ViewSection, EditorView, DefaultTreeItem, DebugView } from 'vscode-extension-tester';
+import { DebugView, DefaultTreeItem, EditorView, InputBox, SideBarView, ViewSection, VSBrowser, Workbench } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import { logger } from './utils/testLogger';
-import * as fs from 'fs';
-import { VSBrowser } from 'vscode-extension-tester';
 import path = require('path');
 
 describe('Devmode action tests for Gradle Project', () => {
@@ -38,6 +36,14 @@ describe('Devmode action tests for Gradle Project', () => {
             await new EditorView().closeAllEditors();
         } catch (error) {
             logger.error('Failed to close editors in afterEach', error);
+        }
+        
+        // Clear terminal between tests to avoid confusion with old output
+        try {
+            const workbench = new Workbench();
+            await workbench.executeCommand('terminal clear');
+        } catch (error) {
+            logger.error('Failed to clear terminal in afterEach', error);
         }
     });
 
@@ -387,10 +393,10 @@ describe('Devmode action tests for Gradle Project', () => {
                 logger.info('Attach Debugger action completed');
 
                 logger.step(6, 'Waiting for debugger to attach');
-                attachStatus = await utils.waitForDebuggerAttach(debugView);
+                attachStatus = await utils.waitForDebuggerAttach();
 
                 if (!attachStatus) {
-                    logger.error('BREAKPOINTS section not found - debugger may not have attached');
+                    logger.error('DebugToolbar not found - debugger may not have attached');
                 } else {
                     logger.stepSuccess(6, 'Debugger attached successfully');
                 }
