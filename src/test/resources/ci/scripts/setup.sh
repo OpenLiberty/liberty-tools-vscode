@@ -20,17 +20,19 @@ OS=$(uname -s)
 
 # Semeru JDK version control constants.
 # Example:
-# Version (SEMERU_OPEN_JDK_BUILD): 11.0.14.1 
-# OpenJDK (SEMERU_OPEN_JDK_BUILD + SEMERU_OPEN_JDK_BUILD): 11.0.14.1+1
-# OpenJ9  (SEMERU_OPENJ9_VERSION): 0.30.1
-SEMERU_OPEN_JDK_MAJOR=17
-SEMERU_OPEN_JDK_VERSION="${SEMERU_OPEN_JDK_MAJOR}.0.6"
-SEMERU_OPEN_JDK_BUILD=10
-SEMERU_OPENJ9_VERSION=0.36.0
+# Version (SEMERU_OPEN_JDK_VERSION): 21
+# OpenJDK (SEMERU_OPEN_JDK_VERSION + SEMERU_OPEN_JDK_BUILD): 21+35
+# OpenJ9  (SEMERU_OPENJ9_VERSION): 0.42.0-m0
+# Releases page: https://github.com/ibmruntimes/semeru21-binaries/releases/tag/jdk-21%2B35_openj9-0.42.0-m0
+# MacOS binary:  https://github.com/ibmruntimes/semeru21-binaries/releases/download/jdk-21%2B35_openj9-0.42.0-m0/ibm-semeru-open-jdk_x64_mac_21_35_openj9-0.42.0-m0.tar.gz
+SEMERU_OPEN_JDK_MAJOR=21
+SEMERU_OPEN_JDK_VERSION="${SEMERU_OPEN_JDK_MAJOR}"
+SEMERU_OPEN_JDK_BUILD=35
+SEMERU_OPENJ9_VERSION=0.42.0-m0
 
-SEMERU_ARCHIVE_MAC_SHA256=37baae44a266c53a90e494be208564c690ed36b7b590f0d75e257efe9173e6c9
-SEMERU_ARCHIVE_LINUX_SHA256=ce39a4f7c2e08e56083f17f3e44c05e0fbbeba775e670f015a337679c99c54c6
-SEMERU_ARCHIVE_WINDOWS_SHA256=4143a9fe93b8a139be34f5789fe61bf197d772600b716fa4b3b8f09c0ab679da
+SEMERU_ARCHIVE_MAC_SHA256=7e6f90dbdb3b72cb8fd23d1287482c00c4d89292f5bce7823dda246ec7c0550f
+SEMERU_ARCHIVE_LINUX_SHA256=e52dbc5513d83f4823e0a7bb317a6aeda8b87aef4f2b951eae9541d4b301a061
+SEMERU_ARCHIVE_WINDOWS_SHA256=9a70de6aea7e43d262d8709c154e0fb387cce23bf48f3271ad0ae74fe0d572fc
 
 # Maven version control constants.
 MAVEN_VERSION=3.8.6
@@ -89,34 +91,47 @@ installCustomSoftware() {
 	installGradle
 }  
 
-# installJDK installs the set version of the Semeru JDK.
+# installJDK installs or configures JDK 21.
+# First tries to use pre-installed JDK 21 from GitHub Actions runner (via JAVA_HOME_21_X64).
+# Falls back to downloading Semeru JDK 21 if not in GHA environment.
 installJDK() {
-	local javaHome="${SOFTWARE_INSTALL_DIR}/jdk-${SEMERU_OPEN_JDK_VERSION}+${SEMERU_OPEN_JDK_BUILD}"
+	local javaHome=""
+	
+	# Check if running in GitHub Actions with pre-installed JDK 21
+	if [[ -n "${JAVA_HOME_21_X64}" && -d "${JAVA_HOME_21_X64}" ]]; then
+		echo "Using pre-installed JDK 21 from GitHub Actions runner"
+		javaHome="${JAVA_HOME_21_X64}"
+	else
+		echo "Downloading and installing Semeru JDK 21"
+		javaHome="${SOFTWARE_INSTALL_DIR}/jdk-${SEMERU_OPEN_JDK_VERSION}+${SEMERU_OPEN_JDK_BUILD}"
+		
+		# Download, validate, and expand the JDK archive.
+		if [[ $OS == "Linux" ]]; then
+			local url="https://github.com/ibmruntimes/semeru${SEMERU_OPEN_JDK_MAJOR}-binaries/releases/download/jdk-${SEMERU_OPEN_JDK_VERSION}%2B${SEMERU_OPEN_JDK_BUILD}_openj9-${SEMERU_OPENJ9_VERSION}/ibm-semeru-open-jdk_x64_linux_${SEMERU_OPEN_JDK_VERSION}_${SEMERU_OPEN_JDK_BUILD}_openj9-${SEMERU_OPENJ9_VERSION}.tar.gz"
+			curl -fsSL -o /tmp/liberty-dev-tool-semeru-jdk.tar.gz "$url"
+			echo "${SEMERU_ARCHIVE_LINUX_SHA256}  /tmp/liberty-dev-tool-semeru-jdk.tar.gz" | sha256sum -c -
+			tar -xzf /tmp/liberty-dev-tool-semeru-jdk.tar.gz -C "$SOFTWARE_INSTALL_DIR"
+		elif [[ $OS == "Darwin" ]]; then
+		   javaHome="$javaHome"/Contents/Home
+		   local url="https://github.com/ibmruntimes/semeru${SEMERU_OPEN_JDK_MAJOR}-binaries/releases/download/jdk-${SEMERU_OPEN_JDK_VERSION}%2B${SEMERU_OPEN_JDK_BUILD}_openj9-${SEMERU_OPENJ9_VERSION}/ibm-semeru-open-jdk_x64_mac_${SEMERU_OPEN_JDK_VERSION}_${SEMERU_OPEN_JDK_BUILD}_openj9-${SEMERU_OPENJ9_VERSION}.tar.gz"
+		   curl -fsSL -o /tmp/liberty-dev-tool-semeru-jdk.tar.gz "$url"
+		   echo "${SEMERU_ARCHIVE_MAC_SHA256}  /tmp/liberty-dev-tool-semeru-jdk.tar.gz" | shasum -a 256 -c -
+		   tar -xzf /tmp/liberty-dev-tool-semeru-jdk.tar.gz -C "$SOFTWARE_INSTALL_DIR"
+		else
+			local url="https://github.com/ibmruntimes/semeru${SEMERU_OPEN_JDK_MAJOR}-binaries/releases/download/jdk-${SEMERU_OPEN_JDK_VERSION}%2B${SEMERU_OPEN_JDK_BUILD}_openj9-${SEMERU_OPENJ9_VERSION}/ibm-semeru-open-jdk_x64_windows_${SEMERU_OPEN_JDK_VERSION}_${SEMERU_OPEN_JDK_BUILD}_openj9-${SEMERU_OPENJ9_VERSION}.zip"
+			curl -fsSL -o /tmp/liberty-dev-tool-semeru-jdk.zip "$url"
+			local shaAll=$(certutil -hashfile /tmp/liberty-dev-tool-semeru-jdk.zip SHA256)
+			local downloadedZipSha=$(echo $(echo $shaAll | tr '\r' ' ') | cut -d " " -f 5)
+			if [ "$SEMERU_ARCHIVE_WINDOWS_SHA256" != "$downloadedZipSha" ]; then
+				echo "ERROR: expected SHA: $SEMERU_ARCHIVE_WINDOWS_SHA256 is not equal to downloaded file calculated SHA of: $downloadedZipSha"
+				exit -1
+			fi
+			unzip /tmp/liberty-dev-tool-semeru-jdk.zip -d "$SOFTWARE_INSTALL_DIR"
+		fi
+	fi
 
-    # Download, validate, and expand the JDK archive.
-	if [[ $OS == "Linux" ]]; then
-        local url="https://github.com/ibmruntimes/semeru${SEMERU_OPEN_JDK_MAJOR}-binaries/releases/download/jdk-${SEMERU_OPEN_JDK_VERSION}%2B${SEMERU_OPEN_JDK_BUILD}_openj9-${SEMERU_OPENJ9_VERSION}/ibm-semeru-open-jdk_x64_linux_${SEMERU_OPEN_JDK_VERSION}_${SEMERU_OPEN_JDK_BUILD}_openj9-${SEMERU_OPENJ9_VERSION}.tar.gz"
-        curl -fsSL -o /tmp/liberty-dev-tool-semeru-jdk.tar.gz "$url"
-        echo "${SEMERU_ARCHIVE_LINUX_SHA256}  /tmp/liberty-dev-tool-semeru-jdk.tar.gz" | sha256sum -c - 
-        tar -xzf /tmp/liberty-dev-tool-semeru-jdk.tar.gz -C "$SOFTWARE_INSTALL_DIR"
-    elif [[ $OS == "Darwin" ]]; then
-       javaHome="$javaHome"/Contents/Home
-       local url="https://github.com/ibmruntimes/semeru${SEMERU_OPEN_JDK_MAJOR}-binaries/releases/download/jdk-${SEMERU_OPEN_JDK_VERSION}%2B${SEMERU_OPEN_JDK_BUILD}_openj9-${SEMERU_OPENJ9_VERSION}/ibm-semeru-open-jdk_x64_mac_${SEMERU_OPEN_JDK_VERSION}_${SEMERU_OPEN_JDK_BUILD}_openj9-${SEMERU_OPENJ9_VERSION}.tar.gz"
-       curl -fsSL -o /tmp/liberty-dev-tool-semeru-jdk.tar.gz "$url"
-       echo "${SEMERU_ARCHIVE_MAC_SHA256}  /tmp/liberty-dev-tool-semeru-jdk.tar.gz" | shasum -a 256 -c - 
-       tar -xzf /tmp/liberty-dev-tool-semeru-jdk.tar.gz -C "$SOFTWARE_INSTALL_DIR"
-    else
-        local url="https://github.com/ibmruntimes/semeru${SEMERU_OPEN_JDK_MAJOR}-binaries/releases/download/jdk-${SEMERU_OPEN_JDK_VERSION}%2B${SEMERU_OPEN_JDK_BUILD}_openj9-${SEMERU_OPENJ9_VERSION}/ibm-semeru-open-jdk_x64_windows_${SEMERU_OPEN_JDK_VERSION}_${SEMERU_OPEN_JDK_BUILD}_openj9-${SEMERU_OPENJ9_VERSION}.zip"
-        curl -fsSL -o /tmp/liberty-dev-tool-semeru-jdk.zip "$url"
-        local shaAll=$(certutil -hashfile /tmp/liberty-dev-tool-semeru-jdk.zip SHA256)
-        local downloadedZipSha=$(echo $(echo $shaAll | tr '\r' ' ') | cut -d " " -f 5)
-        if [ "$SEMERU_ARCHIVE_WINDOWS_SHA256" != "$downloadedZipSha" ]; then
-            echo "ERROR: expected SHA: $SEMERU_ARCHIVE_WINDOWS_SHA256 is not equal to downloaded file calculated SHA of: $downloadedZipSha"
-            exit -1
-        fi
-        unzip /tmp/liberty-dev-tool-semeru-jdk.zip -d "$SOFTWARE_INSTALL_DIR"
-    fi
-
+	echo "Java Home: ${javaHome}"
+	
 	# Set the JAVA_HOME environment variable and make it available to other steps within the executing job.
 	echo "JAVA_HOME=${javaHome}" >> $GITHUB_ENV
 
