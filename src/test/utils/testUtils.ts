@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
@@ -23,6 +23,116 @@ export function getWaitHelper(): WaitHelper {
         waitHelper = new WaitHelper(VSBrowser.instance.driver);
     }
     return waitHelper;
+}
+
+/**
+ * Wait for a language server to initialize by checking its output channel.
+ * Uses clipboard to read full output content by clicking in output view to focus it.
+ *
+ * @param channelName The name of the output channel (e.g., 'Language Support for Liberty')
+ * @param initMessage The message to look for indicating initialization (e.g., 'Initialized Liberty Language server')
+ * @param timeout Timeout in seconds (default: 60)
+ */
+export async function waitForLanguageServerInit(
+    channelName: string,
+    initMessage: string,
+    timeout: number = 60
+): Promise<void> {
+    const wait = getWaitHelper();
+    const workbench = new Workbench();
+    
+    logger.info(`Checking if the ${channelName} channel has initialized...`);
+    
+    await wait.forCondition(async () => {
+        try {
+            // Open the bottom bar panel (Output)
+            const bottomBar = new BottomBarPanel();
+            await bottomBar.toggle(true);
+            await wait.sleep(500);
+            
+            // Get the OutputView
+            const outputView = await bottomBar.openOutputView();
+            await wait.sleep(500);
+            
+            // Select the specific output channel
+            await outputView.selectChannel(channelName);
+            await wait.sleep(1000);
+            
+            // Click in the output view to focus it, then use clipboard to get content
+            // This is similar to how terminal content is read in checkTerminalforServerState
+            const outputElement = await outputView.getEnclosingElement();
+            await outputElement.click();
+            await wait.sleep(500);
+            
+            clipboard.writeSync(''); // Clear clipboard
+            await workbench.executeCommand('editor.action.selectAll');
+            await wait.sleep(500);
+            await workbench.executeCommand('editor.action.clipboardCopyAction');
+            await wait.sleep(500);
+            const outputText = clipboard.readSync();
+            
+            // Close the output panel
+            await bottomBar.toggle(false);
+            
+            if (outputText.includes(initMessage)) {
+                logger.info(`${channelName} initialized successfully`);
+                return true;
+            }
+            
+            logger.info(`Waiting for the ${channelName} channel initialization message...`);
+            return false;
+        } catch (error) {
+            logger.info(`Error checking the ${channelName} channel: ${error}, retrying...`);
+            return false;
+        }
+    }, {
+        timeout: timeout * 1000,
+        pollInterval: 2000,
+        message: `The ${channelName} output channel did not initialize within ${timeout} seconds`
+    });
+}
+
+/**
+ * Wait for hover widget to appear with content after triggering hover command.
+ * This function dynamically waits for the hover widget to render and contain content,
+ * accounting for language server initialization delays.
+ * Works for both Liberty Language Server and LSP4Jakarta hover content.
+ *
+ * @param driver The WebDriver instance
+ * @param elementDescription Description of the element being hovered (for logging)
+ * @param timeout Timeout in milliseconds (default: 15000)
+ * @returns The hover text content if widget appeared with content, empty string otherwise
+ */
+export async function waitForHoverWidget(
+    driver: any,
+    elementDescription: string,
+    timeout: number = 15000
+): Promise<string> {
+    const wait = getWaitHelper();
+    
+    const result = await wait.forCondition(async () => {
+        try {
+            const hoverWidget = await driver.findElement({ css: '.monaco-hover' });
+            const isDisplayed = await hoverWidget.isDisplayed();
+            if (isDisplayed) {
+                const hoverText = await hoverWidget.getText();
+                logger.info(`Hover content for ${elementDescription}: ${hoverText.length} characters`);
+                // Verify hover contains content (language server provides documentation)
+                if (hoverText && hoverText.length > 0) {
+                    return hoverText;
+                }
+            }
+        } catch {
+            return undefined;
+        }
+        return undefined;
+    }, {
+        timeout: timeout,
+        pollInterval: 500,
+        message: `Hover widget did not appear with content for ${elementDescription}`
+    });
+    
+    return result || '';
 }
 
 /**
@@ -260,11 +370,9 @@ export async function checkTerminalforServerState(serverStatusCode: string): Pro
             message: `Server state '${serverStatusCode}' not found in terminal`
         });
         
-        await workbench.executeCommand('terminal clear');
         return true;
     } catch (error) {
         logger.error("Failed to find server state in terminal", error);
-        await workbench.executeCommand('terminal clear');
         return false;
     }
 }
@@ -290,11 +398,9 @@ export async function checkTestStatus(testStatus: string): Promise<boolean> {
             message: `Test status '${testStatus}' not found in terminal`
         });
         
-        await workbench.executeCommand('terminal clear');
         return true;
     } catch (error) {
         logger.error("Failed to find test status in terminal", error);
-        await workbench.executeCommand('terminal clear');
         return false;
     }
 }
@@ -345,7 +451,6 @@ export async function clearCommandPalette() {
 
 /**
  * Wait for the Liberty Dashboard to load and become ready.
- * This replaces arbitrary delays with condition-based waiting.
  */
 export async function waitForDashboardToLoad(section: any): Promise<void> {
     const wait = getWaitHelper();
@@ -385,7 +490,6 @@ export async function waitForDashboardToLoad(section: any): Promise<void> {
 
 /**
  * Wait for server to start by checking terminal output.
- * Replaces fixed 30-second delays with condition-based waiting.
  */
 export async function waitForServerStart(serverStartString: string): Promise<boolean> {
     logger.info('Waiting for server to start');
@@ -407,57 +511,57 @@ export async function waitForServerStop(serverStopString: string): Promise<boole
 
 /**
  * Wait for test report file to exist on filesystem.
- * Replaces polling loop with condition-based waiting.
+ * @param reportPath Primary report path to check
+ * @param alternatePath Optional alternate report path to check simultaneously
+ * @returns true if report found at either location, false otherwise
  */
-export async function waitForTestReport(reportPath: string): Promise<boolean> {
+export async function waitForTestReport(reportPath: string, alternatePath?: string): Promise<boolean> {
     const wait = getWaitHelper();
     logger.info(`Waiting for test report at: ${reportPath}`);
+    if (alternatePath) {
+        logger.info(`Also checking alternate location: ${alternatePath}`);
+    }
     
     try {
         await wait.forCondition(async () => {
-            return fs.existsSync(reportPath);
+            if (fs.existsSync(reportPath)) {
+                logger.info('Test report found at primary location');
+                return true;
+            }
+            if (alternatePath && fs.existsSync(alternatePath)) {
+                logger.info('Test report found at alternate location');
+                return true;
+            }
+            return;
         }, {
-            timeout: 50000, // 50 seconds
-            pollInterval: 5000, // check every 5 seconds
-            message: `Test report not found at ${reportPath}`
+            timeout: 50000, // 50 seconds max (for slow systems)
+            pollInterval: 1000, // check every 1 second (faster detection)
+            message: alternatePath
+                ? `Test report not found at either ${reportPath} or ${alternatePath}`
+                : `Test report not found at ${reportPath}`
         });
-        logger.info('Test report found');
         return true;
     } catch (error) {
-        logger.info('Report not found at primary location. Checking alternate location...');
+        logger.error('Test report not found');
         return false;
     }
 }
 
 /**
- * Wait for debugger to attach by checking for BREAKPOINTS section.
- * Replaces fixed 8-second delay with condition-based waiting.
+ * Wait for debugger to attach by checking for the DebugToolbar.
+ * The DebugToolbar only appears when a debug session is successfully connected.
  */
-export async function waitForDebuggerAttach(debugView: any): Promise<boolean> {
-    const wait = getWaitHelper();
-    logger.info('Waiting for debugger to attach');
+export async function waitForDebuggerAttach(): Promise<boolean> {
+    logger.info('Waiting for debugger to attach (checking for DebugToolbar)');
     
     try {
-        await wait.forCondition(async () => {
-            const contentPart = debugView.getContent();
-            const sections = await contentPart.getSections();
-            
-            for (const section of sections) {
-                const sectionText = await section.getEnclosingElement().getText();
-                if (sectionText.includes("BREAKPOINTS")) {
-                    logger.info('BREAKPOINTS section found - debugger attached');
-                    return true;
-                }
-            }
-            return;
-        }, {
-            timeout: 30000, // 30 seconds
-            pollInterval: 2000, // check every 2 seconds
-            message: 'Debugger did not attach - BREAKPOINTS section not found'
-        });
+        // Wait for the debug toolbar to appear, which indicates debugger is attached
+        const findDebugBarTimeout = 30000;
+        await DebugToolbar.create(findDebugBarTimeout);
+        logger.info('DebugToolbar appeared - debugger attached successfully');
         return true;
     } catch (error) {
-        logger.error('Failed to detect debugger attachment', error);
+        logger.error('Failed to detect debugger attachment - DebugToolbar did not appear', error);
         return false;
     }
 }

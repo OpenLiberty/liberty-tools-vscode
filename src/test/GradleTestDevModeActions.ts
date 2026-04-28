@@ -3,17 +3,14 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import { expect } from 'chai';
-import { InputBox, Workbench, SideBarView, ViewSection, EditorView, DefaultTreeItem, DebugView } from 'vscode-extension-tester';
+import { DefaultTreeItem, EditorView, InputBox, SideBarView, ViewSection, VSBrowser, Workbench } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import { logger } from './utils/testLogger';
-import * as fs from 'fs';
-import { VSBrowser } from 'vscode-extension-tester';
 import path = require('path');
 
 describe('Devmode action tests for Gradle Project', () => {
     let sidebar: SideBarView;
-    let debugView: DebugView;
     let section: ViewSection;
     let item: DefaultTreeItem;
     let tabs: string[];
@@ -23,10 +20,10 @@ describe('Devmode action tests for Gradle Project', () => {
         // Wait for workbench to be ready
         await VSBrowser.instance.waitForWorkbench();
         sidebar = new SideBarView();
-        debugView = new DebugView();
     });
 
     afterEach(async function() {
+        this.timeout(10000); // Increase timeout for cleanup operations
         // Close any open editors after each test
         if (this.currentTest?.state === 'failed') {
             const driver = VSBrowser.instance.driver;
@@ -38,6 +35,14 @@ describe('Devmode action tests for Gradle Project', () => {
             await new EditorView().closeAllEditors();
         } catch (error) {
             logger.error('Failed to close editors in afterEach', error);
+        }
+        
+        // Clear terminal between tests to avoid confusion with old output
+        try {
+            const workbench = new Workbench();
+            await workbench.executeCommand('terminal clear');
+        } catch (error) {
+            logger.error('Failed to clear terminal in afterEach', error);
         }
     });
 
@@ -387,10 +392,10 @@ describe('Devmode action tests for Gradle Project', () => {
                 logger.info('Attach Debugger action completed');
 
                 logger.step(6, 'Waiting for debugger to attach');
-                attachStatus = await utils.waitForDebuggerAttach(debugView);
+                attachStatus = await utils.waitForDebuggerAttach();
 
                 if (!attachStatus) {
-                    logger.error('BREAKPOINTS section not found - debugger may not have attached');
+                    logger.error('DebugToolbar not found - debugger may not have attached');
                 } else {
                     logger.stepSuccess(6, 'Debugger attached successfully');
                 }
