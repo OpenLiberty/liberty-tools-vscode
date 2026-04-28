@@ -83,12 +83,12 @@ describe('LSP Hover tests for Gradle Project', () => {
 
     // Test data for parameterized hover tests
     const hoverTestCases = [
-        { element: 'httpEndpoint element', line: 18, column: 10 },
-        { element: 'feature element', line: 15, column: 16 },
-        { element: 'featureManager element', line: 14, column: 10 },
-        { element: 'webApplication element', line: 20, column: 10 },
-        { element: 'jsp-2.3 feature value', line: 15, column: 22 },
-        { element: 'httpPort attribute', line: 18, column: 33 }
+        { element: 'httpEndpoint element', line: 18, column: 10, expectedDoc: 'Configuration properties for an HTTP endpoint.' },
+        { element: 'feature element', line: 15, column: 16, expectedDoc: 'Specifies a feature to be used when the server runs.' },
+        { element: 'featureManager element', line: 14, column: 10, expectedDoc: 'Defines how the server loads features.' },
+        { element: 'webApplication element', line: 20, column: 10, expectedDoc: 'Defines the properties of a web application.' },
+        { element: 'jsp-2.3 feature value', line: 15, column: 22, expectedDoc: 'This feature enables support for Java Server Pages (JSPs) that are written to the JSP 2.3 specification.' },
+        { element: 'httpPort attribute', line: 18, column: 33, expectedDoc: 'The port used for client HTTP requests. Use -1 to disable this port.' }
     ];
 
     hoverTestCases.forEach(testCase => {
@@ -107,10 +107,14 @@ describe('LSP Hover tests for Gradle Project', () => {
 
                 logger.step(3, 'Verifying hover widget appears with Liberty Language Server content');
                 const driver = VSBrowser.instance.driver;
-                const hoverVisible = await utils.waitForHoverWidget(driver, testCase.element, 15000);
+                const hoverText = await utils.waitForHoverWidget(driver, testCase.element, 15000);
                 
-                expect(hoverVisible).to.be.true;
+                expect(hoverText).to.not.be.empty;
                 logger.stepSuccess(3, `Hover widget displayed with Liberty Language Server content for ${testCase.element}`);
+
+                logger.step(4, 'Verifying hover contains expected documentation');
+                expect(hoverText).to.include(testCase.expectedDoc);
+                logger.stepSuccess(4, `Hover text contains expected documentation: "${testCase.expectedDoc}"`);
 
                 logger.testComplete(`Hover over ${testCase.element} shows Liberty Language Server documentation`);
             } catch (error) {
@@ -168,10 +172,10 @@ describe('LSP Hover tests for Gradle Project', () => {
 
         // Test data for LSP4Jakarta hover tests
         const jakartaHoverTestCases = [
-            { element: '@WebServlet annotation', line: 23, column: 2 },
-            { element: 'HttpServlet class', line: 24, column: 35 },
-            { element: 'HttpServletRequest type', line: 30, column: 35 },
-            { element: 'HttpServletResponse type', line: 30, column: 70 }
+            { element: '@WebServlet annotation', line: 23, column: 2, expectedDoc: 'Annotation used to declare a servlet.' },
+            { element: 'HttpServlet class', line: 24, column: 35, expectedDoc: 'Provides an abstract class to be subclassed to create an HTTP servlet suitable for a Web site.' },
+            { element: 'HttpServletRequest type', line: 30, column: 35, expectedDoc: 'Extends the javax.servlet.ServletRequest interface to provide request information for HTTP servlets.' },
+            { element: 'HttpServletResponse type', line: 30, column: 70, expectedDoc: 'Extends the ServletResponse interface to provide HTTP-specific functionality in sending a response.' }
         ];
 
         jakartaHoverTestCases.forEach(testCase => {
@@ -190,10 +194,14 @@ describe('LSP Hover tests for Gradle Project', () => {
 
                     logger.step(3, 'Verifying hover widget appears with LSP4Jakarta content');
                     const driver = VSBrowser.instance.driver;
-                    const hoverVisible = await utils.waitForHoverWidget(driver, testCase.element, 15000);
+                    const hoverText = await utils.waitForHoverWidget(driver, testCase.element, 15000);
                     
-                    expect(hoverVisible).to.be.true;
+                    expect(hoverText).to.not.be.empty;
                     logger.stepSuccess(3, `Hover widget displayed with LSP4Jakarta content for ${testCase.element}`);
+
+                    logger.step(4, 'Verifying hover contains expected documentation');
+                    expect(hoverText).to.include(testCase.expectedDoc);
+                    logger.stepSuccess(4, `Hover text contains expected documentation: "${testCase.expectedDoc}"`);
 
                     logger.testComplete(`Hover over ${testCase.element} shows LSP4Jakarta documentation`);
                 } catch (error) {

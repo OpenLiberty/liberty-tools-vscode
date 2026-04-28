@@ -101,16 +101,16 @@ export async function waitForLanguageServerInit(
  * @param driver The WebDriver instance
  * @param elementDescription Description of the element being hovered (for logging)
  * @param timeout Timeout in milliseconds (default: 15000)
- * @returns true if hover widget appeared with content
+ * @returns The hover text content if widget appeared with content, empty string otherwise
  */
 export async function waitForHoverWidget(
     driver: any,
     elementDescription: string,
     timeout: number = 15000
-): Promise<boolean> {
+): Promise<string> {
     const wait = getWaitHelper();
     
-    return await wait.forCondition(async () => {
+    const result = await wait.forCondition(async () => {
         try {
             const hoverWidget = await driver.findElement({ css: '.monaco-hover' });
             const isDisplayed = await hoverWidget.isDisplayed();
@@ -118,17 +118,21 @@ export async function waitForHoverWidget(
                 const hoverText = await hoverWidget.getText();
                 logger.info(`Hover content for ${elementDescription}: ${hoverText.length} characters`);
                 // Verify hover contains content (language server provides documentation)
-                return hoverText && hoverText.length > 0;
+                if (hoverText && hoverText.length > 0) {
+                    return hoverText;
+                }
             }
         } catch {
-            return false;
+            return undefined;
         }
-        return false;
+        return undefined;
     }, {
         timeout: timeout,
         pollInterval: 500,
         message: `Hover widget did not appear with content for ${elementDescription}`
     });
+    
+    return result || '';
 }
 
 /**
