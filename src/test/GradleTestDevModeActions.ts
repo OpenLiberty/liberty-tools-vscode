@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import { expect } from 'chai';
-import { DebugView, DefaultTreeItem, EditorView, InputBox, SideBarView, ViewSection, VSBrowser, Workbench } from 'vscode-extension-tester';
+import { DefaultTreeItem, EditorView, InputBox, SideBarView, ViewSection, VSBrowser, Workbench } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import { logger } from './utils/testLogger';
@@ -11,7 +11,6 @@ import path = require('path');
 
 describe('Devmode action tests for Gradle Project', () => {
     let sidebar: SideBarView;
-    let debugView: DebugView;
     let section: ViewSection;
     let item: DefaultTreeItem;
     let tabs: string[];
@@ -21,7 +20,6 @@ describe('Devmode action tests for Gradle Project', () => {
         // Wait for workbench to be ready
         await VSBrowser.instance.waitForWorkbench();
         sidebar = new SideBarView();
-        debugView = new DebugView();
     });
 
     afterEach(async function() {
