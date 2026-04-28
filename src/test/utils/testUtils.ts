@@ -447,7 +447,6 @@ export async function clearCommandPalette() {
 
 /**
  * Wait for the Liberty Dashboard to load and become ready.
- * This replaces arbitrary delays with condition-based waiting.
  */
 export async function waitForDashboardToLoad(section: any): Promise<void> {
     const wait = getWaitHelper();
@@ -487,7 +486,6 @@ export async function waitForDashboardToLoad(section: any): Promise<void> {
 
 /**
  * Wait for server to start by checking terminal output.
- * Replaces fixed 30-second delays with condition-based waiting.
  */
 export async function waitForServerStart(serverStartString: string): Promise<boolean> {
     logger.info('Waiting for server to start');
@@ -509,7 +507,6 @@ export async function waitForServerStop(serverStopString: string): Promise<boole
 
 /**
  * Wait for test report file to exist on filesystem.
- * Replaces polling loop with condition-based waiting.
  * @param reportPath Primary report path to check
  * @param alternatePath Optional alternate report path to check simultaneously
  * @returns true if report found at either location, false otherwise
@@ -555,7 +552,8 @@ export async function waitForDebuggerAttach(): Promise<boolean> {
     
     try {
         // Wait for the debug toolbar to appear, which indicates debugger is attached
-        await DebugToolbar.create(30000);
+        const findDebugBarTimeout = 30000;
+        await DebugToolbar.create(findDebugBarTimeout);
         logger.info('DebugToolbar appeared - debugger attached successfully');
         return true;
     } catch (error) {
