@@ -52,6 +52,7 @@ describe('LSP Hover tests for Maven Project', () => {
     });
 
     after(async function() {
+        this.timeout(10000); // Increase timeout for cleanup operations
         // Close editor after all tests complete
         try {
             await editorView.closeAllEditors();
@@ -106,25 +107,7 @@ describe('LSP Hover tests for Maven Project', () => {
 
                 logger.step(3, 'Verifying hover widget appears with Liberty Language Server content');
                 const driver = VSBrowser.instance.driver;
-                const hoverVisible = await wait.forCondition(async () => {
-                    try {
-                        const hoverWidget = await driver.findElement({ css: '.monaco-hover' });
-                        const isDisplayed = await hoverWidget.isDisplayed();
-                        if (isDisplayed) {
-                            const hoverText = await hoverWidget.getText();
-                            logger.info(`Hover content for ${testCase.element}: ${hoverText.length} characters`);
-                            // Verify hover contains content (Liberty LS provides documentation)
-                            return hoverText && hoverText.length > 0;
-                        }
-                    } catch {
-                        return;
-                    }
-                    return;
-                }, {
-                    timeout: 10000,
-                    pollInterval: 500,
-                    message: `Hover widget did not appear with content for ${testCase.element}`
-                });
+                const hoverVisible = await utils.waitForHoverWidget(driver, testCase.element, 15000);
                 
                 expect(hoverVisible).to.be.true;
                 logger.stepSuccess(3, `Hover widget displayed with Liberty Language Server content for ${testCase.element}`);
@@ -207,25 +190,7 @@ describe('LSP Hover tests for Maven Project', () => {
 
                     logger.step(3, 'Verifying hover widget appears with LSP4Jakarta content');
                     const driver = VSBrowser.instance.driver;
-                    const hoverVisible = await wait.forCondition(async () => {
-                        try {
-                            const hoverWidget = await driver.findElement({ css: '.monaco-hover' });
-                            const isDisplayed = await hoverWidget.isDisplayed();
-                            if (isDisplayed) {
-                                const hoverText = await hoverWidget.getText();
-                                logger.info(`Hover content for ${testCase.element}: ${hoverText.length} characters`);
-                                // Verify hover contains content (LSP4Jakarta provides documentation)
-                                return hoverText && hoverText.length > 0;
-                            }
-                        } catch {
-                            return;
-                        }
-                        return;
-                    }, {
-                        timeout: 10000,
-                        pollInterval: 500,
-                        message: `Hover widget did not appear with content for ${testCase.element}`
-                    });
+                    const hoverVisible = await utils.waitForHoverWidget(driver, testCase.element, 15000);
                     
                     expect(hoverVisible).to.be.true;
                     logger.stepSuccess(3, `Hover widget displayed with LSP4Jakarta content for ${testCase.element}`);

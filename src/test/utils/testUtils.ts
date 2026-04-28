@@ -93,6 +93,45 @@ export async function waitForLanguageServerInit(
 }
 
 /**
+ * Wait for hover widget to appear with content after triggering hover command.
+ * This function dynamically waits for the hover widget to render and contain content,
+ * accounting for language server initialization delays.
+ * Works for both Liberty Language Server and LSP4Jakarta hover content.
+ *
+ * @param driver The WebDriver instance
+ * @param elementDescription Description of the element being hovered (for logging)
+ * @param timeout Timeout in milliseconds (default: 15000)
+ * @returns true if hover widget appeared with content
+ */
+export async function waitForHoverWidget(
+    driver: any,
+    elementDescription: string,
+    timeout: number = 15000
+): Promise<boolean> {
+    const wait = getWaitHelper();
+    
+    return await wait.forCondition(async () => {
+        try {
+            const hoverWidget = await driver.findElement({ css: '.monaco-hover' });
+            const isDisplayed = await hoverWidget.isDisplayed();
+            if (isDisplayed) {
+                const hoverText = await hoverWidget.getText();
+                logger.info(`Hover content for ${elementDescription}: ${hoverText.length} characters`);
+                // Verify hover contains content (language server provides documentation)
+                return hoverText && hoverText.length > 0;
+            }
+        } catch {
+            return false;
+        }
+        return false;
+    }, {
+        timeout: timeout,
+        pollInterval: 500,
+        message: `Hover widget did not appear with content for ${elementDescription}`
+    });
+}
+
+/**
  * @deprecated Use getWaitHelper().sleep() or preferably condition-based waiting instead
  */
 export function delay(millisec: number) {

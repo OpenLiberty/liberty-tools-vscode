@@ -26,6 +26,7 @@ describe('Devmode action tests for Maven Project', () => {
     });
 
     afterEach(async function() {
+        this.timeout(10000); // Increase timeout for cleanup operations
         // Close any open editors after each test
         if (this.currentTest?.state === 'failed') {
             const driver = VSBrowser.instance.driver;
