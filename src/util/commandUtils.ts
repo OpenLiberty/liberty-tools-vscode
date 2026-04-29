@@ -1,6 +1,6 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2024
+ * Copyright IBM Corp. 2024, 2026
  */
 
 import * as Path from "path";
@@ -52,16 +52,16 @@ export async function getCommandForMaven(pomPath: string, command: string, termi
  */
 export async function getCommandForGradle(buildGradlePath: string, command: string, terminalType?: String, customCommand?: string): Promise<string> {
     let gradleCmdStart = await gradleCmd(buildGradlePath);
+    const projectDir = Path.dirname(buildGradlePath);
 
     if (gradleCmdStart === "gradle") {
-        return formDefaultCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
+        return formGradleCommand(projectDir, "gradle", command, customCommand);
     }
     //checking the OS type for command customization
     if (isWin()) {
-        return getGradleCommandForWin(gradleCmdStart, buildGradlePath, command, terminalType, customCommand);
+        return getGradleCommandForWin(gradleCmdStart, projectDir, command, terminalType, customCommand);
     } else {
-        gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
-        return formDefaultCommandWithPath(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
+        return formGradleCommand(projectDir, "./gradlew", command, customCommand);
     }
 }
 
@@ -158,20 +158,17 @@ async function getLocalMavenWrapperDir(projectFolder: string): Promise<string | 
 /**
  * Returns the gradle command for windows OS based on the terminal configured
  */
-function getGradleCommandForWin(gradleCmdStart: string, buildGradlePath: string, command: string, terminalType?: String, customCommand?: string): string {
+function getGradleCommandForWin(gradleCmdStart: string, projectDir: string, command: string, terminalType?: String, customCommand?: string): string {
     switch (terminalType) {
         case ShellType.GIT_BASH:
-            gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
-            return formDefaultCommandWithPath(gradleCmdStart, buildGradlePath, command, "-b=", customCommand); //Bash
+            return formGradleCommand(projectDir, "./gradlew", command, customCommand); //Bash
         case ShellType.POWERSHELL:
-            gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
-            return formPowershellCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
+            return formGradlePowershellCommand(projectDir, "gradlew.bat", command, customCommand);
         case ShellType.WSL:
-            return formLinuxBasedCommand(toDefaultWslPath(gradleCmdStart), command, "./gradlew ", customCommand); //Wsl
+            return formGradleCommand(toDefaultWslPath(projectDir), "./gradlew", command, customCommand); //Wsl
         default:
             // The default case is ShellType CMD or OTHERS
-            gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
-            return formDefaultCommandWithPath(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
+            return formGradleWindowsCommand(projectDir, "gradlew.bat", command, customCommand);
     }
 }
 
@@ -233,6 +230,38 @@ function formDefaultCommandWithPath(projectPath: string, buildFilePath: String, 
         return "\"" + projectPath + "\" " + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${buildFilePath}"`;
     }
     return "\"" + projectPath + "\" " + `${command}` + ` ${cmdOption}"${buildFilePath}"`;
+}
+
+/**
+ * Returns the Gradle command by cd'ing into the project directory
+ * This approach is compatible with all Gradle versions including Gradle 9+
+ * where the -b option was removed
+ */
+function formGradleCommand(projectDir: string, gradleCmd: string, command: string, customCommand?: string): string {
+    if (customCommand) {
+        return `cd "${projectDir}" && ${gradleCmd} ${command} ${customCommand}`;
+    }
+    return `cd "${projectDir}" && ${gradleCmd} ${command}`;
+}
+
+/**
+ * Returns the Gradle command for PowerShell by cd'ing into the project directory
+ */
+function formGradlePowershellCommand(projectDir: string, gradleCmd: string, command: string, customCommand?: string): string {
+    if (customCommand) {
+        return `cd "${projectDir}"; .\\${gradleCmd} ${command} ${customCommand}`;
+    }
+    return `cd "${projectDir}"; .\\${gradleCmd} ${command}`;
+}
+
+/**
+ * Returns the Gradle command for Windows CMD by cd'ing into the project directory
+ */
+function formGradleWindowsCommand(projectDir: string, gradleCmd: string, command: string, customCommand?: string): string {
+    if (customCommand) {
+        return `cd "${projectDir}" && ${gradleCmd} ${command} ${customCommand}`;
+    }
+    return `cd "${projectDir}" && ${gradleCmd} ${command}`;
 }
 
 /**
