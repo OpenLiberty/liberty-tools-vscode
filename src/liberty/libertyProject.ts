@@ -1,6 +1,6 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2020, 2024
+ * Copyright IBM Corp. 2020, 2026
  */
 import * as fse from "fs-extra";
 import * as vscodePath from "path";
@@ -170,7 +170,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			const project = await this.createLibertyProject(p.path, p.contextValue);
 			if ( project !== undefined) {
 				this.projects.set(p.path, project);
-				console.debug("Project " + p.path + " added to Liberty Dashboard");
+				console.debug("Project " + p.path + " added to Liberty Tools");
 			} else {
 				// add to remove list
 				projectsToBeRemoved.push(p);

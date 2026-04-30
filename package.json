@@ -2,7 +2,7 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Liberty Tools",
 	"description": "Liberty Tools for Visual Studio Code",
-	"version": "25.0.12-SNAPSHOT",
+	"version": "26.0.4-SNAPSHOT",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
@@ -248,6 +248,7 @@
 		"watch": "webpack --mode development --watch --info-verbosity verbose",
 		"test-compile": "tsc -p ./",
 		"build": "gulp downloadLibertyLSJars downloadLSP4JakartaJars",
+		"downloadLCLS": "gulp downloadLibertyLSJars",
 		"buildLcls": "gulp buildLemminxLiberty buildLibertyServer",
 		"buildJakarta": "gulp buildJakartaJdt buildJakartaLs",
 		"test": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/*.js' --code_settings src/test/resources/settings.json",
