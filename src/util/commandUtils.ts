@@ -21,9 +21,17 @@ enum ShellType {
 
 /**
  * Return the maven command based on the OS and Terminal for start, start in container, start..
+ * @param pomPath Path to the pom.xml file (or aggregator pom for multi-module)
+ * @param command Maven command to execute
+ * @param terminalType Type of terminal
+ * @param customCommand Custom parameters
+ * @param artifactId Optional artifact ID for multi-module projects (uses -pl :artifactId -am)
  */
-export async function getCommandForMaven(pomPath: string, command: string, terminalType?: string, customCommand?: string): Promise<string> {
+export async function getCommandForMaven(pomPath: string, command: string, terminalType?: string, customCommand?: string, artifactId?: string): Promise<string> {
 
+    // For multi-module projects, add -pl :artifactId -am
+    const moduleSelector = artifactId ? ` -pl :${artifactId} -am` : "";
+    
     // attempt to use the Maven executable path, if empty try using mvn or mvnw according to the preferMavenWrapper setting
     const mavenExecutablePath: string | undefined = vscode.workspace.getConfiguration("maven").get<string>("executable.path");
     if (mavenExecutablePath) {
@@ -31,19 +39,19 @@ export async function getCommandForMaven(pomPath: string, command: string, termi
             /**
             * Function call to get the command for powershell in Windows OS
             */
-            return formPowershellCommand(mavenExecutablePath, pomPath, command, "-f ", customCommand);
+            return formPowershellCommand(mavenExecutablePath, pomPath, command, "-f ", customCommand, moduleSelector);
         }
-        return formDefaultCommandWithPath(mavenExecutablePath, pomPath, command, "-f ", customCommand);
+        return formDefaultCommandWithPath(mavenExecutablePath, pomPath, command, "-f ", customCommand, moduleSelector);
     }
     let mvnCmdStart = await mvnCmd(pomPath);
     if (mvnCmdStart === "mvn") {
-        return formDefaultCommand(mvnCmdStart, pomPath, command, "-f ", customCommand);
+        return formDefaultCommand(mvnCmdStart, pomPath, command, "-f ", customCommand, moduleSelector);
     }
     //checking the OS type for command customization
     if (isWin()) {
-        return getMavenCommandForWin(mvnCmdStart, pomPath, command, terminalType, customCommand);
+        return getMavenCommandForWin(mvnCmdStart, pomPath, command, terminalType, customCommand, moduleSelector);
     } else {
-        return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand);
+        return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand, moduleSelector);
     }
 }
 
@@ -175,61 +183,65 @@ function getGradleCommandForWin(gradleCmdStart: string, projectDir: string, comm
 /**
  * Returns the maven command for windows OS based on the terminal configured
  */
-function getMavenCommandForWin(mvnCmdStart: string, pomPath: string, command: string, terminalType?: String, customCommand?: string): string {
+function getMavenCommandForWin(mvnCmdStart: string, pomPath: string, command: string, terminalType?: String, customCommand?: string, moduleSelector?: string): string {
     switch (terminalType) {
         case ShellType.GIT_BASH:
-            return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand);
+            return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand, moduleSelector);
         case ShellType.POWERSHELL:
             mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
-            return formPowershellCommand(mvnCmdStart, pomPath, command, "-f ", customCommand);
+            return formPowershellCommand(mvnCmdStart, pomPath, command, "-f ", customCommand, moduleSelector);
         case ShellType.WSL:
             mvnCmdStart = toDefaultWslPath(mvnCmdStart);
-            return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand);
+            return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand, moduleSelector);
         default:
             // The default case is ShellType CMD or OTHERS
             mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
-            return formDefaultCommandWithPath(mvnCmdStart, pomPath, command, "-f ", customCommand);
+            return formDefaultCommandWithPath(mvnCmdStart, pomPath, command, "-f ", customCommand, moduleSelector);
     }
 }
 
 /**
  * Returns the Powershell based command for windows OS
  */
-function formPowershellCommand(cmdStart: string, projectPath: string, command: string, cmdOption: String, customCommand?: string): string {
+function formPowershellCommand(cmdStart: string, projectPath: string, command: string, cmdOption: String, customCommand?: string, moduleSelector?: string): string {
+    const modulePart = moduleSelector || "";
     if (customCommand) {
-        return "& \"" + cmdStart + "\" " + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${projectPath}"`; //Powershell for start..
+        return "& \"" + cmdStart + "\" " + `${command}` + ` ${customCommand}` + `${modulePart}` + ` ${cmdOption}"${projectPath}"`; //Powershell for start..
     }
-    return "& \"" + cmdStart + "\" " + `${command}` + ` ${cmdOption}"${projectPath}"`;  //PowerShell
+    return "& \"" + cmdStart + "\" " + `${command}` + `${modulePart}` + ` ${cmdOption}"${projectPath}"`;  //PowerShell
 }
 
 /**
  * Returns the Linux based command
  */
-function formLinuxBasedCommand(cmdStart: string, command: string, wrapperType: String, customCommand?: string): string {
+function formLinuxBasedCommand(cmdStart: string, command: string, wrapperType: String, customCommand?: string, moduleSelector?: string): string {
+    const modulePart = moduleSelector || "";
     if (customCommand) {
-        return "cd \"" + cmdStart + "\" && " + `${wrapperType}` + `${command}` + ` ${customCommand}`; //Bash or WSL for start..
+        return "cd \"" + cmdStart + "\" && " + `${wrapperType}` + `${command}` + ` ${customCommand}` + `${modulePart}`; //Bash or WSL for start..
     }
-    return "cd \"" + cmdStart + "\" && " + `${wrapperType}` + `${command}`; //Bash or WSL command
+    return "cd \"" + cmdStart + "\" && " + `${wrapperType}` + `${command}` + `${modulePart}`; //Bash or WSL command
 }
 
 /**
  * Returns default command
  */
-function formDefaultCommand(projectPath: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string): string {
+function formDefaultCommand(projectPath: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string, moduleSelector?: string): string {
+    const modulePart = moduleSelector || "";
     if (customCommand) {
-        return `${projectPath} ` + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${buildFilePath}"`;
+        return `${projectPath} ` + `${command}` + ` ${customCommand}` + `${modulePart}` + ` ${cmdOption}"${buildFilePath}"`;
     }
-    return `${projectPath} ` + `${command}` + ` ${cmdOption}"${buildFilePath}"`;
+    return `${projectPath} ` + `${command}` + `${modulePart}` + ` ${cmdOption}"${buildFilePath}"`;
 }
 
 /**
- * Returns default format for the command with Path  
+ * Returns default format for the command with Path
  */
-function formDefaultCommandWithPath(projectPath: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string): string {
+function formDefaultCommandWithPath(projectPath: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string, moduleSelector?: string): string {
+    const modulePart = moduleSelector || "";
     if (customCommand) {
-        return "\"" + projectPath + "\" " + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${buildFilePath}"`;
+        return "\"" + projectPath + "\" " + `${command}` + ` ${customCommand}` + `${modulePart}` + ` ${cmdOption}"${buildFilePath}"`;
     }
-    return "\"" + projectPath + "\" " + `${command}` + ` ${cmdOption}"${buildFilePath}"`;
+    return "\"" + projectPath + "\" " + `${command}` + `${modulePart}` + ` ${cmdOption}"${buildFilePath}"`;
 }
 
 /**

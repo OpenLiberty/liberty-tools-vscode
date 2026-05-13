@@ -28,6 +28,9 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	// Map of buildFilePath -> LibertyProject
 	private projects: Map<string, LibertyProject> = new Map();
+	
+	// Root projects for hierarchical tree view
+	private rootProjects: LibertyProject[] = [];
 
 	private _context: vscode.ExtensionContext;
 
@@ -253,7 +256,104 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 
 	public getTreeItem(element: LibertyProject): vscode.TreeItem {
-		return element;
+		// Set collapsible state based on whether project has children
+		const collapsibleState = (element.isAggregator && element.children.length > 0)
+			? vscode.TreeItemCollapsibleState.Collapsed
+			: vscode.TreeItemCollapsibleState.None;
+		
+		// Update the element's collapsible state by creating a new TreeItem
+		const treeItem = new vscode.TreeItem(element.label, collapsibleState);
+		treeItem.tooltip = element.tooltip;
+		treeItem.iconPath = element.iconPath;
+		treeItem.contextValue = element.contextValue;
+		treeItem.command = element.command;
+		
+		return treeItem;
+	}
+	
+	/**
+	 * Check if a project has any Liberty-enabled descendants
+	 * @param project The project to check
+	 * @returns true if project or any descendant is Liberty-enabled
+	 */
+	private hasLibertyDescendants(project: LibertyProject): boolean {
+		if (project.isLibertyEnabled) {
+			return true;
+		}
+		return project.children.some(child => this.hasLibertyDescendants(child));
+	}
+	
+	/**
+	 * Find all Liberty-enabled descendants of a project
+	 * @param project The project to search
+	 * @returns Array of Liberty-enabled descendant projects
+	 */
+	public findLibertyDescendants(project: LibertyProject): LibertyProject[] {
+		const descendants: LibertyProject[] = [];
+		
+		// Only search children - don't include the project itself
+		// This ensures aggregators aren't included in their own descendant list
+		for (const child of project.children) {
+			// Add the child if it's Liberty-enabled
+			if (child.isLibertyEnabled) {
+				descendants.push(child);
+			}
+			// Recursively search the child's descendants
+			descendants.push(...this.findLibertyDescendants(child));
+		}
+		
+		return descendants;
+	}
+	
+	/**
+		* Execute a command on a project, with delegation to children if it's an aggregator
+	 * @param project The project to execute the command on
+	 * @param commandName The command name for display purposes
+	 * @returns The target project to execute on, or undefined if cancelled
+	 */
+	public async resolveCommandTarget(project: LibertyProject, commandName: string): Promise<LibertyProject | undefined> {
+		// Check if project is an aggregator FIRST (before checking if Liberty-enabled)
+		// An aggregator with children should delegate to children, not execute directly
+		if (project.isAggregator && project.children.length > 0) {
+			const libertyChildren = this.findLibertyDescendants(project);
+			
+			if (libertyChildren.length === 0) {
+				vscode.window.showWarningMessage(
+					localize("no.liberty.modules.found", `No Liberty-enabled modules found in ${project.label}`)
+				);
+				return undefined;
+			}
+			
+			if (libertyChildren.length === 1) {
+				// Only one Liberty child, execute automatically
+				return libertyChildren[0];
+			}
+			
+			// Multiple children - show notification with buttons
+			const buttonLabels = libertyChildren.map(c => c.label);
+			const selected = await vscode.window.showInformationMessage(
+				localize("select.module.for.command", commandName),
+				...buttonLabels
+			);
+			
+			if (!selected) {
+				return undefined;
+			}
+			
+			// Find the project that matches the selected button
+			return libertyChildren.find(c => c.label === selected);
+		}
+		
+		// If we get here, check if it's a Liberty-enabled leaf project (not an aggregator)
+		if (project.isLibertyEnabled) {
+			return project;
+		}
+		
+		// Not Liberty-enabled and not an aggregator
+		vscode.window.showWarningMessage(
+			localize("project.not.liberty.enabled", `${project.label} is not Liberty-enabled`)
+		);
+		return undefined;
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -264,12 +364,17 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		}
 		// if element is null, vscode is asking for the root node
 		if (element === undefined) {
-			// projects is a map of buildFilePath -> LibertyProjects
-			// Need to return an array of just the LibertyProject
+			// Return root projects for hierarchical view
+			// If no hierarchy is built, fall back to flat list
+			if (this.rootProjects.length > 0) {
+				return this.rootProjects;
+			}
 			return [... this.projects.values()];
 		}
-		// else it is asking for a child node
-		return [];
+		// Return children that are Liberty-enabled OR have Liberty descendants
+		return element.children.filter(child =>
+			child.isLibertyEnabled || this.hasLibertyDescendants(child)
+		);
 	}
 
 
@@ -401,6 +506,63 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		}
 		return added;
 	}	
+	/**
+	 * Build hierarchical relationships between projects based on metadata
+	 * @param projectsMap Map of all projects
+	 */
+	private async buildHierarchy(projectsMap: Map<string, LibertyProject>): Promise<void> {
+		const mavenProjectsByArtifactId = new Map<string, LibertyProject>();
+		const gradleProjectsByName = new Map<string, LibertyProject>();
+		
+		// First pass: populate metadata for all projects
+		for (const [buildFilePath, project] of projectsMap.entries()) {
+			try {
+				if (buildFilePath.endsWith("pom.xml")) {
+					const xmlString = await fse.readFile(buildFilePath, "utf8");
+					const metadata = await mavenUtil.extractMavenMetadata(buildFilePath, xmlString);
+					project.artifactId = metadata.artifactId;
+					project.parentArtifactId = metadata.parentArtifactId;
+					project.isAggregator = metadata.isAggregator;
+					project.isLibertyEnabled = metadata.isLibertyEnabled;
+					mavenProjectsByArtifactId.set(metadata.artifactId, project);
+				} else if (buildFilePath.endsWith("build.gradle")) {
+					const metadata = await gradleUtil.extractGradleMetadata(buildFilePath);
+					project.artifactId = metadata.projectName;
+					project.parentArtifactId = metadata.parentProjectName;
+					project.isAggregator = metadata.isAggregator;
+					project.isLibertyEnabled = metadata.isLibertyEnabled;
+					gradleProjectsByName.set(metadata.projectName, project);
+				}
+			} catch (error) {
+				console.error(`Error extracting metadata for ${buildFilePath}:`, error);
+				// Set defaults if metadata extraction fails
+				project.isLibertyEnabled = true; // Assume Liberty-enabled if in the map
+			}
+		}
+		
+		// Second pass: build parent-child relationships
+		for (const project of projectsMap.values()) {
+			if (project.parentArtifactId) {
+				// Look up parent in the appropriate map based on build tool
+				const parent = project.path.endsWith("pom.xml")
+					? mavenProjectsByArtifactId.get(project.parentArtifactId)
+					: gradleProjectsByName.get(project.parentArtifactId);
+				
+				if (parent) {
+					project.parent = parent;
+					if (!parent.children.includes(project)) {
+						parent.children.push(project);
+					}
+				}
+			}
+		}
+		
+		// Third pass: identify root projects (no parent or parent not in workspace)
+		this.rootProjects = Array.from(projectsMap.values())
+			.filter(p => !p.parent)
+			.filter(p => p.isLibertyEnabled || this.hasLibertyDescendants(p));
+	}
+	
 	
 	private async updateProjects(): Promise<void> {
 		// find all build files in the open workspace and find all the ones that are valid for dev-mode
@@ -425,12 +587,14 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		}
 		
 		for (const gradleBuild of validGradleBuilds) {
+			console.log(`[DEBUG] Processing Gradle build: ${gradleBuild.getBuildFilePath()}, type: ${gradleBuild.getProjectType()}`);
 			// if a LibertyProject for this build.gradle has already been created
 			// we want to re-use it
 			if ( !await this.addExistingProjectToNewProjectsMap(gradleBuild.getBuildFilePath(), gradleBuild.getProjectType(),
 					newProjectsMap) ) {
 				const project = await createProject(this._context, gradleBuild.getBuildFilePath(), gradleBuild.getProjectType());
 				newProjectsMap.set(gradleBuild.getBuildFilePath(), project);
+				console.log(`[DEBUG] Added Gradle project to map: ${gradleBuild.getBuildFilePath()}`);
 			}
 		}
 
@@ -471,11 +635,32 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				}
 			}
 		}
+		console.log(`[DEBUG] Total projects in map: ${newProjectsMap.size}`);
+		for (const [path, proj] of newProjectsMap.entries()) {
+			console.log(`[DEBUG] Project: ${proj.label} at ${path}`);
+		}
+		
 		this.projects = newProjectsMap;
+		
+		// Build hierarchical relationships between projects
+		await this.buildHierarchy(newProjectsMap);
+		
+		console.log(`[DEBUG] Root projects after hierarchy: ${this.rootProjects.length}`);
+		for (const root of this.rootProjects) {
+			console.log(`[DEBUG] Root: ${root.label}, isAggregator: ${root.isAggregator}, isLibertyEnabled: ${root.isLibertyEnabled}, children: ${root.children.length}`);
+		}
 	}
 }
 
 export class LibertyProject extends vscode.TreeItem {
+	// New fields for multi-module hierarchy support
+	public parent?: LibertyProject;
+	public children: LibertyProject[] = [];
+	public isAggregator: boolean = false;
+	public isLibertyEnabled: boolean = false;
+	public artifactId: string = "";
+	public parentArtifactId?: string;
+
 	constructor(
 		private _context: vscode.ExtensionContext,
 		public label: string,
@@ -491,6 +676,7 @@ export class LibertyProject extends vscode.TreeItem {
 	) {
 		super(label, collapsibleState);
 		this.tooltip = this.path;
+		this.children = [];
 	}
 
 	private EXPLORER_ICON = this.setExplorerIcon();

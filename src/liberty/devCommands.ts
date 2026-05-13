@@ -1,6 +1,6 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2020, 2024
+ * Copyright IBM Corp. 2020, 2026
  */
 import * as fs from "fs";
 import * as fse from "fs-extra";
@@ -91,20 +91,44 @@ export async function listAllCommands(): Promise<void> {
 // start dev mode
 export async function startDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log(localize("starting.liberty.dev.on", libProject.getLabel()));
-        let terminal = libProject.getTerminal();
+        // Resolve the target project (handles aggregators with multiple Liberty children)
+        const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+        const targetProject = await projectProvider.resolveCommandTarget(libProject, localize("command.start.dev.mode"));
+        
+        if (targetProject === undefined) {
+            // User cancelled or no valid target found
+            return;
+        }
+        
+        // Check if user clicked directly on a child (not via aggregator)
+        const clickedDirectlyOnChild = (libProject === targetProject) && targetProject.parent;
+        
+        console.log(localize("starting.liberty.dev.on", targetProject.getLabel()));
+        let terminal = targetProject.getTerminal();
         if (terminal === undefined) {
+            // For multi-module projects, create terminal in parent aggregator directory
+            const terminalPath = targetProject.parent
+                ? Path.dirname(targetProject.parent.getPath())
+                : Path.dirname(targetProject.getPath());
             //function call to create new terminal for LTV
-            terminal = createTerminalforLiberty(libProject, terminal);
+            terminal = createTerminalforLiberty(targetProject, terminal, terminalPath);
         }
         if (terminal !== undefined) {
             terminal.show();
-            libProject.setTerminal(terminal);
-            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType());
+            targetProject.setTerminal(terminal);
+            if (targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT || targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+                // For multi-module projects, use parent aggregator path
+                const pomPath = targetProject.parent ? targetProject.parent.getPath() : targetProject.getPath();
+                // Use module selector (-pl) if:
+                // 1. User clicked directly on child module, OR
+                // 2. Parent has multiple Liberty children
+                const artifactId = (targetProject.parent && (clickedDirectlyOnChild || projectProvider.findLibertyDescendants(targetProject.parent).length > 1))
+                    ? targetProject.artifactId
+                    : undefined;
+                const cmd = await getCommandForMaven(pomPath, "io.openliberty.tools:liberty-maven-plugin:dev", targetProject.getTerminalType(), undefined, artifactId);
                 terminal.sendText(cmd); // start dev mode on current project
-            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                const cmd = await getCommandForGradle(libProject.getPath(), "libertyDev", libProject.getTerminalType());
+            } else if (targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT || targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+                const cmd = await getCommandForGradle(targetProject.getPath(), "libertyDev", targetProject.getTerminalType());
                 terminal.sendText(cmd); // start dev mode on current project
             }
         }
@@ -224,13 +248,22 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
 // stop dev mode
 export async function stopDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log(localize("stopping.liverty.dev.on", libProject.getLabel()));
-        const terminal = libProject.getTerminal();
+        // Resolve the target project (handles aggregators with multiple Liberty children)
+        const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+        const targetProject = await projectProvider.resolveCommandTarget(libProject, localize("command.stop.dev.mode"));
+        
+        if (targetProject === undefined) {
+            // User cancelled or no valid target found
+            return;
+        }
+        
+        console.log(localize("stopping.liverty.dev.on", targetProject.getLabel()));
+        const terminal = targetProject.getTerminal();
         if (terminal !== undefined) {
             terminal.show();
             terminal.sendText("exit"); // stop dev mode on current project
         } else {
-            const message = localize("liberty.dev.not.started.on", libProject.getLabel());
+            const message = localize("liberty.dev.not.started.on", targetProject.getLabel());
             vscode.window.showWarningMessage(message);
         }
     } else if (ProjectProvider.getInstance()) {
@@ -243,24 +276,33 @@ export async function stopDevMode(libProject?: LibertyProject | undefined): Prom
     }
 }
 
-// stop dev mode
+// attach debugger
 export async function attachDebugger(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
+        // Resolve the target project (handles aggregators with multiple Liberty children)
+        const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+        const targetProject = await projectProvider.resolveCommandTarget(libProject, localize("command.attach.debugger"));
+        
+        if (targetProject === undefined) {
+            // User cancelled or no valid target found
+            return;
+        }
+        
         const EXCLUDED_DIR_PATTERN = "**/{bin,classes}/**";
         let pathPrefix = "";
-        if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+        if (targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT || targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
             pathPrefix = "target";
 
-        } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+        } else if (targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT || targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
             pathPrefix = "build";
         }
         let paths: string[] = [];
         if (pathPrefix !== "") {
-            const serverEnvPattern = new vscode.RelativePattern(Path.dirname(libProject.getPath()), pathPrefix + "/**/server.env");
+            const serverEnvPattern = new vscode.RelativePattern(Path.dirname(targetProject.getPath()), pathPrefix + "/**/server.env");
             paths = (await vscode.workspace.findFiles(serverEnvPattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
         }
         if (paths.length === 1) {
-            console.log(localize("attach.debugger.liverty.dev.in", libProject.getLabel()));
+            console.log(localize("attach.debugger.liverty.dev.in", targetProject.getLabel()));
             const file = Path.resolve(paths[0]);
             const lines = await fse.readFileSync(file, "utf8").split("\n");
             let port = "";
@@ -272,16 +314,16 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
                 }
             }
             if (port !== "") {
-                const path = Path.dirname(libProject.getPath());
-                const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(libProject.getPath()));
+                const path = Path.dirname(targetProject.getPath());
+                const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(targetProject.getPath()));
                 vscode.debug.startDebugging(workspaceFolder, {
                     "type": "java",
-                    "name": localize("liberty.dev.debug.label", Path.dirname(libProject.getPath())),
+                    "name": localize("liberty.dev.debug.label", Path.dirname(targetProject.getPath())),
                     "request": "attach",
                     "hostName": "localhost",
                     "port": port,
                     "cwd": path,
-                    "projectName": libProject.getLabel()
+                    "projectName": targetProject.getLabel()
                 }).then(() => {
                     // do not show any message
                 }, err => {
@@ -355,20 +397,36 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
 export async function customDevMode(libProject?: LibertyProject | undefined, params?: string | undefined): Promise<void> {
     const _customParameters = (params === undefined) ? "" : params.trim();
     if (libProject !== undefined) {
-        let terminal = libProject.getTerminal();
+        // Resolve the target project (handles aggregators with multiple Liberty children)
+        const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+        const targetProject = await projectProvider.resolveCommandTarget(libProject, localize("command.start.custom.dev.mode"));
+        
+        if (targetProject === undefined) {
+            // User cancelled or no valid target found
+            return;
+        }
+        
+        // Check if user clicked directly on a child (not via aggregator)
+        const clickedDirectlyOnChild = (libProject === targetProject) && targetProject.parent;
+        
+        let terminal = targetProject.getTerminal();
         if (terminal === undefined) {
+            // For multi-module projects, create terminal in parent aggregator directory
+            const terminalPath = targetProject.parent
+                ? Path.dirname(targetProject.parent.getPath())
+                : Path.dirname(targetProject.getPath());
             //function call to create new terminal for LTV
-            terminal = createTerminalforLiberty(libProject, terminal);
+            terminal = createTerminalforLiberty(targetProject, terminal, terminalPath);
         }
         if (terminal !== undefined) {
             terminal.show();
-            libProject.setTerminal(terminal);
+            targetProject.setTerminal(terminal);
 
             let placeHolderStr = "";
             let promptString = localize("specify.custom.parms.maven");
-            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+            if (targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT || targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                 placeHolderStr = "e.g. -DhotTests=true";
-            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+            } else if (targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT || targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
                 placeHolderStr = "e.g. --hotTests";
                 promptString = localize("specify.custom.parms.gradle");
             }
@@ -396,18 +454,25 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
                 // save command
                 customCommand = customCommand.trim();
                 if ( customCommand.length > 0 ) {
-                    const projectStartCmdParam: ProjectStartCmdParam = new ProjectStartCmdParam(libProject.getPath(), customCommand);
-                    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+                    const projectStartCmdParam: ProjectStartCmdParam = new ProjectStartCmdParam(targetProject.getPath(), customCommand);
                     const dashboardData: DashboardData = helperUtil.getStorageData(projectProvider.getContext());
                     dashboardData.addStartCmdParams(projectStartCmdParam);
                     await helperUtil.saveStorageData(projectProvider.getContext(), dashboardData);
                 }
 
-                if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                    const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType(), customCommand);
+                if (targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT || targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+                    // For multi-module projects, use parent aggregator path
+                    const pomPath = targetProject.parent ? targetProject.parent.getPath() : targetProject.getPath();
+                    // Use module selector (-pl) if:
+                    // 1. User clicked directly on child module, OR
+                    // 2. Parent has multiple Liberty children
+                    const artifactId = (targetProject.parent && (clickedDirectlyOnChild || projectProvider.findLibertyDescendants(targetProject.parent).length > 1))
+                        ? targetProject.artifactId
+                        : undefined;
+                    const cmd = await getCommandForMaven(pomPath, "io.openliberty.tools:liberty-maven-plugin:dev", targetProject.getTerminalType(), customCommand, artifactId);
                     terminal.sendText(cmd);
-                } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                    const cmd = await getCommandForGradle(libProject.getPath(), "libertyDev", libProject.getTerminalType(), customCommand);
+                } else if (targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT || targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+                    const cmd = await getCommandForGradle(targetProject.getPath(), "libertyDev", targetProject.getTerminalType(), customCommand);
                     terminal.sendText(cmd);
                 }
             }
@@ -425,19 +490,43 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
 // start dev mode in a container
 export async function startContainerDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        let terminal = libProject.getTerminal();
+        // Resolve the target project (handles aggregators with multiple Liberty children)
+        const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+        const targetProject = await projectProvider.resolveCommandTarget(libProject, localize("command.start.container.dev.mode"));
+        
+        if (targetProject === undefined) {
+            // User cancelled or no valid target found
+            return;
+        }
+        
+        // Check if user clicked directly on a child (not via aggregator)
+        const clickedDirectlyOnChild = (libProject === targetProject) && targetProject.parent;
+        
+        let terminal = targetProject.getTerminal();
         if (terminal === undefined) {
+            // For multi-module projects, create terminal in parent aggregator directory
+            const terminalPath = targetProject.parent
+                ? Path.dirname(targetProject.parent.getPath())
+                : Path.dirname(targetProject.getPath());
             //function call to create new terminal for LTV
-            terminal = createTerminalforLiberty(libProject, terminal);
+            terminal = createTerminalforLiberty(targetProject, terminal, terminalPath);
         }
         if (terminal !== undefined) {
             terminal.show();
-            libProject.setTerminal(terminal);
-            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
-                const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:devc", libProject.getTerminalType());
+            targetProject.setTerminal(terminal);
+            if (targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+                // For multi-module projects, use parent aggregator path
+                const pomPath = targetProject.parent ? targetProject.parent.getPath() : targetProject.getPath();
+                // Use module selector (-pl) if:
+                // 1. User clicked directly on child module, OR
+                // 2. Parent has multiple Liberty children
+                const artifactId = (targetProject.parent && (clickedDirectlyOnChild || projectProvider.findLibertyDescendants(targetProject.parent).length > 1))
+                    ? targetProject.artifactId
+                    : undefined;
+                const cmd = await getCommandForMaven(pomPath, "io.openliberty.tools:liberty-maven-plugin:devc", targetProject.getTerminalType(), undefined, artifactId);
                 terminal.sendText(cmd);
-            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                const cmd = await getCommandForGradle(libProject.getPath(), "libertyDevc", libProject.getTerminalType());
+            } else if (targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+                const cmd = await getCommandForGradle(targetProject.getPath(), "libertyDevc", targetProject.getTerminalType());
                 terminal.sendText(cmd);
             }
         }
@@ -454,13 +543,22 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
 // run tests on dev mode
 export async function runTests(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        console.log(localize("running.liberty.dev.tests.on", libProject.getLabel()));
-        const terminal = libProject.getTerminal();
+        // Resolve the target project (handles aggregators with multiple Liberty children)
+        const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+        const targetProject = await projectProvider.resolveCommandTarget(libProject, localize("command.run.tests"));
+        
+        if (targetProject === undefined) {
+            // User cancelled or no valid target found
+            return;
+        }
+        
+        console.log(localize("running.liberty.dev.tests.on", targetProject.getLabel()));
+        const terminal = targetProject.getTerminal();
         if (terminal !== undefined) {
             terminal.show();
             terminal.sendText(" "); // sends Enter to run tests in terminal
         } else {
-            vscode.window.showWarningMessage(localize("liberty.dev.has.not.been.started.on", libProject.getLabel()));
+            vscode.window.showWarningMessage(localize("liberty.dev.has.not.been.started.on", targetProject.getLabel()));
         }
     } else if (ProjectProvider.getInstance()) {
         showProjects("liberty.dev.run.tests", runTests);
@@ -519,11 +617,14 @@ export function deleteTerminal(terminal: vscode.Terminal): void {
     }
 }
 /**
- * function to create new terminal of default type 
+ * function to create new terminal of default type
+ * @param libProject The Liberty project
+ * @param terminal The existing terminal (if any)
+ * @param terminalPath Optional path to create terminal in (defaults to project directory)
  */
-function createTerminalforLiberty(libProject: LibertyProject, terminal: vscode.Terminal | undefined) {
-    const path = Path.dirname(libProject.getPath());
-    //fetch the default terminal details and store it in LibertyProject object 
+function createTerminalforLiberty(libProject: LibertyProject, terminal: vscode.Terminal | undefined, terminalPath?: string) {
+    const path = terminalPath || Path.dirname(libProject.getPath());
+    //fetch the default terminal details and store it in LibertyProject object
     const terminalType = defaultWindowsShell();
     libProject.setTerminalType(terminalType);
     terminal = libProject.createTerminal(path);
