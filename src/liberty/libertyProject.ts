@@ -513,6 +513,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	private async buildHierarchy(projectsMap: Map<string, LibertyProject>): Promise<void> {
 		const mavenProjectsByArtifactId = new Map<string, LibertyProject>();
 		const gradleProjectsByName = new Map<string, LibertyProject>();
+		const mavenMetadataMap = new Map<string, mavenUtil.MavenProjectMetadata>();
 		
 		// First pass: populate metadata for all projects
 		for (const [buildFilePath, project] of projectsMap.entries()) {
@@ -525,6 +526,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					project.isAggregator = metadata.isAggregator;
 					project.isLibertyEnabled = metadata.isLibertyEnabled;
 					mavenProjectsByArtifactId.set(metadata.artifactId, project);
+					mavenMetadataMap.set(buildFilePath, metadata);
 				} else if (buildFilePath.endsWith("build.gradle")) {
 					const metadata = await gradleUtil.extractGradleMetadata(buildFilePath);
 					project.artifactId = metadata.projectName;
@@ -541,6 +543,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		}
 		
 		// Second pass: build parent-child relationships
+		// Strategy 1: Use parentArtifactId if available (standard Maven with <parent> element)
 		for (const project of projectsMap.values()) {
 			if (project.parentArtifactId) {
 				// Look up parent in the appropriate map based on build tool
@@ -552,6 +555,34 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					project.parent = parent;
 					if (!parent.children.includes(project)) {
 						parent.children.push(project);
+					}
+				}
+			}
+		}
+		
+		// Strategy 2: For Maven projects without parent links, use filesystem paths + module declarations
+		// This handles multimodule projects where child POMs don't have <parent> elements
+		for (const [parentPath, parentMetadata] of mavenMetadataMap.entries()) {
+			if (parentMetadata.isAggregator && parentMetadata.modules.length > 0) {
+				const parentProject = projectsMap.get(parentPath);
+				if (!parentProject) continue;
+				
+				const parentDir = vscodePath.dirname(parentPath);
+				
+				// For each module declared in parent's <modules> section
+				for (const moduleName of parentMetadata.modules) {
+					// Resolve the module path relative to parent
+					const modulePomPath = vscodePath.resolve(parentDir, moduleName, "pom.xml");
+					
+					// Check if this module exists in our discovered projects
+					const childProject = projectsMap.get(modulePomPath);
+					if (childProject && !childProject.parent) {
+						// Link child to parent
+						childProject.parent = parentProject;
+						if (!parentProject.children.includes(childProject)) {
+							parentProject.children.push(childProject);
+						}
+						console.debug(`Linked module ${moduleName} to parent ${parentMetadata.artifactId} via filesystem path`);
 					}
 				}
 			}
