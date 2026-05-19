@@ -11,7 +11,7 @@
 	"preview": false,
 	"license": "EPL-2.0",
 	"engines": {
-		"vscode": "^1.78.0"
+		"vscode": "1.78.0"
 	},
 	"categories": [
 		"Programming Languages"
@@ -256,48 +256,48 @@
 		"test-gradle": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js' --code_settings src/test/resources/settings.json"
 	},
 	"devDependencies": {
-		"@types/chai": "^4.3.4",
-		"@types/glob": "^7.1.1",
-		"@types/mocha": "^7.0.2",
-		"@types/node": "^16.11.7",
-		"@types/selenium-webdriver": "^4.1.22",
-		"@types/vscode": "^1.42.0",
-		"@typescript-eslint/eslint-plugin": "^5.15.0",
-		"@typescript-eslint/parser": "^5.15.0",
-		"axios": "^1.15.2",
-		"chai": "^4.3.7",
-		"clipboardy": "^2.3.0",
-		"eslint": "^8.11.0",
-		"fast-xml-parser": "^5.2.5",
-		"glob": "^7.1.6",
-		"gulp": "^5.0.1",
-		"gulp-download2": "^1.1.0",
-		"gulp-xml": "^1.0.5",
-		"mocha": "^11.1.0",
-		"request": "^2.88.2",
-		"ts-loader": "^9.3.1",
-		"typescript": "^4.8.4",
-		"vscode-extension-tester": "^8.21.0",
-		"vscode-test": "^1.3.0",
-		"webpack": "^5.96.1",
-		"webpack-cli": "^4.10.0"
+		"@types/chai": "4.3.4",
+		"@types/glob": "7.1.1",
+		"@types/mocha": "7.0.2",
+		"@types/node": "16.11.7",
+		"@types/selenium-webdriver": "4.1.22",
+		"@types/vscode": "1.42.0",
+		"@typescript-eslint/eslint-plugin": "5.15.0",
+		"@typescript-eslint/parser": "5.15.0",
+		"axios": "1.15.2",
+		"chai": "4.3.7",
+		"clipboardy": "2.3.0",
+		"eslint": "8.11.0",
+		"fast-xml-parser": "5.2.5",
+		"glob": "7.1.6",
+		"gulp": "5.0.1",
+		"gulp-download2": "1.1.0",
+		"gulp-xml": "1.0.5",
+		"mocha": "11.1.0",
+		"request": "2.88.2",
+		"ts-loader": "9.3.1",
+		"typescript": "4.8.4",
+		"vscode-extension-tester": "8.21.0",
+		"vscode-test": "1.3.0",
+		"webpack": "5.96.1",
+		"webpack-cli": "4.10.0"
 	},
 	"overrides": {
 		"vscode-languageclient": {
-			"minimatch": "^5.1.8"
+			"minimatch": "5.1.8"
 		}
 	},
 	"dependencies": {
-		"@types/fs-extra": "^8.1.0",
-		"@types/semver": "^7.3.2",
-		"@types/xml2js": "^0.4.5",
-		"brace-expansion": "^4.0.1",
+		"@types/fs-extra": "8.1.0",
+		"@types/semver": "7.3.2",
+		"@types/xml2js": "0.4.5",
+		"brace-expansion": "4.0.1",
 		"expand-home-dir": "0.0.3",
-		"find-java-home": "^1.2.2",
-		"fs-extra": "^9.0.0",
-		"gradle-to-js": "^2.0.0",
-		"jsonpath-plus": "^10.3.0",
-		"vscode-languageclient": "^9.0.1",
-		"xml2js": "^0.5.0"
+		"find-java-home": "1.2.2",
+		"fs-extra": "9.0.0",
+		"gradle-to-js": "2.0.0",
+		"jsonpath-plus": "10.3.0",
+		"vscode-languageclient": "9.0.1",
+		"xml2js": "0.5.0"
 	}
 }
