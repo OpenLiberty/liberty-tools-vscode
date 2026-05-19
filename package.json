@@ -268,7 +268,7 @@
 		"chai": "^4.3.7",
 		"clipboardy": "^2.3.0",
 		"eslint": "^8.11.0",
-		"fast-xml-parser": "^5.2.5",
+		"fast-xml-parser": "^5.7.0",
 		"glob": "^7.1.6",
 		"gulp": "^5.0.1",
 		"gulp-download2": "^1.1.0",
