@@ -23,11 +23,11 @@ import * as path from 'path';
 import { Uri, workspace } from 'vscode';
 
 const expandHomeDir = require('expand-home-dir');
-import * as findJavaHome from 'find-java-home';
+const findJavaHome = require('find-java-home');
 import { JavaExtensionAPI } from '../extension';
 import { localize } from './i18nUtil';
 const isWindows = process.platform.indexOf('win') === 0;
-const JAVA_FILENAME = 'java' + (isWindows?'.exe': '');
+const JAVA_FILENAME = 'java' + (isWindows ? '.exe' : '');
 
 const REQUIRED_JAVA_VERSION = 21;
 
@@ -58,10 +58,10 @@ export async function resolveRequirements(api: JavaExtensionAPI): Promise<Requir
 
     const javaHome = await checkJavaRuntime('java.jdt.ls.java.home');
     const javaVersion = await checkJavaVersion(javaHome, true);
-    return Promise.resolve({tooling_jre: javaHome, tooling_jre_version: javaVersion, java_home: javaHome, java_version: javaVersion});
+    return Promise.resolve({ tooling_jre: javaHome, tooling_jre_version: javaVersion, java_home: javaHome, java_version: javaVersion });
 }
 
-export async function resolveLclsRequirements(api:JavaExtensionAPI) {
+export async function resolveLclsRequirements(api: JavaExtensionAPI) {
     const javaHome = await checkJavaRuntime('xml.java.home');
     return checkJavaVersion(javaHome, false);
 }
@@ -69,7 +69,7 @@ export async function resolveLclsRequirements(api:JavaExtensionAPI) {
 function checkJavaRuntime(property: string): Promise<string> {
     return new Promise((resolve, reject) => {
         let source: string;
-        let javaHome: string|undefined = readJavaHomeConfig(property);
+        let javaHome: string | undefined = readJavaHomeConfig(property);
 
         if (javaHome) {
             source = localize("check.java.runtime.vscode.java.home");
@@ -94,6 +94,7 @@ function checkJavaRuntime(property: string): Promise<string> {
         }
         // No settings, let's try to detect as last resort.
         findJavaHome({ allowJre: true }, (err: any, home: any) => {
+            require
             if (err) {
                 openJDKDownload(reject, localize("check.java.runtime.failed.locate"));
             }
@@ -104,7 +105,7 @@ function checkJavaRuntime(property: string): Promise<string> {
     });
 }
 
-function readJavaHomeConfig(property: string): string|undefined {
+function readJavaHomeConfig(property: string): string | undefined {
     const config = workspace.getConfiguration();
     let javaHome = config.get<string>(property);
     return (javaHome != null) ? javaHome : config.get<string>('java.home');
