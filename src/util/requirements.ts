@@ -94,7 +94,6 @@ function checkJavaRuntime(property: string): Promise<string> {
         }
         // No settings, let's try to detect as last resort.
         findJavaHome({ allowJre: true }, (err: any, home: any) => {
-            require
             if (err) {
                 openJDKDownload(reject, localize("check.java.runtime.failed.locate"));
             }
