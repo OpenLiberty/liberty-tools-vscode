@@ -16,29 +16,29 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.GetMethod;
+
+import java.net.http.HttpClient;
+
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 public class EndpointIT {
     private String URL = "http://localhost:9080/liberty-maven-test-wrapper-app/servlet";
 
     @Test
     public void testServlet() throws Exception {
-        HttpClient client = new HttpClient();
-        
-        GetMethod method = new GetMethod(URL);
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpGet request = new HttpGet(URL);
+            try (CloseableHttpResponse response = client.execute(request)) {
+                int statusCode = response.getCode();
+                String responseBody = EntityUtils.toString(response.getEntity());
 
-        try {
-            int statusCode = client.executeMethod(method);
-
-            Assertions.assertEquals(HttpStatus.SC_OK, statusCode, "HTTP GET failed");
-
-            String response = method.getResponseBodyAsString(1000);
-
-            Assertions.assertTrue(response.contains("Hello! How are you today?"), "Unexpected response body");
-        } finally {
-            method.releaseConnection();
-        }  
+                Assertions.assertEquals(HttpStatus.SC_OK, statusCode, "HTTP GET failed");
+                Assertions.assertTrue(responseBody.contains("Hello! How are you today?"), "Unexpected response body");
+            }
+        }
     }
 }
