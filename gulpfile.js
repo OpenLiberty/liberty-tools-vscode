@@ -23,9 +23,9 @@ const libertyVersion = "2.4.1";
 const jakartaGroupId = "org.eclipse.lsp4jakarta";
 const jakartaJdtArtifactId = "org.eclipse.lsp4jakarta.jdt.core";
 const jakartaLSArtifactId = "org.eclipse.lsp4jakarta.ls";
-const jakartaVersion = "0.2.5";
+const jakartaVersion = "0.2.6-SNAPSHOT";
 var lclsReleaseLevel = "releases";  //snapshots or releases
-var jakartaReleaseLevel = "releases";
+var jakartaReleaseLevel = "snapshots";
 
 const libertyLemminxName = "liberty-langserver-lemminx-" + libertyVersion + "-jar-with-dependencies.jar";
 const libertyLemminxDir = "../liberty-language-server/lemminx-liberty";
@@ -95,8 +95,8 @@ gulp.task("downloadLSP4JakartaJars", async function() {
   var jakartaLSURL;
 
   if (jakartaReleaseLevel === "snapshots") {
-    jakartaJDTURL = getEclipseJarURL(jakartaGroupId, jakartaJdtArtifactId, jakartaVersion, null, true);
-    jakartaLSURL = getEclipseJarURL(jakartaGroupId, jakartaLSArtifactId, jakartaVersion, "jar-with-dependencies", true);
+    jakartaJDTURL = await generateEclipseSnapshotJarURL(jakartaGroupId, jakartaJdtArtifactId, jakartaVersion, null);
+    jakartaLSURL = await generateEclipseSnapshotJarURL(jakartaGroupId, jakartaLSArtifactId, jakartaVersion, "jar-with-dependencies");
   } else {
     jakartaJDTURL = getEclipseJarURL(jakartaGroupId, jakartaJdtArtifactId, jakartaVersion, null, false);
     jakartaLSURL = getEclipseJarURL(jakartaGroupId, jakartaLSArtifactId, jakartaVersion, "jar-with-dependencies", false);
@@ -158,6 +158,39 @@ function getEclipseJarURL (groupId, artifactId, version, classifier, isSnapshot)
   return eclipseJarURL;
 }
 
+// Resolve Eclipse snapshot version from maven-metadata.xml
+// Example: https://repo.eclipse.org/repository/lsp4jakarta-maven2-snapshots/org/eclipse/lsp4jakarta/org.eclipse.lsp4jakarta.jdt.core/0.2.6-SNAPSHOT/maven-metadata.xml -> 0.2.6-20260526.143326-21
+async function resolveEclipseSnapshotVersionFromMetadata (groupId, artifactId, snapshotVersion, classifier) {
+  // Generate maven-metadata.xml URL for Eclipse repository
+  const metadataURL = `${ECLIPSE_SNAPSHOT_BASE_URL}/lsp4jakarta-maven2-snapshots/${groupId.replace(/\./g, '/')}/${artifactId}/${snapshotVersion}/maven-metadata.xml`;
+  console.log(`Fetching maven-metadata.xml: ${metadataURL}`);
+
+  // Fetch and parse maven-metadata.xml
+  const response = await axios.get(metadataURL);
+  const parser = new XMLParser();
+  const parsedXML = parser.parse(response.data);
+
+  // Get all <snapshotVersion> entries
+  const versions = parsedXML?.metadata?.versioning?.snapshotVersions.snapshotVersion || [];
+
+  const targetClassifier = classifier || null;
+
+  // Filter entries, only list jar files, match classifier if provided
+  const snapshotVersionEntry = versions.find(v => {
+    const extensionMatch = v.extension === 'jar';
+    const classifierValue = v.classifier || null;
+
+    return extensionMatch && classifierValue === targetClassifier;
+  });
+
+  if (!snapshotVersionEntry) {
+    throw new Error(`No snapshot JAR found matching parameters: ${groupId}:${artifactId}:${classifier || '(no classifier)'}:${snapshotVersion}`);
+  }
+
+  console.log(`Resolved full snapshot version for ${artifactId}: ${snapshotVersionEntry.value}`);
+  return snapshotVersionEntry.value;
+}
+
 // No API provided to retrieve snapshot artifacts hosted on https://central.sonatype.com/repository/maven-snapshots
 // Can access maven-metadata.xml using GAV coordinates for artifacts
 // Will parse retrieved maven-metadata.xml for full artifact version, including timestamp
@@ -192,6 +225,16 @@ async function resolveSnapshotVersionFromMetadata (groupId, artifactId, snapshot
 
   console.log(`Resolved full snapshot version for ${artifactId}: ${snapshotVersionEntry.value}`);
   return snapshotVersionEntry.value;
+}
+
+// Generate Eclipse repository artifact URL for a SNAPSHOT dependency with provided GAV coordinates
+// Example: https://repo.eclipse.org/repository/lsp4jakarta-maven2-snapshots/org/eclipse/lsp4jakarta/org.eclipse.lsp4jakarta.jdt.core/0.2.6-SNAPSHOT/org.eclipse.lsp4jakarta.jdt.core-0.2.6-20260526.143326-21.jar
+async function generateEclipseSnapshotJarURL (groupId, artifactId, snapshotVersion, classifier) {
+  const snapshotJarVersion = await resolveEclipseSnapshotVersionFromMetadata(groupId, artifactId, snapshotVersion, classifier);
+  const classifierString = classifier ? `-${classifier}` : ''; //Format classifier for URL if defined
+  const snapshotJarURL = `${ECLIPSE_SNAPSHOT_BASE_URL}/lsp4jakarta-maven2-snapshots/${groupId.replace(/\./g, '/')}/${artifactId}/${snapshotVersion}/${artifactId}-${snapshotJarVersion}${classifierString}.jar`;
+  console.log(`${groupId}:${artifactId}:${snapshotVersion}:${classifier} URL: ${snapshotJarURL}`);
+  return snapshotJarURL;
 }
 
 // Generate Maven Central artifact URL for a SNAPSHOT dependency with provided GAV coordinates
