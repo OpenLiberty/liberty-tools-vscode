@@ -1,11 +1,16 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2020, 2022
+ * Copyright IBM Corp. 2020, 2026
  */
 import { LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT } from "../definitions/constants";
 import { BuildFileImpl } from "./buildFile";
 import { localize } from "../util/i18nUtil";
 import * as semver from "semver";
+import * as vscode from "vscode";
+import * as Path from "path";
+import { pathExists } from "fs-extra";
+import { exec } from "child_process";
+import { promisify } from "util";
 
 /**
  * Look for a valid parent pom.xml
@@ -229,6 +234,62 @@ function containerVersion(plugin: any): boolean {
 }
 
 /**
+ * Resolve effective POM using Maven help:effective-pom goal
+ * @param pomPath Path to pom.xml file
+ * @returns Effective POM XML string
+ * @throws Error if Maven command fails
+ */
+export async function resolveEffectivePom(pomPath: string): Promise<string> {
+    const execAsync = promisify(exec);
+    
+    // Determine Maven executable
+    const mavenConfig = vscode.workspace.getConfiguration("maven");
+    const mavenExecutablePath = mavenConfig.get("executable.path") as string | undefined;
+    let mvnCmd = "mvn";
+    
+    if (mavenExecutablePath) {
+        mvnCmd = mavenExecutablePath;
+    } else {
+        // Check for Maven wrapper
+        const preferMavenWrapper = mavenConfig.get("executable.preferMavenWrapper") as boolean | undefined;
+        if (preferMavenWrapper) {
+            const pomDir = Path.dirname(pomPath);
+            const mvnw = process.platform.startsWith("win") ? "mvnw.cmd" : "mvnw";
+            let currentDir = pomDir;
+            
+            // Walk up parent folders to find mvnw
+            while (Path.basename(currentDir)) {
+                const potentialMvnwPath = Path.join(currentDir, mvnw);
+                if (await pathExists(potentialMvnwPath)) {
+                    mvnCmd = potentialMvnwPath;
+                    break;
+                }
+                currentDir = Path.dirname(currentDir);
+            }
+        }
+    }
+    
+    // Build the command
+    const command = `"${mvnCmd}" help:effective-pom -f "${pomPath}" -q`;
+    
+    try {
+        // Execute the Maven command and capture stdout
+        const { stdout, stderr } = await execAsync(command, {
+            maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large POMs
+            cwd: Path.dirname(pomPath)
+        });
+        
+        if (stderr && stderr.trim().length > 0) {
+            console.warn(`Maven effective-pom stderr: ${stderr}`);
+        }
+        
+        return stdout;
+    } catch (error: any) {
+        throw new Error(`Failed to resolve effective POM for ${pomPath}: ${error.message}`);
+    }
+}
+
+/**
  * Interface for Maven project metadata used in multi-module hierarchy
  */
 export interface MavenProjectMetadata {
@@ -245,6 +306,7 @@ export interface MavenProjectMetadata {
 
 /**
  * Extract metadata from a Maven POM file for multi-module support
+ * Uses effective-pom for accurate metadata extraction with fallback to direct XML
  * @param pomPath Path to the pom.xml file
  * @param xmlString Optional XML string content (if already read)
  * @returns MavenProjectMetadata object
@@ -253,11 +315,21 @@ export async function extractMavenMetadata(pomPath: string, xmlString?: string):
     const fse = require("fs-extra");
     const xml = xmlString || await fse.readFile(pomPath, "utf8");
     
-    const metadata = parsePomXml(xml);
-    metadata.buildFilePath = pomPath;
-    metadata.xmlString = xml;
-    
-    return metadata;
+    // Try to use effective-pom for accurate metadata extraction
+    try {
+        const effectivePomXml = await resolveEffectivePom(pomPath);
+        const metadata = parsePomXml(effectivePomXml);
+        metadata.buildFilePath = pomPath;
+        metadata.xmlString = xml; // Keep original XML for reference
+        return metadata;
+    } catch (error: any) {
+        // Fallback: Use direct XML parsing if effective-pom fails
+        console.warn(`Could not resolve effective POM for ${pomPath}, using direct XML parsing: ${error.message}`);
+        const metadata = parsePomXml(xml);
+        metadata.buildFilePath = pomPath;
+        metadata.xmlString = xml;
+        return metadata;
+    }
 }
 
 /**
