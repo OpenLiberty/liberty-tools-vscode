@@ -263,7 +263,7 @@
 		"@types/vscode": "1.42.0",
 		"@typescript-eslint/eslint-plugin": "8.0.0",
 		"@typescript-eslint/parser": "8.0.0",
-		"axios": "1.15.2",
+		"axios": "1.16.0",
 		"chai": "4.3.7",
 		"clipboardy": "2.3.0",
 		"eslint": "9.0.0",
