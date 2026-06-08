@@ -81,5 +81,6 @@
     "command.start.custom.dev.mode": "start custom dev mode",
     "command.stop.dev.mode": "stop dev mode",
     "command.run.tests": "run tests",
-    "command.attach.debugger": "attach debugger"
+    "command.attach.debugger": "attach debugger",
+    "command.view.test.report": "view test report"
 }

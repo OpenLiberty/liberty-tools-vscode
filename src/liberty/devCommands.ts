@@ -573,7 +573,16 @@ export async function runTests(libProject?: LibertyProject | undefined): Promise
 // open surefire, failsafe, or gradle test report
 export async function openReport(reportType: string, libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
-        const path = Path.dirname(libProject.getPath());
+        // Resolve the target project (handles aggregators with multiple Liberty children)
+        const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+        const targetProject = await projectProvider.resolveCommandTarget(libProject, localize("command.view.test.report"));
+        
+        if (targetProject === undefined) {
+            // User cancelled or no valid target found
+            return;
+        }
+        
+        const path = Path.dirname(targetProject.getPath());
         if (path !== undefined) {
             let report: any;
             let reportTypeLabel = reportType;
@@ -581,21 +590,21 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                 reportTypeLabel = "test";
             }
             let showErrorMessage: boolean = true;
-            if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+            if (targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT || targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                 report = getReportFile(path, "reports", reportType + ".html");
                 // show the error message only if both "reports" and "site" dirs do not contain the test reports
                 // set to false since this will be the first location checked
-                showErrorMessage = false; 
-                if (!await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage)) {
+                showErrorMessage = false;
+                if (!await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage)) {
                     report = getReportFile(path, "site", reportType + "-report.html");
                     // show the error message only if both "reports" and "site" dirs do not contain the test reports
                     // set to true since this will be the second location checked
-                    showErrorMessage = true; 
-                    await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage);
+                    showErrorMessage = true;
+                    await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
                 }
-            } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
-                report = await getGradleTestReport(libProject.path, path);
-                await checkReportAndDisplay(report, reportType, reportTypeLabel, libProject, showErrorMessage);
+            } else if (targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT || targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+                report = await getGradleTestReport(targetProject.path, path);
+                await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
             }
         }
     } else if (ProjectProvider.getInstance() && reportType) {
