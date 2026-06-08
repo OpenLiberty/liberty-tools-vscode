@@ -415,6 +415,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		// [gradle path, liberty project type]
 		const validGradleBuildFiles: BuildFileImpl[] = [];
 		let gradleChildren: string[] = [];
+		const visitedPaths: Set<string> = new Set();
 
 		// check for multi module build.gradles
 		// eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -424,12 +425,13 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				const gradleSettings = gradleUtil.getGradleSettings(gradlePath);
 				if (gradleSettings !== "") {
 					await g2js.parseFile(gradleSettings).then(async (settingsFile: any) => {
-						const gradleBuildFile: GradleBuildFile = gradleUtil.findChildGradleProjects(buildFile, settingsFile);
+						const gradleBuildFile: GradleBuildFile = gradleUtil.findChildGradleProjects(buildFile, settingsFile, gradlePath);
 						if (gradleBuildFile.getChildren().length !== 0) {
-							gradleChildren = gradleChildren.concat(gradleBuildFile.getChildren());
+							gradleChildren.push(...gradleBuildFile.getChildren());
 							const gradleParent: GradleBuildFile = new GradleBuildFile(true, gradleBuildFile.getProjectType());
 							gradleParent.setBuildFilePath(gradlePath);
 							validGradleBuildFiles.push(gradleParent);
+							visitedPaths.add(gradlePath);
 						}
 					}).catch((err: any) => console.error(localize("unable.to.parse.settings.gradle", gradleSettings, err)));
 				}
@@ -438,22 +440,32 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 		// check build.gradles
 		for (const gradlePath of gradlePaths) {
+			// Skip if already processed as a parent
+			if (visitedPaths.has(gradlePath)) {
+				continue;
+			}
+			
 			await g2js.parseFile(gradlePath).then(async (buildFile: any) => {
 				const dirName = vscodePath.dirname(gradlePath);
 				const label = vscodePath.basename(dirName);
+
+				const gradleBuild: BuildFileImpl = gradleUtil.validGradleBuild(buildFile, gradlePath);
+				
 				// check build.gradle matches any of the subprojects in the gradleChildMap or for liberty-gradle-plugin
 				if (gradleChildren.includes(label)) {
-					// TODO: add ability to detect version of LMP once multi-module project scenarios are defined
-					// @see https://github.com/OpenLiberty/open-liberty-tools-vscode/issues/61
-					// @see https://github.com/OpenLiberty/open-liberty-tools-vscode/issues/26 
-					const gradleChild: GradleBuildFile = new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT);
-					gradleChild.setBuildFilePath(gradlePath);
-					validGradleBuildFiles.push(gradleChild);
-				} else {
-					const gradleBuild: BuildFileImpl = gradleUtil.validGradleBuild(buildFile);
-					if (gradleBuild.isValidBuildFile()) {
+					// This is a child module - validate it for inclusion using utility function
+					const shouldInclude = await gradleUtil.validateGradleChildModule(gradleBuild, buildFile, gradlePath, visitedPaths);
+					if (shouldInclude) {
 						gradleBuild.setBuildFilePath(gradlePath);
 						validGradleBuildFiles.push(gradleBuild);
+						visitedPaths.add(gradlePath);
+					}
+				} else {
+					// Not a child module - only include if it has Liberty plugin
+					if (gradleBuild.hasLibertyPlugin()) {
+						gradleBuild.setBuildFilePath(gradlePath);
+						validGradleBuildFiles.push(gradleBuild);
+						visitedPaths.add(gradlePath);
 					}
 				}
 			}).catch((err: any) => console.error(localize("unable.to.parse.build.gradle", gradlePath, err)));
@@ -537,8 +549,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				}
 			} catch (error) {
 				console.error(`Error extracting metadata for ${buildFilePath}:`, error);
-				// Set defaults if metadata extraction fails
-				project.isLibertyEnabled = true; // Assume Liberty-enabled if in the map
+				project.isLibertyEnabled = true;
 			}
 		}
 		
