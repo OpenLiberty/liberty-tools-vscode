@@ -69,7 +69,7 @@ export async function getCommandForGradle(buildGradlePath: string, command: stri
     if (isWin()) {
         return getGradleCommandForWin(gradleCmdStart, projectDir, command, terminalType, customCommand);
     } else {
-        return formGradleCommand(projectDir, "./gradlew", command, customCommand);
+        return formGradleCommand(projectDir, gradleCmdStart, command, customCommand);
     }
 }
 
@@ -116,9 +116,11 @@ async function mvnCmd(pomPath: string): Promise<string> {
 async function gradleCmd(buildGradle: string): Promise<string> {
     const preferGradleWrapper: boolean | undefined = vscode.workspace.getConfiguration("java").get<boolean>("import.gradle.wrapper.enabled");
     if (preferGradleWrapper) {
-        const localGradlewPath: string | undefined = await getLocalGradleWrapperDir(Path.dirname(buildGradle));
-        if (localGradlewPath) {
-            return `${localGradlewPath}`;
+        const localGradlewDir: string | undefined = await getLocalGradleWrapperDir(Path.dirname(buildGradle));
+        if (localGradlewDir) {
+            // Return full path to wrapper executable
+            const wrapperName = isWin() ? "gradlew.bat" : "gradlew";
+            return Path.join(localGradlewDir, wrapperName);
         }
     }
     return "gradle";
@@ -169,14 +171,14 @@ async function getLocalMavenWrapperDir(projectFolder: string): Promise<string | 
 function getGradleCommandForWin(gradleCmdStart: string, projectDir: string, command: string, terminalType?: String, customCommand?: string): string {
     switch (terminalType) {
         case ShellType.GIT_BASH:
-            return formGradleCommand(projectDir, "./gradlew", command, customCommand); //Bash
+            return formGradleCommand(projectDir, gradleCmdStart, command, customCommand); //Bash
         case ShellType.POWERSHELL:
-            return formGradlePowershellCommand(projectDir, "gradlew.bat", command, customCommand);
+            return formGradlePowershellCommand(projectDir, gradleCmdStart, command, customCommand);
         case ShellType.WSL:
-            return formGradleCommand(toDefaultWslPath(projectDir), "./gradlew", command, customCommand); //Wsl
+            return formGradleCommand(toDefaultWslPath(projectDir), gradleCmdStart, command, customCommand); //Wsl
         default:
             // The default case is ShellType CMD or OTHERS
-            return formGradleWindowsCommand(projectDir, "gradlew.bat", command, customCommand);
+            return formGradleWindowsCommand(projectDir, gradleCmdStart, command, customCommand);
     }
 }
 
@@ -251,9 +253,9 @@ function formDefaultCommandWithPath(projectPath: string, buildFilePath: String, 
  */
 function formGradleCommand(projectDir: string, gradleCmd: string, command: string, customCommand?: string): string {
     if (customCommand) {
-        return `cd "${projectDir}" && ${gradleCmd} ${command} ${customCommand}`;
+        return `cd "${projectDir}" && "${gradleCmd}" ${command} ${customCommand}`;
     }
-    return `cd "${projectDir}" && ${gradleCmd} ${command}`;
+    return `cd "${projectDir}" && "${gradleCmd}" ${command}`;
 }
 
 /**
@@ -261,9 +263,9 @@ function formGradleCommand(projectDir: string, gradleCmd: string, command: strin
  */
 function formGradlePowershellCommand(projectDir: string, gradleCmd: string, command: string, customCommand?: string): string {
     if (customCommand) {
-        return `cd "${projectDir}"; .\\${gradleCmd} ${command} ${customCommand}`;
+        return `cd "${projectDir}"; & "${gradleCmd}" ${command} ${customCommand}`;
     }
-    return `cd "${projectDir}"; .\\${gradleCmd} ${command}`;
+    return `cd "${projectDir}"; & "${gradleCmd}" ${command}`;
 }
 
 /**
@@ -271,9 +273,9 @@ function formGradlePowershellCommand(projectDir: string, gradleCmd: string, comm
  */
 function formGradleWindowsCommand(projectDir: string, gradleCmd: string, command: string, customCommand?: string): string {
     if (customCommand) {
-        return `cd "${projectDir}" && ${gradleCmd} ${command} ${customCommand}`;
+        return `cd "${projectDir}" && "${gradleCmd}" ${command} ${customCommand}`;
     }
-    return `cd "${projectDir}" && ${gradleCmd} ${command}`;
+    return `cd "${projectDir}" && "${gradleCmd}" ${command}`;
 }
 
 /**
