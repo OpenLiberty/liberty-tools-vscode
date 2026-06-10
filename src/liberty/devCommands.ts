@@ -617,9 +617,10 @@ export async function openReport(reportType: string, libProject?: LibertyProject
 }
 
 // retrieve LibertyProject corresponding to closed terminal and delete terminal
-export function deleteTerminal(terminal: vscode.Terminal): void {
+export async function deleteTerminal(terminal: vscode.Terminal): Promise<void> {
     try {
-        const libProject = terminals[Number(terminal.processId)];
+        const pid = await terminal.processId;
+        const libProject = terminals[Number(pid)];
         libProject.deleteTerminal();
     } catch {
         console.error(localize("unable.to.delete.terminal", terminal.name));
