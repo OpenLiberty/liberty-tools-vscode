@@ -11,7 +11,7 @@ import { localize } from "../util/i18nUtil";
 import { QuickPickItem } from "vscode";
 import { LibertyProject, ProjectProvider } from "./libertyProject";
 import { getReport, filterProjects } from "../util/helperUtil";
-import { COMMAND_TITLES, LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_SERVER_ENV_PORT_REGEX } from "../definitions/constants";
+import { COMMAND_TITLES, LIBERTY_SERVER_ENV_PORT_REGEX, isMaven, isGradle, isContainer } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
@@ -116,7 +116,7 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         if (terminal !== undefined) {
             terminal.show();
             targetProject.setTerminal(terminal);
-            if (targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT || targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+            if (isMaven(targetProject.getContextValue())) {
                 // For multi-module projects, use parent aggregator path
                 const pomPath = targetProject.parent ? targetProject.parent.getPath() : targetProject.getPath();
                 // Use module selector (-pl) if:
@@ -127,7 +127,7 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
                     : undefined;
                 const cmd = await getCommandForMaven(pomPath, "io.openliberty.tools:liberty-maven-plugin:dev", targetProject.getTerminalType(), undefined, artifactId);
                 terminal.sendText(cmd); // start dev mode on current project
-            } else if (targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT || targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+            } else if (isGradle(targetProject.getContextValue())) {
                 const cmd = await getCommandForGradle(targetProject.getPath(), "libertyDev", targetProject.getTerminalType());
                 terminal.sendText(cmd); // start dev mode on current project
             }
@@ -290,10 +290,10 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
         
         const EXCLUDED_DIR_PATTERN = "**/{bin,classes}/**";
         let pathPrefix = "";
-        if (targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT || targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+        if (isMaven(targetProject.getContextValue())) {
             pathPrefix = "target";
 
-        } else if (targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT || targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+        } else if (isGradle(targetProject.getContextValue())) {
             pathPrefix = "build";
         }
         let paths: string[] = [];
@@ -424,9 +424,9 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
 
             let placeHolderStr = "";
             let promptString = localize("specify.custom.parms.maven");
-            if (targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT || targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+            if (isMaven(targetProject.getContextValue())) {
                 placeHolderStr = "e.g. -DhotTests=true";
-            } else if (targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT || targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+            } else if (isGradle(targetProject.getContextValue())) {
                 placeHolderStr = "e.g. --hotTests";
                 promptString = localize("specify.custom.parms.gradle");
             }
@@ -460,7 +460,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
                     await helperUtil.saveStorageData(projectProvider.getContext(), dashboardData);
                 }
 
-                if (targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT || targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+                if (isMaven(targetProject.getContextValue())) {
                     // For multi-module projects, use parent aggregator path
                     const pomPath = targetProject.parent ? targetProject.parent.getPath() : targetProject.getPath();
                     // Use module selector (-pl) if:
@@ -471,7 +471,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
                         : undefined;
                     const cmd = await getCommandForMaven(pomPath, "io.openliberty.tools:liberty-maven-plugin:dev", targetProject.getTerminalType(), customCommand, artifactId);
                     terminal.sendText(cmd);
-                } else if (targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT || targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+                } else if (isGradle(targetProject.getContextValue())) {
                     const cmd = await getCommandForGradle(targetProject.getPath(), "libertyDev", targetProject.getTerminalType(), customCommand);
                     terminal.sendText(cmd);
                 }
@@ -514,7 +514,7 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
         if (terminal !== undefined) {
             terminal.show();
             targetProject.setTerminal(terminal);
-            if (targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+            if (isContainer(targetProject.getContextValue()) && isMaven(targetProject.getContextValue())) {
                 // For multi-module projects, use parent aggregator path
                 const pomPath = targetProject.parent ? targetProject.parent.getPath() : targetProject.getPath();
                 // Use module selector (-pl) if:
@@ -525,7 +525,7 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
                     : undefined;
                 const cmd = await getCommandForMaven(pomPath, "io.openliberty.tools:liberty-maven-plugin:devc", targetProject.getTerminalType(), undefined, artifactId);
                 terminal.sendText(cmd);
-            } else if (targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+            } else if (isContainer(targetProject.getContextValue()) && isGradle(targetProject.getContextValue())) {
                 const cmd = await getCommandForGradle(targetProject.getPath(), "libertyDevc", targetProject.getTerminalType());
                 terminal.sendText(cmd);
             }
@@ -590,7 +590,7 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                 reportTypeLabel = "test";
             }
             let showErrorMessage: boolean = true;
-            if (targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT || targetProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
+            if (isMaven(targetProject.getContextValue())) {
                 report = getReportFile(path, "reports", reportType + ".html");
                 // show the error message only if both "reports" and "site" dirs do not contain the test reports
                 // set to false since this will be the first location checked
@@ -602,7 +602,7 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                     showErrorMessage = true;
                     await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
                 }
-            } else if (targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT || targetProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
+            } else if (isGradle(targetProject.getContextValue())) {
                 report = await getGradleTestReport(targetProject.path, path);
                 await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
             }
@@ -687,7 +687,9 @@ Method adds a project which is selected by the user from the list to the liberty
 export async function addProjectsToTheDashBoard(projectProvider: ProjectProvider, selection: string): Promise<void> {
     const result = await projectProvider.addUserSelectedPath(selection, projectProvider.getProjects());
     const message = localize(`add.project.manually.message.${result}`, selection);
-    (result !== 0) ? console.error(message) : console.info(message); projectProvider.fireChangeEvent();
+    (result !== 0) ? console.error(message) : console.info(message);
     vscode.window.showInformationMessage(message);
+    // refresh() re-runs full discovery (including hierarchy) and shows the status bar indicator
+    await projectProvider.refresh();
     return Promise.resolve();
 }

@@ -9,7 +9,32 @@ import * as gradleUtil from "../util/gradleUtil";
 import * as mavenUtil from "../util/mavenUtil";
 import * as util from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
-import { EXCLUDED_DIR_PATTERN, LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, UNTITLED_WORKSPACE } from "../definitions/constants";
+
+/**
+ * Internal pipeline cache: one entry per discovered build file, carrying
+ * raw parsed content so each file is read/parsed exactly once.
+ */
+interface ParsedBuildEntry {
+	path: string;
+	type: "maven" | "gradle";
+	xmlString?: string;       // maven only
+	parsedBuild?: any;        // gradle only — null when regexBuildFile is set
+	settingsPath?: string;    // gradle only
+	parsedSettings?: any;     // gradle only
+	/** Set when regex pre-screen was sufficient and g2js.parseFile was skipped */
+	regexBuildFile?: import("../util/buildFile").GradleBuildFile;
+}
+import {
+	EXCLUDED_DIR_PATTERN,
+	UNTITLED_WORKSPACE,
+	LIBERTY_PROJECT_MAVEN, LIBERTY_PROJECT_GRADLE,
+	LIBERTY_PROJECT_MAVEN_CONTAINER, LIBERTY_PROJECT_GRADLE_CONTAINER,
+	LIBERTY_PROJECT_MAVEN_AGGREGATOR, LIBERTY_PROJECT_GRADLE_AGGREGATOR,
+	isMaven, isGradle,
+	// Deprecated — used only for persisted storage migration shim
+	LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT,
+	LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER,
+} from "../definitions/constants";
 import { BuildFileImpl, GradleBuildFile } from "../util/buildFile";
 import { DashboardData } from "./dashboard";
 import { BaseLibertyProject } from "./baseLibertyProject";
@@ -25,6 +50,8 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	// tslint:disable-next-line: variable-name
 	private _onDidChangeTreeData: vscode.EventEmitter<LibertyProject | undefined>;
+
+	private _refreshing = false;
 
 	// Map of buildFilePath -> LibertyProject
 	private projects: Map<string, LibertyProject> = new Map();
@@ -55,23 +82,38 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	private async createLibertyProject(path: string, type: string | undefined): Promise<LibertyProject | undefined> {
 		let project: LibertyProject | undefined;
+
+		// Migration shim: map old persisted contextValue strings to new scheme.
+		// Users upgrading from previous versions may have old strings in workspaceState.
+		// Remove this shim after one release cycle.
+		const migrateContextValue = (cv: string): string => {
+			const map: Record<string, string> = {
+				[LIBERTY_MAVEN_PROJECT]:           LIBERTY_PROJECT_MAVEN,
+				[LIBERTY_GRADLE_PROJECT]:          LIBERTY_PROJECT_GRADLE,
+				[LIBERTY_MAVEN_PROJECT_CONTAINER]: LIBERTY_PROJECT_MAVEN_CONTAINER,
+				[LIBERTY_GRADLE_PROJECT_CONTAINER]: LIBERTY_PROJECT_GRADLE_CONTAINER,
+			};
+			return map[cv] ?? cv;
+		};
+
 		if ( type !== undefined) {
-			if ( fse.existsSync (path) && LIBERTY_MAVEN_PROJECT === type) {
+			const migratedType = migrateContextValue(type);
+			if ( fse.existsSync (path) && isMaven(migratedType)) {
 				const xmlString = await fse.readFile(path, "utf8");
-				project = await createProject(this._context, path, type, xmlString);
-			} else if (fse.existsSync (path) && LIBERTY_GRADLE_PROJECT === type) {
-				project = await createProject(this._context, path, LIBERTY_GRADLE_PROJECT);
+				project = await createProject(this._context, path, migratedType, xmlString);
+			} else if (fse.existsSync (path) && isGradle(migratedType)) {
+				project = await createProject(this._context, path, migratedType);
 			}
 		} else {
 			const pomFile = vscodePath.resolve(path, "pom.xml");
 			
 			if (fse.existsSync(pomFile)) {
 				const xmlString = await fse.readFile(pomFile, "utf8");
-				project = await createProject(this._context, pomFile, LIBERTY_MAVEN_PROJECT, xmlString);
+				project = await createProject(this._context, pomFile, LIBERTY_PROJECT_MAVEN, xmlString);
 			} else {
 				const gradleFile = vscodePath.resolve(path, "build.gradle");
 				if ( fse.existsSync (gradleFile)) {		
-					project = await createProject(this._context, gradleFile, LIBERTY_GRADLE_PROJECT);	
+					project = await createProject(this._context, gradleFile, LIBERTY_PROJECT_GRADLE);	
 				}
 			}
 		}
@@ -192,13 +234,18 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		return this.projects;
 	}
 	public async refresh(): Promise<void> {
-		// update the map of projects
+		if (this._refreshing) { return; }
+		this._refreshing = true;
 		const statusMessage = vscode.window.setStatusBarMessage(localize("refreshing.liberty.dashboard"));
-		await this.updateProjects();
-		await this.addPersistedProjects();
-		// trigger a re-render of the tree view
-		this._onDidChangeTreeData.fire(undefined);
-		statusMessage.dispose();
+		const t0 = Date.now();
+		try {
+			await this.updateProjects();
+			console.log(`[perf] refresh total: ${Date.now() - t0}ms`);
+			this._onDidChangeTreeData.fire(undefined);
+		} finally {
+			statusMessage.dispose();
+			this._refreshing = false;
+		}
 	}
 
 	/**
@@ -378,319 +425,380 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 
 
-	// Given a list of pom.xml files, find ones that are valid to use with liberty dev-mode
-	private async findValidPOMs(pomPaths: string[]): Promise<BuildFileImpl[]> {
-		// [pom, liberty project type]
-		const validPoms: BuildFileImpl[] = [];
-		let mavenChildMap: Map<string, string[]> = new Map();
-
-		// check for parentPoms
-		for (const parentPom of pomPaths) {
-			const xmlString: string = await fse.readFile(parentPom, "utf8");
-			const validParent: BuildFileImpl = mavenUtil.validParentPom(xmlString);
-			if (validParent.isValidBuildFile()) {
-				// mavenChildMap: [parentName, array of child names]
-				mavenChildMap = new Map([...Array.from(mavenChildMap.entries()), ...Array.from(mavenUtil.findChildMavenModules(xmlString).entries())]);
-				validParent.setBuildFilePath(parentPom);
-				validPoms.push(validParent);
-			}
-		}
-
-		// check poms
-		for (const pomPath of pomPaths) {
-			if (!validPoms.some(mavenPom => mavenPom["buildFilePath"] === pomPath)) {
-				const xmlString: string = await fse.readFile(pomPath, "utf8");
-				const validPom: BuildFileImpl = mavenUtil.validPom(xmlString, mavenChildMap);
-				if (validPom.isValidBuildFile()) {
-					validPom.setBuildFilePath(pomPath);
-					validPoms.push(validPom);
-				}
-			}
-		}
-		return validPoms;
-	}
-
-	// Given a list of build.gradle files, find ones that are valid to use with liberty dev-mode
-	private async findValidGradleBuildFiles(gradlePaths: string[]): Promise<BuildFileImpl[]> {
-		// [gradle path, liberty project type]
-		const validGradleBuildFiles: BuildFileImpl[] = [];
-		let gradleChildren: string[] = [];
-		const visitedPaths: Set<string> = new Set();
-
-		// check for multi module build.gradles
-		// eslint-disable-next-line @typescript-eslint/no-var-requires
-		const g2js = require("gradle-to-js/lib/parser");
-		for (const gradlePath of gradlePaths) {
-			await g2js.parseFile(gradlePath).then(async (buildFile: any) => {
-				const gradleSettings = gradleUtil.getGradleSettings(gradlePath);
-				if (gradleSettings !== "") {
-					await g2js.parseFile(gradleSettings).then(async (settingsFile: any) => {
-						const gradleBuildFile: GradleBuildFile = gradleUtil.findChildGradleProjects(buildFile, settingsFile, gradlePath);
-						if (gradleBuildFile.getChildren().length !== 0) {
-							gradleChildren.push(...gradleBuildFile.getChildren());
-							const gradleParent: GradleBuildFile = new GradleBuildFile(true, gradleBuildFile.getProjectType());
-							gradleParent.setBuildFilePath(gradlePath);
-							validGradleBuildFiles.push(gradleParent);
-							visitedPaths.add(gradlePath);
-						}
-					}).catch((err: any) => console.error(localize("unable.to.parse.settings.gradle", gradleSettings, err)));
-				}
-			}).catch((err: any) => console.error(localize("unable.to.parse.build.gradle", gradlePath, err)));
-		}
-
-		// check build.gradles
-		for (const gradlePath of gradlePaths) {
-			// Skip if already processed as a parent
-			if (visitedPaths.has(gradlePath)) {
-				continue;
-			}
-			
-			await g2js.parseFile(gradlePath).then(async (buildFile: any) => {
-				const dirName = vscodePath.dirname(gradlePath);
-				const label = vscodePath.basename(dirName);
-
-				const gradleBuild: BuildFileImpl = gradleUtil.validGradleBuild(buildFile, gradlePath);
-				
-				// check build.gradle matches any of the subprojects in the gradleChildMap or for liberty-gradle-plugin
-				if (gradleChildren.includes(label)) {
-					// This is a child module - validate it for inclusion using utility function
-					const shouldInclude = await gradleUtil.validateGradleChildModule(gradleBuild, buildFile, gradlePath, visitedPaths);
-					if (shouldInclude) {
-						gradleBuild.setBuildFilePath(gradlePath);
-						validGradleBuildFiles.push(gradleBuild);
-						visitedPaths.add(gradlePath);
-					}
-				} else {
-					// Not a child module - only include if it has Liberty plugin
-					if (gradleBuild.hasLibertyPlugin()) {
-						gradleBuild.setBuildFilePath(gradlePath);
-						validGradleBuildFiles.push(gradleBuild);
-						visitedPaths.add(gradlePath);
-					}
-				}
-			}).catch((err: any) => console.error(localize("unable.to.parse.build.gradle", gradlePath, err)));
-		}
-		return validGradleBuildFiles;
-	}
-
 	public projectRootPathExists(path: string, keys: Iterable<string>): boolean {
 		for (const existingPath of keys) {
-			if ( vscodePath.dirname(existingPath) === path) {
+			if (vscodePath.dirname(existingPath) === path) {
 				return true;
 			}
-        }
+		}
 		return false;
 	}
 
 	/**
-	 * Checks if given build file exists in existing project map (<code>this.projects</code>).
-	 * If it exists, then the corresponding liberty project will be added to the given 
-	 * <code>projectsMap</code>.
-	 * 
-	 * @param buildFilePath The build file to check (full path to pom.xml or build.gradle)
-	 * @param projectType Project type
-	 * @param projectsMap Existing projects.
-	 * @returns 
+	 * Unified discovery pipeline. Reads and parses every build file exactly once,
+	 * then classifies, creates LibertyProject objects, and wires the hierarchy —
+	 * all in a single method replacing the old findValidPOMs / findValidGradleBuildFiles
+	 * / buildHierarchy trio.
+	 *
+	 * Phase 1 — parallel read/parse of all files into ParsedBuildEntry[]
+	 * Phase 2 — classify parents: build mavenChildMap + gradleChildSet
+	 * Phase 3 — parallel validate + create LibertyProject objects into projectsMap
+	 * Phase 4 — link parent-child relationships, stamp rootProjects (pure in-memory)
 	 */
-	private async addExistingProjectToNewProjectsMap (buildFilePath: string, projectType: string, projectsMap: Map<string, LibertyProject> ): Promise<boolean> {
-		let added = false;
-		if (this.projects.has(buildFilePath)) {
-			const project = this.projects.get(buildFilePath);
-			if (project !== undefined) {
-				if (project.contextValue !== projectType) {
-					project.setContextValue(projectType);
-				}
-				let newLabel = undefined;
-				// checking the projectType for a gradle project first, then checking for a maven project
-				if ( projectType == LIBERTY_GRADLE_PROJECT || projectType == LIBERTY_GRADLE_PROJECT_CONTAINER ) {
-					newLabel = await getLabelFromBuildFile(buildFilePath);
-				} else if ( projectType == LIBERTY_MAVEN_PROJECT || projectType == LIBERTY_MAVEN_PROJECT_CONTAINER ) {
-					const xmlString = await fse.readFile(buildFilePath, "utf8");
-					newLabel = await getLabelFromBuildFile(buildFilePath, xmlString);
-				}
-				if ( newLabel !== undefined && project.getLabel() !==  newLabel ) {
-					project.setLabel(newLabel);
-				}
-				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				projectsMap.set(buildFilePath, this.projects.get(buildFilePath)!);
-				added = true;
-			}
-		}
-		return added;
-	}	
-	/**
-	 * Build hierarchical relationships between projects based on metadata
-	 * @param projectsMap Map of all projects
-	 */
-	private async buildHierarchy(projectsMap: Map<string, LibertyProject>): Promise<void> {
-		const mavenProjectsByArtifactId = new Map<string, LibertyProject>();
-		const gradleProjectsByName = new Map<string, LibertyProject>();
-		const mavenMetadataMap = new Map<string, mavenUtil.MavenProjectMetadata>();
-		
-		// First pass: populate metadata for all projects
-		for (const [buildFilePath, project] of projectsMap.entries()) {
-			try {
-				if (buildFilePath.endsWith("pom.xml")) {
-					const xmlString = await fse.readFile(buildFilePath, "utf8");
-					const metadata = await mavenUtil.extractMavenMetadata(buildFilePath, xmlString);
-					project.artifactId = metadata.artifactId;
-					project.parentArtifactId = metadata.parentArtifactId;
-					project.isAggregator = metadata.isAggregator;
-					project.isLibertyEnabled = metadata.isLibertyEnabled;
-					mavenProjectsByArtifactId.set(metadata.artifactId, project);
-					mavenMetadataMap.set(buildFilePath, metadata);
-				} else if (buildFilePath.endsWith("build.gradle")) {
-					const metadata = await gradleUtil.extractGradleMetadata(buildFilePath);
-					project.artifactId = metadata.projectName;
-					project.parentArtifactId = metadata.parentProjectName;
-					project.isAggregator = metadata.isAggregator;
-					project.isLibertyEnabled = metadata.isLibertyEnabled;
-					gradleProjectsByName.set(metadata.projectName, project);
-				}
-			} catch (error) {
-				console.error(`Error extracting metadata for ${buildFilePath}:`, error);
-				project.isLibertyEnabled = true;
-			}
-		}
-		
-		// Second pass: build parent-child relationships
-		// Strategy 1: Use parentArtifactId if available (standard Maven with <parent> element)
-		for (const project of projectsMap.values()) {
-			if (project.parentArtifactId) {
-				// Look up parent in the appropriate map based on build tool
-				const parent = project.path.endsWith("pom.xml")
-					? mavenProjectsByArtifactId.get(project.parentArtifactId)
-					: gradleProjectsByName.get(project.parentArtifactId);
-				
-				if (parent) {
-					project.parent = parent;
-					if (!parent.children.includes(project)) {
-						parent.children.push(project);
-					}
-				}
-			}
-		}
-		
-		// Strategy 2: For Maven projects without parent links, use filesystem paths + module declarations
-		// This handles multimodule projects where child POMs don't have <parent> elements
-		for (const [parentPath, parentMetadata] of mavenMetadataMap.entries()) {
-			if (parentMetadata.isAggregator && parentMetadata.modules.length > 0) {
-				const parentProject = projectsMap.get(parentPath);
-				if (!parentProject) continue;
-				
-				const parentDir = vscodePath.dirname(parentPath);
-				
-				// For each module declared in parent's <modules> section
-				for (const moduleName of parentMetadata.modules) {
-					// Resolve the module path relative to parent
-					const modulePomPath = vscodePath.resolve(parentDir, moduleName, "pom.xml");
-					
-					// Check if this module exists in our discovered projects
-					const childProject = projectsMap.get(modulePomPath);
-					if (childProject && !childProject.parent) {
-						// Link child to parent
-						childProject.parent = parentProject;
-						if (!parentProject.children.includes(childProject)) {
-							parentProject.children.push(childProject);
-						}
-						console.debug(`Linked module ${moduleName} to parent ${parentMetadata.artifactId} via filesystem path`);
-					}
-				}
-			}
-		}
-		
-		// Third pass: identify root projects (no parent or parent not in workspace)
-		this.rootProjects = Array.from(projectsMap.values())
-			.filter(p => !p.parent)
-			.filter(p => p.isLibertyEnabled || this.hasLibertyDescendants(p));
-	}
-	
-	
-	private async updateProjects(): Promise<void> {
-		// find all build files in the open workspace and find all the ones that are valid for dev-mode
-		
-		const pomPaths = (await vscode.workspace.findFiles("**/pom.xml", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
-		const gradlePaths = (await vscode.workspace.findFiles("**/build.gradle", EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
-		const validPoms: BuildFileImpl[] = await this.findValidPOMs(pomPaths);
-		const validGradleBuilds: BuildFileImpl[] = await this.findValidGradleBuildFiles(gradlePaths);
-		let serverXMLPaths: string[] = [];
-		
-		// map of buildFilePath -> LibertyProject
-		const newProjectsMap: Map<string, LibertyProject> = new Map();
-		for (const pom of validPoms) {
-			// if a LibertyProject for this pom has already been created
-			// we want to re-use it since it stores state such as the terminal being used for dev-mode
-			if ( !await this.addExistingProjectToNewProjectsMap(pom.getBuildFilePath(), pom.getProjectType(),
-					newProjectsMap) ) {
-				const xmlString = await fse.readFile(pom.getBuildFilePath(), "utf8");
-				const project = await createProject(this._context, pom.getBuildFilePath(), pom.getProjectType(), xmlString);
-				newProjectsMap.set(pom.getBuildFilePath(), project);
-			}
-		}
-		
-		for (const gradleBuild of validGradleBuilds) {
-			console.log(`[DEBUG] Processing Gradle build: ${gradleBuild.getBuildFilePath()}, type: ${gradleBuild.getProjectType()}`);
-			// if a LibertyProject for this build.gradle has already been created
-			// we want to re-use it
-			if ( !await this.addExistingProjectToNewProjectsMap(gradleBuild.getBuildFilePath(), gradleBuild.getProjectType(),
-					newProjectsMap) ) {
-				const project = await createProject(this._context, gradleBuild.getBuildFilePath(), gradleBuild.getProjectType());
-				newProjectsMap.set(gradleBuild.getBuildFilePath(), project);
-				console.log(`[DEBUG] Added Gradle project to map: ${gradleBuild.getBuildFilePath()}`);
+	private async discoverProjects(
+		pomPaths: string[],
+		gradlePaths: string[],
+		projectsMap: Map<string, LibertyProject>
+	): Promise<void> {
+		// eslint-disable-next-line @typescript-eslint/no-var-requires
+		const g2js = require("gradle-to-js/lib/parser");
+		const t0 = Date.now();
+
+		// ── Phase 1: read/parse all files in parallel ──────────────────────────
+		const allEntries: ParsedBuildEntry[] = await Promise.all([
+			...pomPaths.map(async (p): Promise<ParsedBuildEntry> => ({
+				path: p,
+				type: "maven",
+				xmlString: await fse.readFile(p, "utf8").catch(err => {
+					console.error(`Error reading ${p}:`, err);
+					return "";
+				}),
+			})),
+			...gradlePaths.map(async (p): Promise<ParsedBuildEntry> => {
+				const settingsPath = gradleUtil.getGradleSettings(p);
+
+				// Fast path: read raw text and try regex detection first.
+				// g2js.parseFile() is a full char-by-char parser — skip it when:
+				//   (a) regex already confirms modern plugin syntax, AND
+				//   (b) file has no legacy buildscript { } block
+				// g2js is still needed for: legacy buildscript.dependencies syntax,
+				// settings.gradle include extraction, and test-report path queries.
+				const rawContent = await fse.readFile(p, "utf8").catch((err: any) => {
+					console.error(`Error reading ${p}:`, err);
+					return "";
+				});
+
+				const regexResult = gradleUtil.detectLibertyPluginFromText(rawContent);
+				const needsG2js = !regexResult && gradleUtil.mightUseLegacyBuildscriptSyntax(rawContent);
+				// Always parse settings.gradle when present — needed for include (aggregator detection)
+				// and rootProject.name (label). Skip it only if there are no subprojects to find.
+				const hasIncludes = settingsPath ? (() => {
+					try {
+						const st = fse.readFileSync(settingsPath, "utf8");
+						return /\binclude\b/.test(st);
+					} catch { return false; }
+				})() : false;
+
+				const [parsedBuild, parsedSettings] = await Promise.all([
+					needsG2js
+						? g2js.parseFile(p).catch((err: any) => {
+								console.error(localize("unable.to.parse.build.gradle", p, err));
+								return null;
+						  })
+						: Promise.resolve(null),
+					(settingsPath && (hasIncludes || !regexResult))
+						? g2js.parseFile(settingsPath).catch((err: any) => {
+								console.error(localize("unable.to.parse.settings.gradle", settingsPath, err));
+								return null;
+						  })
+						: Promise.resolve(null),
+				]);
+				return {
+					path: p, type: "gradle",
+					parsedBuild,
+					settingsPath: settingsPath || undefined,
+					parsedSettings,
+					// regexBuildFile is set when g2js was skipped (modern plugin syntax confirmed)
+					regexBuildFile: (!needsG2js && regexResult) ? regexResult : undefined,
+				};
+			}),
+		]);
+		console.log(`[perf] discoverProjects phase1 (read+parse): ${Date.now() - t0}ms`);
+
+		const mavenEntries  = allEntries.filter(e => e.type === "maven");
+		const gradleEntries = allEntries.filter(e => e.type === "gradle");
+
+		// ── Phase 2: classify parents ──────────────────────────────────────────
+		// Maven: scan all POMs for parent declarations + build mavenChildMap
+		let mavenChildMap: Map<string, string[]> = new Map();
+		const mavenParentPaths = new Set<string>();
+		for (const entry of mavenEntries) {
+			if (!entry.xmlString) { continue; }
+			const validParent = mavenUtil.validParentPom(entry.xmlString);
+			if (validParent.isValidBuildFile()) {
+				mavenChildMap = new Map([
+					...Array.from(mavenChildMap.entries()),
+					...Array.from(mavenUtil.findChildMavenModules(entry.xmlString).entries()),
+				]);
+				mavenParentPaths.add(entry.path);
 			}
 		}
 
+		// Gradle: scan all build.gradle entries for settings.gradle includes
+		const gradleChildSet = new Set<string>();
+		const gradleParentPaths = new Set<string>();
+		for (const entry of gradleEntries) {
+			// Need parsedSettings for include detection; parsedBuild OR regexBuildFile is sufficient
+			if ((!entry.parsedBuild && !entry.regexBuildFile) || !entry.parsedSettings) { continue; }
+			const gradleBuildFile = gradleUtil.findChildGradleProjects(
+				entry.parsedBuild ?? {}, entry.parsedSettings, entry.path
+			);
+			if (gradleBuildFile.getChildren().length > 0) {
+				gradleBuildFile.getChildren().forEach(c => gradleChildSet.add(c));
+				gradleParentPaths.add(entry.path);
+			}
+		}
+		console.log(`[perf] discoverProjects phase2 (classify): ${Date.now() - t0}ms`);
+
+		// ── Phase 3: validate + create LibertyProject objects (parallel) ────────
+		const visitedPaths = new Set<string>();
+
+		await Promise.all([
+			// Maven entries
+			...mavenEntries.map(async (entry) => {
+				if (!entry.xmlString) { return; }
+				let buildFile: BuildFileImpl;
+				if (mavenParentPaths.has(entry.path)) {
+					buildFile = mavenUtil.validParentPom(entry.xmlString);
+				} else {
+					buildFile = mavenUtil.validPom(entry.xmlString, mavenChildMap);
+				}
+				if (!buildFile.isValidBuildFile()) { return; }
+				buildFile.setBuildFilePath(entry.path);
+
+				// Re-use existing project (preserves terminal state) or create new
+				if (this.projects.has(entry.path)) {
+					const existing = this.projects.get(entry.path)!;
+					if (existing.contextValue !== buildFile.getProjectType()) {
+						existing.setContextValue(buildFile.getProjectType());
+					}
+					const newLabel = await getLabelFromBuildFile(entry.path, entry.xmlString);
+					if (newLabel && existing.getLabel() !== newLabel) { existing.setLabel(newLabel); }
+					projectsMap.set(entry.path, existing);
+				} else {
+					const project = await createProject(this._context, entry.path, buildFile.getProjectType(), entry.xmlString);
+					projectsMap.set(entry.path, project);
+				}
+				visitedPaths.add(entry.path);
+			}),
+
+			// Gradle entries
+			...gradleEntries.map(async (entry) => {
+				// Either a full g2js parse or a regex pre-screen result must be present
+				if (!entry.parsedBuild && !entry.regexBuildFile) { return; }
+				const dirName = vscodePath.basename(vscodePath.dirname(entry.path));
+				let buildFile: BuildFileImpl;
+
+				if (gradleParentPaths.has(entry.path)) {
+					// Parent aggregator — parsedBuild available (aggregators need settings include detection)
+					const gf = gradleUtil.findChildGradleProjects(entry.parsedBuild ?? {}, entry.parsedSettings, entry.path);
+					buildFile = new GradleBuildFile(true, gf.getProjectType());
+				} else if (gradleChildSet.has(dirName)) {
+					// Child module — validate; use regexBuildFile if g2js was skipped
+					const gf = entry.regexBuildFile
+						? entry.regexBuildFile
+						: gradleUtil.validGradleBuild(entry.parsedBuild!, entry.path);
+					const shouldInclude = await gradleUtil.validateGradleChildModule(gf, entry.parsedBuild ?? {}, entry.path, visitedPaths);
+					if (!shouldInclude) { return; }
+					buildFile = gf;
+				} else {
+					// Standalone — must have Liberty plugin
+					buildFile = entry.regexBuildFile
+						? entry.regexBuildFile
+						: gradleUtil.validGradleBuild(entry.parsedBuild!, entry.path);
+					if (!buildFile.hasLibertyPlugin()) { return; }
+				}
+				buildFile.setBuildFilePath(entry.path);
+
+				// Resolve label from cached settings — avoids re-parsing settings.gradle
+				const gradleLabel: string =
+					(entry.parsedSettings && entry.parsedSettings["rootProject.name"])
+						? entry.parsedSettings["rootProject.name"]
+						: vscodePath.basename(vscodePath.dirname(entry.path));
+
+				if (this.projects.has(entry.path)) {
+					const existing = this.projects.get(entry.path)!;
+					if (existing.contextValue !== buildFile.getProjectType()) {
+						existing.setContextValue(buildFile.getProjectType());
+					}
+					if (existing.getLabel() !== gradleLabel) { existing.setLabel(gradleLabel); }
+					projectsMap.set(entry.path, existing);
+				} else {
+					const project = new LibertyProject(this._context, gradleLabel, vscode.TreeItemCollapsibleState.None, entry.path, "start", buildFile.getProjectType(), undefined, {
+						command: "extension.open.project",
+						title: "",
+						arguments: [entry.path],
+					});
+					projectsMap.set(entry.path, project);
+				}
+				visitedPaths.add(entry.path);
+			}),
+		]);
+		console.log(`[perf] discoverProjects phase3 (create projects): ${Date.now() - t0}ms  (${projectsMap.size} valid)`);
+
+		// ── Phase 4: metadata + hierarchy (in-memory, no I/O) ──────────────────
+		const mavenProjectsByArtifactId = new Map<string, LibertyProject>();
+		const gradleProjectsByName      = new Map<string, LibertyProject>();
+		const mavenMetadataMap          = new Map<string, mavenUtil.MavenProjectMetadata>();
+
+		for (const entry of allEntries) {
+			const project = projectsMap.get(entry.path);
+			if (!project) { continue; }
+			try {
+				if (entry.type === "maven" && entry.xmlString) {
+					const metadata = await mavenUtil.extractMavenMetadata(entry.path, entry.xmlString);
+					project.artifactId      = metadata.artifactId;
+					project.parentArtifactId = metadata.parentArtifactId;
+					project.isAggregator    = metadata.isAggregator;
+					project.isLibertyEnabled = metadata.isLibertyEnabled || !metadata.isAggregator;
+					mavenProjectsByArtifactId.set(metadata.artifactId, project);
+					mavenMetadataMap.set(entry.path, metadata);
+				} else if (entry.type === "gradle" && (entry.parsedBuild || entry.regexBuildFile)) {
+					// Pass parsedBuild if available; extractGradleMetadata accepts null/undefined
+					// and will use parsedSettings + regexBuildFile path as needed.
+					const metadata = await gradleUtil.extractGradleMetadata(entry.path, entry.parsedBuild ?? null, entry.parsedSettings);
+					project.artifactId      = metadata.projectName;
+					project.parentArtifactId = metadata.parentProjectName;
+					project.isAggregator    = metadata.isAggregator;
+					project.isLibertyEnabled = metadata.isLibertyEnabled || !metadata.isAggregator;
+					gradleProjectsByName.set(metadata.projectName, project);
+				}
+			} catch (error) {
+				console.error(`Error extracting metadata for ${entry.path}:`, error);
+				project.isLibertyEnabled = true;
+			}
+		}
+
+		// Link parent-child via parentArtifactId (standard Maven <parent> element)
+		for (const project of projectsMap.values()) {
+			if (!project.parentArtifactId) { continue; }
+			const parent = project.path.endsWith("pom.xml")
+				? mavenProjectsByArtifactId.get(project.parentArtifactId)
+				: gradleProjectsByName.get(project.parentArtifactId);
+			if (parent && !parent.children.includes(project)) {
+				project.parent = parent;
+				parent.children.push(project);
+			}
+		}
+
+		// Link via filesystem paths for Maven projects missing <parent> element
+		for (const [parentPath, parentMetadata] of mavenMetadataMap.entries()) {
+			if (!parentMetadata.isAggregator || parentMetadata.modules.length === 0) { continue; }
+			const parentProject = projectsMap.get(parentPath);
+			if (!parentProject) { continue; }
+			const parentDir = vscodePath.dirname(parentPath);
+			for (const moduleName of parentMetadata.modules) {
+				const modulePomPath = vscodePath.resolve(parentDir, moduleName, "pom.xml");
+				const childProject = projectsMap.get(modulePomPath);
+				if (childProject && !childProject.parent) {
+					childProject.parent = parentProject;
+					if (!parentProject.children.includes(childProject)) {
+						parentProject.children.push(childProject);
+					}
+					console.debug(`Linked module ${moduleName} to parent ${parentMetadata.artifactId} via filesystem path`);
+				}
+			}
+		}
+
+		// Stamp aggregator contextValue and collect root projects
+		for (const project of projectsMap.values()) {
+			if (project.isAggregator) {
+				project.setContextValue(
+					isMaven(project.contextValue)
+						? LIBERTY_PROJECT_MAVEN_AGGREGATOR
+						: LIBERTY_PROJECT_GRADLE_AGGREGATOR
+				);
+			}
+		}
+
+		this.rootProjects = Array.from(projectsMap.values())
+			.filter(p => !p.parent)
+			.filter(p => p.isLibertyEnabled || this.hasLibertyDescendants(p));
+		console.log(`[perf] discoverProjects phase4 (hierarchy): ${Date.now() - t0}ms  (${this.rootProjects.length} roots)`);
+	}
+
+	/**
+	 * Fallback discovery for workspace folders not covered by the main build-file scan.
+	 * Finds projects by locating server.xml and walking up to infer the build file location.
+	 */
+	private async addServerXMLProjects(projectsMap: Map<string, LibertyProject>): Promise<void> {
+		let serverXMLPaths: string[] = [];
 		const wsFolders = vscode.workspace.workspaceFolders;
-		if ( wsFolders ) {
-			for ( const folder of wsFolders ) {
-				const path = folder.uri.fsPath;
-				if ( this.projectRootPathExists(path, newProjectsMap.keys() ) === false ) {
-					const includeRelativePath = new vscode.RelativePattern(path, "**/src/main/liberty/config/server.xml");
-					const paths = (await vscode.workspace.findFiles(includeRelativePath, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
+		if (wsFolders) {
+			for (const folder of wsFolders) {
+				if (!this.projectRootPathExists(folder.uri.fsPath, projectsMap.keys())) {
+					const pattern = new vscode.RelativePattern(folder.uri.fsPath, "**/src/main/liberty/config/server.xml");
+					const paths = (await vscode.workspace.findFiles(pattern, EXCLUDED_DIR_PATTERN)).map(u => u.fsPath);
 					serverXMLPaths = serverXMLPaths.concat(paths);
 				}
 			}
 		}
 
-		/* 
-		 * Find the projects by server.xml.
-		 * This method assumes if pom.xml is under project root, then the server.xml is in
-		 * ./src/main/liberty/config/server.xml
-		 */
+		// server.xml is at ./src/main/liberty/config/server.xml — 4 levels up is project root
 		for (const serverXML of serverXMLPaths) {
-			const folder = vscodePath.parse(vscodePath.resolve(serverXML, "../../../../")).dir;
+			const folder  = vscodePath.parse(vscodePath.resolve(serverXML, "../../../../")).dir;
 			const pomFile = vscodePath.resolve(folder, "pom.xml");
 
-			if (fse.existsSync(pomFile) && !newProjectsMap.has(pomFile)) {
-				if (!await this.addExistingProjectToNewProjectsMap(pomFile, LIBERTY_MAVEN_PROJECT, newProjectsMap)) {
+			if (fse.existsSync(pomFile) && !projectsMap.has(pomFile)) {
+				if (this.projects.has(pomFile)) {
+					projectsMap.set(pomFile, this.projects.get(pomFile)!);
+				} else {
 					const xmlString = await fse.readFile(pomFile, "utf8");
-					const project = await createProject(this._context, pomFile, LIBERTY_MAVEN_PROJECT, xmlString);
-					newProjectsMap.set(pomFile, project);
+					projectsMap.set(pomFile, await createProject(this._context, pomFile, LIBERTY_PROJECT_MAVEN, xmlString));
 				}
 			} else {
 				const gradleFile = vscodePath.resolve(folder, "build.gradle");
-				if (fse.existsSync(gradleFile) && !newProjectsMap.has(gradleFile)) {
-					if (!await this.addExistingProjectToNewProjectsMap(gradleFile, LIBERTY_GRADLE_PROJECT, newProjectsMap)) {
-						const project = await createProject(this._context, gradleFile, LIBERTY_GRADLE_PROJECT);
-						newProjectsMap.set(gradleFile, project);
+				if (fse.existsSync(gradleFile) && !projectsMap.has(gradleFile)) {
+					if (this.projects.has(gradleFile)) {
+						projectsMap.set(gradleFile, this.projects.get(gradleFile)!);
+					} else {
+						projectsMap.set(gradleFile, await createProject(this._context, gradleFile, LIBERTY_PROJECT_GRADLE));
 					}
 				}
 			}
 		}
-		console.log(`[DEBUG] Total projects in map: ${newProjectsMap.size}`);
-		for (const [path, proj] of newProjectsMap.entries()) {
-			console.log(`[DEBUG] Project: ${proj.label} at ${path}`);
+	}
+
+	private async updateProjects(): Promise<void> {
+		const t0 = Date.now();
+		const [pomPaths, gradlePaths] = await Promise.all([
+			vscode.workspace.findFiles("**/pom.xml", EXCLUDED_DIR_PATTERN).then(uris => uris.map(u => u.fsPath)),
+			vscode.workspace.findFiles("**/build.gradle", EXCLUDED_DIR_PATTERN).then(uris => uris.map(u => u.fsPath)),
+		]);
+		console.log(`[perf] findFiles: ${Date.now() - t0}ms  (${pomPaths.length} pom, ${gradlePaths.length} gradle)`);
+
+		// Merge manually-added persisted projects into the discovery paths so they
+		// flow through discoverProjects (full validation + hierarchy) rather than
+		// bypassing it via addPersistedProjects. This also fixes the bug where
+		// persisted projects were re-added on every refresh without ever appearing
+		// in the tree (they were added after rootProjects was already built).
+		const persistedProjects = util.getStorageData(this._context).projects;
+		const persistedToRemove: typeof persistedProjects[0][] = [];
+		for (const p of persistedProjects) {
+			if (!fse.existsSync(p.path)) {
+				// File gone — remove from storage
+				persistedToRemove.push(p);
+				continue;
+			}
+			if (p.path.endsWith("pom.xml") && !pomPaths.includes(p.path)) {
+				pomPaths.push(p.path);
+			} else if (p.path.endsWith("build.gradle") && !gradlePaths.includes(p.path)) {
+				gradlePaths.push(p.path);
+			}
 		}
-		
+		if (persistedToRemove.length > 0) {
+			const dashboardData = util.getStorageData(this._context);
+			persistedToRemove.forEach(p => dashboardData.removeProject(p.path));
+			await util.saveStorageData(this._context, dashboardData);
+		}
+
+		const newProjectsMap: Map<string, LibertyProject> = new Map();
+		await this.discoverProjects(pomPaths, gradlePaths, newProjectsMap);
+		console.log(`[perf] discoverProjects: ${Date.now() - t0}ms  (${newProjectsMap.size} projects)`);
+		await this.addServerXMLProjects(newProjectsMap);
+		console.log(`[perf] addServerXMLProjects: ${Date.now() - t0}ms`);
+
 		this.projects = newProjectsMap;
-		
-		// Build hierarchical relationships between projects
-		await this.buildHierarchy(newProjectsMap);
-		
-		console.log(`[DEBUG] Root projects after hierarchy: ${this.rootProjects.length}`);
-		for (const root of this.rootProjects) {
-			console.log(`[DEBUG] Root: ${root.label}, isAggregator: ${root.isAggregator}, isLibertyEnabled: ${root.isLibertyEnabled}, children: ${root.children.length}`);
-		}
 	}
 }
 
@@ -792,13 +900,11 @@ export class LibertyProject extends vscode.TreeItem {
 	}
 
 	public setExplorerIcon() {
-		const iconRecord: Record<string, string> = {};
-		iconRecord[LIBERTY_MAVEN_PROJECT] = MAVEN_ICON;
-		iconRecord[LIBERTY_MAVEN_PROJECT_CONTAINER] = MAVEN_ICON;
-		iconRecord[LIBERTY_GRADLE_PROJECT] = GRADLE_ICON;
-		iconRecord[LIBERTY_GRADLE_PROJECT_CONTAINER] = GRADLE_ICON;
-		
-		return (this.contextValue in iconRecord) ? iconRecord[this.contextValue] : OL_LOGO_ICON;
+		// Use helpers instead of exact string matching so all variants
+		// (leaf, container, aggregator) resolve to the correct icon.
+		if (isMaven(this.contextValue)) { return MAVEN_ICON; }
+		if (isGradle(this.contextValue)) { return GRADLE_ICON; }
+		return OL_LOGO_ICON;
 	}
 }
 

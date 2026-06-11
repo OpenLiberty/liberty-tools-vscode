@@ -7,7 +7,7 @@ import { DashboardData } from "./../liberty/dashboard";
 import * as fs from "fs";
 import * as vscode from "vscode";
 import { LibertyProject } from "./../liberty/libertyProject";
-import { COMMAND_AND_PROJECT_TYPE_MAP, LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY } from "../definitions/constants";
+import { LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY, isMaven, isGradle, isContainer, isLibertyProject, isAggregator } from "../definitions/constants";
 import path = require('path');
 
 
@@ -38,14 +38,31 @@ export function getConfiguration<T>(section: string, resourceOrFilepath?: vscode
  * @returns a list of projects that the given command can be excuted on.
  */
 export function filterProjects(projects: LibertyProject[], command: string): LibertyProject[] {
-	const resultProjects: LibertyProject[] = [];
-	for ( const project of projects) {
-		const applicableTypes = COMMAND_AND_PROJECT_TYPE_MAP[command];
-		if (applicableTypes.includes(project.getContextValue())) {
-			resultProjects.push(project);
+	// Replaced COMMAND_AND_PROJECT_TYPE_MAP array lookups with regex helpers.
+	// Aggregators are intentionally excluded — command palette picks leaf projects only;
+	// aggregator delegation is handled by resolveCommandTarget in devCommands.ts.
+	return projects.filter(project => {
+		const cv = project.getContextValue();
+		if (!isLibertyProject(cv)) { return false; }
+		switch (command) {
+			case "liberty.dev.start":
+			case "liberty.dev.stop":
+			case "liberty.dev.custom":
+			case "liberty.dev.run.tests":
+			case "liberty.dev.debug":
+				// All liberty leaf projects (including container variants)
+				return !isAggregator(cv);
+			case "liberty.dev.start.container":
+				return isContainer(cv);
+			case "failsafe":
+			case "surefire":
+				return isMaven(cv) && !isAggregator(cv);
+			case "gradle":
+				return isGradle(cv) && !isAggregator(cv);
+			default:
+				return false;
 		}
-	}
-	return resultProjects;
+	});
 }
 
 
