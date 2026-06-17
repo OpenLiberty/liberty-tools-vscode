@@ -50,27 +50,42 @@ describe('Rest Class Snippet Test for Gradle Project', () => {
     });
 
     after(async function() {
-        this.timeout(10000); // Increase timeout for cleanup operations
-        // Close editor after all tests complete
-        try {
-            if(javaEditor){
-                await javaEditor.setText(''); 
-                await javaEditor.save(); 
-                logger.info('Reset TestRest.java to empty after test')
-
-            } 
-        } catch (error){
-                logger.error('Failed to reset TestRest.java ', error);
+            this.timeout(15000);
+            try {
+                if (javaEditor) {
+                    // Select all text first, then clear
+                    const currentText = await javaEditor.getText();
+                    try {
+                        await javaEditor.selectText(currentText);
+                        await wait.sleep(300);
+                    } catch (selectError) {
+                        // selectText may fail but setText still works
+                    }
+                    
+                    await javaEditor.setText('');
+                    await wait.sleep(500);
+                    await javaEditor.save();
+                    await wait.sleep(500);
+                    logger.info('Reset TestRest.java to empty after test');
+                }
+            } catch (error) {
+                logger.error('Failed to reset TestRest.java', error);
             }
-        try {
-            await editorView.closeAllEditors();
-            logger.info('Closed all editors after test suite');
-        } catch (error) {
-            logger.error('Failed to close editors in after hook', error);
-        }
-        
-        utils.copyScreenshotsToProjectFolder('gradle');
-    });
+            
+            try {
+                await editorView.closeAllEditors();
+                await wait.sleep(500);
+                logger.info('Closed all editors after test suite');
+            } catch (error) {
+                logger.error('Failed to close editors in after hook', error);
+            }
+            
+            try {
+                utils.copyScreenshotsToProjectFolder('maven');
+            } catch (error) {
+                // Ignore screenshot errors
+            }
+        });
     
     it('LSP4Jakarta Language Server should initialize', async function() {
             this.timeout(60000);
@@ -122,7 +137,6 @@ describe('Rest Class Snippet Test for Gradle Project', () => {
                 
                 logger.step(5, 'Verifying snippet insertion');
                 const codeInsertion = await javaEditor.getText();
-                logger.info('Inserted code snapshot: ' + codeInsertion);
                 expect(codeInsertion).to.include('@GET')
                 expect(codeInsertion).to.include('methodname');
                 logger.stepSuccess(5, 'Snippet rest_class was inserted correctly');
@@ -204,7 +218,6 @@ describe('Rest Class Snippet Test for Gradle Project', () => {
 
                 // Check quick fix was implemented at correct line number 
                 const after = await javaEditor.getText();
-                logger.info('Buffer after quick fix: ' + JSON.stringify(after));
                 expect(after).to.include('public String methodname');
 
                 problemsView = await bottomBar.openProblemsView();

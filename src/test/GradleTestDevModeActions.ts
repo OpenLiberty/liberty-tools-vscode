@@ -14,12 +14,10 @@ describe('Devmode action tests for Gradle Project', () => {
     let section: ViewSection;
     let item: DefaultTreeItem;
     let tabs: string[];
-    let driver: WebDriver;
 
     before(async function() {
         this.timeout(30000);
         // Wait for workbench to be ready
-        driver = VSBrowser.instance.driver;
         await VSBrowser.instance.openResources(utils.getGradleProjectPath());
         await VSBrowser.instance.waitForWorkbench();
         sidebar = new SideBarView();

@@ -15,12 +15,10 @@ describe('Devmode action tests for Maven Project', () => {
     let menu: ViewItem[];
     let item: DefaultTreeItem;
     let tabs: string[];
-    let driver: WebDriver;
 
     before(async function() {
         this.timeout(30000);
 
-        driver = VSBrowser.instance.driver;
         await VSBrowser.instance.openResources(utils.getMvnProjectPath());
         await VSBrowser.instance.waitForWorkbench();
 
