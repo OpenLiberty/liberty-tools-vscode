@@ -21,10 +21,12 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
     let driver: WebDriver;
 
     before(async function() {
-        this.timeout(30000);
+        this.timeout(6000);
         driver = VSBrowser.instance.driver;
         // Wait for workbench to be ready
         await VSBrowser.instance.waitForWorkbench();
+        await VSBrowser.instance.openResources(utils.getGradle9ProjectPath());
+        await utils.getWaitHelper().sleep(20000);
         sidebar = new SideBarView();
     });
 
@@ -52,9 +54,9 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
         }
     });
 
-    it('Open Sample Gradle 9 Project', async () => {
-        await VSBrowser.instance.openResources(utils.getGradle9ProjectPath());
-    }).timeout(15000);
+    // it('Open Sample Gradle 9 Project', async () => {
+    //     await VSBrowser.instance.openResources(utils.getGradle9ProjectPath());
+    // }).timeout(15000);
 
     it('Find Liberty Tools in sidebar', async () => {
         logger.testStart('Find Liberty Tools in sidebar');
