@@ -303,19 +303,10 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 
 	public getTreeItem(element: LibertyProject): vscode.TreeItem {
-		// Set collapsible state based on whether project has children
-		const collapsibleState = (element.isAggregator && element.children.length > 0)
-			? vscode.TreeItemCollapsibleState.Collapsed
+		element.collapsibleState = (element.isAggregator && element.children.length > 0)
+			? vscode.TreeItemCollapsibleState.Expanded
 			: vscode.TreeItemCollapsibleState.None;
-		
-		// Update the element's collapsible state by creating a new TreeItem
-		const treeItem = new vscode.TreeItem(element.label, collapsibleState);
-		treeItem.tooltip = element.tooltip;
-		treeItem.iconPath = element.iconPath;
-		treeItem.contextValue = element.contextValue;
-		treeItem.command = element.command;
-		
-		return treeItem;
+		return element;
 	}
 	
 	/**
@@ -353,52 +344,72 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 	
 	/**
-		* Execute a command on a project, with delegation to children if it's an aggregator
-	 * @param project The project to execute the command on
-	 * @param commandName The command name for display purposes
-	 * @returns The target project to execute on, or undefined if cancelled
+	 * Unified project picker. Replaces both `showProjects` (command palette) and
+	 * `resolveCommandTarget` (tree-view aggregator delegation).
+	 *
+	 * - No project (command palette): filter all leaf projects for `command`, auto-select if 1, quick pick if many.
+	 * - project = leaf/submodule: return directly, no picker.
+	 * - project = aggregator: filter Liberty-enabled children, auto-select if 1, quick pick if many.
+	 *
+	 * @param project  Optional project passed from context menu / tree view click.
+	 * @param command  Command key used to filter projects when no project is provided (e.g. "liberty.dev.start").
+	 * @returns The resolved leaf project to operate on, or undefined if cancelled / nothing found.
 	 */
-	public async resolveCommandTarget(project: LibertyProject, commandName: string): Promise<LibertyProject | undefined> {
-		// Check if project is an aggregator FIRST (before checking if Liberty-enabled)
-		// An aggregator with children should delegate to children, not execute directly
+	public async pickProject(project: LibertyProject | undefined, command: string): Promise<LibertyProject | undefined> {
+		const placeholder = localize("select.module.for.command");
+
+		if (project === undefined) {
+			// Command palette path — filter all leaf projects
+			const { filterProjects } = await import("../util/helperUtil");
+			const projects = filterProjects(Array.from(this.projects.values()), command);
+			if (projects.length === 0) {
+				const message = localize("no.liberty.projects.found");
+				console.error(message);
+				vscode.window.showInformationMessage(message);
+				return undefined;
+			}
+			if (projects.length === 1) {
+				return projects[0];
+			}
+			const items = projects.map(p => ({
+				label: p.label,
+				description: p.parent ? p.parent.label : undefined,
+				detail: p.path,
+				project: p,
+			}));
+			const selected = await vscode.window.showQuickPick(items, { placeHolder: placeholder });
+			return selected?.project;
+		}
+
 		if (project.isAggregator && project.children.length > 0) {
+			// Aggregator path — delegate to Liberty-enabled children
 			const libertyChildren = this.findLibertyDescendants(project);
-			
 			if (libertyChildren.length === 0) {
 				vscode.window.showWarningMessage(
-					localize("no.liberty.modules.found", `No Liberty-enabled modules found in ${project.label}`)
+					localize("no.liberty.modules.found", project.label)
 				);
 				return undefined;
 			}
-			
 			if (libertyChildren.length === 1) {
-				// Only one Liberty child, execute automatically
 				return libertyChildren[0];
 			}
-			
-			// Multiple children - show notification with buttons
-			const buttonLabels = libertyChildren.map(c => c.label);
-			const selected = await vscode.window.showInformationMessage(
-				localize("select.module.for.command", commandName),
-				...buttonLabels
-			);
-			
-			if (!selected) {
-				return undefined;
-			}
-			
-			// Find the project that matches the selected button
-			return libertyChildren.find(c => c.label === selected);
+			const items = libertyChildren.map(c => ({
+				label: c.label,
+				description: c.parent ? c.parent.label : undefined,
+				detail: c.path,
+				project: c,
+			}));
+			const selected = await vscode.window.showQuickPick(items, { placeHolder: placeholder });
+			return selected?.project;
 		}
-		
-		// If we get here, check if it's a Liberty-enabled leaf project (not an aggregator)
+
+		// Leaf / submodule — use directly
 		if (project.isLibertyEnabled) {
 			return project;
 		}
-		
-		// Not Liberty-enabled and not an aggregator
+
 		vscode.window.showWarningMessage(
-			localize("project.not.liberty.enabled", `${project.label} is not Liberty-enabled`)
+			localize("project.not.liberty.enabled", project.label)
 		);
 		return undefined;
 	}
@@ -814,7 +825,7 @@ export class LibertyProject extends vscode.TreeItem {
 	constructor(
 		private _context: vscode.ExtensionContext,
 		public label: string,
-		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+		public collapsibleState: vscode.TreeItemCollapsibleState,
 		// tslint:disable-next-line: no-shadowed-variable
 		public readonly path: string,
 		public state: string,

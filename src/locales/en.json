@@ -74,7 +74,7 @@
     "hotkey.commands.title.show.commands": "Liberty: Show Liberty commands",
     "workspace.not.saved.projects.may.not.persist": "Save the workspace first. Projects that you manually add to Liberty Tools might not persist in the next VS Code session if you don't save the workspace before you add the project.",
     "no.liberty.modules.found": "No Liberty-enabled modules found in {0}",
-    "select.module.for.command": "Select which module to {0}",
+    "select.module.for.command": "Select a Liberty project or submodule",
     "project.not.liberty.enabled": "{0} is not Liberty-enabled",
     "command.start.dev.mode": "start dev mode",
     "command.start.container.dev.mode": "start container dev mode",

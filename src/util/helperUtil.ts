@@ -40,7 +40,7 @@ export function getConfiguration<T>(section: string, resourceOrFilepath?: vscode
 export function filterProjects(projects: LibertyProject[], command: string): LibertyProject[] {
 	// Replaced COMMAND_AND_PROJECT_TYPE_MAP array lookups with regex helpers.
 	// Aggregators are intentionally excluded — command palette picks leaf projects only;
-	// aggregator delegation is handled by resolveCommandTarget in devCommands.ts.
+	// aggregator delegation is handled by pickProject in libertyProject.ts.
 	return projects.filter(project => {
 		const cv = project.getContextValue();
 		if (!isLibertyProject(cv)) { return false; }
