@@ -189,6 +189,13 @@ export function getGradleProjectPath(): string {
     return gradleProjectPath;
 }
 
+export function getGradle9ProjectPath(): string {
+    const gradle9ProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "gradle", "liberty-gradle-9-test-wrapper-app");
+    logger.info("Path is : " + gradle9ProjectPath);
+    return gradle9ProjectPath;
+}
+
+
 export async function getDashboardSection(sidebar: any): Promise<any> {
     logger.info("Getting Liberty Tools section");
     return await waitForCondition(async () => {
