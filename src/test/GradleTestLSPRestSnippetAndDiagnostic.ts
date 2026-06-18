@@ -72,16 +72,11 @@ describe('Rest Class Snippet Test for Gradle Project', () => {
                 logger.error('Failed to reset TestRest.java', error);
             }
             
-            try {
-                await editorView.closeAllEditors();
-                await wait.sleep(500);
-                logger.info('Closed all editors after test suite');
-            } catch (error) {
-                logger.error('Failed to close editors in after hook', error);
-            }
+            // Close workspace to prepare for next test file
+            await utils.closeWorkspace();
             
             try {
-                utils.copyScreenshotsToProjectFolder('maven');
+                utils.copyScreenshotsToProjectFolder('gradle');
             } catch (error) {
                 // Ignore screenshot errors
             }

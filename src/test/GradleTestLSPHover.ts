@@ -57,13 +57,8 @@ describe('LSP Hover tests for Gradle Project', () => {
 
     after(async function() {
         this.timeout(10000); // Increase timeout for cleanup operations
-        // Close editor after all tests complete
-        try {
-            await editorView.closeAllEditors();
-            logger.info('Closed all editors after test suite');
-        } catch (error) {
-            logger.error('Failed to close editors in after hook', error);
-        }
+        // Close workspace and editors after all tests complete
+        await utils.closeWorkspace();
         
         utils.copyScreenshotsToProjectFolder('gradle');
     });
