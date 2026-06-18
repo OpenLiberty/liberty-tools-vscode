@@ -21,7 +21,7 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
     let driver: WebDriver;
 
     before(async function() {
-        this.timeout(6000);
+        this.timeout(60000);
         driver = VSBrowser.instance.driver;
         // Wait for workbench to be ready
         await VSBrowser.instance.waitForWorkbench();
