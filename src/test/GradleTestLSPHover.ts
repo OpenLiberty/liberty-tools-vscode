@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
-import { EditorView, TextEditor, VSBrowser, Workbench } from 'vscode-extension-tester';
+import { EditorView, TextEditor, VSBrowser, WebDriver, Workbench } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import { logger } from './utils/testLogger';
 import * as path from 'path';
@@ -12,10 +12,14 @@ describe('LSP Hover tests for Gradle Project', () => {
     let editorView: EditorView;
     let editor: TextEditor;
     let wait: any;
+    let driver: WebDriver;
 
     before(async function() {
         this.timeout(60000);
         logger.info('Setting up Gradle LSP Hover tests');
+        
+        driver = VSBrowser.instance.driver;
+        await VSBrowser.instance.openResources(utils.getGradleProjectPath());
         
         // Wait for workbench to be ready
         await VSBrowser.instance.waitForWorkbench();

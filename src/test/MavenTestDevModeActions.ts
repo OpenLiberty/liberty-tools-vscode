@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import { expect } from 'chai';
-import { DefaultTreeItem, EditorView, SideBarView, ViewItem, ViewSection, VSBrowser, Workbench } from 'vscode-extension-tester';
+import { DefaultTreeItem, EditorView, SideBarView, ViewItem, ViewSection, VSBrowser, Workbench, WebDriver } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import { logger } from './utils/testLogger';
@@ -18,8 +18,10 @@ describe('Devmode action tests for Maven Project', () => {
 
     before(async function() {
         this.timeout(30000);
-        // Wait for workbench to be ready
+
+        await VSBrowser.instance.openResources(utils.getMvnProjectPath());
         await VSBrowser.instance.waitForWorkbench();
+
         sidebar = new SideBarView();
     });
 
