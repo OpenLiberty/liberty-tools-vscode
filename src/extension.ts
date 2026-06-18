@@ -131,7 +131,12 @@ function registerCommands(context: ExtensionContext) {
 
     if (vscode.workspace.workspaceFolders !== undefined) {
         registerFileWatcher(projectProvider);
-        vscode.window.registerTreeDataProvider("liberty-dev", projectProvider);
+        const treeView = vscode.window.createTreeView("liberty-dev", {
+            treeDataProvider: projectProvider,
+            showCollapseAll: false,
+        });
+        projectProvider.setTreeView(treeView);
+        context.subscriptions.push(treeView);
     }
 
     handleWorkspaceSaveInProgress(context);
@@ -144,6 +149,9 @@ function registerCommands(context: ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand("extension.open.project", (pomPath) => devCommands.openProject(pomPath)),
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand("liberty.dev.open.build.file", (libProject?: LibertyProject) => devCommands.openBuildFile(libProject)),
     );
     context.subscriptions.push(
         vscode.commands.registerCommand("liberty.dev.show.commands", () => devCommands.listAllCommands()),

@@ -53,6 +53,8 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	private _refreshing = false;
 
+	private _treeView: vscode.TreeView<LibertyProject> | undefined;
+
 	// Map of buildFilePath -> LibertyProject
 	private projects: Map<string, LibertyProject> = new Map();
 	
@@ -236,6 +238,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	public async refresh(): Promise<void> {
 		if (this._refreshing) { return; }
 		this._refreshing = true;
+		this.setLoading(true);
 		const statusMessage = vscode.window.setStatusBarMessage(localize("refreshing.liberty.dashboard"));
 		const t0 = Date.now();
 		try {
@@ -244,6 +247,8 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			this._onDidChangeTreeData.fire(undefined);
 		} finally {
 			statusMessage.dispose();
+			this.setLoading(false);
+			this.setMessage("");
 			this._refreshing = false;
 		}
 	}
@@ -300,6 +305,20 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	public fireChangeEvent(): void {
 		this._onDidChangeTreeData.fire(undefined);
+	}
+
+	public setTreeView(treeView: vscode.TreeView<LibertyProject>): void {
+		this._treeView = treeView;
+	}
+
+	public setMessage(message: string): void {
+		if (this._treeView) {
+			this._treeView.message = message;
+		}
+	}
+
+	private setLoading(loading: boolean): void {
+		vscode.commands.executeCommand('setContext', 'liberty:loading', loading);
 	}
 
 	public getTreeItem(element: LibertyProject): vscode.TreeItem {
@@ -460,7 +479,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		pomPaths: string[],
 		gradlePaths: string[],
 		projectsMap: Map<string, LibertyProject>
-	): Promise<void> {
+	): Promise<ParsedBuildEntry[]> {
 		// eslint-disable-next-line @typescript-eslint/no-var-requires
 		const g2js = require("gradle-to-js/lib/parser");
 		const t0 = Date.now();
@@ -635,19 +654,31 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					if (existing.getLabel() !== gradleLabel) { existing.setLabel(gradleLabel); }
 					projectsMap.set(entry.path, existing);
 				} else {
-					const project = new LibertyProject(this._context, gradleLabel, vscode.TreeItemCollapsibleState.None, entry.path, "start", buildFile.getProjectType(), undefined, {
+					const project = new LibertyProject(this._context, gradleLabel, vscode.TreeItemCollapsibleState.None, entry.path, "start", buildFile.getProjectType(), undefined, /* {
 						command: "extension.open.project",
 						title: "",
 						arguments: [entry.path],
-					});
+					} */ undefined);
 					projectsMap.set(entry.path, project);
 				}
 				visitedPaths.add(entry.path);
 			}),
 		]);
 		console.log(`[perf] discoverProjects phase3 (create projects): ${Date.now() - t0}ms  (${projectsMap.size} valid)`);
+		return allEntries;
+	}
 
-		// ── Phase 4: metadata + hierarchy (in-memory, no I/O) ──────────────────
+	/**
+	 * Phase 4 — metadata extraction + parent-child hierarchy linking.
+	 * Runs once over the fully-merged projectsMap after all workspace folders
+	 * have been discovered. Writes parent/child/isAggregator fields and stamps
+	 * this.rootProjects.
+	 */
+	private async linkHierarchy(
+		projectsMap: Map<string, LibertyProject>,
+		allEntries: ParsedBuildEntry[]
+	): Promise<void> {
+		const t0 = Date.now();
 		const mavenProjectsByArtifactId = new Map<string, LibertyProject>();
 		const gradleProjectsByName      = new Map<string, LibertyProject>();
 		const mavenMetadataMap          = new Map<string, mavenUtil.MavenProjectMetadata>();
@@ -658,20 +689,18 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			try {
 				if (entry.type === "maven" && entry.xmlString) {
 					const metadata = await mavenUtil.extractMavenMetadata(entry.path, entry.xmlString);
-					project.artifactId      = metadata.artifactId;
+					project.artifactId       = metadata.artifactId;
 					project.parentArtifactId = metadata.parentArtifactId;
-					project.isAggregator    = metadata.isAggregator;
-					project.isLibertyEnabled = metadata.isLibertyEnabled || !metadata.isAggregator;
+					project.isAggregator     = metadata.isAggregator;
+					project.isLibertyEnabled  = metadata.isLibertyEnabled || !metadata.isAggregator;
 					mavenProjectsByArtifactId.set(metadata.artifactId, project);
 					mavenMetadataMap.set(entry.path, metadata);
 				} else if (entry.type === "gradle" && (entry.parsedBuild || entry.regexBuildFile)) {
-					// Pass parsedBuild if available; extractGradleMetadata accepts null/undefined
-					// and will use parsedSettings + regexBuildFile path as needed.
 					const metadata = await gradleUtil.extractGradleMetadata(entry.path, entry.parsedBuild ?? null, entry.parsedSettings);
-					project.artifactId      = metadata.projectName;
+					project.artifactId       = metadata.projectName;
 					project.parentArtifactId = metadata.parentProjectName;
-					project.isAggregator    = metadata.isAggregator;
-					project.isLibertyEnabled = metadata.isLibertyEnabled || !metadata.isAggregator;
+					project.isAggregator     = metadata.isAggregator;
+					project.isLibertyEnabled  = metadata.isLibertyEnabled || !metadata.isAggregator;
 					gradleProjectsByName.set(metadata.projectName, project);
 				}
 			} catch (error) {
@@ -711,7 +740,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			}
 		}
 
-		// Stamp aggregator contextValue and collect root projects
+		// Stamp aggregator contextValue
 		for (const project of projectsMap.values()) {
 			if (project.isAggregator) {
 				project.setContextValue(
@@ -725,7 +754,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		this.rootProjects = Array.from(projectsMap.values())
 			.filter(p => !p.parent)
 			.filter(p => p.isLibertyEnabled || this.hasLibertyDescendants(p));
-		console.log(`[perf] discoverProjects phase4 (hierarchy): ${Date.now() - t0}ms  (${this.rootProjects.length} roots)`);
+		console.log(`[perf] linkHierarchy: ${Date.now() - t0}ms  (${this.rootProjects.length} roots)`);
 	}
 
 	/**
@@ -772,29 +801,15 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	private async updateProjects(): Promise<void> {
 		const t0 = Date.now();
-		const [pomPaths, gradlePaths] = await Promise.all([
-			vscode.workspace.findFiles("**/pom.xml", EXCLUDED_DIR_PATTERN).then(uris => uris.map(u => u.fsPath)),
-			vscode.workspace.findFiles("**/build.gradle", EXCLUDED_DIR_PATTERN).then(uris => uris.map(u => u.fsPath)),
-		]);
-		console.log(`[perf] findFiles: ${Date.now() - t0}ms  (${pomPaths.length} pom, ${gradlePaths.length} gradle)`);
+		const wsFolders = vscode.workspace.workspaceFolders ?? [];
+		const totalFolders = wsFolders.length;
 
-		// Merge manually-added persisted projects into the discovery paths so they
-		// flow through discoverProjects (full validation + hierarchy) rather than
-		// bypassing it via addPersistedProjects. This also fixes the bug where
-		// persisted projects were re-added on every refresh without ever appearing
-		// in the tree (they were added after rootProjects was already built).
+		// Clean up persisted projects whose files no longer exist
 		const persistedProjects = util.getStorageData(this._context).projects;
 		const persistedToRemove: typeof persistedProjects[0][] = [];
 		for (const p of persistedProjects) {
 			if (!fse.existsSync(p.path)) {
-				// File gone — remove from storage
 				persistedToRemove.push(p);
-				continue;
-			}
-			if (p.path.endsWith("pom.xml") && !pomPaths.includes(p.path)) {
-				pomPaths.push(p.path);
-			} else if (p.path.endsWith("build.gradle") && !gradlePaths.includes(p.path)) {
-				gradlePaths.push(p.path);
 			}
 		}
 		if (persistedToRemove.length > 0) {
@@ -802,12 +817,65 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			persistedToRemove.forEach(p => dashboardData.removeProject(p.path));
 			await util.saveStorageData(this._context, dashboardData);
 		}
+		const validPersisted = persistedProjects.filter(p => !persistedToRemove.includes(p));
 
+		// Per-folder discovery — run in parallel, fire tree after each folder completes
 		const newProjectsMap: Map<string, LibertyProject> = new Map();
-		await this.discoverProjects(pomPaths, gradlePaths, newProjectsMap);
-		console.log(`[perf] discoverProjects: ${Date.now() - t0}ms  (${newProjectsMap.size} projects)`);
+		const allEntries: ParsedBuildEntry[] = [];
+		let foldersComplete = 0;
+
+		await Promise.all(wsFolders.map(async (folder) => {
+			const folderPath = folder.uri.fsPath;
+
+			const [pomUris, gradleUris] = await Promise.all([
+				vscode.workspace.findFiles(
+					new vscode.RelativePattern(folder, "**/pom.xml"), EXCLUDED_DIR_PATTERN
+				),
+				vscode.workspace.findFiles(
+					new vscode.RelativePattern(folder, "**/build.gradle"), EXCLUDED_DIR_PATTERN
+				),
+			]);
+			const pomPaths = pomUris.map(u => u.fsPath);
+			const gradlePaths = gradleUris.map(u => u.fsPath);
+
+			// Merge persisted projects scoped to this folder
+			for (const p of validPersisted) {
+				if (!p.path.startsWith(folderPath)) { continue; }
+				if (p.path.endsWith("pom.xml") && !pomPaths.includes(p.path)) {
+					pomPaths.push(p.path);
+				} else if (p.path.endsWith("build.gradle") && !gradlePaths.includes(p.path)) {
+					gradlePaths.push(p.path);
+				}
+			}
+
+			console.log(`[perf] folder ${folderPath} findFiles: ${Date.now() - t0}ms  (${pomPaths.length} pom, ${gradlePaths.length} gradle)`);
+
+			const folderMap: Map<string, LibertyProject> = new Map();
+			const folderEntries = await this.discoverProjects(pomPaths, gradlePaths, folderMap);
+
+			// Merge into shared map (JS single-thread guarantees no interleaving at Map.set)
+			for (const [k, v] of folderMap) { newProjectsMap.set(k, v); }
+			allEntries.push(...folderEntries);
+			foldersComplete++;
+
+			// Provisional roots — no hierarchy yet, but projects appear immediately
+			this.projects = new Map(newProjectsMap);
+			this.rootProjects = Array.from(newProjectsMap.values()).filter(p => !p.parent);
+
+			if (foldersComplete < totalFolders) {
+				this.setMessage(localize("scanning.workspace.folders", foldersComplete, totalFolders));
+			}
+			this._onDidChangeTreeData.fire(undefined);
+
+			console.log(`[perf] folder ${folderPath} complete (${foldersComplete}/${totalFolders}): ${Date.now() - t0}ms`);
+		}));
+
+		// Fallback: server.xml-based project discovery
 		await this.addServerXMLProjects(newProjectsMap);
-		console.log(`[perf] addServerXMLProjects: ${Date.now() - t0}ms`);
+
+		// Phase 4: cross-folder hierarchy linking — runs once over full merged map
+		await this.linkHierarchy(newProjectsMap, allEntries);
+		console.log(`[perf] updateProjects total: ${Date.now() - t0}ms  (${newProjectsMap.size} projects, ${this.rootProjects.length} roots)`);
 
 		this.projects = newProjectsMap;
 	}
@@ -921,11 +989,11 @@ export class LibertyProject extends vscode.TreeItem {
 
 export async function createProject(context: vscode.ExtensionContext, buildFile: string, contextValue: string, xmlString?: string): Promise<LibertyProject> {
 	let label = await getLabelFromBuildFile(buildFile, xmlString);
-	const project: LibertyProject = new LibertyProject(context, label, vscode.TreeItemCollapsibleState.None, buildFile, "start", contextValue, undefined, {
+	const project: LibertyProject = new LibertyProject(context, label, vscode.TreeItemCollapsibleState.None, buildFile, "start", contextValue, undefined, /* {
 		command: "extension.open.project",
 		title: "",
 		arguments: [buildFile],
-	});
+	} */ undefined);
 	return project;
 }
 
