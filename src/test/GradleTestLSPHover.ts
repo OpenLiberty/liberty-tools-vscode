@@ -12,13 +12,11 @@ describe('LSP Hover tests for Gradle Project', () => {
     let editorView: EditorView;
     let editor: TextEditor;
     let wait: any;
-    let driver: WebDriver;
 
     before(async function() {
         this.timeout(60000);
         logger.info('Setting up Gradle LSP Hover tests');
         
-        driver = VSBrowser.instance.driver;
         await VSBrowser.instance.openResources(utils.getGradleProjectPath());
         
         // Wait for workbench to be ready
@@ -213,4 +211,3 @@ describe('LSP Hover tests for Gradle Project', () => {
 
 });
 
-// Made with Bob

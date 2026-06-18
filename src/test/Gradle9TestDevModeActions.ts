@@ -18,11 +18,9 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
     let section: ViewSection;
     let item: DefaultTreeItem;
     let tabs: string[];
-    let driver: WebDriver;
 
     before(async function() {
-        this.timeout(60000);
-        driver = VSBrowser.instance.driver;
+        this.timeout(30000);
         // Wait for workbench to be ready
         await VSBrowser.instance.waitForWorkbench();
         await VSBrowser.instance.openResources(utils.getGradle9ProjectPath());
