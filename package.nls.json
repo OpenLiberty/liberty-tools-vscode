@@ -14,6 +14,8 @@
     "commands.title.add.project": "Add project to Liberty Tools",
     "commands.title.remove.project": "Remove project from Liberty Tools",
     "commands.title.show.commands": "Show Liberty commands",
+    "commands.title.open.build.file": "Open build file",
+    "views.loading.message": "$(loading~spin) Scanning workspace for Liberty projects…",
     "views.welcome.message": "\n 1. If no projects are open in the Explorer, open or create a Liberty project using the File menu.\n[Open Project](command:vscode.openFolder) \n 2. If one or more existing Maven or Gradle projects are open in the Explorer, try one of the following actions:\n a. Configure the Liberty build plugin in the build file of an existing [Maven](https://github.com/OpenLiberty/ci.maven/#configuration) or [Gradle](https://github.com/OpenLiberty/ci.gradle#adding-the-plugin-to-the-build-script) project.\n b. Add a [server.xml file](https://openliberty.io/docs/latest/reference/config/server-configuration-overview.html#server-xml) to an existing Maven or Gradle project at \"src/main/liberty/config\". \n c. Manually add an existing Maven or Gradle project to Liberty Tools through the Command Palette action \"Liberty: Add project to Liberty Tools\".\n [Add project to Liberty Tools](command:liberty.dev.add.project)"
     
 }

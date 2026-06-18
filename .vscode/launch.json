@@ -11,12 +11,13 @@
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}"
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--disable-extension=open-liberty.liberty-dev-vscode-ext"
 			],
 			"outFiles": [
 				"${workspaceFolder}/dist/**/*.js"
-			]
-			// "preLaunchTask": "npm: watch"
+			],
+			"preLaunchTask": "npm: watch"
 		},
 		{
 			"name": "Extension Tests",
