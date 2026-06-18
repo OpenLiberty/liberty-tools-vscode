@@ -72,6 +72,7 @@
     "hotkey.commands.title.add.project": "Liberty: Add Project to Liberty Tools",
     "hotkey.commands.title.remove.project": "Liberty: Remove Project from Liberty Tools",
     "hotkey.commands.title.show.commands": "Liberty: Show Liberty commands",
+    "hotkey.commands.title.open.build.file": "Liberty: Open build file",
     "workspace.not.saved.projects.may.not.persist": "Save the workspace first. Projects that you manually add to Liberty Tools might not persist in the next VS Code session if you don't save the workspace before you add the project.",
     "no.liberty.modules.found": "No Liberty-enabled modules found in {0}",
     "select.module.for.command": "Select a Liberty project or submodule",
@@ -82,5 +83,7 @@
     "command.stop.dev.mode": "stop dev mode",
     "command.run.tests": "run tests",
     "command.attach.debugger": "attach debugger",
-    "command.view.test.report": "view test report"
+    "command.view.test.report": "view test report",
+    "scanning.workspace.folders": "Scanning workspace\u2026 ({0} of {1} folders)",
+    "scanning.workspace.complete": ""
 }
