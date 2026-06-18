@@ -145,8 +145,6 @@ describe('Devmode action tests for Maven Project', () => {
     it('Start Maven with Docker from Liberty Tools', async () => {
         logger.testStart('Start Maven with Docker from Liberty Tools');
 
-        return true;
-
         if ((process.platform === 'darwin') || (process.platform === 'win32')) {
             logger.skip(`Test skipped for platform: ${process.platform} (Docker test only runs on Linux)`);
             return true;

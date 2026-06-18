@@ -52,9 +52,6 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
         }
     });
 
-    // it('Open Sample Gradle 9 Project', async () => {
-    //     await VSBrowser.instance.openResources(utils.getGradle9ProjectPath());
-    // }).timeout(15000);
 
     it('Find Liberty Tools in sidebar', async () => {
         logger.testStart('Find Liberty Tools in sidebar');
@@ -151,8 +148,6 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
 
     it('Start Gradle with Docker from Liberty Tools', async () => {
         logger.testStart('Start Gradle with Docker from Liberty Tools');
-        // remove after test is Gradle9 test is written
-        return true;
 
         if ((process.platform === 'darwin') || (process.platform === 'win32')) {
             logger.skip(`Test skipped for platform: ${process.platform} (Docker test only runs on Linux)`);

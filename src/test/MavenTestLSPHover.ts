@@ -12,12 +12,10 @@ describe('LSP Hover tests for Maven Project', () => {
     let editorView: EditorView;
     let editor: TextEditor;
     let wait: any;
-    let driver: WebDriver;
 
 
     before(async function() {
         this.timeout(60000);
-        driver = VSBrowser.instance.driver;
         await VSBrowser.instance.openResources(utils.getMvnProjectPath());
         logger.info('Setting up Maven LSP Hover tests');
         
