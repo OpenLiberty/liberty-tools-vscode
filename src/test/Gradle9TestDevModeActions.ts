@@ -24,7 +24,6 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
         // Wait for workbench to be ready
         await VSBrowser.instance.waitForWorkbench();
         await VSBrowser.instance.openResources(utils.getGradle9ProjectPath());
-        await utils.getWaitHelper().sleep(20000);
         sidebar = new SideBarView();
     });
 
