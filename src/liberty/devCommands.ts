@@ -47,7 +47,12 @@ export async function openBuildFile(libProject?: LibertyProject): Promise<void> 
         vscode.window.showInformationMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, "liberty.dev.open.build.file");
+    // If the command is selected by the icon in the tree view, directly open that build file.
+    if (libProject !== undefined) {
+        vscode.commands.executeCommand("vscode.open", vscode.Uri.file(libProject.getPath()));
+        return;
+    }
+    const targetProject = await projectProvider.pickProject(undefined, "liberty.dev.open.build.file");
     if (targetProject === undefined) {
         return;
     }
