@@ -38,22 +38,37 @@ export async function openProject(pomPath: string): Promise<void> {
     vscode.commands.executeCommand("vscode.open", vscode.Uri.file(pomPath));
 }
 
+// open the build file (pom.xml / build.gradle) for a Liberty project
+export async function openBuildFile(libProject?: LibertyProject): Promise<void> {
+    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    if (!projectProvider) {
+        const message = localize("cannot.start.liberty.dev");
+        console.error(message);
+        vscode.window.showInformationMessage(message);
+        return;
+    }
+    const targetProject = await projectProvider.pickProject(libProject, "liberty.dev.open.build.file");
+    if (targetProject === undefined) {
+        return;
+    }
+    vscode.commands.executeCommand("vscode.open", vscode.Uri.file(targetProject.getPath()));
+}
+
 // List all liberty dev commands, triggerred by hotkey only (Shift+Cmd+L)
 export async function listAllCommands(): Promise<void> {
     const libertyCommands = Array.from(COMMAND_TITLES.keys());
     vscode.window.showQuickPick(libertyCommands).then(selection => {
-            if (!selection) {
-                return;
-            }
-            const command = COMMAND_TITLES.get(selection);
-            if ( command !== undefined )
-            {
-                vscode.commands.executeCommand(command);
-            } else {
-                // should never happen
-                console.error("Unable to find corresponding command for " + selection);
-            }
-                
+        if (!selection) {
+            return;
+        }
+        const command = COMMAND_TITLES.get(selection);
+        if (command !== undefined) {
+            vscode.commands.executeCommand(command);
+        } else {
+            // should never happen
+            console.error("Unable to find corresponding command for " + selection);
+        }
+
     });
 }
 
@@ -98,13 +113,14 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
             const cmd = await getCommandForGradle(targetProject.getPath(), "libertyDev", targetProject.getTerminalType());
             terminal.sendText(cmd);
         }
+        targetProject.isDevMode = true;
+        projectProvider.notifyDevModeChanged(targetProject);
     }
 }
 
-
 export async function removeProject(): Promise<void> {
     const projectProvider: ProjectProvider = ProjectProvider.getInstance();
-    
+
     // clicked on the empty space and workspace has more than one folders, or
     // from command palette
     // Display the list of current user added projects for user to select.
@@ -137,7 +153,7 @@ export async function removeProject(): Promise<void> {
                     }
                 });
         });
-        
+
     }
 }
 
@@ -175,11 +191,11 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
         // scan the folder and get a list of folders with pom.xml and build.gradle
         const uris: string[] = await projectProvider.getListOfMavenAndGradleFolders(uri.fsPath);
         console.log(JSON.stringify(uris));
-        if ( uris.length > 0) {
+        if (uris.length > 0) {
             // present the list to add
             showListOfPathsToAdd(uris);
         }
-        
+
 
     } else {
         // clicked on the empty space and workspace has more than one folders, or
@@ -224,6 +240,9 @@ export async function stopDevMode(libProject?: LibertyProject | undefined): Prom
     if (terminal !== undefined) {
         terminal.show();
         terminal.sendText("exit");
+        terminal.dispose();
+        targetProject.isDevMode = false;
+        projectProvider.notifyDevModeChanged(targetProject);
     } else {
         const message = localize("liberty.dev.not.started.on", targetProject.getLabel());
         vscode.window.showWarningMessage(message);
@@ -407,6 +426,8 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
                 const cmd = await getCommandForGradle(targetProject.getPath(), "libertyDev", targetProject.getTerminalType(), customCommand);
                 terminal.sendText(cmd);
             }
+            targetProject.isDevMode = true;
+            projectProvider.notifyDevModeChanged(targetProject);
         }
     }
 }
@@ -425,7 +446,7 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
         return;
     }
 
-    const clickedDirectlyOnChild = !( libProject?.isAggregator ?? false) && targetProject.parent;
+    const clickedDirectlyOnChild = !(libProject?.isAggregator ?? false) && targetProject.parent;
 
     let terminal = targetProject.getTerminal();
     if (terminal === undefined) {
@@ -448,6 +469,8 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
             const cmd = await getCommandForGradle(targetProject.getPath(), "libertyDevc", targetProject.getTerminalType());
             terminal.sendText(cmd);
         }
+        targetProject.isDevMode = true;
+        projectProvider.notifyDevModeChanged(targetProject);
     }
 }
 
@@ -517,6 +540,9 @@ export async function deleteTerminal(terminal: vscode.Terminal): Promise<void> {
     try {
         const pid = await terminal.processId;
         const libProject = terminals[Number(pid)];
+        libProject.isDevMode = false;
+        const pp = ProjectProvider.getInstance();
+        if (pp) { pp.notifyDevModeChanged(libProject); }
         libProject.deleteTerminal();
     } catch {
         console.error(localize("unable.to.delete.terminal", terminal.name));
@@ -535,7 +561,11 @@ function createTerminalforLiberty(libProject: LibertyProject, terminal: vscode.T
     libProject.setTerminalType(terminalType);
     terminal = libProject.createTerminal(path);
     if (terminal !== undefined) {
-        terminals[Number(terminal.processId)] = libProject;
+        terminal.processId.then(pid => {
+            if (pid !== undefined) {
+                terminals[pid] = libProject;
+            }
+        });
     }
     return terminal;
 }

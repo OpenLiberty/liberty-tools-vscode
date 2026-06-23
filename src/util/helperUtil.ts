@@ -32,6 +32,24 @@ export function getConfiguration<T>(section: string, resourceOrFilepath?: vscode
 }
 
 /**
+ * Helper function for singular source of truth for dev mode command requirements.
+ */
+export function devModeRequirement(command: string): boolean | undefined {
+	switch (command) {
+		case "liberty.dev.stop":
+		case "liberty.dev.run.tests":
+		case "liberty.dev.debug":
+			return true;   // must be running
+		case "liberty.dev.start":
+		case "liberty.dev.custom":
+		case "liberty.dev.start.container":
+			return false;  // must NOT be running
+		default:
+			return undefined; // no restriction
+	}
+}
+
+/**
  * Filters the projects by command.
  * @param projects The list of projects
  * @param commamnd The command to check
@@ -41,19 +59,20 @@ export function filterProjects(projects: LibertyProject[], command: string): Lib
 	// Replaced COMMAND_AND_PROJECT_TYPE_MAP array lookups with regex helpers.
 	// Aggregators are intentionally excluded — command palette picks leaf projects only;
 	// aggregator delegation is handled by pickProject in libertyProject.ts.
+	const req = devModeRequirement(command);
 	return projects.filter(project => {
 		const cv = project.getContextValue();
 		if (!isLibertyProject(cv)) { return false; }
 		switch (command) {
 			case "liberty.dev.start":
-			case "liberty.dev.stop":
 			case "liberty.dev.custom":
-			case "liberty.dev.run.tests":
-			case "liberty.dev.debug":
-				// All liberty leaf projects (including container variants)
-				return !isAggregator(cv);
+				return !isAggregator(cv) && !project.isDevMode;
 			case "liberty.dev.start.container":
 				return isContainer(cv);
+			case "liberty.dev.stop":
+			case "liberty.dev.run.tests":
+			case "liberty.dev.debug":
+				return !isAggregator(cv) && project.isDevMode;
 			case "failsafe":
 			case "surefire":
 				return isMaven(cv) && !isAggregator(cv);
@@ -81,7 +100,7 @@ export function getStorageData(context: vscode.ExtensionContext): DashboardData 
  * @param context
  * @param dasboardData 
  */
-export async function saveStorageData(context: vscode.ExtensionContext, dasboardData: DashboardData): Promise<void>{
+export async function saveStorageData(context: vscode.ExtensionContext, dasboardData: DashboardData): Promise<void> {
 	await context.workspaceState.update(LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY, dasboardData);
 }
 /**

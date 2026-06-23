@@ -75,6 +75,8 @@
     "hotkey.commands.title.open.build.file": "Liberty: Open build file",
     "workspace.not.saved.projects.may.not.persist": "Save the workspace first. Projects that you manually add to Liberty Tools might not persist in the next VS Code session if you don't save the workspace before you add the project.",
     "no.liberty.modules.found": "No Liberty-enabled modules found in {0}",
+    "all.modules.currently.running": "All modules in {0} are currently running.",
+    "no.modules.currently.running": "No modules in {0} are currently running.",
     "select.module.for.command": "Select a Liberty project or submodule",
     "project.not.liberty.enabled": "{0} is not Liberty-enabled",
     "command.start.dev.mode": "start dev mode",

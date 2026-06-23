@@ -137,6 +137,9 @@ function registerCommands(context: ExtensionContext) {
         });
         projectProvider.setTreeView(treeView);
         context.subscriptions.push(treeView);
+        context.subscriptions.push(
+            (vscode.window as any).registerFileDecorationProvider(projectProvider.decorationProvider)
+        );
     }
 
     handleWorkspaceSaveInProgress(context);
@@ -184,18 +187,18 @@ function registerCommands(context: ExtensionContext) {
         vscode.commands.registerCommand("liberty.dev.open.gradle.test.report", (libProject?: LibertyProject) => devCommands.openReport("gradle", libProject)),
     );
     context.subscriptions.push(
-		vscode.commands.registerCommand("liberty.dev.add.project", (uri: vscode.Uri) => devCommands.addProject(uri)),
-	);
-	context.subscriptions.push(
-		vscode.commands.registerCommand("liberty.dev.remove.project", () => devCommands.removeProject()),
-	);
+        vscode.commands.registerCommand("liberty.dev.add.project", (uri: vscode.Uri) => devCommands.addProject(uri)),
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand("liberty.dev.remove.project", () => devCommands.removeProject()),
+    );
     context.subscriptions.push(
         vscode.window.onDidCloseTerminal((closedTerminal: vscode.Terminal) => {
             devCommands.deleteTerminal(closedTerminal);
         })
     );
-     // Listens for any new folders are added to the workspace
-     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+    // Listens for any new folders are added to the workspace
+    context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
         projectProvider.refresh();
     }));
 }
@@ -215,7 +218,7 @@ export function deactivate(): Promise<void[]> {
  * @param projectProvider Liberty Dev projects
  */
 export function registerFileWatcher(projectProvider: ProjectProvider): void {
-	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
+    const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
     // Async handler for the file system events (create, change, delete)
     const handleUri = async (uri: vscode.Uri) => {
         if (uri.fsPath.endsWith("server.xml")) {
@@ -290,12 +293,14 @@ function startLangServer(context: ExtensionContext, requirements: RequirementsDa
     return languageClient.start();
 }
 
-function prepareClientOptions(Liberty_LS :boolean) {
+function prepareClientOptions(Liberty_LS: boolean) {
     if (Liberty_LS) {
         return {
             // Filter to `*.properties` and `*.env` files, let LCLS handle filtering for default/custom configs
-            documentSelector: [{ scheme: "file", 
-                                pattern: "**/{*.properties,*.env}" }],
+            documentSelector: [{
+                scheme: "file",
+                pattern: "**/{*.properties,*.env}"
+            }],
             synchronize: {
                 configurationSection: SUPPORTED_LANGUAGE_IDS,
                 fileEvents: [
@@ -319,9 +324,9 @@ function prepareClientOptions(Liberty_LS :boolean) {
 }
 
 function toggleItem(editor: TextEditor | undefined, item: vscode.StatusBarItem) {
-    if(editor && editor.document && SUPPORTED_LANGUAGE_IDS.includes(editor.document.languageId)){
+    if (editor && editor.document && SUPPORTED_LANGUAGE_IDS.includes(editor.document.languageId)) {
         item.show();
-    } else{
+    } else {
         item.hide();
     }
 }

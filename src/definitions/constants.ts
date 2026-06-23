@@ -96,3 +96,4 @@ COMMAND_TITLES.set(localize("hotkey.commands.title.view.test.report"), "liberty.
 
 COMMAND_TITLES.set(localize("hotkey.commands.title.add.project"), "liberty.dev.add.project");
 COMMAND_TITLES.set(localize("hotkey.commands.title.remove.project"), "liberty.dev.remove.project");
+COMMAND_TITLES.set(localize("hotkey.commands.title.open.build.file"), "liberty.dev.open.build.file");

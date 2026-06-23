@@ -9,6 +9,7 @@ import * as gradleUtil from "../util/gradleUtil";
 import * as mavenUtil from "../util/mavenUtil";
 import * as util from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
+import { devModeRequirement } from "../util/helperUtil";
 
 /**
  * Internal pipeline cache: one entry per discovered build file, carrying
@@ -43,6 +44,30 @@ const MAVEN_ICON = "maven-tag.png";
 const GRADLE_ICON = "gradle-tag-1.png";
 const OL_LOGO_ICON = "ol_logo.png";
 
+// URI scheme used to signal dev-mode state to the FileDecorationProvider.
+// Format: liberty-dev://running/<encoded-project-path>
+const LIBERTY_DEV_SCHEME = "liberty-dev";
+
+export class LibertyDevDecorationProvider {
+	private _onDidChangeFileDecorations = new vscode.EventEmitter<vscode.Uri | vscode.Uri[]>();
+	readonly onDidChangeFileDecorations = this._onDidChangeFileDecorations.event;
+
+	public notify(uri: vscode.Uri): void {
+		this._onDidChangeFileDecorations.fire(uri);
+	}
+
+	provideFileDecoration(uri: vscode.Uri): { color: vscode.ThemeColor; tooltip: string } | undefined {
+		if (uri.scheme === LIBERTY_DEV_SCHEME && uri.authority === "running") {
+			return {
+				// this is the VSCode color for debug foreground green
+				color: new vscode.ThemeColor("debugIcon.startForeground"),
+				tooltip: "Dev mode running",
+			};
+		}
+		return undefined;
+	}
+}
+
 export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> {
 	public readonly onDidChangeTreeData: vscode.Event<LibertyProject | undefined>;
 
@@ -57,11 +82,13 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	// Map of buildFilePath -> LibertyProject
 	private projects: Map<string, LibertyProject> = new Map();
-	
+
 	// Root projects for hierarchical tree view
 	private rootProjects: LibertyProject[] = [];
 
 	private _context: vscode.ExtensionContext;
+
+	public readonly decorationProvider = new LibertyDevDecorationProvider();
 
 	constructor(context: vscode.ExtensionContext) {
 		this._context = context;
@@ -90,32 +117,32 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		// Remove this shim after one release cycle.
 		const migrateContextValue = (cv: string): string => {
 			const map: Record<string, string> = {
-				[LIBERTY_MAVEN_PROJECT]:           LIBERTY_PROJECT_MAVEN,
-				[LIBERTY_GRADLE_PROJECT]:          LIBERTY_PROJECT_GRADLE,
+				[LIBERTY_MAVEN_PROJECT]: LIBERTY_PROJECT_MAVEN,
+				[LIBERTY_GRADLE_PROJECT]: LIBERTY_PROJECT_GRADLE,
 				[LIBERTY_MAVEN_PROJECT_CONTAINER]: LIBERTY_PROJECT_MAVEN_CONTAINER,
 				[LIBERTY_GRADLE_PROJECT_CONTAINER]: LIBERTY_PROJECT_GRADLE_CONTAINER,
 			};
 			return map[cv] ?? cv;
 		};
 
-		if ( type !== undefined) {
+		if (type !== undefined) {
 			const migratedType = migrateContextValue(type);
-			if ( fse.existsSync (path) && isMaven(migratedType)) {
+			if (fse.existsSync(path) && isMaven(migratedType)) {
 				const xmlString = await fse.readFile(path, "utf8");
 				project = await createProject(this._context, path, migratedType, xmlString);
-			} else if (fse.existsSync (path) && isGradle(migratedType)) {
+			} else if (fse.existsSync(path) && isGradle(migratedType)) {
 				project = await createProject(this._context, path, migratedType);
 			}
 		} else {
 			const pomFile = vscodePath.resolve(path, "pom.xml");
-			
+
 			if (fse.existsSync(pomFile)) {
 				const xmlString = await fse.readFile(pomFile, "utf8");
 				project = await createProject(this._context, pomFile, LIBERTY_PROJECT_MAVEN, xmlString);
 			} else {
 				const gradleFile = vscodePath.resolve(path, "build.gradle");
-				if ( fse.existsSync (gradleFile)) {		
-					project = await createProject(this._context, gradleFile, LIBERTY_PROJECT_GRADLE);	
+				if (fse.existsSync(gradleFile)) {
+					project = await createProject(this._context, gradleFile, LIBERTY_PROJECT_GRADLE);
 				}
 			}
 		}
@@ -126,7 +153,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	 * Scan the specified folder, get a list of paths that contain a pom.xml or build.gradle file. Exclude the folders that already
 	 * exist in the ProjectProvider class "projects" map.
 	 * */
-	public async getListOfMavenAndGradleFolders(path: string): Promise<string[]>{
+	public async getListOfMavenAndGradleFolders(path: string): Promise<string[]> {
 		let uris: string[] = [];
 		const pomPattern = new vscode.RelativePattern(path, "**/pom.xml");
 		const gradlePattern = new vscode.RelativePattern(path, "**/build.gradle");
@@ -135,8 +162,8 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		paths = (await vscode.workspace.findFiles(gradlePattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
 		uris = uris.concat(paths);
 		const result: string[] = [];
-		uris.forEach((uri)=> {
-			if ( this.projects.has(uri) === false ) {
+		uris.forEach((uri) => {
+			if (this.projects.has(uri) === false) {
 				result.push(vscodePath.dirname(uri));
 			}
 		});
@@ -152,17 +179,17 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	 * @param existingProjects 
 	 * @returns 
 	 */
-	public async addUserSelectedPath(path: string, existingProjects: Map<string, LibertyProject>): Promise<number>{
+	public async addUserSelectedPath(path: string, existingProjects: Map<string, LibertyProject>): Promise<number> {
 		let baseProject = undefined;
 		const pomFile = vscodePath.resolve(path, "pom.xml");
 		const gradleFile = vscodePath.resolve(path, "build.gradle");
 		let returnCode = 0;
-		if ( this.projects.has(pomFile) || this.projects.has(gradleFile)) {
+		if (this.projects.has(pomFile) || this.projects.has(gradleFile)) {
 			// project already exists
 			returnCode = 1;
 		} else {
 			const project = await this.createLibertyProject(path, undefined);
-			if ( project !== undefined ) {
+			if (project !== undefined) {
 				// pom or gradle build file exists.
 				existingProjects.set(project.getPath(), project);
 				baseProject = new BaseLibertyProject(project.getLabel(), project.getPath(), project.getContextValue());
@@ -183,9 +210,9 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		const dashboard: DashboardData = util.getStorageData(this._context);
 		const pomFile = vscodePath.resolve(path, "pom.xml");
 		const gradleFile = vscodePath.resolve(path, "build.gradle");
-		if ( fse.existsSync(pomFile) && dashboard.isPathExists(pomFile) ) {
+		if (fse.existsSync(pomFile) && dashboard.isPathExists(pomFile)) {
 			return pomFile;
-		} else if ( fse.existsSync(gradleFile) && dashboard.isPathExists(gradleFile) ) {
+		} else if (fse.existsSync(gradleFile) && dashboard.isPathExists(gradleFile)) {
 			return gradleFile;
 		}
 		return undefined;
@@ -193,7 +220,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	public removeInPersistedProjects(path: string): void {
 		const dashboard: DashboardData = util.getStorageData(this._context);
-		if( dashboard.isPathExists(path) ) {
+		if (dashboard.isPathExists(path)) {
 			// remove it from storage.
 			dashboard.removeProject(path);
 			util.saveStorageData(this._context, dashboard);
@@ -206,16 +233,16 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		return util.getStorageData(this._context).projects;
 	}
 
-	private async addPersistedProjects(): Promise<void>{
+	private async addPersistedProjects(): Promise<void> {
 		const dashboardData = util.getStorageData(this._context);
 		const projects = dashboardData.projects;
 		const projectsToBeRemoved: BaseLibertyProject[] = [];
-		for ( const p of projects) {
+		for (const p of projects) {
 			// check if folder exists and has valid pom.xml or gradle build file.
 			// User may shut down VSCode, delete projects/folders offline, then bring up
 			// vscode, so these projects become obsolete
 			const project = await this.createLibertyProject(p.path, p.contextValue);
-			if ( project !== undefined) {
+			if (project !== undefined) {
 				this.projects.set(p.path, project);
 				console.debug("Project " + p.path + " added to Liberty Tools");
 			} else {
@@ -223,9 +250,9 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				projectsToBeRemoved.push(p);
 			}
 		}
-		
-		if ( projectsToBeRemoved.length > 0 ) {
-			projectsToBeRemoved.forEach(function(element) {
+
+		if (projectsToBeRemoved.length > 0) {
+			projectsToBeRemoved.forEach(function (element) {
 				dashboardData.removeProject(element.path);
 			});
 			// save it.
@@ -327,7 +354,28 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			: vscode.TreeItemCollapsibleState.None;
 		return element;
 	}
-	
+
+	/**
+	 * Update the tree item to reflect the new dev mode state by:
+	 * Add a text description and update URI with a running component to make green
+	 * Then trigger a refresh for the tree view.
+	 */
+	public notifyDevModeChanged(project: LibertyProject): void {
+		if (project.isDevMode) {
+			project.description = "Running...";
+			project.resourceUri = vscode.Uri.parse(
+				`${LIBERTY_DEV_SCHEME}://running/${encodeURIComponent(project.path)}`
+			);
+		} else {
+			project.description = undefined;
+			project.resourceUri = undefined;
+		}
+		this._onDidChangeTreeData.fire(project);
+		if (project.resourceUri) {
+			this.decorationProvider.notify(project.resourceUri);
+		}
+	}
+
 	/**
 	 * Check if a project has any Liberty-enabled descendants
 	 * @param project The project to check
@@ -339,7 +387,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		}
 		return project.children.some(child => this.hasLibertyDescendants(child));
 	}
-	
+
 	/**
 	 * Find all Liberty-enabled descendants of a project
 	 * @param project The project to search
@@ -347,7 +395,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	 */
 	public findLibertyDescendants(project: LibertyProject): LibertyProject[] {
 		const descendants: LibertyProject[] = [];
-		
+
 		// Only search children - don't include the project itself
 		// This ensures aggregators aren't included in their own descendant list
 		for (const child of project.children) {
@@ -358,10 +406,10 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			// Recursively search the child's descendants
 			descendants.push(...this.findLibertyDescendants(child));
 		}
-		
+
 		return descendants;
 	}
-	
+
 	/**
 	 * Unified project picker. Replaces both `showProjects` (command palette) and
 	 * `resolveCommandTarget` (tree-view aggregator delegation).
@@ -401,7 +449,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		}
 
 		if (project.isAggregator && project.children.length > 0) {
-			// Aggregator path — delegate to Liberty-enabled children
+			// Aggregator path — delegate to Liberty-enabled children and filter by dev mode state
 			const libertyChildren = this.findLibertyDescendants(project);
 			if (libertyChildren.length === 0) {
 				vscode.window.showWarningMessage(
@@ -409,10 +457,21 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				);
 				return undefined;
 			}
-			if (libertyChildren.length === 1) {
-				return libertyChildren[0];
+			const req = devModeRequirement(command);
+			const eligible = req === undefined
+				? libertyChildren
+				: libertyChildren.filter(c => c.isDevMode === req);
+			if (eligible.length === 0) {
+				const msg = req === true
+					? localize("no.modules.currently.running", project.label)
+					: localize("all.modules.currently.running", project.label);
+				vscode.window.showInformationMessage(msg);
+				return undefined;
 			}
-			const items = libertyChildren.map(c => ({
+			if (eligible.length === 1) {
+				return eligible[0];
+			}
+			const items = eligible.map(c => ({
 				label: c.label,
 				description: c.parent ? c.parent.label : undefined,
 				detail: c.path,
@@ -522,15 +581,15 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				const [parsedBuild, parsedSettings] = await Promise.all([
 					needsG2js
 						? g2js.parseFile(p).catch((err: any) => {
-								console.error(localize("unable.to.parse.build.gradle", p, err));
-								return null;
-						  })
+							console.error(localize("unable.to.parse.build.gradle", p, err));
+							return null;
+						})
 						: Promise.resolve(null),
 					(settingsPath && (hasIncludes || !regexResult))
 						? g2js.parseFile(settingsPath).catch((err: any) => {
-								console.error(localize("unable.to.parse.settings.gradle", settingsPath, err));
-								return null;
-						  })
+							console.error(localize("unable.to.parse.settings.gradle", settingsPath, err));
+							return null;
+						})
 						: Promise.resolve(null),
 				]);
 				return {
@@ -545,7 +604,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		]);
 		console.log(`[perf] discoverProjects phase1 (read+parse): ${Date.now() - t0}ms`);
 
-		const mavenEntries  = allEntries.filter(e => e.type === "maven");
+		const mavenEntries = allEntries.filter(e => e.type === "maven");
 		const gradleEntries = allEntries.filter(e => e.type === "gradle");
 
 		// ── Phase 2: classify parents ──────────────────────────────────────────
@@ -680,8 +739,8 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	): Promise<void> {
 		const t0 = Date.now();
 		const mavenProjectsByArtifactId = new Map<string, LibertyProject>();
-		const gradleProjectsByName      = new Map<string, LibertyProject>();
-		const mavenMetadataMap          = new Map<string, mavenUtil.MavenProjectMetadata>();
+		const gradleProjectsByName = new Map<string, LibertyProject>();
+		const mavenMetadataMap = new Map<string, mavenUtil.MavenProjectMetadata>();
 
 		for (const entry of allEntries) {
 			const project = projectsMap.get(entry.path);
@@ -689,18 +748,18 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			try {
 				if (entry.type === "maven" && entry.xmlString) {
 					const metadata = await mavenUtil.extractMavenMetadata(entry.path, entry.xmlString);
-					project.artifactId       = metadata.artifactId;
+					project.artifactId = metadata.artifactId;
 					project.parentArtifactId = metadata.parentArtifactId;
-					project.isAggregator     = metadata.isAggregator;
-					project.isLibertyEnabled  = metadata.isLibertyEnabled || !metadata.isAggregator;
+					project.isAggregator = metadata.isAggregator;
+					project.isLibertyEnabled = metadata.isLibertyEnabled || !metadata.isAggregator;
 					mavenProjectsByArtifactId.set(metadata.artifactId, project);
 					mavenMetadataMap.set(entry.path, metadata);
 				} else if (entry.type === "gradle" && (entry.parsedBuild || entry.regexBuildFile)) {
 					const metadata = await gradleUtil.extractGradleMetadata(entry.path, entry.parsedBuild ?? null, entry.parsedSettings);
-					project.artifactId       = metadata.projectName;
+					project.artifactId = metadata.projectName;
 					project.parentArtifactId = metadata.parentProjectName;
-					project.isAggregator     = metadata.isAggregator;
-					project.isLibertyEnabled  = metadata.isLibertyEnabled || !metadata.isAggregator;
+					project.isAggregator = metadata.isAggregator;
+					project.isLibertyEnabled = metadata.isLibertyEnabled || !metadata.isAggregator;
 					gradleProjectsByName.set(metadata.projectName, project);
 				}
 			} catch (error) {
@@ -776,7 +835,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 		// server.xml is at ./src/main/liberty/config/server.xml — 4 levels up is project root
 		for (const serverXML of serverXMLPaths) {
-			const folder  = vscodePath.parse(vscodePath.resolve(serverXML, "../../../../")).dir;
+			const folder = vscodePath.parse(vscodePath.resolve(serverXML, "../../../../")).dir;
 			const pomFile = vscodePath.resolve(folder, "pom.xml");
 
 			if (fse.existsSync(pomFile) && !projectsMap.has(pomFile)) {
@@ -887,6 +946,7 @@ export class LibertyProject extends vscode.TreeItem {
 	public children: LibertyProject[] = [];
 	public isAggregator: boolean = false;
 	public isLibertyEnabled: boolean = false;
+	public isDevMode: boolean = false;
 	public artifactId: string = "";
 	public parentArtifactId?: string;
 
@@ -968,7 +1028,7 @@ export class LibertyProject extends vscode.TreeItem {
 					env = { JAVA_HOME: javaHome };
 				}
 			}
-			const terminal = vscode.window.createTerminal({cwd: projectHome, name: this.label + " (liberty dev)", env:env });
+			const terminal = vscode.window.createTerminal({ cwd: projectHome, name: this.label + " (liberty dev)", env: env, message: "" } as any);
 			return terminal;
 		}
 		return undefined;
@@ -997,21 +1057,21 @@ export async function createProject(context: vscode.ExtensionContext, buildFile:
 	return project;
 }
 
-export async function getLabelFromBuildFile( buildFile: string, xmlString?: string): Promise<string> {
-    let label = "";
-    if (xmlString !== undefined) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const parseString = require("xml2js").parseString;
-        parseString(xmlString, (err: any, result: any) => {
-            if (result.project.artifactId[0] !== undefined) {
-                label = result.project.artifactId[0];
-            } else {
-                const dirName = vscodePath.dirname(buildFile);
-                label = vscodePath.basename(dirName);
-            }
-        });
-    } else {
+export async function getLabelFromBuildFile(buildFile: string, xmlString?: string): Promise<string> {
+	let label = "";
+	if (xmlString !== undefined) {
+		// eslint-disable-next-line @typescript-eslint/no-var-requires
+		const parseString = require("xml2js").parseString;
+		parseString(xmlString, (err: any, result: any) => {
+			if (result.project.artifactId[0] !== undefined) {
+				label = result.project.artifactId[0];
+			} else {
+				const dirName = vscodePath.dirname(buildFile);
+				label = vscodePath.basename(dirName);
+			}
+		});
+	} else {
 		label = await gradleUtil.getGradleProjectName(buildFile);
-    }
+	}
 	return label;
 }
