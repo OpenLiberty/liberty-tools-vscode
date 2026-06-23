@@ -68,7 +68,13 @@
 		"viewsWelcome": [
 			{
 				"view": "liberty-dev",
-				"contents": "%views.welcome.message%"
+				"contents": "%views.loading.message%",
+				"when": "liberty:loading"
+			},
+			{
+				"view": "liberty-dev",
+				"contents": "%views.welcome.message%",
+				"when": "!liberty:loading"
 			}
 		],
 		"commands": [
@@ -82,6 +88,12 @@
 				"title": "%commands.title.refresh%",
 				"category": "Liberty",
 				"icon": "$(refresh)"
+			},
+			{
+				"command": "workbench.actions.treeView.liberty-dev.collapseAll",
+				"title": "%commands.title.collapse.all%",
+				"category": "Liberty",
+				"icon": "$(collapse-all)"
 			},
 			{
 				"command": "liberty.dev.start",
@@ -139,6 +151,12 @@
 				"command": "liberty.dev.open.gradle.test.report",
 				"category": "Liberty",
 				"title": "%commands.title.view.test.report%"
+			},
+			{
+				"command": "liberty.dev.open.build.file",
+				"category": "Liberty",
+				"title": "%commands.title.open.build.file%",
+				"icon": "$(go-to-file)"
 			}
 		],
 		"menus": {
@@ -161,61 +179,76 @@
 					"group": "navigation@1"
 				},
 				{
-					"command": "liberty.dev.add.project",
+					"command": "workbench.actions.treeView.liberty-dev.collapseAll",
 					"when": "view == liberty-dev",
 					"group": "navigation@2"
 				},
 				{
-					"command": "liberty.dev.remove.project",
+					"command": "liberty.dev.add.project",
 					"when": "view == liberty-dev",
 					"group": "navigation@3"
+				},
+				{
+					"command": "liberty.dev.remove.project",
+					"when": "view == liberty-dev",
+					"group": "navigation@4"
 				}
 			],
 			"view/item/context": [
 				{
 					"command": "liberty.dev.start",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+					"when": "viewItem =~ /^libertyProject/",
 					"group": "libertyCore@1"
 				},
 				{
 					"command": "liberty.dev.debug",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+					"when": "viewItem =~ /^libertyProject/",
 					"group": "libertyCore@3"
 				},
 				{
 					"command": "liberty.dev.stop",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+					"when": "viewItem =~ /^libertyProject/",
 					"group": "libertyCore@3"
 				},
 				{
 					"command": "liberty.dev.custom",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+					"when": "viewItem =~ /^libertyProject/",
 					"group": "libertyCore@2"
 				},
 				{
 					"command": "liberty.dev.start.container",
-					"when": "viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+					"when": "viewItem =~ /^libertyProject.*:container/",
 					"group": "libertyCore@2"
 				},
 				{
 					"command": "liberty.dev.run.tests",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+					"when": "viewItem =~ /^libertyProject/",
 					"group": "libertyCore@4"
 				},
 				{
 					"command": "liberty.dev.open.failsafe.report",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyMavenProjectContainer",
+					"when": "viewItem =~ /^libertyProject:maven/",
 					"group": "libertyCore@5"
 				},
 				{
 					"command": "liberty.dev.open.surefire.report",
-					"when": "viewItem == libertyMavenProject || viewItem == libertyMavenProjectContainer",
+					"when": "viewItem =~ /^libertyProject:maven/",
 					"group": "libertyCore@6"
 				},
 				{
 					"command": "liberty.dev.open.gradle.test.report",
-					"when": "viewItem == libertyGradleProject || viewItem == libertyGradleProjectContainer",
+					"when": "viewItem =~ /^libertyProject:gradle/",
 					"group": "libertyCore@5"
+				},
+				{
+					"command": "liberty.dev.open.build.file",
+					"when": "viewItem =~ /^libertyProject/",
+					"group": "libertyCore@7"
+				},
+				{
+					"command": "liberty.dev.open.build.file",
+					"when": "viewItem =~ /^libertyProject/",
+					"group": "inline"
 				}
 			]
 		},
