@@ -68,7 +68,7 @@ export function filterProjects(projects: LibertyProject[], command: string): Lib
 			case "liberty.dev.custom":
 				return !isAggregator(cv) && !project.isDevMode;
 			case "liberty.dev.start.container":
-				return isContainer(cv);
+				return isContainer(cv) && !project.isDevMode;
 			case "liberty.dev.stop":
 			case "liberty.dev.run.tests":
 			case "liberty.dev.debug":

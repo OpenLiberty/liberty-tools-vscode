@@ -278,8 +278,9 @@
 	"scripts": {
 		"vscode:prepublish": "webpack --mode production",
 		"compile": "webpack --mode none",
-		"watch": "webpack --mode development --watch --info-verbosity verbose",
+		"watch": "webpack --mode development --watch --stats minimal",
 		"test-compile": "tsc -p ./",
+		"test:unit": "npm run test-compile && mocha --config .mocharc.unit.json",
 		"build": "gulp downloadLibertyLSJars downloadLSP4JakartaJars",
 		"downloadLCLS": "gulp downloadLibertyLSJars",
 		"buildLcls": "gulp buildLemminxLiberty buildLibertyServer",
