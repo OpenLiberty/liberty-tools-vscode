@@ -4,7 +4,7 @@
  * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
-import { EditorView, TextEditor, VSBrowser, Workbench, WebDriver, BottomBarPanel, MarkerType, Key, By } from 'vscode-extension-tester';
+import { EditorView, VSBrowser, WebDriver } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import { logger } from './utils/testLogger';
 import * as path from 'path';
@@ -12,6 +12,7 @@ import { ProblemsPage } from './pages/ProblemsPage';
 import { EditorPage } from './pages/EditorPage';
 import { CodeAssistPage } from './pages/CodeAssistPage';
 import { QuickFixPage } from './pages/QuickFixPage';
+import * as editorUtils from './utils/editorUtils';
 
 describe('Rest Class Snippet Test for Maven Project', () => {
     let editorPage: EditorPage; 
@@ -61,7 +62,7 @@ describe('Rest Class Snippet Test for Maven Project', () => {
                     // selectText may fail but setText still works
                 }
                 
-                await editorPage.clear();
+                await editorUtils.clearEditor(editorPage.getEditor());
                 logger.info('Reset TestRest.java to empty after test');
             }
         } catch (error) {
@@ -101,7 +102,7 @@ describe('Rest Class Snippet Test for Maven Project', () => {
             logger.testStart('rest_class snippet inserts correct REST class');
 
             // at the top of the rest_class snippet test, before positioning the cursor
-            await editorPage.clear();
+            await editorUtils.clearEditor(editorPage.getEditor());
             await wait.sleep(1500);   // let any auto-stub settle, then confirm
             const check = await editorPage.getEditor().getText();
             logger.info('Buffer before snippet: ' + JSON.stringify(check));
@@ -109,7 +110,7 @@ describe('Rest Class Snippet Test for Maven Project', () => {
             try {
                 logger.step(1, 'Positioning cursor for snippet insertion');
                 // Position cursor at end of file
-                await editorPage.moveCursorToEnd();
+                await editorUtils.moveCursorToEnd(editorPage.getEditor());
                 
                 // Type rest and trigger snippet insertion
                 logger.step(2, 'Opening content assist');
@@ -139,7 +140,7 @@ describe('Rest Class Snippet Test for Maven Project', () => {
             logger.testStart('Diagnostic for a private @GET method and quick fix clears it');
             try {
                 // Find the method with @GET and change it to private 
-                await editorPage.replaceTextWithinLineContaining('methodname', 'public' , 'private');
+                await editorUtils.replaceTextWithinLineContaining(editorPage.getEditor(), 'methodname', 'public', 'private');
 
                 // Save file and wait for reanalysis 
                 await editorPage.getEditor().save();

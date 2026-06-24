@@ -3,11 +3,12 @@
  * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
-import { EditorView, TextEditor, VSBrowser, Workbench, WebDriver } from 'vscode-extension-tester';
+import { EditorView, VSBrowser } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import { logger } from './utils/testLogger';
 import * as path from 'path';
 import { EditorPage } from './pages/EditorPage';
+import * as editorUtils from './utils/editorUtils';
 
 describe('LSP Hover tests for Maven Project', () => {
     let serverXml: EditorPage;
@@ -91,7 +92,7 @@ describe('LSP Hover tests for Maven Project', () => {
             logger.testStart(`Hover over ${testCase.element} shows Liberty Language Server documentation`);
             
             try {
-                const hoverText = await serverXml.hoverOver(testCase.line, testCase.column, testCase.element);
+                const hoverText = await editorUtils.hoverOver(serverXml.getEditor(), testCase.line, testCase.column, testCase.element);
                 expect(hoverText).to.not.be.empty;
                 logger.stepSuccess(3, `Hover widget displayed with Liberty Language Server content for ${testCase.element}`);
 
@@ -163,7 +164,7 @@ describe('LSP Hover tests for Maven Project', () => {
                 logger.testStart(`Hover over ${testCase.element} shows LSP4Jakarta documentation`);
                 
                 try {
-                    const hoverText = await javaFile.hoverOver(testCase.line, testCase.column, testCase.element);
+                    const hoverText = await editorUtils.hoverOver(javaFile.getEditor(), testCase.line, testCase.column, testCase.element);
                     
                     expect(hoverText).to.not.be.empty;
                     logger.stepSuccess(3, `Hover widget displayed with LSP4Jakarta content for ${testCase.element}`);
