@@ -76,7 +76,10 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
                 pollInterval: 1000,
                 message: 'Diagnostics did not clear after restoring server.xml'
             });
+            // Close the bottom bar and re-focus the editor — opening the Problems panel
+            // shifts VS Code focus away, leaving the TextEditor handle stale for the next test
             await new BottomBarPanel().toggle(false);
+            editor = await editorView.openEditor('server.xml') as TextEditor;
             logger.info('Restored original server.xml content');
         }
     });
