@@ -1,6 +1,6 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2025, 2026
+ * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
 import { By, EditorView, TextEditor, VSBrowser, WebDriver, Workbench, BottomBarPanel, MarkerType, Key } from 'vscode-extension-tester';
@@ -90,8 +90,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
     });
 
 
-    // Diagnostic + Quick Fix
-    it('Should show diagnostic for invalid feature and apply quick fix', async function() {
+    it('View Diagnostic for Invalid Liberty Feature and Use Quick Fix', async function() {
         this.timeout(120000);
         logger.testStart('Testing diagnostic detection and quick fix for invalid feature');
 
@@ -195,8 +194,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
     });
 
 
-    // Autocomplete for Features
-    it('Should provide autocomplete for Liberty features (#391)', async function() {
+    it('Use Autocomplete for Liberty Features', async function() {
         this.timeout(60000);
         logger.testStart('Testing autocomplete for features');
 
@@ -250,8 +248,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
     });
 
 
-    // Autocomplete for Config Stanzas
-    describe('Autocomplete for Configuration Stanzas (#392)', () => {
+    describe('Use Autocomplete for Configuration Stanzas', () => {
 
         it('Should autocomplete <logging> stanza', async function() {
             this.timeout(60000);
@@ -300,7 +297,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             logger.testComplete('Logging stanza autocomplete worked');
         });
 
-        it('Should autocomplete <application> stanza', async function() {
+        it('Use autocomplete on <application> stanza', async function() {
             this.timeout(60000);
             logger.testStart('Testing autocomplete for application stanza');
 
