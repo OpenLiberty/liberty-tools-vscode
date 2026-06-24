@@ -54,9 +54,9 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
             logger.error(`Test failed: ${this.currentTest?.title}`);
         }
 
-        // Always close the bottom bar and re-focus the editor first — any test that
-        // opens the Output or Problems panel leaves VS Code focus off the editor,
-        // making the TextEditor handle stale. Re-acquire before touching editor content.
+        // Close the bottom bar and re-focus the editor before restoring content.
+        // Any test that opens the Output or Problems panel shifts VS Code focus,
+        // making subsequent editor operations unreliable.
         await new BottomBarPanel().toggle(false);
         editor = await editorView.openEditor('server.xml') as TextEditor;
 
@@ -65,24 +65,10 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
             await editor.clearText();
             await editor.setText(originalContent);
             await editor.save();
-            // Wait for LCLS to reanalyse the restored file and clear any diagnostics
-            // before the next test starts — poll the Problems panel rather than sleeping
-            await wait.forCondition(async () => {
-                try {
-                    const bottomBar = new BottomBarPanel();
-                    await bottomBar.toggle(true);
-                    const problemsView = await bottomBar.openProblemsView();
-                    const markers = await problemsView.getAllVisibleMarkers(MarkerType.Error);
-                    return markers.length === 0 ? true : undefined;
-                } catch {
-                    return undefined;
-                }
-            }, {
-                timeout: 10000,
-                pollInterval: 1000,
-                message: 'Diagnostics did not clear after restoring server.xml'
-            });
-            await new BottomBarPanel().toggle(false);
+            // Give LCLS time to reanalyse the restored file before the next test.
+            // Avoid opening the Problems panel here — doing so steals focus from
+            // the editor and poisons the clipboard used by getText().
+            await wait.sleep(3000);
             logger.info('Restored original server.xml content');
         }
     });
@@ -116,6 +102,10 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
     it('Should show diagnostic for invalid feature (#370)', async function() {
         this.timeout(60000);
         logger.testStart('Testing diagnostic for invalid feature');
+
+        // Re-acquire editor handle at test start — afterEach may have left focus
+        // on a different panel; openEditor() clicks the tab and returns a live handle
+        editor = await editorView.openEditor('server.xml') as TextEditor;
 
         logger.step(1, 'Finding feature line');
         const lineNumber = await editor.getLineOfText('jsp-2.3');
@@ -163,6 +153,8 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
     it('Should apply quick fix for invalid feature (#434)', async function() {
         this.timeout(90000);
         logger.testStart('Testing quick fix for invalid feature');
+
+        editor = await editorView.openEditor('server.xml') as TextEditor;
 
         logger.step(1, 'Adding invalid feature');
         const lineNumber = await editor.getLineOfText('jsp-2.3');
@@ -263,6 +255,8 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
         this.timeout(60000);
         logger.testStart('Testing autocomplete for features');
 
+        editor = await editorView.openEditor('server.xml') as TextEditor;
+
         // The flow: type a full <feature></feature> tag, place cursor inside it,
         // trigger Ctrl+Space to get the LCLS dropdown of feature names, then select
         // a specific known feature. This matches the toggleContentAssist pattern
@@ -312,6 +306,8 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
             this.timeout(60000);
             logger.testStart('Testing autocomplete for dataSource stanza');
 
+            editor = await editorView.openEditor('server.xml') as TextEditor;
+
             // The flow: type a partial element name at server level, trigger Ctrl+Space,
             // select from the dropdown. LCLS inserts <dataSource></dataSource>.
             logger.step(1, 'Finding </featureManager> as insertion point');
@@ -351,6 +347,8 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
         it('Should autocomplete <application> stanza', async function() {
             this.timeout(60000);
             logger.testStart('Testing autocomplete for application stanza');
+
+            editor = await editorView.openEditor('server.xml') as TextEditor;
 
             logger.step(1, 'Finding </featureManager> as insertion point');
             const lineNumber = await editor.getLineOfText('</featureManager>');
