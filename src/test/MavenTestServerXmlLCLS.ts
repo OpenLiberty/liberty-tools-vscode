@@ -69,9 +69,11 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
             return text.includes('<server') ? true : undefined;
         }, 15);
 
-        // Restore original content so each test starts from a clean slate
+        // Restore original content so each test starts from a clean slate.
+        // setText() replaces all content internally via Ctrl+A, Ctrl+V — calling
+        // clearText() first is redundant and causes a stray 'a' keystroke when
+        // focus briefly shifts between the two operations.
         if (originalContent) {
-            await editor.clearText();
             await editor.setText(originalContent);
             await editor.save();
             // Give LCLS time to reanalyse the restored file before the next test.
