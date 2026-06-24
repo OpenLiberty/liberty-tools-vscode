@@ -59,6 +59,12 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
         // making subsequent editor operations unreliable.
         await new BottomBarPanel().toggle(false);
         editor = await editorView.openEditor('server.xml') as TextEditor;
+        // Wait until the editor is truly focused — getText() returning non-empty content
+        // confirms the inputArea has keyboard focus and Ctrl+A will land correctly
+        await utils.waitForCondition(async () => {
+            const text = await editor.getText();
+            return text.length > 0 ? true : undefined;
+        }, 10);
 
         // Restore original content so each test starts from a clean slate
         if (originalContent) {
@@ -186,8 +192,14 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
             pollInterval: 2000,
             message: 'Diagnostic did not appear before attempting quick fix'
         });
-        // Close the bottom bar so the editor is focused for the quick-fix shortcut
+        // Close the bottom bar and re-acquire the editor — the Problems panel
+        // interaction in step 2 shifts focus off the editor tab
         await new BottomBarPanel().toggle(false);
+        editor = await editorView.openEditor('server.xml') as TextEditor;
+        await utils.waitForCondition(async () => {
+            const text = await editor.getText();
+            return text.length > 0 ? true : undefined;
+        }, 10);
         logger.stepSuccess(2, 'Diagnostic confirmed');
 
         logger.step(3, 'Selecting invalid feature text');
@@ -323,6 +335,15 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
             const assist = await utils.waitForCondition(async () => {
                 return await editor.toggleContentAssist(true) ?? undefined;
             }, 10);
+            // Wait until the target item is present and interactable in the list
+            await utils.waitForCondition(async () => {
+                try {
+                    const item = await assist.getItem('dataSource');
+                    return item ? true : undefined;
+                } catch {
+                    return undefined;
+                }
+            }, 10);
             logger.stepSuccess(3, 'Content assist opened');
 
             logger.step(4, 'Selecting "dataSource" from the completion list');
@@ -361,6 +382,15 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
             logger.step(3, 'Opening content assist for stanza completion');
             const assist = await utils.waitForCondition(async () => {
                 return await editor.toggleContentAssist(true) ?? undefined;
+            }, 10);
+            // Wait until the target item is present and interactable in the list
+            await utils.waitForCondition(async () => {
+                try {
+                    const item = await assist.getItem('application');
+                    return item ? true : undefined;
+                } catch {
+                    return undefined;
+                }
             }, 10);
             logger.stepSuccess(3, 'Content assist opened');
 
