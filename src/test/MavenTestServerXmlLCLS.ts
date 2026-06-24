@@ -1,23 +1,18 @@
-/**
- * Copyright (c) 2025 IBM Corporation.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2025, 2026
  */
 import { expect } from 'chai';
-import { By, EditorView, TextEditor, VSBrowser, Workbench, BottomBarPanel, MarkerType, Key } from 'vscode-extension-tester';
+import { By, EditorView, TextEditor, VSBrowser, WebDriver, Workbench, BottomBarPanel, MarkerType, Key } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import { logger } from './utils/testLogger';
 import * as path from 'path';
 
-describe('Liberty Config Language Server Tests for Maven Project', function () {
+describe('Liberty Config Language Server Tests for Maven Project', () => {
     let editorView: EditorView;
     let editor: TextEditor;
     let wait: any;
-    let driver: any;
+    let driver: WebDriver;
     let originalContent: string;
 
     before(async function() {
@@ -30,9 +25,7 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
         await VSBrowser.instance.waitForWorkbench();
         editorView = new EditorView();
 
-        // Open the real server.xml — LCLS only activates on files under a recognised
-        // Liberty config directory name ('config'), so we edit this file directly and
-        // restore its content in afterEach.
+        // Open the real server.xml
         const serverXmlPath = path.resolve(
             utils.getMvnProjectPath(),
             'src', 'main', 'liberty', 'config', 'server.xml'
@@ -54,31 +47,19 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
             logger.error(`Test failed: ${this.currentTest?.title}`);
         }
 
-        // Close the bottom bar and re-focus the editor before restoring content.
-        // Any test that opens the Output or Problems panel shifts VS Code focus,
-        // making subsequent editor operations unreliable.
+        // Close the bottom bar and re-focus the editor
         await new BottomBarPanel().toggle(false);
         editor = await editorView.openEditor('server.xml') as TextEditor;
-        // Wait until getText() returns the actual server.xml content — not just any
-        // non-empty string. After the Output/Problems panel, the clipboard can still
-        // hold panel text, making getText() return stale content immediately.
-        // Checking for a known string from the file confirms the editor inputArea
-        // truly has focus and is returning its own content.
+        // Wait until getText() returns the actual server.xml content
         await utils.waitForCondition(async () => {
             const text = await editor.getText();
             return text.includes('<server') ? true : undefined;
         }, 15);
 
-        // Restore original content so each test starts from a clean slate.
-        // setText() replaces all content internally via Ctrl+A, Ctrl+V — calling
-        // clearText() first is redundant and causes a stray 'a' keystroke when
-        // focus briefly shifts between the two operations.
+        // Restore original content
         if (originalContent) {
             await editor.setText(originalContent);
             await editor.save();
-            // Give LCLS time to reanalyse the restored file before the next test.
-            // Avoid opening the Problems panel here — doing so steals focus from
-            // the editor and poisons the clipboard used by getText().
             await wait.sleep(3000);
             logger.info('Restored original server.xml content');
         }
@@ -87,8 +68,6 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
     after(async function() {
         this.timeout(30000);
         try {
-            // Revert any unsaved changes before closing — a dirty editor causes
-            // VS Code to show a "save?" dialog which blocks closeAllEditors()
             await new Workbench().executeCommand('revert file');
             await wait.sleep(500);
             await editorView.closeAllEditors();
@@ -110,30 +89,25 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
         logger.testComplete('Liberty Language Server initialized successfully');
     });
 
-    // ========================================
-    // ISSUE #370: Diagnostic Detection
-    // ========================================
 
-    it('Should show diagnostic for invalid feature (#370)', async function() {
-        this.timeout(60000);
-        logger.testStart('Testing diagnostic for invalid feature');
+    // Diagnostic + Quick Fix
+    it('Should show diagnostic for invalid feature and apply quick fix', async function() {
+        this.timeout(120000);
+        logger.testStart('Testing diagnostic detection and quick fix for invalid feature');
 
-        // Re-acquire editor handle at test start — afterEach may have left focus
-        // on a different panel; openEditor() clicks the tab and returns a live handle
+
         editor = await editorView.openEditor('server.xml') as TextEditor;
 
-        logger.step(1, 'Finding feature line');
+        logger.step(1, 'Finding feature line and replacing with invalid feature');
         const lineNumber = await editor.getLineOfText('jsp-2.3');
         logger.stepSuccess(1, `Found feature at line ${lineNumber}`);
-
-        logger.step(2, 'Replacing with invalid feature');
         const currentLine = await editor.getTextAtLine(lineNumber);
         const modifiedLine = currentLine.replace('jsp-2.3', 'jsp-100.0');
         await editor.setTextAtLine(lineNumber, modifiedLine);
         await editor.save();
-        logger.stepSuccess(2, 'Changed to invalid feature jsp-100.0');
+        logger.stepSuccess(1, 'Changed to invalid feature jsp-100.0');
 
-        logger.step(3, 'Waiting for diagnostic to appear');
+        logger.step(2, 'Waiting for diagnostic to appear');
         // LCLS produces: ERROR: The feature "jsp-100.0" does not exist. liberty-lemminx(incorrect_feature)
         await wait.forCondition(async () => {
             try {
@@ -144,7 +118,7 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
                 for (const marker of markers) {
                     const text = await marker.getText();
                     if (text.includes('does not exist')) {
-                        logger.stepSuccess(3, `Diagnostic found: ${text}`);
+                        logger.stepSuccess(2, `Diagnostic found: ${text}`);
                         return true;
                     }
                 }
@@ -158,58 +132,13 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
             message: 'Diagnostic did not appear for invalid feature'
         });
 
-        logger.testComplete('Diagnostic detected for invalid feature');
-    });
 
-    // ========================================
-    // ISSUE #434: Quick Fix Application
-    // ========================================
-
-    it('Should apply quick fix for invalid feature (#434)', async function() {
-        this.timeout(90000);
-        logger.testStart('Testing quick fix for invalid feature');
-
-        editor = await editorView.openEditor('server.xml') as TextEditor;
-
-        logger.step(1, 'Adding invalid feature');
-        const lineNumber = await editor.getLineOfText('jsp-2.3');
-        const currentLine = await editor.getTextAtLine(lineNumber);
-        const modifiedLine = currentLine.replace('jsp-2.3', 'jsp-100.0');
-        await editor.setTextAtLine(lineNumber, modifiedLine);
-        await editor.save();
-        logger.stepSuccess(1, 'Changed to invalid feature');
-
-        logger.step(2, 'Waiting for diagnostic to appear before triggering quick fix');
-        await wait.forCondition(async () => {
-            try {
-                const bottomBar = new BottomBarPanel();
-                await bottomBar.toggle(true);
-                const problemsView = await bottomBar.openProblemsView();
-                const markers = await problemsView.getAllVisibleMarkers(MarkerType.Error);
-                for (const marker of markers) {
-                    const text = await marker.getText();
-                    if (text.includes('does not exist')) {
-                        return true;
-                    }
-                }
-                return undefined;
-            } catch {
-                return undefined;
-            }
-        }, {
-            timeout: 45000,
-            pollInterval: 2000,
-            message: 'Diagnostic did not appear before attempting quick fix'
-        });
-        // Close the bottom bar and re-acquire the editor — the Problems panel
-        // interaction in step 2 shifts focus off the editor tab
         await new BottomBarPanel().toggle(false);
         editor = await editorView.openEditor('server.xml') as TextEditor;
         await utils.waitForCondition(async () => {
             const text = await editor.getText();
             return text.includes('<server') ? true : undefined;
         }, 15);
-        logger.stepSuccess(2, 'Diagnostic confirmed');
 
         logger.step(3, 'Selecting invalid feature text');
         await editor.selectText('jsp-100.0');
@@ -221,7 +150,6 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
         // The quick-fix widget closes between polling iterations, so re-open it each time
         const quickFixApplied = await wait.forCondition(async () => {
             try {
-                // Re-select and re-open the menu on every attempt
                 await editor.selectText('jsp-100.0');
                 await driver.actions().keyDown(modKey).sendKeys('.').keyUp(modKey).perform();
                 await wait.sleep(1500);
@@ -232,8 +160,7 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
                 for (const opt of options) {
                     const text = await opt.getText();
                     logger.info(`Quick fix option: ${text}`);
-                    // LCLS offers "Replace feature with jsp-2.2" and "Replace feature with jsp-2.3"
-                    // Accept either — both are valid replacements for the invalid jsp-100.0
+                    // LCLS offers "Replace feature with jsp-2.2" and "Replace feature with jsp-2.3", accept either
                     if (text.includes('Replace feature with jsp-')) {
                         await driver.executeScript('arguments[0].click();', opt);
                         logger.stepSuccess(4, `Applied quick fix: ${text}`);
@@ -255,7 +182,6 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
         expect(quickFixApplied).to.be.true;
 
         logger.step(5, 'Verifying fix was applied');
-        // Wait until the editor reflects the applied fix rather than sleeping blindly
         const updatedContent = await utils.waitForCondition(async () => {
             const text = await editor.getText();
             return !text.includes('jsp-100.0') ? text : undefined;
@@ -265,23 +191,19 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
         expect(updatedContent).to.not.include('jsp-100.0');
         logger.stepSuccess(5, 'Quick fix successfully replaced invalid feature');
 
-        logger.testComplete('Quick fix applied successfully');
+        logger.testComplete('Diagnostic detected and quick fix applied successfully');
     });
 
-    // ========================================
-    // ISSUE #391: Autocomplete for Features
-    // ========================================
 
+    // Autocomplete for Features
     it('Should provide autocomplete for Liberty features (#391)', async function() {
         this.timeout(60000);
         logger.testStart('Testing autocomplete for features');
 
         editor = await editorView.openEditor('server.xml') as TextEditor;
 
-        // The capability being tested: LCLS provides a completion list of valid
-        // Liberty feature names when the cursor is inside a <feature> tag value.
-        // We verify the list opens with items, then dismiss it and type the value
-        // directly — avoiding the fragile scroll-and-select over hundreds of entries.
+
+        // verify the list opens with items, then dismiss it and type the value directly
         logger.step(1, 'Finding the closing </featureManager> line as insertion point');
         const featureManagerEndLine = await editor.getLineOfText('</featureManager>');
         logger.stepSuccess(1, `Found </featureManager> at line ${featureManagerEndLine}`);
@@ -290,15 +212,13 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
         await editor.typeTextAt(featureManagerEndLine, 1, '        <feature></feature>');
         logger.stepSuccess(2, 'Typed empty feature tag');
 
-        // Position cursor inside the empty tag — between > and <
-        // "        <feature>" is 18 chars so cursor goes at col 18
         logger.step(3, 'Positioning cursor inside the empty feature tag');
         await editor.setCursor(featureManagerEndLine, 18);
         logger.stepSuccess(3, 'Cursor positioned inside feature tag');
 
         logger.step(4, 'Opening content assist and verifying feature list appears');
         const assist = await editor.toggleContentAssist(true);
-        // Verify the list has items — confirms LCLS is providing feature completions
+
         const items = await utils.waitForCondition(async () => {
             try {
                 const all = await assist!.getItems();
@@ -329,10 +249,8 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
         logger.testComplete('Autocomplete for features worked');
     });
 
-    // ========================================
-    // ISSUE #392: Autocomplete for Config Stanzas
-    // ========================================
 
+    // Autocomplete for Config Stanzas
     describe('Autocomplete for Configuration Stanzas (#392)', () => {
 
         it('Should autocomplete <logging> stanza', async function() {
@@ -341,9 +259,6 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
 
             editor = await editorView.openEditor('server.xml') as TextEditor;
 
-            // The flow: type a partial element name at server level, trigger Ctrl+Space,
-            // select from the dropdown. LCLS inserts <logging></logging>.
-            // Uses 'logging' — available with only jsp-2.3, confirmed locally.
             logger.step(1, 'Finding </featureManager> as insertion point');
             const lineNumber = await editor.getLineOfText('</featureManager>');
             logger.stepSuccess(1, `Found featureManager end at line ${lineNumber}`);
@@ -378,7 +293,6 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
                 const text = await editor.getText();
                 return text.includes('<logging>') ? text : undefined;
             }, 10);
-            // LCLS inserts <logging></logging> (confirmed locally)
             expect(updatedContent).to.include('<logging>');
             expect(updatedContent).to.include('</logging>');
             logger.stepSuccess(5, 'Logging stanza autocomplete worked');
