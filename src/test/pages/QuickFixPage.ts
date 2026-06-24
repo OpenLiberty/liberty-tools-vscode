@@ -1,3 +1,8 @@
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2026
+ */
+
 import { By, Key, VSBrowser, WebDriver } from 'vscode-extension-tester';
 import * as utils from '../utils/testUtils';
 import { EditorPage } from "./EditorPage";

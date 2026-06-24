@@ -1,3 +1,8 @@
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2026
+ */
+
 import { TextEditor } from 'vscode-extension-tester';
 import { EditorPage } from "./EditorPage";
 

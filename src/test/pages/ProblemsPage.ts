@@ -1,3 +1,7 @@
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2026
+ */
 
 import { BottomBarPanel, MarkerType } from 'vscode-extension-tester'; 
 

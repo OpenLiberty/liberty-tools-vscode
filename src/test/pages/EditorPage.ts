@@ -1,3 +1,8 @@
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2026
+ */
+
 import { EditorView, TextEditor, VSBrowser } from 'vscode-extension-tester';
 import * as utils from '../utils/testUtils';
 
