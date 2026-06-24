@@ -14,11 +14,11 @@ export class ProblemsPage {
         const bottomBar = new BottomBarPanel();
         await bottomBar.toggle(true);
         let problemsView = await bottomBar.openProblemsView();
-        let markers = await problemsView.getAllVisibleMarkers(MarkerType.Any);
+        let markers = await problemsView.getAllVisibleMarkers(markerType);
                 for (const marker of markers) {
                     const text = await marker.getText();
                     // Check if text contains your diagnostic message
-                    if(text.includes('Only public methods can be exposed as resource methods.')){
+                    if(text.includes(message)){
                         return true;
                     }
                 }
