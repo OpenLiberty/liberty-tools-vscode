@@ -48,6 +48,7 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
     });
 
     afterEach(async function() {
+        this.timeout(15000);
         if (this.currentTest?.state === 'failed') {
             await driver.takeScreenshot();
             logger.error(`Test failed: ${this.currentTest?.title}`);
@@ -58,7 +59,24 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
             await editor.clearText();
             await editor.setText(originalContent);
             await editor.save();
-            await wait.sleep(1000);
+            // Wait for LCLS to reanalyse the restored file and clear any diagnostics
+            // before the next test starts — poll the Problems panel rather than sleeping
+            await wait.forCondition(async () => {
+                try {
+                    const bottomBar = new BottomBarPanel();
+                    await bottomBar.toggle(true);
+                    const problemsView = await bottomBar.openProblemsView();
+                    const markers = await problemsView.getAllVisibleMarkers(MarkerType.Error);
+                    return markers.length === 0 ? true : undefined;
+                } catch {
+                    return undefined;
+                }
+            }, {
+                timeout: 10000,
+                pollInterval: 1000,
+                message: 'Diagnostics did not clear after restoring server.xml'
+            });
+            await new BottomBarPanel().toggle(false);
             logger.info('Restored original server.xml content');
         }
     });
