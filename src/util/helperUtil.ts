@@ -63,6 +63,7 @@ export function filterProjects(projects: LibertyProject[], command: string): Lib
 	return projects.filter(project => {
 		const cv = project.getContextValue();
 		if (!isLibertyProject(cv)) { return false; }
+		if (!project.isLibertyEnabled) { return false; }
 		switch (command) {
 			case "liberty.dev.start":
 			case "liberty.dev.custom":

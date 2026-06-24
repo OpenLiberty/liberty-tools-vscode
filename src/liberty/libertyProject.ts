@@ -751,7 +751,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					project.artifactId = metadata.artifactId;
 					project.parentArtifactId = metadata.parentArtifactId;
 					project.isAggregator = metadata.isAggregator;
-					project.isLibertyEnabled = metadata.isLibertyEnabled || !metadata.isAggregator;
+					project.isLibertyEnabled = metadata.isLibertyEnabled;
 					mavenProjectsByArtifactId.set(metadata.artifactId, project);
 					mavenMetadataMap.set(entry.path, metadata);
 				} else if (entry.type === "gradle" && (entry.parsedBuild || entry.regexBuildFile)) {
@@ -759,7 +759,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					project.artifactId = metadata.projectName;
 					project.parentArtifactId = metadata.parentProjectName;
 					project.isAggregator = metadata.isAggregator;
-					project.isLibertyEnabled = metadata.isLibertyEnabled || !metadata.isAggregator;
+					project.isLibertyEnabled = metadata.isLibertyEnabled;
 					gradleProjectsByName.set(metadata.projectName, project);
 				}
 			} catch (error) {
@@ -768,7 +768,8 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			}
 		}
 
-		// Link parent-child via parentArtifactId (standard Maven <parent> element)
+		// Link parent-child via parentArtifactId (standard Maven <parent> element).
+		// Inherit isLibertyEnabled inline — child gets it if parent has it.
 		for (const project of projectsMap.values()) {
 			if (!project.parentArtifactId) { continue; }
 			const parent = project.path.endsWith("pom.xml")
@@ -777,10 +778,15 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			if (parent && !parent.children.includes(project)) {
 				project.parent = parent;
 				parent.children.push(project);
+				if (!project.isLibertyEnabled && parent.isLibertyEnabled) {
+					project.isLibertyEnabled = true;
+					console.debug(`${project.artifactId} inherits Liberty plugin from parent ${parent.artifactId}`);
+				}
 			}
 		}
 
-		// Link via filesystem paths for Maven projects missing <parent> element
+		// Link via filesystem paths for Maven projects missing <parent> element.
+		// Inherit isLibertyEnabled inline — child gets it if parent has it.
 		for (const [parentPath, parentMetadata] of mavenMetadataMap.entries()) {
 			if (!parentMetadata.isAggregator || parentMetadata.modules.length === 0) { continue; }
 			const parentProject = projectsMap.get(parentPath);
@@ -793,6 +799,9 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					childProject.parent = parentProject;
 					if (!parentProject.children.includes(childProject)) {
 						parentProject.children.push(childProject);
+					}
+					if (!childProject.isLibertyEnabled && parentProject.isLibertyEnabled) {
+						childProject.isLibertyEnabled = true;
 					}
 					console.debug(`Linked module ${moduleName} to parent ${parentMetadata.artifactId} via filesystem path`);
 				}

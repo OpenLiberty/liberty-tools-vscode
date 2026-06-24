@@ -17,7 +17,9 @@ const stubContext: any = {
 const None = 0;
 
 function makeProject(contextValue: string): LibertyProject {
-    return new LibertyProject(stubContext, "test-project", None, "/fake/path", "start", contextValue);
+    const p = new LibertyProject(stubContext, "test-project", None, "/fake/path", "start", contextValue);
+    p.isLibertyEnabled = true;
+    return p;
 }
 
 // ---------------------------------------------------------------------------
