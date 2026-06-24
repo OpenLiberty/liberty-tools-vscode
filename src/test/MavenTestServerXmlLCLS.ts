@@ -59,12 +59,15 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
         // making subsequent editor operations unreliable.
         await new BottomBarPanel().toggle(false);
         editor = await editorView.openEditor('server.xml') as TextEditor;
-        // Wait until the editor is truly focused — getText() returning non-empty content
-        // confirms the inputArea has keyboard focus and Ctrl+A will land correctly
+        // Wait until getText() returns the actual server.xml content — not just any
+        // non-empty string. After the Output/Problems panel, the clipboard can still
+        // hold panel text, making getText() return stale content immediately.
+        // Checking for a known string from the file confirms the editor inputArea
+        // truly has focus and is returning its own content.
         await utils.waitForCondition(async () => {
             const text = await editor.getText();
-            return text.length > 0 ? true : undefined;
-        }, 10);
+            return text.includes('<server') ? true : undefined;
+        }, 15);
 
         // Restore original content so each test starts from a clean slate
         if (originalContent) {
@@ -202,8 +205,8 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
         editor = await editorView.openEditor('server.xml') as TextEditor;
         await utils.waitForCondition(async () => {
             const text = await editor.getText();
-            return text.length > 0 ? true : undefined;
-        }, 10);
+            return text.includes('<server') ? true : undefined;
+        }, 15);
         logger.stepSuccess(2, 'Diagnostic confirmed');
 
         logger.step(3, 'Selecting invalid feature text');
