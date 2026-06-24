@@ -80,8 +80,12 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
     });
 
     after(async function() {
-        this.timeout(10000);
+        this.timeout(30000);
         try {
+            // Revert any unsaved changes before closing — a dirty editor causes
+            // VS Code to show a "save?" dialog which blocks closeAllEditors()
+            await new Workbench().executeCommand('revert file');
+            await wait.sleep(500);
             await editorView.closeAllEditors();
             logger.info('Closed all editors');
         } catch (error) {
@@ -314,31 +318,31 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
 
     describe('Autocomplete for Configuration Stanzas (#392)', () => {
 
-        it('Should autocomplete <dataSource> stanza', async function() {
+        it('Should autocomplete <logging> stanza', async function() {
             this.timeout(60000);
-            logger.testStart('Testing autocomplete for dataSource stanza');
+            logger.testStart('Testing autocomplete for logging stanza');
 
             editor = await editorView.openEditor('server.xml') as TextEditor;
 
             // The flow: type a partial element name at server level, trigger Ctrl+Space,
-            // select from the dropdown. LCLS inserts <dataSource></dataSource>.
+            // select from the dropdown. LCLS inserts <logging></logging>.
+            // Uses 'logging' — available with only jsp-2.3, confirmed locally.
             logger.step(1, 'Finding </featureManager> as insertion point');
             const lineNumber = await editor.getLineOfText('</featureManager>');
             logger.stepSuccess(1, `Found featureManager end at line ${lineNumber}`);
 
             logger.step(2, 'Typing partial stanza name on a new line');
-            await editor.typeTextAt(lineNumber + 1, 1, '    <dataS');
+            await editor.typeTextAt(lineNumber + 1, 1, '    <loggi');
             logger.stepSuccess(2, 'Typed partial stanza name');
 
             logger.step(3, 'Opening content assist for stanza completion');
-            // waitForCondition ensures the assist is ready before we try to select from it
             const assist = await utils.waitForCondition(async () => {
                 return await editor.toggleContentAssist(true) ?? undefined;
             }, 10);
             // Wait until the target item is present and interactable in the list
             await utils.waitForCondition(async () => {
                 try {
-                    const item = await assist.getItem('dataSource');
+                    const item = await assist.getItem('logging');
                     return item ? true : undefined;
                 } catch {
                     return undefined;
@@ -346,23 +350,23 @@ describe('Liberty Config Language Server Tests for Maven Project', function () {
             }, 10);
             logger.stepSuccess(3, 'Content assist opened');
 
-            logger.step(4, 'Selecting "dataSource" from the completion list');
-            await assist.select('dataSource');
+            logger.step(4, 'Selecting "logging" from the completion list');
+            await assist.select('logging');
             await editor.toggleContentAssist(false);
-            logger.stepSuccess(4, 'Selected dataSource from completion list');
+            logger.stepSuccess(4, 'Selected logging from completion list');
 
-            logger.step(5, 'Verifying dataSource stanza was inserted');
+            logger.step(5, 'Verifying logging stanza was inserted');
             // Poll until the editor reflects the completion rather than sleeping blindly
             const updatedContent = await utils.waitForCondition(async () => {
                 const text = await editor.getText();
-                return text.includes('<dataSource>') ? text : undefined;
+                return text.includes('<logging>') ? text : undefined;
             }, 10);
-            // LCLS inserts <dataSource></dataSource> (confirmed locally)
-            expect(updatedContent).to.include('<dataSource>');
-            expect(updatedContent).to.include('</dataSource>');
-            logger.stepSuccess(5, 'DataSource stanza autocomplete worked');
+            // LCLS inserts <logging></logging> (confirmed locally)
+            expect(updatedContent).to.include('<logging>');
+            expect(updatedContent).to.include('</logging>');
+            logger.stepSuccess(5, 'Logging stanza autocomplete worked');
 
-            logger.testComplete('DataSource stanza autocomplete worked');
+            logger.testComplete('Logging stanza autocomplete worked');
         });
 
         it('Should autocomplete <application> stanza', async function() {
