@@ -7,6 +7,7 @@ import { expect } from 'chai';
 import { CodeAssistPage } from '../pages/CodeAssistPage';
 import { ProblemsPage } from '../pages/ProblemsPage';
 import { QuickFixPage } from '../pages/QuickFixPage';
+import * as editorUtils from '../utils/editorUtils';
 
 export interface ServerEnvConfig {
     buildTool: 'maven' | 'gradle';
@@ -73,7 +74,7 @@ export function runServerEnvSuite(config: ServerEnvConfig){
                                     // selectText may fail but setText still works
                                 }
                                 
-                                await serverEnv.clear();
+                                await editorUtils.clearEditor(serverEnv.getEditor());
                                 logger.info('Reset TestRest.java to empty after test');
                             }
                         } catch (error) {
@@ -119,7 +120,7 @@ export function runServerEnvSuite(config: ServerEnvConfig){
                         
                     try {
 
-                        const hoverText = await serverEnv.hoverOver(testCase.line, testCase.column, testCase.element);
+                        const hoverText = await editorUtils.hoverOver(serverEnv.getEditor(), testCase.line, testCase.column, testCase.element);
                         expect(hoverText).to.not.be.empty;
                         logger.stepSuccess(3, `Hover widget displayed with Liberty Language Server content for ${testCase.element}`);
         
@@ -169,7 +170,7 @@ export function runServerEnvSuite(config: ServerEnvConfig){
                             logger.testStart('Show that INVALID text displays diagnostic and quick fix removes it');
                             try {
 
-                                await serverEnv.replaceTextWithinLineContaining('WLP_LOGGING_MESSAGE_FORMAT', 'JSON' , 'INVALID');
+                                await editorUtils.replaceTextWithinLineContaining(serverEnv.getEditor(), 'WLP_LOGGING_MESSAGE_FORMAT', 'JSON', 'INVALID');
             
                                 // Save file and wait for reanalysis 
                                 await serverEnv.getEditor().save();
