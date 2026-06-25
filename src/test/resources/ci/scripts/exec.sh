@@ -160,7 +160,6 @@ setVscodeVersionToTest() {
                 exit 1
         fi
 
-        echo "Resolved previous VS Code version: $previous_version"
         VSCODE_VERSION_TO_RUN="$previous_version"
 }
 
