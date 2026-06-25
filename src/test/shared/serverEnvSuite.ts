@@ -12,13 +12,24 @@ import * as editorUtils from '../utils/editorUtils';
 export interface ServerEnvConfig {
     buildTool: 'maven' | 'gradle';
     getProjectPath: () => string;
-    hoverTestCases: Array<{
-        element: string;
-        line: number;
-        column: number;
-        expectedDoc: string;
-    }>;
 }
+
+const HOVER_INITIAL_CONTENT = 'WLP_USER_DIR=/opt/wlp/usr\nLOG_DIR=/logs\n';
+
+const HOVER_TEST_CASES = [
+    {
+        element: 'WLP_USER_DIR',
+        line: 1,
+        column: 1,
+        expectedDoc: 'The user or custom configuration directory that is used to store shared and server-specific configuration. See the path_to_liberty/wlp/README.TXT file for details about shared resource locations. A server configuration is at the %WLP_USER_DIR%/servers/serverName location. The default value is the user directory in the installation directory.',
+    },
+    {
+        element: 'LOG_DIR',
+        line: 2,
+        column: 1,
+        expectedDoc: 'The directory that contains the log file. The default value is %WLP_OUTPUT_DIR%/serverName/logs',
+    },
+];
 
 export function runServerEnvSuite(config: ServerEnvConfig){
      describe(`Server Env functionality tests for ${config.buildTool === 'maven' ? 'Maven' : 'Gradle'} Project`, () => {
@@ -108,13 +119,11 @@ export function runServerEnvSuite(config: ServerEnvConfig){
                     }
                 });
 
-            const hoverTestCases = config.hoverTestCases;
-        
-            hoverTestCases.forEach(testCase => {
+            HOVER_TEST_CASES.forEach(testCase => {
                 it(`Hover over ${testCase.element} shows Liberty Language Server documentation`, async function() {
                     this.timeout(30000);
                     logger.testStart(`Hover over ${testCase.element} shows Liberty Language Server documentation`);
-                    await serverEnv.getEditor().setText('WLP_USER_DIR=/opt/wlp/usr\nLOG_DIR=/logs\n');
+                    await serverEnv.getEditor().setText(HOVER_INITIAL_CONTENT);
                     await serverEnv.getEditor().save();
                     await wait.sleep(1000);
                         
