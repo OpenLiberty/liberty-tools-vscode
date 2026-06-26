@@ -1,7 +1,8 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2023, 2026
+ * Copyright IBM Corp. 2026
  */
+
 import { expect } from 'chai';
 import { runDevModeTestSuite } from "./shared/devModeTestSuite";
 import * as utils from './utils/testUtils';

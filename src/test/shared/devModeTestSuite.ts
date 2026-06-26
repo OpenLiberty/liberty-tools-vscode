@@ -1,3 +1,8 @@
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2026
+ */
+
 import { expect } from 'chai';
 import { DefaultTreeItem, EditorView, SideBarView, ViewItem, ViewSection, VSBrowser, Workbench, WebDriver } from 'vscode-extension-tester';
 import * as utils from '../utils/testUtils';
