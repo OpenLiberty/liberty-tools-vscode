@@ -30,8 +30,7 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
         this.timeout(10000); // Increase timeout for cleanup operations
         // Close any open editors after each test
         if (this.currentTest?.state === 'failed') {
-            const driver = VSBrowser.instance.driver;
-            const screenshot = await driver.takeScreenshot();
+            await VSBrowser.instance.driver.takeScreenshot();
             logger.error(`Test failed: ${this.currentTest.title}`);
         }
         
@@ -107,24 +106,24 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
             logger.step(1, 'Launching dashboard start action');
             await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
 
-            logger.step(3, 'Waiting for server to start');
+            logger.step(2, 'Waiting for server to start');
             const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
 
             if (!serverStartStatus) {
                 logger.error('Server started message not found in the terminal');
             } else {
-                logger.stepSuccess(3, 'Server successfully started');
+                logger.stepSuccess(2, 'Server successfully started');
 
-                logger.step(4, 'Launching dashboard stop action');
+                logger.step(3, 'Launching dashboard stop action');
                 await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
-                logger.step(5, 'Waiting for server to stop');
+                logger.step(4, 'Waiting for server to stop');
                 const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!serverStopStatus) {
                     logger.error('Server stopped message not found in the terminal');
                 } else {
-                    logger.stepSuccess(5, 'Server stopped successfully');
+                    logger.stepSuccess(4, 'Server stopped successfully');
                 }
                 expect(serverStopStatus).to.be.true;
             }
@@ -166,7 +165,7 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
                 if (!serverStopStatus) {
                     logger.error('Server stopped message not found in the terminal');
                 } else {
-                    logger.stepSuccess(5, 'Server stopped successfully');
+                    logger.stepSuccess(4, 'Server stopped successfully');
                 }
                 expect(serverStopStatus).to.be.true;
             }
@@ -185,18 +184,18 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
             logger.step(1, 'Launching dashboard start action');
             await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
 
-            logger.step(3, 'Waiting for server to start');
+            logger.step(2, 'Waiting for server to start');
             const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
 
             if (!serverStartStatus) {
                 logger.error('Server started message not found in the terminal');
             } else {
-                logger.stepSuccess(3, 'Server successfully started');
+                logger.stepSuccess(2, 'Server successfully started');
 
                 logger.step(3, 'Launching run tests dashboard action');
                 await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.RUNTEST_DASHBOARD_ACTION, constants.RUNTEST_DASHBOARD_MAC_ACTION);
 
-                logger.step(5, 'Checking test execution status');
+                logger.step(4, 'Checking test execution status');
                 const testStatus = await utils.checkTestStatus(constants.GRADLE_TEST_RUN_STRING);
                 logger.info(`Test status result: ${testStatus}`);
 
@@ -212,7 +211,7 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
                 if (!serverStopStatus) {
                     logger.error('Server stopped message not found in the terminal');
                 } else {
-                    logger.stepSuccess(7, 'Server stopped successfully');
+                    logger.stepSuccess(6, 'Server stopped successfully');
                 }
                 expect(serverStopStatus).to.be.true;
             }
@@ -267,7 +266,7 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
                 if (!serverStopStatus) {
                     logger.error('Server stopped message not found in the terminal');
                 } else {
-                    logger.stepSuccess(8, 'Server stopped successfully');
+                    logger.stepSuccess(7, 'Server stopped successfully');
                 }
                 expect(serverStopStatus).to.be.true;
             }
@@ -323,7 +322,7 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
                 if (!serverStopStatus) {
                     logger.error('Server stopped message not found in terminal');
                 } else {
-                    logger.stepSuccess(8, 'Server stopped successfully');
+                    logger.stepSuccess(7, 'Server stopped successfully');
                 }
                 expect(serverStopStatus).to.be.true;
             }
