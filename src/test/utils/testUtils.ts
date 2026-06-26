@@ -189,6 +189,13 @@ export function getGradleProjectPath(): string {
     return gradleProjectPath;
 }
 
+export function getGradle9ProjectPath(): string {
+    const gradle9ProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "gradle", "liberty-gradle-9-test-wrapper-app");
+    logger.info("Path is : " + gradle9ProjectPath);
+    return gradle9ProjectPath;
+}
+
+
 export async function getDashboardSection(sidebar: any): Promise<any> {
     logger.info("Getting Liberty Tools section");
     return await waitForCondition(async () => {
@@ -619,5 +626,35 @@ function copyFolderContents(sourceFolder: string, destinationFolder: string): vo
         } else {
             fs.copyFileSync(sourcePath, destinationPath);
         }
+    }
+}
+
+/**
+ * Close the current workspace to prepare for the next test file.
+ * This ensures each test file starts with a clean workspace when running multiple test files.
+ * Essential when test files open different projects (e.g., Gradle 9 vs regular Gradle vs Maven).
+ */
+export async function closeWorkspace(): Promise<void> {
+    try {
+        logger.info('Closing current workspace for next test file...');
+        const workbench = new Workbench();
+        
+        // Close all open editors first
+        try {
+            const EditorView = require('vscode-extension-tester').EditorView;
+            await new EditorView().closeAllEditors();
+            logger.info('Closed all editors');
+        } catch (error) {
+            logger.info('Failed to close editors, continuing...');
+        }
+        
+        // Close the workspace/folder
+        await workbench.executeCommand('workbench.action.closeFolder');
+        await getWaitHelper().sleep(2000); // Wait for workspace to close
+        
+        logger.info('Workspace closed successfully');
+    } catch (error) {
+        logger.error('Error closing workspace', error);
+        // Don't throw - allow tests to continue even if close fails
     }
 }

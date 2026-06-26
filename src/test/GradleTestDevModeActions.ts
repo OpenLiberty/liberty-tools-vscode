@@ -165,8 +165,6 @@ describe('Gradle-specific devmode action tests', () => {
         }
     }).timeout(30000);
 
-    // Based on the UI testing code, it sometimes selects the wrong command in "command palette", such as choosing "Liberty: Start ..." instead of "Liberty: Start" from the recent suggestions. This discrepancy occurs because we specifically need "Liberty: Start" at that moment.
-    // Now, clear the command history of the "command palette" to avoid receiving "recently used" suggestions. This action should be performed at the end of Gradle Project tests.
     it('Clear Command Palette', async () => {
         logger.testStart('Clear Command Palette');
         try {
@@ -179,6 +177,13 @@ describe('Gradle-specific devmode action tests', () => {
             throw error;
         }
     }).timeout(100000);
+
+    /**
+     * The following after hook closes the workspace and copies screenshots.
+     * Closing the workspace ensures the next test file starts with a clean slate.
+     */
+    after(async function() {
+        this.timeout(10000);
+        await utils.closeWorkspace();
+    });
 });
-
-
