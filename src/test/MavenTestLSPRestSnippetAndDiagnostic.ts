@@ -4,16 +4,19 @@
  * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
-import { EditorView, TextEditor, VSBrowser, Workbench, WebDriver, BottomBarPanel, MarkerType, Key, By } from 'vscode-extension-tester';
+import { EditorView, VSBrowser } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import { logger } from './utils/testLogger';
 import * as path from 'path';
+import { ProblemsPage } from './pages/ProblemsPage';
+import { EditorPage } from './pages/EditorPage';
+import { CodeAssistPage } from './pages/CodeAssistPage';
+import { QuickFixPage } from './pages/QuickFixPage';
+import * as editorUtils from './utils/editorUtils';
 
 describe('Rest Class Snippet Test for Maven Project', () => {
-    let editorView: EditorView;
-    let javaEditor: TextEditor;
+    let editorPage: EditorPage;
     let wait: any;
-    let driver: WebDriver;
 
     const testRestPath = path.resolve(
                     utils.getMvnProjectPath(),
@@ -25,26 +28,20 @@ describe('Rest Class Snippet Test for Maven Project', () => {
         this.timeout(60000);
         logger.info('Setting up rest_class snippet test');
 
-        driver = VSBrowser.instance.driver;
-        await VSBrowser.instance.openResources(utils.getMvnProjectPath());
-        
-        // Wait for workbench to be ready
-        await VSBrowser.instance.waitForWorkbench();
-        editorView = new EditorView();
         wait = utils.getWaitHelper();
+        // Open folder, wait for workbench 
+        await VSBrowser.instance.openResources(utils.getMvnProjectPath());
+        await VSBrowser.instance.waitForWorkbench();
 
-        // Open the file
-        await VSBrowser.instance.openResources(testRestPath, async () => {
-            await wait.sleep(3000); 
-        });
-        javaEditor = await editorView.openEditor('TestRest.java') as TextEditor;
+        // Open file and bind page object to editor
+        editorPage = await new EditorPage().openFile(testRestPath, 'TestRest.java');
+
     });
 
     afterEach(async function() {
         // Take screenshot on failure but don't close editor
         if (this.currentTest?.state === 'failed') {
-            const driver = VSBrowser.instance.driver;
-            const screenshot = await driver.takeScreenshot();
+            await VSBrowser.instance.driver.takeScreenshot();
             logger.error(`Test failed: ${this.currentTest.title}`);
         }
     });
@@ -52,34 +49,32 @@ describe('Rest Class Snippet Test for Maven Project', () => {
     after(async function() {
         this.timeout(15000);
         try {
-            if (javaEditor) {
+            if (editorPage) {
                 // Select all text first, then clear
-                const currentText = await javaEditor.getText();
+                const currentText = await editorPage.getEditor().getText();
                 try {
-                    await javaEditor.selectText(currentText);
+                    await editorPage.getEditor().selectText(currentText);
                     await wait.sleep(300);
                 } catch (selectError) {
                     // selectText may fail but setText still works
                 }
                 
-                await javaEditor.setText('');
-                await wait.sleep(500);
-                await javaEditor.save();
-                await wait.sleep(500);
+                await editorUtils.clearEditor(editorPage.getEditor());
                 logger.info('Reset TestRest.java to empty after test');
             }
         } catch (error) {
             logger.error('Failed to reset TestRest.java', error);
         }
         
-        // Close workspace to prepare for next test file
-        await utils.closeWorkspace();
-        
         try {
-            utils.copyScreenshotsToProjectFolder('maven');
+            await new EditorView().closeAllEditors();
+            await wait.sleep(500);
+            logger.info('Closed all editors after test suite');
         } catch (error) {
-            // Ignore screenshot errors
+            logger.error('Failed to close editors in after hook', error);
         }
+        
+        utils.copyScreenshotsToProjectFolder('maven');
     });
     
     it('LSP4Jakarta Language Server should initialize', async function() {
@@ -104,37 +99,32 @@ describe('Rest Class Snippet Test for Maven Project', () => {
             logger.testStart('rest_class snippet inserts correct REST class');
 
             // at the top of the rest_class snippet test, before positioning the cursor
-            await javaEditor.setText('');
-            await javaEditor.save();
+            await editorUtils.clearEditor(editorPage.getEditor());
             await wait.sleep(1500);   // let any auto-stub settle, then confirm
-            const check = await javaEditor.getText();
+            const check = await editorPage.getEditor().getText();
             logger.info('Buffer before snippet: ' + JSON.stringify(check));
             
             try {
                 logger.step(1, 'Positioning cursor for snippet insertion');
                 // Position cursor at end of file
-                const lastLine = (await javaEditor.getText()).split('\n').length;
-                await javaEditor.setCursor(lastLine - 1, 1);
+                await editorUtils.moveCursorToEnd(editorPage.getEditor());
                 
-                logger.step(2, 'Typing "rest" to trigger snippet');
-                await javaEditor.typeText('rest');
-                logger.stepSuccess(2, 'Typed "rest"');
+                // Type rest and trigger snippet insertion
+                logger.step(2, 'Opening content assist');
+                const codeAssist = new CodeAssistPage();
+                await codeAssist.insertSnippet(editorPage, 'rest', 'rest_class');
+                logger.stepSuccess(2, 'Snippet inserted');
+                await wait.sleep(1000); // Give time for snippet to fully expand
                 
-                logger.step(3, 'Opening content assist');
-                const assist = await javaEditor.toggleContentAssist(true);
-                if (assist) {
-                    logger.step(4,'Selecting rest_class snippet');
-                    await assist.select('rest_class');
-                    await new Promise(res => setTimeout(res, 600)); // 300–800ms
-                    logger.stepSuccess(4, 'rest_class snippet selected');
-                }
-                await javaEditor.toggleContentAssist(false);
-                
-                logger.step(5, 'Verifying snippet insertion');
-                const codeInsertion = await javaEditor.getText();
+                logger.step(3, 'Verifying snippet insertion');
+                const codeInsertion = await editorPage.getEditor().getText();
                 expect(codeInsertion).to.include('@GET')
                 expect(codeInsertion).to.include('methodname');
-                logger.stepSuccess(5, 'Snippet rest_class was inserted correctly');
+                logger.stepSuccess(3, 'Snippet rest_class was inserted correctly');
+                
+                // Save the file so the content persists for the next test
+                await editorPage.getEditor().save();
+                await wait.sleep(500);
                 
                 logger.testComplete('rest_class snippet inserts correct REST class');
             } catch (error) {
@@ -147,89 +137,31 @@ describe('Rest Class Snippet Test for Maven Project', () => {
             logger.testStart('Diagnostic for a private @GET method and quick fix clears it');
             try {
                 // Find the method with @GET and change it to private 
-                let lineNum = await javaEditor.getLineOfText('methodname');
-                if (lineNum < 1) throw new Error('Could not find the methodname line');
-                const oldLine = await javaEditor.getTextAtLine(lineNum);
-                const newLine = oldLine.replace("public", "private");
-                await javaEditor.setTextAtLine(lineNum, newLine); 
+                await editorUtils.replaceTextWithinLineContaining(editorPage.getEditor(), 'methodname', 'public', 'private');
 
                 // Save file and wait for reanalysis 
-                await javaEditor.save();
+                await editorPage.getEditor().save();
                 await wait.sleep(500); 
 
-                // Open problems view
-                const bottomBar = new BottomBarPanel();
-                await bottomBar.toggle(true);
-                let problemsView = await bottomBar.openProblemsView();
-                let markers = await problemsView.getAllVisibleMarkers(MarkerType.Any); 
-                
-                // Check if the marker is present
-                let found = false;
-                for (const marker of markers) {
-                    const text = await marker.getText();
-                    // Check if text contains your diagnostic message
-                    if(text.includes('Only public methods can be exposed as resource methods.')){
-                        found = true;
-                        break;
-                    }
-                }
+                // Check that the diagnostic is there 
+                let problems = new ProblemsPage(); 
+                const found = await problems.hasDiagnostic('Only public methods can be exposed as resource methods.');
                 expect(found).to.be.true; 
                 logger.testComplete('Diagnostic shows for private @GET method');
 
                 // Quick fix implementation to get rid of diagnostic
                 // Re-find line and place cursor on "methodname()"
-                const buffer = await javaEditor.getText();
+                const buffer = await editorPage.getEditor().getText();
                 logger.info('Buffer before quick fix: ' + JSON.stringify(buffer));
 
-                // Get column on the method name 
-                await javaEditor.selectText('methodname');
-                await wait.sleep(300); 
+               await new QuickFixPage().applyFix(editorPage, 'methodname', 'make method public');
+               await wait.sleep(3000);
+               await editorPage.getEditor().save();
+               await wait.sleep(5000);
 
-                // Open the quick-fix menu with Cmd+. (Mac) / Ctrl+. (Linux/Windows)
-                const modKey = process.platform === 'darwin' ? Key.COMMAND : Key.CONTROL;
-                await driver.actions().keyDown(modKey).sendKeys('.').keyUp(modKey).perform();
-                await wait.sleep(2000);
-
-                // Click on the option to make the method public within the quick-fixes options
-                const options = await driver.findElements(By.css('.action-widget .action-list-item, .action-widget .monaco-list-row'));
-                let clicked = false;
-                for (const opt of options) {
-                    const text = await opt.getText();
-                    logger.info('OPTION: ' + JSON.stringify(text));
-                    if (text.toLowerCase().includes('make method public')) {
-                        await driver.executeScript('arguments[0].click();', opt);
-                        clicked = true;
-                        break;
-                    }
-                }
-                if (!clicked) {
-                    await driver.actions().sendKeys(Key.ESCAPE).perform();  // close menu cleanly
-                    throw new Error('No "make public" quick fix was offered — see OPTION logs above');
-                }
-
-                await wait.sleep(3000);
-                await javaEditor.save();
-                await wait.sleep(5000);
-
-                // Check quick fix was implemented at correct line number 
-                const after = await javaEditor.getText();
-                expect(after).to.include('public String methodname');
-
-                problemsView = await bottomBar.openProblemsView();
-                markers = await problemsView.getAllVisibleMarkers(MarkerType.Any); 
-
-                // Check if the marker is present
-                let stillPresent = false;
-                for (const marker of markers) {
-                    const text = await marker.getText();
-                    // Check if text contains diagnostic message
-                    if(text.includes('Only public methods can be exposed as resource methods.')){
-                        stillPresent = true;
-                        break;
-                    }
-                }
-                expect(stillPresent).to.be.false; 
-                logger.testComplete('Diagnostic no longer shows for public @GET method as expected');
+               const after = await editorPage.getEditor().getText();
+               expect(after).to.include('public String methodname');
+               expect(await problems.hasDiagnostic('Only public methods can be exposed as resource methods.')).to.be.false;
 
             } catch (error) {
                 logger.testFailed('Diagnostic/quick-fix test flow failed', error);

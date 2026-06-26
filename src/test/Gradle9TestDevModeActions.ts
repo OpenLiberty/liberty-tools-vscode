@@ -7,24 +7,23 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import { expect } from 'chai';
-import { DefaultTreeItem, EditorView, InputBox, SideBarView, ViewSection, VSBrowser, Workbench, WebDriver } from 'vscode-extension-tester';
+import { EditorView, VSBrowser, Workbench } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import { logger } from './utils/testLogger';
 import path = require('path');
+import { DashboardPage } from './pages/DashboardPage';
 
 describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
-    let sidebar: SideBarView;
-    let section: ViewSection;
-    let item: DefaultTreeItem;
-    let tabs: string[];
+    let dashboard: DashboardPage;
 
     before(async function() {
         this.timeout(30000);
-        // Wait for workbench to be ready
-        await VSBrowser.instance.waitForWorkbench();
+
         await VSBrowser.instance.openResources(utils.getGradle9ProjectPath());
-        sidebar = new SideBarView();
+        await VSBrowser.instance.waitForWorkbench();
+
+        dashboard = new DashboardPage();
     });
 
     afterEach(async function() {
@@ -54,9 +53,9 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
 
     it('Find Liberty Tools in sidebar', async () => {
         logger.testStart('Find Liberty Tools in sidebar');
-        try {     
+        try {
             logger.step(1, 'Attempting to get Liberty Tools section');
-            section = await utils.getDashboardSection(sidebar);
+            const section = await dashboard.getSection();
             logger.stepSuccess(1, 'Found Liberty Tools section');
 
             logger.step(2, 'Validating sidebar is not undefined');
@@ -72,7 +71,7 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
         logger.testStart('Liberty Tools shows items - Gradle');
         try {
             logger.step(1, 'Getting dashboard section');
-            section = await utils.getDashboardSection(sidebar);
+            const section = await dashboard.getSection();
             logger.stepSuccess(1, 'Dashboard section retrieved');
 
             logger.step(2, 'Waiting for Liberty Tools to load');
@@ -91,9 +90,7 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
             expect(menu).not.empty;
 
             logger.step(4, `Finding Gradle project item: ${constants.GRADLE_9_PROJECT}`);
-            item = await utils.waitForCondition(async () => {
-                return await section.findItem(constants.GRADLE_9_PROJECT) as DefaultTreeItem;
-            }, 30);
+            const item = await dashboard.getProjectItem(constants.GRADLE_9_PROJECT);
             logger.stepSuccess(4, 'Gradle project item found');
             expect(item).not.undefined;
 
@@ -107,13 +104,8 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
     it('Start Gradle project from Liberty Tools', async () => {
         logger.testStart('Start Gradle project from Liberty Tools');
         try {
-            logger.step(1, 'Getting dashboard section and item');
-            section = await utils.getDashboardSection(sidebar);
-            item = await utils.getDashboardItem(section, constants.GRADLE_9_PROJECT);
-            logger.stepSuccess(1, 'Dashboard section and item retrieved');
-
-            logger.step(2, 'Launching dashboard start action');
-            await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
+            logger.step(1, 'Launching dashboard start action');
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
 
             logger.step(3, 'Waiting for server to start');
             const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
@@ -124,7 +116,7 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
                 logger.stepSuccess(3, 'Server successfully started');
 
                 logger.step(4, 'Launching dashboard stop action');
-                await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
                 logger.step(5, 'Waiting for server to stop');
                 const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
@@ -154,26 +146,21 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
         }
 
         try {
-            logger.step(1, 'Getting dashboard section and item');
-            section = await utils.getDashboardSection(sidebar);
-            item = await utils.getDashboardItem(section, constants.GRADLE_9_PROJECT);
-            logger.stepSuccess(1, 'Dashboard section and item retrieved');
+            logger.step(1, 'Launching dashboard start action with Docker');
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);
 
-            logger.step(2, 'Launching dashboard start action with Docker');
-            await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);
-
-            logger.step(3, 'Waiting for server to start in Docker container');
+            logger.step(2, 'Waiting for server to start in Docker container');
             const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
 
             if (!serverStartStatus) {
                 logger.error('Server started message not found in the terminal');
             } else {
-                logger.stepSuccess(3, 'Server successfully started in Docker container');
+                logger.stepSuccess(2, 'Server successfully started in Docker container');
 
-                logger.step(4, 'Launching dashboard stop action');
-                await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+                logger.step(3, 'Launching dashboard stop action');
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
-                logger.step(5, 'Waiting for server to stop');
+                logger.step(4, 'Waiting for server to stop');
                 const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!serverStopStatus) {
@@ -195,13 +182,8 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
     it('Run tests for Gradle project', async () => {
         logger.testStart('Run tests for Gradle project');
         try {
-            logger.step(1, 'Getting dashboard section and item');
-            section = await utils.getDashboardSection(sidebar);
-            item = await utils.getDashboardItem(section, constants.GRADLE_9_PROJECT);
-            logger.stepSuccess(1, 'Dashboard section and item retrieved');
-
-            logger.step(2, 'Launching dashboard start action');
-            await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
+            logger.step(1, 'Launching dashboard start action');
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
 
             logger.step(3, 'Waiting for server to start');
             const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
@@ -211,20 +193,20 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
             } else {
                 logger.stepSuccess(3, 'Server successfully started');
 
-                logger.step(4, 'Launching run tests dashboard action');
-                await utils.launchDashboardAction(item, constants.RUNTEST_DASHBOARD_ACTION, constants.RUNTEST_DASHBOARD_MAC_ACTION);
+                logger.step(3, 'Launching run tests dashboard action');
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.RUNTEST_DASHBOARD_ACTION, constants.RUNTEST_DASHBOARD_MAC_ACTION);
 
                 logger.step(5, 'Checking test execution status');
                 const testStatus = await utils.checkTestStatus(constants.GRADLE_TEST_RUN_STRING);
                 logger.info(`Test status result: ${testStatus}`);
 
                 expect(testStatus).to.be.true;
-                logger.stepSuccess(5, 'Tests executed successfully');
+                logger.stepSuccess(4, 'Tests executed successfully');
 
-                logger.step(6, 'Launching dashboard stop action');
-                await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+                logger.step(5, 'Launching dashboard stop action');
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
-                logger.step(7, 'Waiting for server to stop');
+                logger.step(6, 'Waiting for server to stop');
                 const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!serverStopStatus) {
@@ -247,44 +229,39 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
     it('Start Gradle with options from Liberty Tools', async () => {
         logger.testStart('Start Gradle with options from Liberty Tools');
         try {
-            logger.step(1, 'Getting dashboard section and item');
-            section = await utils.getDashboardSection(sidebar);
-            item = await utils.getDashboardItem(section, constants.GRADLE_9_PROJECT);
-            logger.stepSuccess(1, 'Dashboard section and item retrieved');
-
             const reportPath = path.join(utils.getGradle9ProjectPath(), "build", "reports", "tests", "test", "index.html");
             logger.info(`Report path: ${reportPath}`);
 
-            logger.step(2, 'Deleting existing test report');
+            logger.step(1, 'Deleting existing test report');
             const deleteReport = await utils.deleteReports(reportPath);
             logger.info(`Report deletion result: ${deleteReport}`);
             expect(deleteReport).to.be.true;
 
-            logger.step(3, 'Launching dashboard start action with custom parameters');
-            await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
+            logger.step(2, 'Launching dashboard start action with custom parameters');
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
 
-            logger.step(4, 'Setting custom parameter: --hotTests');
+            logger.step(3, 'Setting custom parameter: --hotTests');
             await utils.setCustomParameter("--hotTests");
 
-            logger.step(5, 'Waiting for server to start with parameters');
+            logger.step(4, 'Waiting for server to start with parameters');
             const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
 
             if (!serverStartStatus) {
                 logger.error('Server started with params message not found in terminal');
             } else {
-                logger.stepSuccess(5, 'Server successfully started with custom parameters');
+                logger.stepSuccess(4, 'Server successfully started with custom parameters');
 
-                logger.step(6, 'Waiting for test report');
+                logger.step(5, 'Waiting for test report');
                 let checkFile = await utils.waitForTestReport(reportPath);
                 logger.info(`Report exists: ${checkFile}`);
 
                 expect(checkFile).to.be.true;
-                logger.stepSuccess(6, 'Test report found');
+                logger.stepSuccess(5, 'Test report found');
 
-                logger.step(7, 'Launching dashboard stop action');
-                await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+                logger.step(6, 'Launching dashboard stop action');
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
-                logger.step(8, 'Waiting for server to stop');
+                logger.step(7, 'Waiting for server to stop');
                 const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!serverStopStatus) {
@@ -306,46 +283,41 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
     it('Start Gradle with history from Liberty Tools', async () => {
         logger.testStart('Start Gradle with history from Liberty Tools');
         try {
-            logger.step(1, 'Getting dashboard section and item');
-            section = await utils.getDashboardSection(sidebar);
-            item = await utils.getDashboardItem(section, constants.GRADLE_9_PROJECT);
-            logger.stepSuccess(1, 'Dashboard section and item retrieved');
-
             const reportPath = path.join(utils.getGradle9ProjectPath(), "build", "reports", "tests", "test", "index.html");
             logger.info(`Report path: ${reportPath}`);
 
-            logger.step(2, 'Deleting existing test report');
+            logger.step(1, 'Deleting existing test report');
             const deleteReport = await utils.deleteReports(reportPath);
             logger.info(`Report deletion result: ${deleteReport}`);
             expect(deleteReport).to.be.true;
 
-            logger.step(3, 'Launching dashboard start action with parameters');
-            await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
+            logger.step(2, 'Launching dashboard start action with parameters');
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
 
-            logger.step(4, 'Choosing command from history: --hotTests');
+            logger.step(3, 'Choosing command from history: --hotTests');
             const foundCommand = await utils.chooseCmdFromHistory("--hotTests");
             logger.info(`Command found in history: ${foundCommand}`);
             expect(foundCommand).to.be.true;
 
-            logger.step(5, 'Waiting for server to start with historical parameters');
+            logger.step(4, 'Waiting for server to start with historical parameters');
             const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
 
             if (!serverStartStatus) {
                 logger.error('Server started with params message not found in the terminal');
             } else {
-                logger.stepSuccess(5, 'Server successfully started with historical parameters');
+                logger.stepSuccess(4, 'Server successfully started with historical parameters');
 
-                logger.step(6, 'Waiting for test report');
+                logger.step(5, 'Waiting for test report');
                 let checkFile = await utils.waitForTestReport(reportPath);
                 logger.info(`Report exists: ${checkFile}`);
 
                 expect(checkFile).to.be.true;
-                logger.stepSuccess(6, 'Test report found');
+                logger.stepSuccess(5, 'Test report found');
 
-                logger.step(7, 'Launching dashboard stop action');
-                await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+                logger.step(6, 'Launching dashboard stop action');
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
-                logger.step(8, 'Waiting for server to stop');
+                logger.step(7, 'Waiting for server to stop');
                 const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!serverStopStatus) {
@@ -374,46 +346,41 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
         let attachStatus: Boolean = false;
 
         try {
-            logger.step(1, 'Getting dashboard section and item');
-            section = await utils.getDashboardSection(sidebar);
-            item = await utils.getDashboardItem(section, constants.GRADLE_9_PROJECT);
-            logger.stepSuccess(1, 'Dashboard section and item retrieved');
+            logger.step(1, 'Launching dashboard start action with custom parameters');
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
 
-            logger.step(2, 'Launching dashboard start action with custom parameters');
-            await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
-
-            logger.step(3, 'Setting custom debug parameter: -DdebugPort=7777');
+            logger.step(2, 'Setting custom debug parameter: -DdebugPort=7777');
             await utils.setCustomParameter("-DdebugPort=7777");
 
-            logger.step(4, 'Waiting for server to start in debug mode');
+            logger.step(3, 'Waiting for server to start in debug mode');
             isServerRunning = await utils.waitForServerStart(constants.SERVER_START_STRING);
 
             if (!isServerRunning) {
                 logger.error('Server started with params message not found in terminal');
             } else {
-                logger.stepSuccess(4, 'Server successfully started in debug mode');
+                logger.stepSuccess(3, 'Server successfully started in debug mode');
 
-                logger.step(5, 'Launching attach debugger dashboard action');
-                await utils.launchDashboardAction(item, constants.ATTACH_DEBUGGER_DASHBOARD_ACTION, constants.ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION);
+                logger.step(4, 'Launching attach debugger dashboard action');
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.ATTACH_DEBUGGER_DASHBOARD_ACTION, constants.ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION);
                 logger.info('Attach Debugger action completed');
 
-                logger.step(6, 'Waiting for debugger to attach');
+                logger.step(5, 'Waiting for debugger to attach');
                 attachStatus = await utils.waitForDebuggerAttach();
 
                 if (!attachStatus) {
                     logger.error('DebugToolbar not found - debugger may not have attached');
                 } else {
-                    logger.stepSuccess(6, 'Debugger attached successfully');
+                    logger.stepSuccess(5, 'Debugger attached successfully');
                 }
 
-                logger.step(7, 'Stopping Liberty server');
+                logger.step(6, 'Stopping Liberty server');
                 await utils.stopLibertyserver(constants.GRADLE_9_PROJECT);
 
-                logger.step(8, 'Waiting for server to stop');
+                logger.step(7, 'Waiting for server to stop');
                 isServerRunning = !await utils.waitForServerStop(constants.SERVER_STOP_STRING);
 
                 if (!isServerRunning) {
-                    logger.stepSuccess(8, 'Server stopped successfully');
+                    logger.stepSuccess(7, 'Server stopped successfully');
                 } else {
                     logger.error('Server stop message not found in terminal');
                 }
@@ -445,10 +412,10 @@ describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
 
         try {
             logger.step(1, 'Launching view test report dashboard action');
-            await utils.launchDashboardAction(item, constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
 
             logger.step(2, 'Waiting for test report tab to open');
-            tabs = await utils.waitForEditorTab(constants.GRADLE_9_TEST_REPORT_TITLE);
+            const tabs = await utils.waitForEditorTab(constants.GRADLE_9_TEST_REPORT_TITLE);
             logger.info(`Open editor tabs: ${tabs.join(', ')}`);
 
             logger.step(3, `Checking if Gradle test report tab is open: ${constants.GRADLE_9_TEST_REPORT_TITLE}`);
