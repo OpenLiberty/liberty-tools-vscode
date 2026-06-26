@@ -28,6 +28,15 @@ describe('Maven-specific devmode action tests', () => {
         dashboard = new DashboardPage();
     });
 
+    after(async function() {
+        this.timeout(10000);
+        try {
+            await new EditorView().closeAllEditors();
+        } catch (error) {
+            logger.error('Failed to close editors after Maven-specific suite', error);
+        }
+    });
+
     it('Start Maven with options from Liberty Tools', async () => {
         logger.testStart('Start Maven with options from Liberty Tools');
         try {
