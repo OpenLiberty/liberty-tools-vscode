@@ -185,4 +185,3 @@ describe('LSP Hover tests for Gradle Project', () => {
 
 });
 
-// Made with Bob

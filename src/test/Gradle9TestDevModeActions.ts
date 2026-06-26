@@ -1,22 +1,26 @@
+// test same functionality as GradleTestDevModeActions
+// make sure paths or constants that call liberty-gradle-test-wrapper call liberty-gradle-9-test-wrapper here
+// make sure you can run it as an individual test
+
 /*
  * IBM Confidential
  * Copyright IBM Corp. 2023, 2026
  */
 import { expect } from 'chai';
-import { DefaultTreeItem, EditorView, SideBarView, ViewItem, ViewSection, VSBrowser, Workbench, WebDriver } from 'vscode-extension-tester';
+import { EditorView, VSBrowser, Workbench } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';
 import { logger } from './utils/testLogger';
 import path = require('path');
 import { DashboardPage } from './pages/DashboardPage';
 
-describe('Devmode action tests for Maven Project', () => {
-    let dashboard: DashboardPage; 
+describe('Open and conduct devmode action tests for Gradle 9.0 Project', () => {
+    let dashboard: DashboardPage;
 
     before(async function() {
         this.timeout(30000);
 
-        await VSBrowser.instance.openResources(utils.getMvnProjectPath());
+        await VSBrowser.instance.openResources(utils.getGradle9ProjectPath());
         await VSBrowser.instance.waitForWorkbench();
 
         dashboard = new DashboardPage();
@@ -45,11 +49,12 @@ describe('Devmode action tests for Maven Project', () => {
         }
     });
 
+
     it('Find Liberty Tools in sidebar', async () => {
         logger.testStart('Find Liberty Tools in sidebar');
         try {
             logger.step(1, 'Attempting to get Liberty Tools section');
-            const section = await dashboard.getSection(); 
+            const section = await dashboard.getSection();
             logger.stepSuccess(1, 'Found Liberty Tools section');
 
             logger.step(2, 'Validating sidebar is not undefined');
@@ -61,11 +66,11 @@ describe('Devmode action tests for Maven Project', () => {
         }
     }).timeout(60000);
 
-    it('Liberty Tools shows items - Maven', async () => {
-        logger.testStart('Liberty Tools shows items - Maven');
+    it('Liberty Tools shows items - Gradle', async () => {
+        logger.testStart('Liberty Tools shows items - Gradle');
         try {
             logger.step(1, 'Getting dashboard section');
-            const section = await dashboard.getSection(); 
+            const section = await dashboard.getSection();
             logger.stepSuccess(1, 'Dashboard section retrieved');
 
             logger.step(2, 'Waiting for Liberty Tools to load');
@@ -83,23 +88,23 @@ describe('Devmode action tests for Maven Project', () => {
             logger.info(`Found ${menu.length} visible items in dashboard`);
             expect(menu).not.empty;
 
-            logger.step(4, `Finding Maven project item: ${constants.MAVEN_PROJECT}`);
-            const item = await dashboard.getProjectItem(constants.MAVEN_PROJECT); 
-            logger.stepSuccess(4, 'Maven project item found');
+            logger.step(4, `Finding Gradle project item: ${constants.GRADLE_9_PROJECT}`);
+            const item = await dashboard.getProjectItem(constants.GRADLE_9_PROJECT);
+            logger.stepSuccess(4, 'Gradle project item found');
             expect(item).not.undefined;
 
-            logger.testComplete('Liberty Tools shows items - Maven');
+            logger.testComplete('Liberty Tools shows items - Gradle');
         } catch (error) {
-            logger.testFailed('Liberty Tools shows items - Maven', error);
+            logger.testFailed('Liberty Tools shows items - Gradle', error);
             throw error;
         }
-    }).timeout(275000);
+    }).timeout(300000);
 
-    it('Start Maven project from Liberty Tools', async () => {
-        logger.testStart('Start Maven project from Liberty Tools');
+    it('Start Gradle project from Liberty Tools', async () => {
+        logger.testStart('Start Gradle project from Liberty Tools');
         try {
-            logger.step(1, 'Getting dashboard section and item');
-            await dashboard.runAction(constants.MAVEN_PROJECT, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
+            logger.step(1, 'Launching dashboard start action');
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
 
             logger.step(2, 'Waiting for server to start');
             const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
@@ -109,50 +114,8 @@ describe('Devmode action tests for Maven Project', () => {
             } else {
                 logger.stepSuccess(2, 'Server successfully started');
 
-                logger.step(4, 'Launching dashboard stop action');
-                await dashboard.runAction(constants.MAVEN_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
-
-                logger.step(5, 'Waiting for server to stop');
-                const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
-
-                if (!serverStopStatus) {
-                    logger.error('Server stopped message not found in the terminal');
-                } else {
-                    logger.stepSuccess(5, 'Server stopped successfully');
-                }
-                expect(serverStopStatus).to.be.true;
-            }
-
-            expect(serverStartStatus).to.be.true;
-            logger.testComplete('Start Maven project from Liberty Tools');
-        } catch (error) {
-            logger.testFailed('Start Maven project from Liberty Tools', error);
-            throw error;
-        }
-    }).timeout(550000);
-
-    it('Start Maven with Docker from Liberty Tools', async () => {
-        logger.testStart('Start Maven with Docker from Liberty Tools');
-
-        if ((process.platform === 'darwin') || (process.platform === 'win32')) {
-            logger.skip(`Test skipped for platform: ${process.platform} (Docker test only runs on Linux)`);
-            return true;
-        }
-
-        try {
-            logger.step(1, 'Launching dashboard start action with Docker');
-            await dashboard.runAction(constants.MAVEN_PROJECT, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);
-
-            logger.step(2, 'Waiting for server to start in Docker container');
-            const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
-
-            if (!serverStartStatus) {
-                logger.error('Server started message not found in the terminal');
-            } else {
-                logger.stepSuccess(2, 'Server successfully started in Docker container');
-
                 logger.step(3, 'Launching dashboard stop action');
-                await dashboard.runAction(constants.MAVEN_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
                 logger.step(4, 'Waiting for server to stop');
                 const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
@@ -166,18 +129,60 @@ describe('Devmode action tests for Maven Project', () => {
             }
 
             expect(serverStartStatus).to.be.true;
-            logger.testComplete('Start Maven with Docker from Liberty Tools');
+            logger.testComplete('Start Gradle project from Liberty Tools');
         } catch (error) {
-            logger.testFailed('Start Maven with Docker from Liberty Tools', error);
+            logger.testFailed('Start Gradle project from Liberty Tools', error);
             throw error;
         }
     }).timeout(350000);
 
-    it('Run tests for Maven project', async () => {
-        logger.testStart('Run tests for Maven project');
+    it('Start Gradle with Docker from Liberty Tools', async () => {
+        logger.testStart('Start Gradle with Docker from Liberty Tools');
+
+        if ((process.platform === 'darwin') || (process.platform === 'win32')) {
+            logger.skip(`Test skipped for platform: ${process.platform} (Docker test only runs on Linux)`);
+            return true;
+        }
+
+        try {
+            logger.step(1, 'Launching dashboard start action with Docker');
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);
+
+            logger.step(2, 'Waiting for server to start in Docker container');
+            const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
+
+            if (!serverStartStatus) {
+                logger.error('Server started message not found in the terminal');
+            } else {
+                logger.stepSuccess(2, 'Server successfully started in Docker container');
+
+                logger.step(3, 'Launching dashboard stop action');
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+
+                logger.step(4, 'Waiting for server to stop');
+                const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
+
+                if (!serverStopStatus) {
+                    logger.error('Server stopped message not found in the terminal');
+                } else {
+                    logger.stepSuccess(4, 'Server stopped successfully');
+                }
+                expect(serverStopStatus).to.be.true;
+            }
+
+            expect(serverStartStatus).to.be.true;
+            logger.testComplete('Start Gradle with Docker from Liberty Tools');
+        } catch (error) {
+            logger.testFailed('Start Gradle with Docker from Liberty Tools', error);
+            throw error;
+        }
+    }).timeout(350000);
+
+    it('Run tests for Gradle project', async () => {
+        logger.testStart('Run tests for Gradle project');
         try {
             logger.step(1, 'Launching dashboard start action');
-            await dashboard.runAction(constants.MAVEN_PROJECT, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
 
             logger.step(2, 'Waiting for server to start');
             const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
@@ -188,16 +193,17 @@ describe('Devmode action tests for Maven Project', () => {
                 logger.stepSuccess(2, 'Server successfully started');
 
                 logger.step(3, 'Launching run tests dashboard action');
-                await dashboard.runAction(constants.MAVEN_PROJECT, constants.RUNTEST_DASHBOARD_ACTION, constants.RUNTEST_DASHBOARD_MAC_ACTION);
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.RUNTEST_DASHBOARD_ACTION, constants.RUNTEST_DASHBOARD_MAC_ACTION);
 
                 logger.step(4, 'Checking test execution status');
-                const testStatus = await utils.checkTestStatus(constants.MAVEN_RUN_TESTS_STRING);
+                const testStatus = await utils.checkTestStatus(constants.GRADLE_TEST_RUN_STRING);
                 logger.info(`Test status result: ${testStatus}`);
+
                 expect(testStatus).to.be.true;
                 logger.stepSuccess(4, 'Tests executed successfully');
 
                 logger.step(5, 'Launching dashboard stop action');
-                await dashboard.runAction(constants.MAVEN_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
                 logger.step(6, 'Waiting for server to stop');
                 const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
@@ -211,33 +217,30 @@ describe('Devmode action tests for Maven Project', () => {
             }
 
             expect(serverStartStatus).to.be.true;
-            logger.testComplete('Run tests for Maven project');
+            logger.testComplete('Run tests for Gradle project');
         } catch (error) {
-            logger.testFailed('Run tests for Maven project', error);
+            logger.testFailed('Run tests for Gradle project', error);
             throw error;
         }
     }).timeout(350000);
 
-    it('Start Maven with options from Liberty Tools', async () => {
-        logger.testStart('Start Maven with options from Liberty Tools');
-        try {
-            const reportPath = path.join(utils.getMvnProjectPath(), "target", "site", "failsafe-report.html");
-            const alternateReportPath = path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html");
-            logger.info(`Primary report path: ${reportPath}`);
-            logger.info(`Alternate report path: ${alternateReportPath}`);
 
-            logger.step(1, 'Deleting existing test reports');
-            let deleteReport = await utils.deleteReports(reportPath);
-            let deleteAlternateReport = await utils.deleteReports(alternateReportPath);
-            logger.info(`Primary report deletion result: ${deleteReport}`);
-            logger.info(`Alternate report deletion result: ${deleteAlternateReport}`);
-            expect(deleteReport && deleteAlternateReport).to.be.true;
+    it('Start Gradle with options from Liberty Tools', async () => {
+        logger.testStart('Start Gradle with options from Liberty Tools');
+        try {
+            const reportPath = path.join(utils.getGradle9ProjectPath(), "build", "reports", "tests", "test", "index.html");
+            logger.info(`Report path: ${reportPath}`);
+
+            logger.step(1, 'Deleting existing test report');
+            const deleteReport = await utils.deleteReports(reportPath);
+            logger.info(`Report deletion result: ${deleteReport}`);
+            expect(deleteReport).to.be.true;
 
             logger.step(2, 'Launching dashboard start action with custom parameters');
-            await dashboard.runAction(constants.MAVEN_PROJECT, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
 
-            logger.step(3, 'Setting custom parameter: -DhotTests=true');
-            await utils.setCustomParameter("-DhotTests=true");
+            logger.step(3, 'Setting custom parameter: --hotTests');
+            await utils.setCustomParameter("--hotTests");
 
             logger.step(4, 'Waiting for server to start with parameters');
             const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
@@ -247,14 +250,15 @@ describe('Devmode action tests for Maven Project', () => {
             } else {
                 logger.stepSuccess(4, 'Server successfully started with custom parameters');
 
-                logger.step(5, 'Waiting for test report at primary or alternate location');
-                const checkFile = await utils.waitForTestReport(reportPath, alternateReportPath);
+                logger.step(5, 'Waiting for test report');
+                let checkFile = await utils.waitForTestReport(reportPath);
+                logger.info(`Report exists: ${checkFile}`);
 
                 expect(checkFile).to.be.true;
                 logger.stepSuccess(5, 'Test report found');
 
                 logger.step(6, 'Launching dashboard stop action');
-                await dashboard.runAction(constants.MAVEN_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
                 logger.step(7, 'Waiting for server to stop');
                 const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
@@ -268,33 +272,29 @@ describe('Devmode action tests for Maven Project', () => {
             }
 
             expect(serverStartStatus).to.be.true;
-            logger.testComplete('Start Maven with options from Liberty Tools');
+            logger.testComplete('Start Gradle with options from Liberty Tools');
         } catch (error) {
-            logger.testFailed('Start Maven with options from Liberty Tools', error);
+            logger.testFailed('Start Gradle with options from Liberty Tools', error);
             throw error;
         }
-    }).timeout(350000);
+    }).timeout(550000);
 
-    it('Start Maven with history from Liberty Tools', async () => {
-        logger.testStart('Start Maven with history from Liberty Tools');
+    it('Start Gradle with history from Liberty Tools', async () => {
+        logger.testStart('Start Gradle with history from Liberty Tools');
         try {
-            const reportPath = path.join(utils.getMvnProjectPath(), "target", "site", "failsafe-report.html");
-            const alternateReportPath = path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html");
-            logger.info(`Primary report path: ${reportPath}`);
-            logger.info(`Alternate report path: ${alternateReportPath}`);
+            const reportPath = path.join(utils.getGradle9ProjectPath(), "build", "reports", "tests", "test", "index.html");
+            logger.info(`Report path: ${reportPath}`);
 
-            logger.step(1, 'Deleting existing test reports');
-            let deleteReport = await utils.deleteReports(reportPath);
-            let deleteAlternateReport = await utils.deleteReports(alternateReportPath);
-            logger.info(`Primary report deletion result: ${deleteReport}`);
-            logger.info(`Alternate report deletion result: ${deleteAlternateReport}`);
-            expect(deleteReport && deleteAlternateReport).to.be.true;
+            logger.step(1, 'Deleting existing test report');
+            const deleteReport = await utils.deleteReports(reportPath);
+            logger.info(`Report deletion result: ${deleteReport}`);
+            expect(deleteReport).to.be.true;
 
             logger.step(2, 'Launching dashboard start action with parameters');
-            await dashboard.runAction(constants.MAVEN_PROJECT, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
 
-            logger.step(3, 'Choosing command from history: -DhotTests=true');
-            const foundCommand = await utils.chooseCmdFromHistory("-DhotTests=true");
+            logger.step(3, 'Choosing command from history: --hotTests');
+            const foundCommand = await utils.chooseCmdFromHistory("--hotTests");
             logger.info(`Command found in history: ${foundCommand}`);
             expect(foundCommand).to.be.true;
 
@@ -306,14 +306,15 @@ describe('Devmode action tests for Maven Project', () => {
             } else {
                 logger.stepSuccess(4, 'Server successfully started with historical parameters');
 
-                logger.step(5, 'Waiting for test report at primary or alternate location');
-                const checkFile = await utils.waitForTestReport(reportPath, alternateReportPath);
+                logger.step(5, 'Waiting for test report');
+                let checkFile = await utils.waitForTestReport(reportPath);
+                logger.info(`Report exists: ${checkFile}`);
 
                 expect(checkFile).to.be.true;
                 logger.stepSuccess(5, 'Test report found');
 
                 logger.step(6, 'Launching dashboard stop action');
-                await dashboard.runAction(constants.MAVEN_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
 
                 logger.step(7, 'Waiting for server to stop');
                 const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
@@ -327,77 +328,25 @@ describe('Devmode action tests for Maven Project', () => {
             }
 
             expect(serverStartStatus).to.be.true;
-            logger.testComplete('Start Maven with history from Liberty Tools');
+            logger.testComplete('Start Gradle with history from Liberty Tools');
         } catch (error) {
-            logger.testFailed('Start Maven with history from Liberty Tools', error);
+            logger.testFailed('Start Gradle with history from Liberty Tools', error);
             throw error;
         }
-    }).timeout(550000);
-
-    it('View unit test report for Maven project', async () => {
-        logger.testStart('View unit test report for Maven project');
-        try {
-            logger.step(1, 'Launching view unit test report dashboard action');
-            await dashboard.runAction(constants.MAVEN_PROJECT, constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);
-
-            logger.step(2, 'Waiting for unit test report tab to open');
-            const tabs = await utils.waitForEditorTab(constants.SUREFIRE_REPORT_TITLE);
-            logger.info(`Open editor tabs: ${tabs.join(', ')}`);
-
-            logger.step(3, `Checking if unit test report tab is open: ${constants.SUREFIRE_REPORT_TITLE}`);
-            const reportFound = tabs.indexOf(constants.SUREFIRE_REPORT_TITLE) > -1;
-            logger.info(`Unit test report found: ${reportFound}`);
-
-            expect(reportFound, "Unit test report not found").to.equal(true);
-            logger.stepSuccess(3, 'Unit test report tab is open');
-
-            logger.step(4, 'Closing unit test report tab');
-            const editorView = new EditorView();
-            await editorView.closeEditor(constants.SUREFIRE_REPORT_TITLE);
-            logger.stepSuccess(4, 'Unit test report tab closed');
-
-            logger.testComplete('View unit test report for Maven project');
-        } catch (error) {
-            logger.testFailed('View unit test report for Maven project', error);
-            throw error;
-        }
-    }).timeout(10000);
-
-    it('View integration test report for Maven project', async () => {
-        logger.testStart('View integration test report for Maven project');
-        try {
-            logger.step(1, 'Launching view integration test report dashboard action');
-            await dashboard.runAction(constants.MAVEN_PROJECT, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);
-
-            logger.step(2, 'Waiting for integration test report tab to open');
-            const tabs = await utils.waitForEditorTab(constants.FAILSAFE_REPORT_TITLE);
-            logger.info(`Open editor tabs: ${tabs.join(', ')}`);
-
-            logger.step(3, `Checking if integration test report tab is open: ${constants.FAILSAFE_REPORT_TITLE}`);
-            const reportFound = tabs.indexOf(constants.FAILSAFE_REPORT_TITLE) > -1;
-            logger.info(`Integration test report found: ${reportFound}`);
-
-            expect(reportFound, "Integration test report not found").to.equal(true);
-            logger.stepSuccess(3, 'Integration test report tab is open');
-            logger.testComplete('View integration test report for Maven project');
-        } catch (error) {
-            logger.testFailed('View integration test report for Maven project', error);
-            throw error;
-        }
-    }).timeout(90000);
+    }).timeout(350000);
 
     /**
      * All future test cases should be written before the test that attaches the debugger, as this will switch the UI to the debugger view.
      * If, for any reason, a test case needs to be written after the debugger test, ensure that the UI is switched back to the explorer view before executing the subsequent tests.
      */
-    it('Attach debugger for start with custom parameter event', async () => {
-        logger.testStart('Attach debugger for start with custom parameter event');
+    it('Attach debugger for Gradle with custom parameter event', async () => {
+        logger.testStart('Attach debugger for Gradle with custom parameter event');
         let isServerRunning: Boolean = true;
         let attachStatus: Boolean = false;
 
         try {
             logger.step(1, 'Launching dashboard start action with custom parameters');
-            await dashboard.runAction(constants.MAVEN_PROJECT, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
 
             logger.step(2, 'Setting custom debug parameter: -DdebugPort=7777');
             await utils.setCustomParameter("-DdebugPort=7777");
@@ -411,7 +360,7 @@ describe('Devmode action tests for Maven Project', () => {
                 logger.stepSuccess(3, 'Server successfully started in debug mode');
 
                 logger.step(4, 'Launching attach debugger dashboard action');
-                await dashboard.runAction(constants.MAVEN_PROJECT, constants.ATTACH_DEBUGGER_DASHBOARD_ACTION, constants.ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION);
+                await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.ATTACH_DEBUGGER_DASHBOARD_ACTION, constants.ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION);
                 logger.info('Attach Debugger action completed');
 
                 logger.step(5, 'Waiting for debugger to attach');
@@ -424,7 +373,7 @@ describe('Devmode action tests for Maven Project', () => {
                 }
 
                 logger.step(6, 'Stopping Liberty server');
-                await utils.stopLibertyserver(constants.MAVEN_PROJECT);
+                await utils.stopLibertyserver(constants.GRADLE_9_PROJECT);
 
                 logger.step(7, 'Waiting for server to stop');
                 isServerRunning = !await utils.waitForServerStop(constants.SERVER_STOP_STRING);
@@ -442,15 +391,59 @@ describe('Devmode action tests for Maven Project', () => {
             logger.info(`Finally block - Server running status: ${isServerRunning}`);
             if (isServerRunning) {
                 logger.info('Attempting to stop server in finally block');
-                await utils.stopLibertyserver(constants.MAVEN_PROJECT);
+                await utils.stopLibertyserver(constants.GRADLE_9_PROJECT);
             } else {
                 logger.info('Server already stopped, test cleanup complete');
             }
         }
 
         expect(attachStatus).to.be.true;
-        logger.testComplete('Attach debugger for start with custom parameter event');
-    }).timeout(350000);
+        logger.testComplete('Attach debugger for Gradle with custom parameter event');
+    }).timeout(550000);
+
+    it('View test report for Gradle project', async () => {
+        logger.testStart('View test report for Gradle project');
+
+        if ((process.platform === 'darwin') || (process.platform === 'win32') || (process.platform == 'linux')) {
+            logger.skip(`Test skipped for platform: ${process.platform} (enable once https://github.com/OpenLiberty/liberty-tools-vscode/issues/266 is resolved)`);
+            return true;
+        }
+
+        try {
+            logger.step(1, 'Launching view test report dashboard action');
+            await dashboard.runAction(constants.GRADLE_9_PROJECT, constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
+
+            logger.step(2, 'Waiting for test report tab to open');
+            const tabs = await utils.waitForEditorTab(constants.GRADLE_9_TEST_REPORT_TITLE);
+            logger.info(`Open editor tabs: ${tabs.join(', ')}`);
+
+            logger.step(3, `Checking if Gradle test report tab is open: ${constants.GRADLE_9_TEST_REPORT_TITLE}`);
+            const reportFound = tabs.indexOf(constants.GRADLE_9_TEST_REPORT_TITLE) > -1;
+            logger.info(`Gradle test report found: ${reportFound}`);
+
+            expect(reportFound, "Gradle test report not found").to.equal(true);
+            logger.stepSuccess(3, 'Gradle test report tab is open');
+            logger.testComplete('View test report for Gradle project');
+        } catch (error) {
+            logger.testFailed('View test report for Gradle project', error);
+            throw error;
+        }
+    }).timeout(30000);
+
+    // Based on the UI testing code, it sometimes selects the wrong command in "command palette", such as choosing "Liberty: Start ..." instead of "Liberty: Start" from the recent suggestions. This discrepancy occurs because we specifically need "Liberty: Start" at that moment.
+    // Now, clear the command history of the "command palette" to avoid receiving "recently used" suggestions. This action should be performed at the end of Gradle Project tests.
+    it('Clear Command Palette', async () => {
+        logger.testStart('Clear Command Palette');
+        try {
+            logger.step(1, 'Clearing command palette history');
+            await utils.clearCommandPalette();
+            logger.stepSuccess(1, 'Command palette history cleared');
+            logger.testComplete('Clear Command Palette');
+        } catch (error) {
+            logger.testFailed('Clear Command Palette', error);
+            throw error;
+        }
+    }).timeout(100000);
 
     /**
      * The following after hook closes the workspace and copies screenshots.
@@ -459,8 +452,6 @@ describe('Devmode action tests for Maven Project', () => {
     after(async function() {
         this.timeout(10000);
         await utils.closeWorkspace();
-        utils.copyScreenshotsToProjectFolder('maven');
+        utils.copyScreenshotsToProjectFolder('gradle');
     });
 });
-
-

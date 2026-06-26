@@ -4,7 +4,7 @@
  * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
-import { EditorView, VSBrowser, WebDriver } from 'vscode-extension-tester';
+import { EditorView, VSBrowser } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import { logger } from './utils/testLogger';
 import * as path from 'path';
@@ -15,9 +15,8 @@ import { QuickFixPage } from './pages/QuickFixPage';
 import * as editorUtils from './utils/editorUtils';
 
 describe('Rest Class Snippet Test for Maven Project', () => {
-    let editorPage: EditorPage; 
+    let editorPage: EditorPage;
     let wait: any;
-    let driver: WebDriver;
 
     const testRestPath = path.resolve(
                     utils.getMvnProjectPath(),
@@ -29,8 +28,7 @@ describe('Rest Class Snippet Test for Maven Project', () => {
         this.timeout(60000);
         logger.info('Setting up rest_class snippet test');
 
-        driver = VSBrowser.instance.driver;
-        wait = utils.getWaitHelper(); 
+        wait = utils.getWaitHelper();
         // Open folder, wait for workbench 
         await VSBrowser.instance.openResources(utils.getMvnProjectPath());
         await VSBrowser.instance.waitForWorkbench();
@@ -43,8 +41,7 @@ describe('Rest Class Snippet Test for Maven Project', () => {
     afterEach(async function() {
         // Take screenshot on failure but don't close editor
         if (this.currentTest?.state === 'failed') {
-            const driver = VSBrowser.instance.driver;
-            const screenshot = await driver.takeScreenshot();
+            await VSBrowser.instance.driver.takeScreenshot();
             logger.error(`Test failed: ${this.currentTest.title}`);
         }
     });

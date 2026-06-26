@@ -439,9 +439,12 @@ describe('Devmode action tests for Gradle Project', () => {
     }).timeout(100000);
 
     /**
-     * The following after hook copies the screenshot from the temporary folder in which it is saved to a known permanent location in the project folder.
+     * The following after hook closes the workspace and copies screenshots.
+     * Closing the workspace ensures the next test file starts with a clean slate.
      */
-    after(() => {
+    after(async function() {
+        this.timeout(10000);
+        await utils.closeWorkspace();
         utils.copyScreenshotsToProjectFolder('gradle');
     });
 });

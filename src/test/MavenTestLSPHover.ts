@@ -36,6 +36,10 @@ describe('LSP Hover tests for Maven Project', () => {
 
         serverXml = await new EditorPage().openFile(serverXmlPath, 'server.xml');
         logger.info('Server.xml file opened and editor obtained');
+        
+        // Wait for editor to be fully ready and Language Server to attach
+        await utils.getWaitHelper().sleep(5000);
+        logger.info('Editor ready for Language Server interaction');
     });
 
     afterEach(async function() {
@@ -67,7 +71,7 @@ describe('LSP Hover tests for Maven Project', () => {
             await utils.waitForLanguageServerInit(
                 'Language Support for Liberty',
                 'Initialized Liberty Language server',
-                60
+                120
             );
             logger.testComplete('Liberty Language Server initialized successfully');
         } catch (error) {
@@ -131,6 +135,10 @@ describe('LSP Hover tests for Maven Project', () => {
             javaFile = await new EditorPage().openFile(javaFilePath, 'HelloServlet.java')
             
             logger.info('HelloServlet.java file opened and editor obtained');
+            
+            // Wait for Java editor to be fully ready and Language Server to attach
+            await utils.getWaitHelper().sleep(10000);
+            logger.info('Java editor ready for Language Server interaction');
         });
 
         it('LSP4Jakarta Language Server should initialize', async function() {
@@ -141,7 +149,7 @@ describe('LSP Hover tests for Maven Project', () => {
                 await utils.waitForLanguageServerInit(
                     'Language Support for Jakarta EE',
                     'Initializing Jakarta EE server',
-                    60
+                    120
                 );
                 logger.testComplete('LSP4Jakarta Language Server initialized successfully');
             } catch (error) {
