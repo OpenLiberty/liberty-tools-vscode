@@ -1,7 +1,8 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2023, 2026
+ * Copyright IBM Corp. 2026
  */
+
 import * as path from 'path';
 import { logger } from './utils/testLogger';
 import { EditorView, VSBrowser } from 'vscode-extension-tester';
@@ -13,7 +14,7 @@ import { ProblemsPage } from './pages/ProblemsPage';
 import { QuickFixPage } from './pages/QuickFixPage';
 import * as editorUtils from './utils/editorUtils';
 
-const HOVER_INITIAL_CONTENT = 'WLP_USER_DIR=/opt/wlp/usr\nLOG_DIR=/logs\n';
+const HOVER_INITIAL_CONTENT = 'WLP_USER_DIR=./custom-user-dir\nLOG_DIR=./logs\n';
 
 const HOVER_TEST_CASES = [
     {

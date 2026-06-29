@@ -1,6 +1,6 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2023, 2026
+ * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
 import { EditorView, VSBrowser } from 'vscode-extension-tester';

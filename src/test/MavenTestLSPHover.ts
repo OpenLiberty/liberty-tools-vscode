@@ -1,3 +1,7 @@
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2026
+ */
 import * as utils from './utils/testUtils';
 import { runHoverTestSuite } from './shared/hoverTestSuite';
 
