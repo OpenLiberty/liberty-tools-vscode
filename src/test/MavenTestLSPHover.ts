@@ -3,29 +3,25 @@
  * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
-import { EditorView, TextEditor, VSBrowser, Workbench, WebDriver } from 'vscode-extension-tester';
+import { EditorView, VSBrowser } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import { logger } from './utils/testLogger';
 import * as path from 'path';
+import { EditorPage } from './pages/EditorPage';
+import * as editorUtils from './utils/editorUtils';
 
 describe('LSP Hover tests for Maven Project', () => {
-    let editorView: EditorView;
-    let editor: TextEditor;
-    let wait: any;
-    let driver: WebDriver;
-
-
+    let serverXml: EditorPage;
+    
     before(async function() {
         this.timeout(60000);
-        driver = VSBrowser.instance.driver;
-        await VSBrowser.instance.openResources(utils.getMvnProjectPath());
+        
         logger.info('Setting up Maven LSP Hover tests');
         
         // Wait for workbench to be ready
+        await VSBrowser.instance.openResources(utils.getMvnProjectPath());
         await VSBrowser.instance.waitForWorkbench();
-        editorView = new EditorView();
-        wait = utils.getWaitHelper();
-
+        
         // Open server.xml file once for all tests
         logger.info('Opening server.xml file for all tests');
         const serverXmlPath = path.resolve(
@@ -38,19 +34,14 @@ describe('LSP Hover tests for Maven Project', () => {
         );
         logger.info(`Server.xml path: ${serverXmlPath}`);
 
-        await VSBrowser.instance.openResources(serverXmlPath, async () => {
-            await wait.sleep(3000); // Allow time for file to load
-        });
-        
-        editor = await editorView.openEditor('server.xml') as TextEditor;
+        serverXml = await new EditorPage().openFile(serverXmlPath, 'server.xml');
         logger.info('Server.xml file opened and editor obtained');
     });
 
     afterEach(async function() {
         // Take screenshot on failure but don't close editor
         if (this.currentTest?.state === 'failed') {
-            const driver = VSBrowser.instance.driver;
-            const screenshot = await driver.takeScreenshot();
+            await VSBrowser.instance.driver.takeScreenshot();
             logger.error(`Test failed: ${this.currentTest.title}`);
         }
     });
@@ -59,7 +50,7 @@ describe('LSP Hover tests for Maven Project', () => {
         this.timeout(10000); // Increase timeout for cleanup operations
         // Close editor after all tests complete
         try {
-            await editorView.closeAllEditors();
+            await new EditorView().closeAllEditors();
             logger.info('Closed all editors after test suite');
         } catch (error) {
             logger.error('Failed to close editors in after hook', error);
@@ -101,18 +92,7 @@ describe('LSP Hover tests for Maven Project', () => {
             logger.testStart(`Hover over ${testCase.element} shows Liberty Language Server documentation`);
             
             try {
-                logger.step(1, `Setting cursor position on ${testCase.element}`);
-                await editor.setCursor(testCase.line, testCase.column);
-                logger.stepSuccess(1, `Cursor positioned on ${testCase.element} at line ${testCase.line}`);
-
-                logger.step(2, 'Triggering hover via command palette');
-                await new Workbench().executeCommand('editor.action.showHover');
-                logger.stepSuccess(2, 'Hover command executed');
-
-                logger.step(3, 'Verifying hover widget appears with Liberty Language Server content');
-                const driver = VSBrowser.instance.driver;
-                const hoverText = await utils.waitForHoverWidget(driver, testCase.element, 15000);
-                
+                const hoverText = await editorUtils.hoverOver(serverXml.getEditor(), testCase.line, testCase.column, testCase.element);
                 expect(hoverText).to.not.be.empty;
                 logger.stepSuccess(3, `Hover widget displayed with Liberty Language Server content for ${testCase.element}`);
 
@@ -129,7 +109,7 @@ describe('LSP Hover tests for Maven Project', () => {
     });
 
     describe('LSP4Jakarta Hover tests in Java file', () => {
-        let javaEditor: TextEditor;
+        let javaFile: EditorPage; 
 
         before(async function() {
             this.timeout(60000);
@@ -148,12 +128,8 @@ describe('LSP Hover tests for Maven Project', () => {
                 'HelloServlet.java'
             );
             logger.info(`Java file path: ${javaFilePath}`);
-
-            await VSBrowser.instance.openResources(javaFilePath, async () => {
-                await wait.sleep(3000); // Allow time for file to load
-            });
+            javaFile = await new EditorPage().openFile(javaFilePath, 'HelloServlet.java')
             
-            javaEditor = await editorView.openEditor('HelloServlet.java') as TextEditor;
             logger.info('HelloServlet.java file opened and editor obtained');
         });
 
@@ -188,17 +164,7 @@ describe('LSP Hover tests for Maven Project', () => {
                 logger.testStart(`Hover over ${testCase.element} shows LSP4Jakarta documentation`);
                 
                 try {
-                    logger.step(1, `Setting cursor position on ${testCase.element}`);
-                    await javaEditor.setCursor(testCase.line, testCase.column);
-                    logger.stepSuccess(1, `Cursor positioned on ${testCase.element} at line ${testCase.line}`);
-
-                    logger.step(2, 'Triggering hover via command palette');
-                    await new Workbench().executeCommand('editor.action.showHover');
-                    logger.stepSuccess(2, 'Hover command executed');
-
-                    logger.step(3, 'Verifying hover widget appears with LSP4Jakarta content');
-                    const driver = VSBrowser.instance.driver;
-                    const hoverText = await utils.waitForHoverWidget(driver, testCase.element, 15000);
+                    const hoverText = await editorUtils.hoverOver(javaFile.getEditor(), testCase.line, testCase.column, testCase.element);
                     
                     expect(hoverText).to.not.be.empty;
                     logger.stepSuccess(3, `Hover widget displayed with LSP4Jakarta content for ${testCase.element}`);
