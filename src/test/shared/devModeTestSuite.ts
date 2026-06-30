@@ -295,7 +295,17 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
             /**
              * The following after hook copies the screenshot from the temporary folder in which it is saved to a known permanent location in the project folder.
              */
-            after(() => {
+            after(async function() {
+                this.timeout(30000);
+                // Restore the Explorer view in case the attach-debugger test left
+                // VS Code in the Debug perspective.  On mac Previous this does not
+                // happen automatically and every subsequent sidebar call would query
+                // the wrong panel, causing ElementNotInteractableError forever.
+                try {
+                    const { Workbench } = require('vscode-extension-tester');
+                    await new Workbench().executeCommand('workbench.view.explorer');
+                    await utils.getWaitHelper().sleep(1000);
+                } catch { /* non-fatal */ }
                 utils.copyScreenshotsToProjectFolder(config.buildTool);
             });
         
