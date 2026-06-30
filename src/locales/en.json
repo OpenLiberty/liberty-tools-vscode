@@ -10,6 +10,7 @@
     "jakarta.ls.output.dropdown": "Language Support for Jakarta EE",
     "jakarta.ls.thumbs.up": "LSP4Jakarta $(thumbsup)",
     "jakarta.ls.started": "Language Server for Jakarta EE started.",
+    "liberty.view.running": "Running...",
     "no.liberty.projects.found": "No Liberty projects found.",
     "starting.liberty.dev.on": "Starting Liberty dev mode on {0}.",
     "cannot.start.liberty.dev": "Cannot start Liberty dev mode on an undefined project.",
@@ -72,9 +73,12 @@
     "hotkey.commands.title.add.project": "Liberty: Add Project to Liberty Tools",
     "hotkey.commands.title.remove.project": "Liberty: Remove Project from Liberty Tools",
     "hotkey.commands.title.show.commands": "Liberty: Show Liberty commands",
+    "hotkey.commands.title.open.build.file": "Liberty: Open build file",
     "workspace.not.saved.projects.may.not.persist": "Save the workspace first. Projects that you manually add to Liberty Tools might not persist in the next VS Code session if you don't save the workspace before you add the project.",
     "no.liberty.modules.found": "No Liberty-enabled modules found in {0}",
-    "select.module.for.command": "Select which module to {0}",
+    "all.modules.currently.running": "All modules in {0} are currently running.",
+    "no.modules.currently.running": "No modules in {0} are currently running.",
+    "select.module.for.command": "Select a Liberty project or submodule",
     "project.not.liberty.enabled": "{0} is not Liberty-enabled",
     "command.start.dev.mode": "start dev mode",
     "command.start.container.dev.mode": "start container dev mode",
@@ -82,5 +86,7 @@
     "command.stop.dev.mode": "stop dev mode",
     "command.run.tests": "run tests",
     "command.attach.debugger": "attach debugger",
-    "command.view.test.report": "view test report"
+    "command.view.test.report": "view test report",
+    "scanning.workspace.folders": "Scanning workspace\u2026 ({0} of {1} folders)",
+    "scanning.workspace.complete": ""
 }
