@@ -6,7 +6,9 @@ import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
 import * as lsp4jakartaLS from "./definitions/lsp4jakartaLSRequestNames";
 
-import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
+import { LibertyProject } from "./liberty/libertyProject";
+import { ProjectRegistry } from "./liberty/projectRegistry";
+import { ProjectTreeProvider } from "./liberty/projectTreeProvider";
 import { LanguageClientOptions } from "vscode-languageclient";
 import { LanguageClient } from "vscode-languageclient/node";
 import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor } from "vscode";
@@ -217,7 +219,7 @@ export function deactivate(): Promise<void[]> {
  * File Watcher to prompt the dev explorer to refresh on file changes
  * @param projectProvider Liberty Dev projects
  */
-export function registerFileWatcher(projectProvider: ProjectProvider): void {
+export function registerFileWatcher(projectProvider: ProjectTreeProvider): void {
     const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
     // Async handler for the file system events (create, change, delete)
     const handleUri = async (uri: vscode.Uri) => {
@@ -344,19 +346,22 @@ async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
 }
 
 function handleWorkspaceSaveInProgress(context: vscode.ExtensionContext) {
-    let projectProvider = getProjectProvider(context);
-    if (projectProvider.getContext().globalState.get('workspaceSaveInProgress') &&
-        projectProvider.getContext().globalState.get('selectedProject') !== undefined) {
-        devCommands.addProjectsToTheDashBoard(projectProvider, projectProvider.getContext().globalState.get('selectedProject') as string);
-        helperUtil.clearDataSavedInGlobalState(projectProvider.getContext());
+    const projectProvider = getProjectProvider(context);
+    const registry = ProjectRegistry.getInstance();
+    if (registry.getContext().globalState.get('workspaceSaveInProgress') &&
+        registry.getContext().globalState.get('selectedProject') !== undefined) {
+        devCommands.addProjectsToTheDashBoard(projectProvider, registry.getContext().globalState.get('selectedProject') as string);
+        helperUtil.clearDataSavedInGlobalState(registry.getContext());
     }
 }
 
-function getProjectProvider(context: vscode.ExtensionContext): ProjectProvider {
-    let projectProvider = ProjectProvider.getInstance();
+function getProjectProvider(context: vscode.ExtensionContext): ProjectTreeProvider {
+    let projectProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
-        projectProvider = new ProjectProvider(context);
-        ProjectProvider.setInstance(projectProvider);
+        const registry = new ProjectRegistry(context);
+        ProjectRegistry.setInstance(registry);
+        projectProvider = new ProjectTreeProvider(registry);
+        ProjectTreeProvider.setInstance(projectProvider);
     }
     return projectProvider;
 }

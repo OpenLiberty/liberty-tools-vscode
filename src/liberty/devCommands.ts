@@ -9,7 +9,9 @@ import * as vscode from "vscode";
 import * as helperUtil from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
 import { QuickPickItem } from "vscode";
-import { LibertyProject, ProjectProvider } from "./libertyProject";
+import { LibertyProject } from "./libertyProject";
+import { ProjectRegistry } from "./projectRegistry";
+import { ProjectTreeProvider } from "./projectTreeProvider";
 import { getReport } from "../util/helperUtil";
 import { COMMAND_TITLES, LIBERTY_SERVER_ENV_PORT_REGEX, isMaven, isGradle, isContainer } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
@@ -40,7 +42,7 @@ export async function openProject(pomPath: string): Promise<void> {
 
 // open the build file (pom.xml / build.gradle) for a Liberty project
 export async function openBuildFile(libProject?: LibertyProject): Promise<void> {
-    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
         const message = localize("cannot.start.liberty.dev");
         console.error(message);
@@ -80,7 +82,7 @@ export async function listAllCommands(): Promise<void> {
 
 // start dev mode
 export async function startDevMode(libProject?: LibertyProject | undefined): Promise<void> {
-    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
         const message = localize("cannot.start.liberty.dev");
         console.error(message);
@@ -109,7 +111,7 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         targetProject.setTerminal(terminal);
         if (isMaven(targetProject.getContextValue())) {
             const pomPath = targetProject.parent ? targetProject.parent.getPath() : targetProject.getPath();
-            const artifactId = (targetProject.parent && (clickedDirectlyOnChild || projectProvider.findLibertyDescendants(targetProject.parent).length > 1))
+            const artifactId = (targetProject.parent && (clickedDirectlyOnChild || ProjectRegistry.getInstance().findLibertyDescendants(targetProject.parent).length > 1))
                 ? targetProject.artifactId
                 : undefined;
             const cmd = await getCommandForMaven(pomPath, "io.openliberty.tools:liberty-maven-plugin:dev", targetProject.getTerminalType(), undefined, artifactId);
@@ -124,13 +126,14 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
 }
 
 export async function removeProject(): Promise<void> {
-    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
+    const registry = ProjectRegistry.getInstance();
 
     // clicked on the empty space and workspace has more than one folders, or
     // from command palette
     // Display the list of current user added projects for user to select.
     const items: LibertyProjectQuickPickItem[] = [];
-    projectProvider.getUserAddedProjects().forEach(function (item) {
+    registry.getUserAddedProjects().forEach(function (item) {
         const qpItem = new LibertyProjectQuickPickItem(item.label,
             item.path);
         items.push(qpItem);
@@ -151,7 +154,7 @@ export async function removeProject(): Promise<void> {
                 .then(answer => {
                     if (answer === yes) {
                         // delete and save
-                        projectProvider.removeInPersistedProjects(selection.detail);
+                        registry.removeInPersistedProjects(selection.detail);
                         vscode.window
                             .showInformationMessage(localize("remove.custom.project.successful"));
                         projectProvider.fireChangeEvent();
@@ -163,7 +166,7 @@ export async function removeProject(): Promise<void> {
 }
 
 function showListOfPathsToAdd(uris: string[]) {
-    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     vscode.window.showQuickPick(uris).then(async selection => {
         if (!selection) {
             return;
@@ -173,7 +176,7 @@ function showListOfPathsToAdd(uris: string[]) {
              * Saving the selected project to globalstate for adding it to the dashboard after 
              * reinitialization of the extension when workspace is saved
              */
-            await projectProvider.getContext().globalState.update('selectedProject', selection);
+            await ProjectRegistry.getInstance().getContext().globalState.update('selectedProject', selection);
             /*
             if the workspace is untitled suggest the user to save the workspace first 
             */
@@ -184,7 +187,8 @@ function showListOfPathsToAdd(uris: string[]) {
 }
 
 export async function addProject(uri: vscode.Uri): Promise<void> {
-    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
+    const registry = ProjectRegistry.getInstance();
     if (uri !== undefined && uri !== null && uri.fsPath !== undefined) {
         // Right mouse clicked on a root folder, or on empty space with only one folder in workspace.
         // Add project if:
@@ -192,9 +196,9 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
         // 2. Project has build files (pom.xml or build.gradle)
         // 
         // Once added, presist the data in workspace storage.
-        console.error("projects " + JSON.stringify(projectProvider.getProjects()));
+        console.error("projects " + JSON.stringify(registry.getProjects()));
         // scan the folder and get a list of folders with pom.xml and build.gradle
-        const uris: string[] = await projectProvider.getListOfMavenAndGradleFolders(uri.fsPath);
+        const uris: string[] = await registry.getListOfMavenAndGradleFolders(uri.fsPath);
         console.log(JSON.stringify(uris));
         if (uris.length > 0) {
             // present the list to add
@@ -212,7 +216,7 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
         if (wsFolders) {
             for (const folder of wsFolders) {
                 const path = folder.uri.fsPath;
-                uris = uris.concat(await projectProvider.getListOfMavenAndGradleFolders(path));
+                uris = uris.concat(await registry.getListOfMavenAndGradleFolders(path));
             }
         }
         if (uris.length === 0) {
@@ -228,7 +232,7 @@ export async function addProject(uri: vscode.Uri): Promise<void> {
 }
 // stop dev mode
 export async function stopDevMode(libProject?: LibertyProject | undefined): Promise<void> {
-    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
         const message = localize("cannot.stop.liberty.dev.on.undefined");
         console.error(message);
@@ -256,7 +260,7 @@ export async function stopDevMode(libProject?: LibertyProject | undefined): Prom
 
 // attach debugger
 export async function attachDebugger(libProject?: LibertyProject | undefined): Promise<void> {
-    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
         const message = localize("cannot.attach.debugger.to.undefined");
         console.error(message);
@@ -322,7 +326,7 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
 
 // custom start dev mode command with history list
 export async function customDevModeWithHistory(libProject?: LibertyProject | undefined): Promise<void> {
-    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
         const message = localize("cannot.custom.start.liberty.dev");
         console.error(message);
@@ -335,7 +339,7 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
     }
 
     // check if we have history for the selected project.
-    const dashboardData: DashboardData = helperUtil.getStorageData(projectProvider.getContext());
+    const dashboardData: DashboardData = helperUtil.getStorageData(ProjectRegistry.getInstance().getContext());
     const history = dashboardData.lastUsedStartParams.filter(element => element.path === targetProject.getPath());
     if (history.length === 0) {
         // no history, show input.
@@ -366,7 +370,8 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
         vscode.window.showInformationMessage(message);
         return;
     }
-    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
+    const registry = ProjectRegistry.getInstance();
     const targetProject = libProject;
 
     // Check if this is a child of an aggregator
@@ -415,14 +420,14 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
             customCommand = customCommand.trim();
             if (customCommand.length > 0) {
                 const projectStartCmdParam: ProjectStartCmdParam = new ProjectStartCmdParam(targetProject.getPath(), customCommand);
-                const dashboardData: DashboardData = helperUtil.getStorageData(projectProvider.getContext());
+                const dashboardData: DashboardData = helperUtil.getStorageData(registry.getContext());
                 dashboardData.addStartCmdParams(projectStartCmdParam);
-                await helperUtil.saveStorageData(projectProvider.getContext(), dashboardData);
+                await helperUtil.saveStorageData(registry.getContext(), dashboardData);
             }
 
             if (isMaven(targetProject.getContextValue())) {
                 const pomPath = targetProject.parent ? targetProject.parent.getPath() : targetProject.getPath();
-                const artifactId = (targetProject.parent && (clickedDirectlyOnChild || projectProvider.findLibertyDescendants(targetProject.parent).length > 1))
+                const artifactId = (targetProject.parent && (clickedDirectlyOnChild || registry.findLibertyDescendants(targetProject.parent).length > 1))
                     ? targetProject.artifactId
                     : undefined;
                 const cmd = await getCommandForMaven(pomPath, "io.openliberty.tools:liberty-maven-plugin:dev", targetProject.getTerminalType(), customCommand, artifactId);
@@ -439,7 +444,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
 
 // start dev mode in a container
 export async function startContainerDevMode(libProject?: LibertyProject | undefined): Promise<void> {
-    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
         const message = localize("cannot.start.liberty.dev.in.container.on.undefined.project");
         console.error(message);
@@ -465,7 +470,7 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
         targetProject.setTerminal(terminal);
         if (isContainer(targetProject.getContextValue()) && isMaven(targetProject.getContextValue())) {
             const pomPath = targetProject.parent ? targetProject.parent.getPath() : targetProject.getPath();
-            const artifactId = (targetProject.parent && (clickedDirectlyOnChild || projectProvider.findLibertyDescendants(targetProject.parent).length > 1))
+            const artifactId = (targetProject.parent && (clickedDirectlyOnChild || ProjectRegistry.getInstance().findLibertyDescendants(targetProject.parent).length > 1))
                 ? targetProject.artifactId
                 : undefined;
             const cmd = await getCommandForMaven(pomPath, "io.openliberty.tools:liberty-maven-plugin:devc", targetProject.getTerminalType(), undefined, artifactId);
@@ -481,7 +486,7 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
 
 // run tests on dev mode
 export async function runTests(libProject?: LibertyProject | undefined): Promise<void> {
-    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
         const message = localize("cannot.run.test.on.undefined.project");
         console.error(message);
@@ -505,7 +510,7 @@ export async function runTests(libProject?: LibertyProject | undefined): Promise
 
 // open surefire, failsafe, or gradle test report
 export async function openReport(reportType: string, libProject?: LibertyProject | undefined): Promise<void> {
-    const projectProvider: ProjectProvider = ProjectProvider.getInstance();
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider || !reportType) {
         const message = localize("cannot.open.test.reports.on.undefined.project");
         console.error(message);
@@ -546,7 +551,7 @@ export async function deleteTerminal(terminal: vscode.Terminal): Promise<void> {
         const pid = await terminal.processId;
         const libProject = terminals[Number(pid)];
         libProject.isDevMode = false;
-        const pp = ProjectProvider.getInstance();
+        const pp = ProjectTreeProvider.getInstance();
         if (pp) { pp.notifyDevModeChanged(libProject); }
         libProject.deleteTerminal();
     } catch {
@@ -615,8 +620,9 @@ function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel:
 /*
 Method adds a project which is selected by the user from the list to the liberty dashboard 
 */
-export async function addProjectsToTheDashBoard(projectProvider: ProjectProvider, selection: string): Promise<void> {
-    const result = await projectProvider.addUserSelectedPath(selection, projectProvider.getProjects());
+export async function addProjectsToTheDashBoard(projectProvider: ProjectTreeProvider, selection: string): Promise<void> {
+    const registry = ProjectRegistry.getInstance();
+    const result = await registry.addUserSelectedPath(selection, registry.getProjects());
     const message = localize(`add.project.manually.message.${result}`, selection);
     (result !== 0) ? console.error(message) : console.info(message);
     vscode.window.showInformationMessage(message);
