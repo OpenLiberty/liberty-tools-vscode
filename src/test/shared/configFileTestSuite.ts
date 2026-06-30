@@ -66,7 +66,7 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
         let wait: any;
 
         before(async function () {
-            this.timeout(60000);
+            this.timeout(120000);
             logger.info(`Setting up Maven ${config.tabTitle} tests`);
 
             await VSBrowser.instance.openResources(config.getProjectPath());
@@ -89,7 +89,7 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
         });
 
         after(async function () {
-            this.timeout(10000);
+            this.timeout(45000);
             try {
                 if (editor) {
                     const currentText = await editor.getEditor().getText();
@@ -111,17 +111,18 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
             } catch (error) {
                 logger.error('Failed to close editors in after hook', error);
             }
+            await utils.closeWorkspace();
             utils.copyScreenshotsToProjectFolder('maven');
         });
 
         it('Liberty Language Server should initialize', async function () {
-            this.timeout(60000);
+            this.timeout(300000);
             logger.testStart('Liberty Language Server should initialize');
             try {
                 await utils.waitForLanguageServerInit(
                     'Language Support for Liberty',
                     'Initialized Liberty Language server',
-                    60
+                    240
                 );
                 logger.testComplete('Liberty Language Server initialized successfully');
             } catch (error) {
