@@ -34,12 +34,12 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
                     );
 
         before(async function() {
-            this.timeout(60000);
+            this.timeout(120000);
             logger.info('Setting up rest_class snippet test');
 
             driver = VSBrowser.instance.driver;
-            wait = utils.getWaitHelper(); 
-            // Open folder, wait for workbench 
+            wait = utils.getWaitHelper();
+            // Open folder, wait for workbench
             await VSBrowser.instance.openResources(config.getProjectPath());
             await VSBrowser.instance.waitForWorkbench();
 
@@ -58,7 +58,7 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
         });
 
         after(async function() {
-            this.timeout(15000);
+            this.timeout(60000);
             try {
                 if (editorPage) {
                     // Select all text first, then clear
@@ -85,25 +85,26 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
                 logger.error('Failed to close editors in after hook', error);
             }
             
+            await utils.closeWorkspace();
             utils.copyScreenshotsToProjectFolder(config.buildTool);
         });
         
         it('LSP4Jakarta Language Server should initialize', async function() {
-                this.timeout(60000);
+                this.timeout(300000);
                 logger.testStart('LSP4Jakarta Language Server should initialize');
                 
                 try {
                     await utils.waitForLanguageServerInit(
                         'Language Support for Jakarta EE',
                         'Initializing Jakarta EE server',
-                        60
+                        240
                     );
                     logger.testComplete('LSP4Jakarta Language Server initialized successfully');
                 } catch (error) {
                     logger.testFailed('LSP4Jakarta Language Server should initialize', error);
                     throw error;
                 }
-            });    
+            });
 
             it('rest_class snippet populates correct REST class', async function ()  {
                 this.timeout(275000);

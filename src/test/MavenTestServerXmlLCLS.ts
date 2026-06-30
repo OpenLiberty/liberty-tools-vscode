@@ -34,6 +34,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
         await VSBrowser.instance.openResources(serverXmlPath, async () => {
             await wait.sleep(3000);
         });
+        
 
         editor = await editorView.openEditor('server.xml') as TextEditor;
         originalContent = await editor.getText();
@@ -47,6 +48,9 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             logger.error(`Test failed: ${this.currentTest?.title}`);
         }
 
+        // Dismiss notification toasts before closing the panel — a toast covering
+        // the close button causes ElementClickInterceptedError on macOS CI
+        await utils.dismissNotifications();
         // Close the bottom bar and re-focus the editor
         await new BottomBarPanel().toggle(false);
         editor = await editorView.openEditor('server.xml') as TextEditor;
@@ -79,12 +83,12 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
     });
 
     it('Liberty Language Server should initialize', async function() {
-        this.timeout(60000);
+        this.timeout(300000);
         logger.testStart('Liberty Language Server should initialize');
         await utils.waitForLanguageServerInit(
             'Language Support for Liberty',
             'Initialized Liberty Language server',
-            60
+            240
         );
         logger.testComplete('Liberty Language Server initialized successfully');
     });

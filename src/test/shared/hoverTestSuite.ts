@@ -26,7 +26,7 @@ export function runHoverTestSuite(config: HoverConfig){
         let serverXml: EditorPage;
         
         before(async function() {
-            this.timeout(60000);
+            this.timeout(120000);
             
             logger.info(`Setting up ${config.buildTool === 'maven' ? 'Maven' : 'Gradle'} LSP Hover tests`);
             
@@ -59,27 +59,26 @@ export function runHoverTestSuite(config: HoverConfig){
         });
 
         after(async function() {
-            this.timeout(10000); // Increase timeout for cleanup operations
-            // Close editor after all tests complete
+            this.timeout(45000);
             try {
                 await new EditorView().closeAllEditors();
                 logger.info('Closed all editors after test suite');
             } catch (error) {
                 logger.error('Failed to close editors in after hook', error);
             }
-            
+            await utils.closeWorkspace();
             utils.copyScreenshotsToProjectFolder(config.buildTool);
         });
 
         it('Liberty Language Server should initialize', async function() {
-            this.timeout(60000);
+            this.timeout(300000);
             logger.testStart('Liberty Language Server should initialize');
             
             try {
                 await utils.waitForLanguageServerInit(
                     'Language Support for Liberty',
                     'Initialized Liberty Language server',
-                    60
+                    240
                 );
                 logger.testComplete('Liberty Language Server initialized successfully');
             } catch (error) {
@@ -139,14 +138,14 @@ export function runHoverTestSuite(config: HoverConfig){
             });
 
             it('LSP4Jakarta Language Server should initialize', async function() {
-                this.timeout(60000);
+                this.timeout(300000);
                 logger.testStart('LSP4Jakarta Language Server should initialize');
                 
                 try {
                     await utils.waitForLanguageServerInit(
                         'Language Support for Jakarta EE',
                         'Initializing Jakarta EE server',
-                        60
+                        240
                     );
                     logger.testComplete('LSP4Jakarta Language Server initialized successfully');
                 } catch (error) {

@@ -20,7 +20,15 @@ export class EditorPage {
         await VSBrowser.instance.openResources(filePath, async () => {
             await utils.getWaitHelper().sleep(loadDelay);
         });
-        this.editor = await this.editorView.openEditor(tabTitle) as TextEditor;
+        // openEditor can fail on slow CI if the tab hasn't rendered yet —
+        // retry for up to 30 s before giving up.
+        this.editor = await utils.waitForCondition(async () => {
+            try {
+                return await this.editorView.openEditor(tabTitle) as TextEditor;
+            } catch {
+                return undefined;
+            }
+        }, 30) as TextEditor;
         return this;
     }
 
