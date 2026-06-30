@@ -524,21 +524,21 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 
 	/**
-	 * Unified discovery pipeline. Reads and parses every build file exactly once,
-	 * then classifies, creates LibertyProject objects, and wires the hierarchy —
-	 * all in a single method replacing the old findValidPOMs / findValidGradleBuildFiles
-	 * / buildHierarchy trio.
+	 * Crawl stage. Reads and parses every build file exactly once, validates Liberty
+	 * relevance, and produces shell LibertyProject objects in projectsMap.
+	 * Children are identified by resolved absolute path — no string matching.
 	 *
 	 * Phase 1 — parallel read/parse of all files into ParsedBuildEntry[]
-	 * Phase 2 — classify parents: build mavenChildMap + gradleChildSet
-	 * Phase 3 — parallel validate + create LibertyProject objects into projectsMap
-	 * Phase 4 — link parent-child relationships, stamp rootProjects (pure in-memory)
+	 * Phase 2 — classify parents: resolve mavenChildPomPaths + gradleChildBuildPaths
+	 * Phase 3 — parallel validate + create shell LibertyProject objects into projectsMap
+	 *
+	 * Returns { projectsMap, allEntries } for consumption by stampProjects.
 	 */
 	private async discoverProjects(
 		pomPaths: string[],
 		gradlePaths: string[],
 		projectsMap: Map<string, LibertyProject>
-	): Promise<ParsedBuildEntry[]> {
+	): Promise<{ projectsMap: Map<string, LibertyProject>; allEntries: ParsedBuildEntry[] }> {
 		// eslint-disable-next-line @typescript-eslint/no-var-requires
 		const g2js = require("gradle-to-js/lib/parser");
 		const t0 = Date.now();
@@ -611,20 +611,38 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		// Maven: scan all POMs for parent declarations + build mavenChildMap
 		let mavenChildMap: Map<string, string[]> = new Map();
 		const mavenParentPaths = new Set<string>();
+		// Resolved absolute pom.xml paths of all known child modules.
+		// <module> is a relative directory path (Maven spec), never an artifactId.
+		// Resolving here handles arbitrary paths like "../other/module" correctly.
+		const mavenChildPomPaths = new Set<string>();
 		for (const entry of mavenEntries) {
 			if (!entry.xmlString) { continue; }
 			const validParent = mavenUtil.validParentPom(entry.xmlString);
+			console.log(`[discovery] phase2 validParentPom(${entry.path}): isValid=${validParent.isValidBuildFile()} type=${validParent.getProjectType()}`);
 			if (validParent.isValidBuildFile()) {
+				const childModules = mavenUtil.findChildMavenModules(entry.xmlString);
+				console.log(`[discovery] phase2 findChildMavenModules(${entry.path}):`, JSON.stringify(Array.from(childModules.entries())));
 				mavenChildMap = new Map([
 					...Array.from(mavenChildMap.entries()),
-					...Array.from(mavenUtil.findChildMavenModules(entry.xmlString).entries()),
+					...Array.from(childModules.entries()),
 				]);
+				const parentDir = vscodePath.dirname(entry.path);
+				for (const modulePaths of childModules.values()) {
+					for (const modulePath of modulePaths) {
+						const resolvedPom = vscodePath.resolve(parentDir, modulePath, "pom.xml");
+						mavenChildPomPaths.add(resolvedPom);
+						console.log(`[discovery] phase2 resolved child pom: ${resolvedPom}`);
+					}
+				}
 				mavenParentPaths.add(entry.path);
 			}
 		}
 
 		// Gradle: scan all build.gradle entries for settings.gradle includes
-		const gradleChildSet = new Set<string>();
+		// Resolve include() paths to absolute build.gradle paths.
+		// Gradle project paths use ':' as separator (e.g. "services:api" -> ./services/api).
+		// See: https://docs.gradle.org/current/userguide/multi_project_builds.html
+		const gradleChildBuildPaths = new Set<string>();
 		const gradleParentPaths = new Set<string>();
 		for (const entry of gradleEntries) {
 			// Need parsedSettings for include detection; parsedBuild OR regexBuildFile is sufficient
@@ -633,7 +651,14 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 				entry.parsedBuild ?? {}, entry.parsedSettings, entry.path
 			);
 			if (gradleBuildFile.getChildren().length > 0) {
-				gradleBuildFile.getChildren().forEach(c => gradleChildSet.add(c));
+				const parentDir = vscodePath.dirname(entry.path);
+				for (const includePath of gradleBuildFile.getChildren()) {
+					// Convert Gradle project path to filesystem path: replace ':' with '/'
+					const fsPath = includePath.replace(/:/g, "/");
+					const resolvedBuild = vscodePath.resolve(parentDir, fsPath, "build.gradle");
+					gradleChildBuildPaths.add(resolvedBuild);
+					console.log(`[discovery] phase2 resolved gradle child: ${resolvedBuild}`);
+				}
 				gradleParentPaths.add(entry.path);
 			}
 		}
@@ -647,9 +672,16 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			...mavenEntries.map(async (entry) => {
 				if (!entry.xmlString) { return; }
 				let buildFile: BuildFileImpl;
-				if (mavenParentPaths.has(entry.path)) {
+				const isParent = mavenParentPaths.has(entry.path);
+				const isChild = mavenChildPomPaths.has(entry.path);
+				if (isParent) {
 					buildFile = mavenUtil.validParentPom(entry.xmlString);
+				} else if (isChild) {
+					// Child module resolved by path — no string matching needed.
+					buildFile = new BuildFileImpl(true, LIBERTY_PROJECT_MAVEN);
+					buildFile.setBuildFilePath(entry.path);
 				} else {
+					// Not a known child — check for standalone Liberty plugin
 					buildFile = mavenUtil.validPom(entry.xmlString, mavenChildMap);
 				}
 				if (!buildFile.isValidBuildFile()) { return; }
@@ -675,15 +707,14 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			...gradleEntries.map(async (entry) => {
 				// Either a full g2js parse or a regex pre-screen result must be present
 				if (!entry.parsedBuild && !entry.regexBuildFile) { return; }
-				const dirName = vscodePath.basename(vscodePath.dirname(entry.path));
 				let buildFile: BuildFileImpl;
 
 				if (gradleParentPaths.has(entry.path)) {
 					// Parent aggregator — parsedBuild available (aggregators need settings include detection)
 					const gf = gradleUtil.findChildGradleProjects(entry.parsedBuild ?? {}, entry.parsedSettings, entry.path);
 					buildFile = new GradleBuildFile(true, gf.getProjectType());
-				} else if (gradleChildSet.has(dirName)) {
-					// Child module — validate; use regexBuildFile if g2js was skipped
+				} else if (gradleChildBuildPaths.has(entry.path)) {
+					// Child module identified by resolved path — validate; use regexBuildFile if g2js was skipped
 					const gf = entry.regexBuildFile
 						? entry.regexBuildFile
 						: gradleUtil.validGradleBuild(entry.parsedBuild!, entry.path);
@@ -724,57 +755,94 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			}),
 		]);
 		console.log(`[perf] discoverProjects phase3 (create projects): ${Date.now() - t0}ms  (${projectsMap.size} valid)`);
-		return allEntries;
+		return { projectsMap, allEntries };
 	}
 
 	/**
-	 * Phase 4 — metadata extraction + parent-child hierarchy linking.
-	 * Runs once over the fully-merged projectsMap after all workspace folders
-	 * have been discovered. Writes parent/child/isAggregator fields and stamps
-	 * this.rootProjects.
+	 * Enrichment stage. Runs once over the fully-merged shell objects from discoverProjects.
+	 * Writes identity and classification fields (artifactId, isAggregator, isLibertyEnabled)
+	 * onto each shell. Requires the full cross-folder picture.
+	 *
+	 * Consumes allEntries (ParsedBuildEntry[]) — raw parsed content is discarded after this stage.
+	 * Returns { projectsMap, mavenMetadataMap, gradleMetadataMap } for linkProjects.
 	 */
-	private async linkHierarchy(
+	private async stampProjects(
 		projectsMap: Map<string, LibertyProject>,
 		allEntries: ParsedBuildEntry[]
-	): Promise<void> {
+	): Promise<{
+		projectsMap: Map<string, LibertyProject>;
+		mavenMetadataMap: Map<string, mavenUtil.MavenProjectMetadata>;
+		gradleMetadataMap: Map<string, gradleUtil.GradleProjectMetadata>;
+	}> {
 		const t0 = Date.now();
-		const mavenProjectsByArtifactId = new Map<string, LibertyProject>();
-		const gradleProjectsByName = new Map<string, LibertyProject>();
 		const mavenMetadataMap = new Map<string, mavenUtil.MavenProjectMetadata>();
+		const gradleMetadataMap = new Map<string, gradleUtil.GradleProjectMetadata>();
 
 		for (const entry of allEntries) {
 			const project = projectsMap.get(entry.path);
-			if (!project) { continue; }
+			if (!project) {
+				console.log(`[stamp] no projectsMap entry for ${entry.path} — skipping`);
+				continue;
+			}
 			try {
 				if (entry.type === "maven" && entry.xmlString) {
 					const metadata = await mavenUtil.extractMavenMetadata(entry.path, entry.xmlString);
+					console.log(`[stamp] maven ${entry.path}: artifactId=${metadata.artifactId}, parentArtifactId=${metadata.parentArtifactId}, isAggregator=${metadata.isAggregator}, isLibertyEnabled=${metadata.isLibertyEnabled}`);
 					project.artifactId = metadata.artifactId;
 					project.parentArtifactId = metadata.parentArtifactId;
 					project.isAggregator = metadata.isAggregator;
 					project.isLibertyEnabled = metadata.isLibertyEnabled;
-					mavenProjectsByArtifactId.set(metadata.artifactId, project);
 					mavenMetadataMap.set(entry.path, metadata);
 				} else if (entry.type === "gradle" && (entry.parsedBuild || entry.regexBuildFile)) {
 					const metadata = await gradleUtil.extractGradleMetadata(entry.path, entry.parsedBuild ?? null, entry.parsedSettings);
+					console.log(`[stamp] gradle ${entry.path}: projectName=${metadata.projectName}, parentProjectName=${metadata.parentProjectName}, isAggregator=${metadata.isAggregator}, isLibertyEnabled=${metadata.isLibertyEnabled}`);
 					project.artifactId = metadata.projectName;
 					project.parentArtifactId = metadata.parentProjectName;
 					project.isAggregator = metadata.isAggregator;
 					project.isLibertyEnabled = metadata.isLibertyEnabled;
-					gradleProjectsByName.set(metadata.projectName, project);
+					gradleMetadataMap.set(entry.path, metadata);
 				}
 			} catch (error) {
-				console.error(`Error extracting metadata for ${entry.path}:`, error);
+				console.error(`Error stamping metadata for ${entry.path}:`, error);
 				project.isLibertyEnabled = true;
 			}
 		}
+		console.log(`[perf] stampProjects: ${Date.now() - t0}ms  (${mavenMetadataMap.size} maven, ${gradleMetadataMap.size} gradle)`);
+		return { projectsMap, mavenMetadataMap, gradleMetadataMap };
+	}
 
-		// Link parent-child via parentArtifactId (standard Maven <parent> element).
-		// Inherit isLibertyEnabled inline — child gets it if parent has it.
+	/**
+	 * Association stage. Receives stamped LibertyProject objects and wires
+	 * parent/child relationships via parentArtifactId and filesystem module paths.
+	 * Computes rootProjects. Does no file I/O, receives no raw parsed content.
+	 */
+	private async linkProjects(
+		projectsMap: Map<string, LibertyProject>,
+		mavenMetadataMap: Map<string, mavenUtil.MavenProjectMetadata>,
+		gradleMetadataMap: Map<string, gradleUtil.GradleProjectMetadata>
+	): Promise<void> {
+		const t0 = Date.now();
+		const mavenProjectsByArtifactId = new Map<string, LibertyProject>();
+		const gradleProjectsByName = new Map<string, LibertyProject>();
+
+		// Build lookup maps from stamped metadata
+		for (const [path, metadata] of mavenMetadataMap.entries()) {
+			const project = projectsMap.get(path);
+			if (project) { mavenProjectsByArtifactId.set(metadata.artifactId, project); }
+		}
+		for (const [path, metadata] of gradleMetadataMap.entries()) {
+			const project = projectsMap.get(path);
+			if (project) { gradleProjectsByName.set(metadata.projectName, project); }
+		}
+
+		// Link parent-child via parentArtifactId (standard Maven <parent> / Gradle settings include).
+		// Inherit isLibertyEnabled — child gets it if parent has it.
 		for (const project of projectsMap.values()) {
 			if (!project.parentArtifactId) { continue; }
 			const parent = project.path.endsWith("pom.xml")
 				? mavenProjectsByArtifactId.get(project.parentArtifactId)
 				: gradleProjectsByName.get(project.parentArtifactId);
+			console.log(`[link] ${project.artifactId} parentArtifactId=${project.parentArtifactId} -> parent found=${!!parent}`);
 			if (parent && !parent.children.includes(project)) {
 				project.parent = parent;
 				parent.children.push(project);
@@ -786,7 +854,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		}
 
 		// Link via filesystem paths for Maven projects missing <parent> element.
-		// Inherit isLibertyEnabled inline — child gets it if parent has it.
+		// Inherit isLibertyEnabled — child gets it if parent has it.
 		for (const [parentPath, parentMetadata] of mavenMetadataMap.entries()) {
 			if (!parentMetadata.isAggregator || parentMetadata.modules.length === 0) { continue; }
 			const parentProject = projectsMap.get(parentPath);
@@ -822,7 +890,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		this.rootProjects = Array.from(projectsMap.values())
 			.filter(p => !p.parent)
 			.filter(p => p.isLibertyEnabled || this.hasLibertyDescendants(p));
-		console.log(`[perf] linkHierarchy: ${Date.now() - t0}ms  (${this.rootProjects.length} roots)`);
+		console.log(`[perf] linkProjects: ${Date.now() - t0}ms  (${this.rootProjects.length} roots)`);
 	}
 
 	/**
@@ -852,7 +920,12 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					projectsMap.set(pomFile, this.projects.get(pomFile)!);
 				} else {
 					const xmlString = await fse.readFile(pomFile, "utf8");
-					projectsMap.set(pomFile, await createProject(this._context, pomFile, LIBERTY_PROJECT_MAVEN, xmlString));
+					// Only add if LMP is actively declared in <build><plugins>.
+					// server.xml presence alone is not sufficient — the pom must have LMP active.
+					const buildFile = mavenUtil.validPom(xmlString, new Map());
+					if (buildFile.isValidBuildFile()) {
+						projectsMap.set(pomFile, await createProject(this._context, pomFile, buildFile.getProjectType(), xmlString));
+					}
 				}
 			} else {
 				const gradleFile = vscodePath.resolve(folder, "build.gradle");
@@ -860,7 +933,12 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					if (this.projects.has(gradleFile)) {
 						projectsMap.set(gradleFile, this.projects.get(gradleFile)!);
 					} else {
-						projectsMap.set(gradleFile, await createProject(this._context, gradleFile, LIBERTY_PROJECT_GRADLE));
+						const rawContent = await fse.readFile(gradleFile, "utf8").catch(() => "");
+						// Only add if LMP is actively declared — server.xml presence alone is not sufficient.
+						const buildFile = gradleUtil.detectLibertyPluginFromText(rawContent);
+						if (buildFile) {
+							projectsMap.set(gradleFile, await createProject(this._context, gradleFile, buildFile.getProjectType()));
+						}
 					}
 				}
 			}
@@ -919,14 +997,14 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			console.log(`[perf] folder ${folderPath} findFiles: ${Date.now() - t0}ms  (${pomPaths.length} pom, ${gradlePaths.length} gradle)`);
 
 			const folderMap: Map<string, LibertyProject> = new Map();
-			const folderEntries = await this.discoverProjects(pomPaths, gradlePaths, folderMap);
+			const { allEntries: folderEntries } = await this.discoverProjects(pomPaths, gradlePaths, folderMap);
 
 			// Merge into shared map (JS single-thread guarantees no interleaving at Map.set)
 			for (const [k, v] of folderMap) { newProjectsMap.set(k, v); }
 			allEntries.push(...folderEntries);
 			foldersComplete++;
 
-			// Provisional roots — no hierarchy yet, but projects appear immediately
+			// Provisional roots — shells visible immediately, hierarchy wired after all folders complete
 			this.projects = new Map(newProjectsMap);
 			this.rootProjects = Array.from(newProjectsMap.values()).filter(p => !p.parent);
 
@@ -941,8 +1019,11 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 		// Fallback: server.xml-based project discovery
 		await this.addServerXMLProjects(newProjectsMap);
 
-		// Phase 4: cross-folder hierarchy linking — runs once over full merged map
-		await this.linkHierarchy(newProjectsMap, allEntries);
+		// Stamp: enrich shells with identity and classification — requires full cross-folder picture
+		const { mavenMetadataMap, gradleMetadataMap } = await this.stampProjects(newProjectsMap, allEntries);
+
+		// Link: wire parent/child relationships and compute roots — no I/O, no raw parsed content
+		await this.linkProjects(newProjectsMap, mavenMetadataMap, gradleMetadataMap);
 		console.log(`[perf] updateProjects total: ${Date.now() - t0}ms  (${newProjectsMap.size} projects, ${this.rootProjects.length} roots)`);
 
 		this.projects = newProjectsMap;
