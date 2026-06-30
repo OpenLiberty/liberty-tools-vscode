@@ -31,12 +31,14 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
             
             dashboard = new DashboardPage();
 
-            // Wait for the Liberty Tools sidebar section to be fully registered
-            // before handing control to tests.  On mac Previous the extension host
-            // takes longer to activate after openResources — without this gate the
-            // first test fires while the sidebar DOM is still mid-construction,
-            // causing StaleElementReferenceError on every getDashboardSection poll.
-            await dashboard.getSection();
+            // Wait until the Liberty Tools section exists AND its tree items are
+            // visible before handing control to tests.  On mac Previous the extension
+            // host takes much longer to scan the project and populate the dashboard
+            // after openResources — getDashboardSection alone resolves too early
+            // (section header present but getVisibleItems still throws
+            // ElementNotInteractableError).  Waiting for the project item here means
+            // every test starts from a fully-ready sidebar.
+            await dashboard.getProjectItem(config.projectConstant);
         });
 
         afterEach(async function() {
