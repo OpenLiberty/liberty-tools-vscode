@@ -24,12 +24,19 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
     describe(`Devmode action tests for ${config.buildTool} Project`, () => {
     
         before(async function() {
-            this.timeout(60000);
+            this.timeout(120000);
     
             await VSBrowser.instance.openResources(config.getProjectPath());
             await VSBrowser.instance.waitForWorkbench();
             
             dashboard = new DashboardPage();
+
+            // Wait for the Liberty Tools sidebar section to be fully registered
+            // before handing control to tests.  On mac Previous the extension host
+            // takes longer to activate after openResources — without this gate the
+            // first test fires while the sidebar DOM is still mid-construction,
+            // causing StaleElementReferenceError on every getDashboardSection poll.
+            await dashboard.getSection();
         });
 
         afterEach(async function() {
