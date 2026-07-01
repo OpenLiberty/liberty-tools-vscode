@@ -252,8 +252,13 @@ export async function getDashboardSection(sidebar: any): Promise<any> {
     const wait = getWaitHelper();
     return await wait.forCondition(async () => {
         try {
-            // Get fresh content on each iteration to avoid stale references
-            const contentPart = sidebar.getContent();
+            // Re-create SideBarView on every iteration — on mac Previous the
+            // sidebar object itself goes stale during a workspace transition and
+            // getSections() returns dead nodes on every call until VS Code
+            // finishes rebuilding the DOM.
+            const { SideBarView } = require('vscode-extension-tester');
+            const freshSidebar = new SideBarView();
+            const contentPart = freshSidebar.getContent();
             const sections = await contentPart.getSections();
             
             // Find the Liberty Tools section
