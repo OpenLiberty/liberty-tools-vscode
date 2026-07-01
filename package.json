@@ -253,16 +253,19 @@
 		"buildJakarta": "gulp buildJakartaJdt buildJakartaLs",
 		"test": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/*.js' --code_settings src/test/resources/settings.json",
 		"test-maven": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/M*.js' --code_settings src/test/resources/settings.json",
-		"test-gradle": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js' --code_settings src/test/resources/settings.json"
+		"test-gradle": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js' --code_settings src/test/resources/settings.json",
+		"test:unit": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' node --require ts-node/register node_modules/.bin/mocha --config .mocharc.unit.yml"
 	},
 	"devDependencies": {
 		"@types/chai": "4.3.4",
 		"@types/mocha": "10.0.0",
 		"@types/node": "20.0.0",
 		"@types/selenium-webdriver": "4.1.22",
+		"@types/sinon": "^21.0.1",
 		"@types/vscode": "1.42.0",
 		"@typescript-eslint/eslint-plugin": "8.0.0",
 		"@typescript-eslint/parser": "8.0.0",
+		"@vscode/test-electron": "2.4.0",
 		"axios": "1.16.0",
 		"chai": "4.3.7",
 		"clipboardy": "2.3.0",
@@ -272,14 +275,15 @@
 		"gulp": "5.0.1",
 		"gulp-download2": "1.1.0",
 		"gulp-xml": "1.0.5",
+		"minimatch": "9.0.7",
 		"mocha": "11.7.6",
+		"sinon": "^22.0.0",
 		"ts-loader": "9.5.7",
+		"ts-node": "^10.9.2",
 		"typescript": "6.0.3",
 		"vscode-extension-tester": "8.21.0",
-		"@vscode/test-electron": "2.4.0",
 		"webpack": "5.107.0",
 		"webpack-cli": "5.0.0",
-		"minimatch": "9.0.7",
 		"xml2js": "0.5.0"
 	},
 	"overrides": {
