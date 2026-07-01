@@ -4,6 +4,7 @@
   "files.simpleDialog.enable": true,
   "git.autoRepositoryDetection": false,
   "github.copilot.enable": false,
+  "security.workspace.trust.enabled": false,
   "terminal.integrated.sendKeybindingsToShell": true,
   "typescript.updateImportsOnFileMove.enabled": "always",
   "window.dialogStyle": "custom",

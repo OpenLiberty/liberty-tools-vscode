@@ -45,21 +45,44 @@ export async function waitForLanguageServerInit(
     
     await wait.forCondition(async () => {
         try {
-            // Open the bottom bar panel (Output)
+            // Open the bottom bar panel (Output).
+            // On macOS CI after workspace transitions the BottomBarPanel element
+            // can be stale or not yet visible — give it time to become interactable.
             const bottomBar = new BottomBarPanel();
-            await bottomBar.toggle(true);
+            try {
+                await bottomBar.toggle(true);
+            } catch (toggleErr: any) {
+                logger.info(`BottomBarPanel toggle failed (${toggleErr.name}), will retry...`);
+                await wait.sleep(2000);
+                return false;
+            }
             await wait.sleep(500);
             
             // Get the OutputView
-            const outputView = await bottomBar.openOutputView();
+            let outputView;
+            try {
+                outputView = await bottomBar.openOutputView();
+            } catch (ovErr: any) {
+                logger.info(`openOutputView failed (${ovErr.name}), will retry...`);
+                await wait.sleep(2000);
+                return false;
+            }
             await wait.sleep(500);
             
-            // Select the specific output channel
-            await outputView.selectChannel(channelName);
+            // Select the specific output channel.
+            // The channel may not exist yet if the LS hasn't registered it — treat as retry.
+            try {
+                await outputView.selectChannel(channelName);
+            } catch (selErr: any) {
+                logger.info(`selectChannel failed (${selErr.name}), channel not yet registered, will retry...`);
+                await dismissNotifications();
+                await bottomBar.toggle(false);
+                await wait.sleep(2000);
+                return false;
+            }
             await wait.sleep(1000);
             
             // Click in the output view to focus it, then use clipboard to get content
-            // This is similar to how terminal content is read in checkTerminalforServerState
             const outputElement = await outputView.getEnclosingElement();
             await outputElement.click();
             await wait.sleep(500);
@@ -71,7 +94,9 @@ export async function waitForLanguageServerInit(
             await wait.sleep(500);
             const outputText = clipboard.readSync();
             
-            // Close the output panel
+            // Dismiss notification toasts before closing — a toast covering the
+            // panel close button causes ElementClickInterceptedError on macOS CI.
+            await dismissNotifications();
             await bottomBar.toggle(false);
             
             if (outputText.includes(initMessage)) {
@@ -83,11 +108,15 @@ export async function waitForLanguageServerInit(
             return false;
         } catch (error) {
             logger.info(`Error checking the ${channelName} channel: ${error}, retrying...`);
+            try {
+                await dismissNotifications();
+                await new BottomBarPanel().toggle(false);
+            } catch { /* ignore */ }
             return false;
         }
     }, {
         timeout: timeout * 1000,
-        pollInterval: 2000,
+        pollInterval: 3000,
         message: `The ${channelName} output channel did not initialize within ${timeout} seconds`
     });
 }
@@ -177,6 +206,21 @@ export async function waitForSuccess(func: () => Promise<any>, timeout: number =
     }, timeout);
 }
 
+/**
+ * Dismiss any visible VS Code notification toasts.
+ * Toasts can intercept clicks on other elements (e.g. the BottomBarPanel close
+ * button), causing ElementClickInterceptedError on macOS CI.
+ */
+export async function dismissNotifications(): Promise<void> {
+    try {
+        const workbench = new Workbench();
+        await workbench.executeCommand('notifications.clearAll');
+        await getWaitHelper().sleep(300);
+    } catch {
+        // Non-fatal — if there are no notifications the command is a no-op
+    }
+}
+
 export function getMvnProjectPath(): string {
     const mvnProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "maven", "liberty-maven-test-wrapper-app");
     logger.info("Path is : " + mvnProjectPath);
@@ -198,53 +242,75 @@ export function getGradle9ProjectPath(): string {
 
 export async function getDashboardSection(sidebar: any): Promise<any> {
     logger.info("Getting Liberty Tools section");
-    return await waitForCondition(async () => {
-        // Get fresh content on each iteration to avoid stale references
-        const contentPart = sidebar.getContent();
-        const sections = await contentPart.getSections();
-        
-        // Find the Liberty Tools section
-        for (const sec of sections) {
-            const title = await sec.getTitle();
-            if (title === 'Liberty Tools') {
-                return sec;
+    const wait = getWaitHelper();
+    return await wait.forCondition(async () => {
+        try {
+            // Re-create SideBarView on every iteration — on mac Previous (cold
+            // VS Code install) the sidebar object goes stale during workspace
+            // transitions and getSections() returns dead nodes on every call.
+            const { SideBarView } = require('vscode-extension-tester');
+            const freshSidebar = new SideBarView();
+            const contentPart = freshSidebar.getContent();
+            const sections = await contentPart.getSections();
+            for (const sec of sections) {
+                const title = await sec.getTitle();
+                if (title === 'Liberty Tools') {
+                    return sec;
+                }
             }
+        } catch (error: any) {
+            if (error.name === 'StaleElementReferenceError' ||
+                error.name === 'ElementNotInteractableError') {
+                logger.info(`getDashboardSection: transient error (${error.name}), retrying...`);
+                return;
+            }
+            throw error;
         }
         return;
-    }, 30);
+    }, {
+        timeout: 120000,
+        pollInterval: 3000,
+        message: 'Liberty Tools section not found in sidebar within 120 seconds'
+    });
 }
 
 export async function getDashboardItem(section: any, projectName: string): Promise<DefaultTreeItem> {
     logger.info(`Getting dashboard item: ${projectName}`);
     
-    // Ensure section is expanded
-    await waitForSuccess(async () => {
-        await section.expand();
-    });
-    
-    // Wait for section container to become stable after expansion
     const wait = getWaitHelper();
-    await wait.sleep(2000);
-    
-    // Wait for items to be visible after expansion with retry on ElementNotInteractableError
-    await wait.forCondition(async () => {
+
+    // Re-fetch the section on every poll iteration rather than reusing the
+    // captured reference.  On mac Previous a section element obtained before
+    // the Liberty extension has fully activated presents as
+    // ElementNotInteractableError on every getVisibleItems() call — the node
+    // is stale but Chrome reports it as not-interactable rather than explicitly
+    // stale.  Getting a fresh section + fresh sidebar each time breaks that loop.
+    return (await wait.forCondition(async () => {
         try {
-            const items = await section.getVisibleItems();
-            return items && items.length > 0;
+            const { SideBarView } = require('vscode-extension-tester');
+            const freshSection = await getDashboardSection(new SideBarView());
+            await freshSection.expand();
+            await wait.sleep(1000);
+            const items = await freshSection.getVisibleItems();
+            if (!items || items.length === 0) {
+                logger.info('Container not yet interactable, retrying...');
+                return;
+            }
+            const item = await freshSection.findItem(projectName) as DefaultTreeItem;
+            if (!item) {
+                return;
+            }
+            return item;
         } catch (error: any) {
-            // Retry on ElementNotInteractableError
-            if (error.name === 'ElementNotInteractableError') {
+            if (error.name === 'ElementNotInteractableError' ||
+                error.name === 'StaleElementReferenceError' ||
+                error.name === 'NoSuchElementError') {
                 logger.info('Container not yet interactable, retrying...');
                 return;
             }
             throw error;
         }
-    }, { timeout: 10000, message: 'Dashboard items did not appear after expansion' });
-    
-    // Find the item
-    return await waitForCondition(async () => {
-        return await section.findItem(projectName) as DefaultTreeItem;
-    }, 30);
+    }, { timeout: 120000, pollInterval: 5000, message: `Dashboard item '${projectName}' did not appear within 120 seconds` }))!;
 }
 
 export async function launchDashboardAction(item: DefaultTreeItem, action: string, actionMac: string) {
@@ -638,7 +704,15 @@ export async function closeWorkspace(): Promise<void> {
     try {
         logger.info('Closing current workspace for next test file...');
         const workbench = new Workbench();
-        
+        const wait = getWaitHelper();
+
+        // Revert all files first so VS Code doesn't show a "Save changes?" modal
+        // when closeFolder is issued. On Linux this modal blocks the renderer.
+        try {
+            await workbench.executeCommand('revert file');
+            await wait.sleep(300);
+        } catch { /* no active editor — fine */ }
+
         // Close all open editors first
         try {
             const EditorView = require('vscode-extension-tester').EditorView;
@@ -647,11 +721,50 @@ export async function closeWorkspace(): Promise<void> {
         } catch (error) {
             logger.info('Failed to close editors, continuing...');
         }
-        
+
         // Close the workspace/folder
         await workbench.executeCommand('workbench.action.closeFolder');
-        await getWaitHelper().sleep(2000); // Wait for workspace to close
-        
+
+        // Dismiss any blocking modal VS Code may show after closeFolder
+        // (e.g. "Do you want to save?" or "A task is running, terminate it?").
+        // These modals freeze the renderer on Linux if left open.
+        await wait.sleep(500);
+        try {
+            const dialog = new ModalDialog();
+            const buttons = await dialog.getButtons();
+            const dismissLabels = ["Don't Save", 'Terminate', 'OK', 'Yes'];
+            for (const btn of buttons) {
+                const label = await btn.getText();
+                if (dismissLabels.includes(label)) {
+                    await btn.click();
+                    break;
+                }
+            }
+        } catch { /* no modal present — fine */ }
+
+        // Poll until the Liberty Tools section disappears from the sidebar —
+        // a fixed sleep is too short on macOS CI where teardown takes 10+ s.
+        try {
+            await wait.forCondition(async () => {
+                try {
+                    const { SideBarView } = require('vscode-extension-tester');
+                    const sidebar = new SideBarView();
+                    const sections = await sidebar.getContent().getSections();
+                    for (const sec of sections) {
+                        if (await sec.getTitle() === 'Liberty Tools') {
+                            return; // still present
+                        }
+                    }
+                    return true; // gone — workspace closed
+                } catch {
+                    return true; // sidebar threw — treat as closed
+                }
+            }, { timeout: 30000, pollInterval: 1000, message: 'Workspace did not finish closing within 30 seconds' });
+        } catch {
+            logger.info('closeWorkspace gate timed out, falling back to fixed wait');
+            await wait.sleep(5000);
+        }
+
         logger.info('Workspace closed successfully');
     } catch (error) {
         logger.error('Error closing workspace', error);

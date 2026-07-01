@@ -24,7 +24,7 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
     describe(`Devmode action tests for ${config.buildTool} Project`, () => {
     
         before(async function() {
-            this.timeout(30000);
+            this.timeout(60000);
     
             await VSBrowser.instance.openResources(config.getProjectPath());
             await VSBrowser.instance.waitForWorkbench();
@@ -33,7 +33,7 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
         });
 
         afterEach(async function() {
-        this.timeout(10000); // Increase timeout for cleanup operations
+        this.timeout(30000);
         // Close any open editors after each test
         if (this.currentTest?.state === 'failed') {
             await VSBrowser.instance.driver.takeScreenshot();
@@ -293,9 +293,17 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
             }).timeout(350000);
         
             /**
-             * The following after hook copies the screenshot from the temporary folder in which it is saved to a known permanent location in the project folder.
+             * The following after hook restores the Explorer view (in case the
+             * attach-debugger test left VS Code in the Debug perspective — on mac
+             * Previous this does not auto-restore) then copies screenshots.
              */
-            after(() => {
+            after(async function() {
+                this.timeout(30000);
+                try {
+                    const { Workbench } = require('vscode-extension-tester');
+                    await new Workbench().executeCommand('workbench.view.explorer');
+                    await utils.getWaitHelper().sleep(1000);
+                } catch { /* non-fatal */ }
                 utils.copyScreenshotsToProjectFolder(config.buildTool);
             });
         

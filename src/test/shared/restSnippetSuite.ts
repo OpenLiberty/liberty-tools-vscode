@@ -34,7 +34,7 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
                     );
 
         before(async function() {
-            this.timeout(60000);
+            this.timeout(120000);
             logger.info('Setting up rest_class snippet test');
 
             driver = VSBrowser.instance.driver;
@@ -58,10 +58,9 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
         });
 
         after(async function() {
-            this.timeout(15000);
+            this.timeout(60000);
             try {
                 if (editorPage) {
-                    // Select all text first, then clear
                     const currentText = await editorPage.getEditor().getText();
                     try {
                         await editorPage.getEditor().selectText(currentText);
@@ -69,14 +68,12 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
                     } catch (selectError) {
                         // selectText may fail but setText still works
                     }
-                    
-                    await editorUtils.clearEditor(editorPage.getEditor())
+                    await editorUtils.clearEditor(editorPage.getEditor());
                     logger.info('Reset TestRest.java to empty after test');
                 }
             } catch (error) {
                 logger.error('Failed to reset TestRest.java', error);
             }
-            
             try {
                 await new EditorView().closeAllEditors();
                 await wait.sleep(500);
@@ -84,19 +81,19 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
             } catch (error) {
                 logger.error('Failed to close editors in after hook', error);
             }
-            
+            await utils.closeWorkspace();
             utils.copyScreenshotsToProjectFolder(config.buildTool);
         });
         
         it('LSP4Jakarta Language Server should initialize', async function() {
-                this.timeout(60000);
+                this.timeout(300000);
                 logger.testStart('LSP4Jakarta Language Server should initialize');
                 
                 try {
                     await utils.waitForLanguageServerInit(
                         'Language Support for Jakarta EE',
                         'Initializing Jakarta EE server',
-                        60
+                        240
                     );
                     logger.testComplete('LSP4Jakarta Language Server initialized successfully');
                 } catch (error) {
