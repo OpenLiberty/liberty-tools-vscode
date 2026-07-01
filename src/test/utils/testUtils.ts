@@ -245,9 +245,7 @@ export async function getDashboardSection(sidebar: any): Promise<any> {
     const wait = getWaitHelper();
     return await wait.forCondition(async () => {
         try {
-            // Re-create SideBarView on every iteration — on mac Previous (cold
-            // VS Code install) the sidebar object goes stale during workspace
-            // transitions and getSections() returns dead nodes on every call.
+            // Re-create SideBarView on every iteration — on mac Previous the sidebar object goes stale during workspace transitions and getSections() returns dead nodes on every call.
             const { SideBarView } = require('vscode-extension-tester');
             const freshSidebar = new SideBarView();
             const contentPart = freshSidebar.getContent();
@@ -270,7 +268,7 @@ export async function getDashboardSection(sidebar: any): Promise<any> {
     }, {
         timeout: 120000,
         pollInterval: 3000,
-        message: 'Liberty Tools section not found in sidebar within 120 seconds'
+        message: 'Liberty Tools section was not found in sidebar within 120 seconds'
     });
 }
 
