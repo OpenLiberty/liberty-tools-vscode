@@ -297,7 +297,7 @@ export async function getDashboardItem(section: any, projectName: string): Promi
         return new SideBarView();
     };
 
-    return await wait.forCondition(async () => {
+    return (await wait.forCondition(async () => {
         try {
             const freshSection = await getDashboardSection(getSidebar());
             await freshSection.expand();
@@ -321,7 +321,7 @@ export async function getDashboardItem(section: any, projectName: string): Promi
             }
             throw error;
         }
-    }, { timeout: 120000, pollInterval: 5000, message: `Dashboard item '${projectName}' did not appear within 120 seconds` });
+    }, { timeout: 120000, pollInterval: 5000, message: `Dashboard item '${projectName}' did not appear within 120 seconds` }))!;
 }
 
 export async function launchDashboardAction(item: DefaultTreeItem, action: string, actionMac: string) {
