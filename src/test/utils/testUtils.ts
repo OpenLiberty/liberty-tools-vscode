@@ -285,47 +285,43 @@ export async function getDashboardItem(section: any, projectName: string): Promi
     
     const wait = getWaitHelper();
 
-    // Ensure section is expanded — retry on stale/interactable errors which
-    // are common on macOS CI after a workspace transition.
-    await wait.forCondition(async () => {
+    // Re-fetch the section on every poll iteration rather than reusing the
+    // captured reference.  On mac Previous a section element obtained before
+    // the Liberty extension has fully activated presents as
+    // ElementNotInteractableError on every getVisibleItems() call even though
+    // the section header is visible — the underlying DOM node is stale but
+    // Chrome reports it as not-interactable rather than explicitly stale.
+    // Getting a fresh section reference each time breaks that loop.
+    const getSidebar = () => {
+        const { SideBarView } = require('vscode-extension-tester');
+        return new SideBarView();
+    };
+
+    return await wait.forCondition(async () => {
         try {
-            await section.expand();
-            return true;
-        } catch (error: any) {
-            if (error.name === 'ElementNotInteractableError' ||
-                error.name === 'StaleElementReferenceError') {
-                logger.info('Section not yet interactable for expand, retrying...');
+            const freshSection = await getDashboardSection(getSidebar());
+            await freshSection.expand();
+            await wait.sleep(1000);
+            const items = await freshSection.getVisibleItems();
+            if (!items || items.length === 0) {
+                logger.info('Container not yet interactable, retrying...');
                 return;
             }
-            throw error;
-        }
-    }, { timeout: 30000, pollInterval: 2000, message: 'Section could not be expanded' });
-    
-    // Wait for section container to become stable after expansion
-    await wait.sleep(2000);
-    
-    // Wait for items to be visible after expansion with retry on stale/interactable errors.
-    // On macOS CI after a workspace open the Liberty extension can take 30–60s to populate
-    // the dashboard tree — use a generous timeout.
-    await wait.forCondition(async () => {
-        try {
-            const items = await section.getVisibleItems();
-            return items && items.length > 0;
+            const item = await freshSection.findItem(projectName) as DefaultTreeItem;
+            if (!item) {
+                return;
+            }
+            return item;
         } catch (error: any) {
-            // Retry on transient DOM errors
             if (error.name === 'ElementNotInteractableError' ||
-                error.name === 'StaleElementReferenceError') {
+                error.name === 'StaleElementReferenceError' ||
+                error.name === 'NoSuchElementError') {
                 logger.info('Container not yet interactable, retrying...');
                 return;
             }
             throw error;
         }
-    }, { timeout: 120000, pollInterval: 5000, message: 'Dashboard items did not appear after expansion' });
-    
-    // Find the item
-    return await waitForCondition(async () => {
-        return await section.findItem(projectName) as DefaultTreeItem;
-    }, 60);
+    }, { timeout: 120000, pollInterval: 5000, message: `Dashboard item '${projectName}' did not appear within 120 seconds` });
 }
 
 export async function launchDashboardAction(item: DefaultTreeItem, action: string, actionMac: string) {
