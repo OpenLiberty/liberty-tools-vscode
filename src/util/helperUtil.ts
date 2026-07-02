@@ -7,7 +7,9 @@ import { DashboardData } from "./../liberty/dashboard";
 import * as fs from "fs";
 import * as vscode from "vscode";
 import { LibertyProject } from "./../liberty/libertyProject";
-import { LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY, isMaven, isGradle, isContainer, isLibertyProject, isAggregator } from "../definitions/constants";
+import { LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY, isMaven, isGradle, isContainer, isLibertyProject, isAggregator,
+	CMD_START, CMD_CUSTOM, CMD_START_CONTAINER, CMD_STOP, CMD_RUN_TESTS, CMD_DEBUG,
+} from "../definitions/constants";
 import path = require('path');
 
 
@@ -36,13 +38,13 @@ export function getConfiguration<T>(section: string, resourceOrFilepath?: vscode
  */
 export function devModeRequirement(command: string): boolean | undefined {
 	switch (command) {
-		case "liberty.dev.stop":
-		case "liberty.dev.run.tests":
-		case "liberty.dev.debug":
+		case CMD_STOP:
+		case CMD_RUN_TESTS:
+		case CMD_DEBUG:
 			return true;   // must be running
-		case "liberty.dev.start":
-		case "liberty.dev.custom":
-		case "liberty.dev.start.container":
+		case CMD_START:
+		case CMD_CUSTOM:
+		case CMD_START_CONTAINER:
 			return false;  // must NOT be running
 		default:
 			return undefined; // no restriction
@@ -64,14 +66,14 @@ export function filterProjects(projects: LibertyProject[], command: string): Lib
 		if (!isLibertyProject(cv)) { return false; }
 		if (!project.isLibertyEnabled) { return false; }
 		switch (command) {
-			case "liberty.dev.start":
-			case "liberty.dev.custom":
+			case CMD_START:
+			case CMD_CUSTOM:
 				return !isAggregator(cv) && !project.isDevMode;
-			case "liberty.dev.start.container":
+			case CMD_START_CONTAINER:
 				return isContainer(cv) && !project.isDevMode;
-			case "liberty.dev.stop":
-			case "liberty.dev.run.tests":
-			case "liberty.dev.debug":
+			case CMD_STOP:
+			case CMD_RUN_TESTS:
+			case CMD_DEBUG:
 				return !isAggregator(cv) && project.isDevMode;
 			case "failsafe":
 			case "surefire":

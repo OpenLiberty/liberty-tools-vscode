@@ -5,15 +5,15 @@
 import { localize } from "../util/i18nUtil";
 
 // ---------------------------------------------------------------------------
-// New contextValue scheme: libertyProject:{tool}[:{container|aggregator}]
-// Use the helpers below (isMaven, isGradle, isContainer, isAggregator) instead
-// of direct string comparisons throughout the codebase.
+// Project Context Values
+// contextValue scheme: libertyProject:{tool}[:{container|aggregator}]
+// Use the helpers below instead of direct string comparisons.
 // ---------------------------------------------------------------------------
-export const LIBERTY_PROJECT_MAVEN = "libertyProject:maven";
-export const LIBERTY_PROJECT_GRADLE = "libertyProject:gradle";
-export const LIBERTY_PROJECT_MAVEN_CONTAINER = "libertyProject:maven:container";
-export const LIBERTY_PROJECT_GRADLE_CONTAINER = "libertyProject:gradle:container";
-export const LIBERTY_PROJECT_MAVEN_AGGREGATOR = "libertyProject:maven:aggregator";
+export const LIBERTY_PROJECT_MAVEN             = "libertyProject:maven";
+export const LIBERTY_PROJECT_GRADLE            = "libertyProject:gradle";
+export const LIBERTY_PROJECT_MAVEN_CONTAINER   = "libertyProject:maven:container";
+export const LIBERTY_PROJECT_GRADLE_CONTAINER  = "libertyProject:gradle:container";
+export const LIBERTY_PROJECT_MAVEN_AGGREGATOR  = "libertyProject:maven:aggregator";
 export const LIBERTY_PROJECT_GRADLE_AGGREGATOR = "libertyProject:gradle:aggregator";
 
 /** Returns true for any libertyProject contextValue (maven or gradle, any variant). */
@@ -37,36 +37,64 @@ export function isAggregator(contextValue: string): boolean {
     return /^libertyProject.*:aggregator/.test(contextValue);
 }
 
-export const TEST_REPORT_STRING = "Test Summary";
-export const LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY = "liberty.dashboard.data";
-export const LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION = "3.3.0";
-export const LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION = "3.1.0";
-export const LIBERTY_SERVER_ENV_PORT_REGEX = /^WLP_DEBUG_ADDRESS=([\d]+)$/;
-
-export const MAVEN_GOAL_DEV = "io.openliberty.tools:liberty-maven-plugin:dev";
+// ---------------------------------------------------------------------------
+// Dev Mode
+// Maven goals are passed to the Maven executable (mvn/mvnw) via terminal.
+// Gradle tasks are passed to the Gradle executable (gradle/gradlew) via terminal.
+// Container version thresholds gate whether devc is available for a project.
+// ---------------------------------------------------------------------------
+export const MAVEN_GOAL_DEV  = "io.openliberty.tools:liberty-maven-plugin:dev";
 export const MAVEN_GOAL_DEVC = "io.openliberty.tools:liberty-maven-plugin:devc";
 
-export const GRADLE_TASK_DEV = "libertyDev";
+export const GRADLE_TASK_DEV  = "libertyDev";
 export const GRADLE_TASK_DEVC = "libertyDevc";
 
-export const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target,build}/**";
+export const LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION  = "3.3.0";
+export const LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION = "3.1.0";
+
+// ---------------------------------------------------------------------------
+// VS Code Commands
+// Must match package.json contributes.commands[].command declarations.
+// ---------------------------------------------------------------------------
+export const CMD_EXPLORER_REFRESH        = "liberty.explorer.refresh";
+export const CMD_SHOW_COMMANDS           = "liberty.dev.show.commands";
+export const CMD_OPEN_BUILD_FILE         = "liberty.dev.open.build.file";
+export const CMD_START                   = "liberty.dev.start";
+export const CMD_DEBUG                   = "liberty.dev.debug";
+export const CMD_STOP                    = "liberty.dev.stop";
+export const CMD_CUSTOM                  = "liberty.dev.custom";
+export const CMD_START_CONTAINER         = "liberty.dev.start.container";
+export const CMD_RUN_TESTS               = "liberty.dev.run.tests";
+export const CMD_OPEN_FAILSAFE_REPORT    = "liberty.dev.open.failsafe.report";
+export const CMD_OPEN_SUREFIRE_REPORT    = "liberty.dev.open.surefire.report";
+export const CMD_OPEN_GRADLE_TEST_REPORT = "liberty.dev.open.gradle.test.report";
+export const CMD_ADD_PROJECT             = "liberty.dev.add.project";
+export const CMD_REMOVE_PROJECT          = "liberty.dev.remove.project";
+
 export const COMMAND_TITLES = new Map();
-export const UNTITLED_WORKSPACE = "Untitled (Workspace)";
-COMMAND_TITLES.set(localize("hotkey.commands.title.refresh"), "liberty.explorer.refresh");
+COMMAND_TITLES.set(localize("hotkey.commands.title.refresh"),                    CMD_EXPLORER_REFRESH);
+COMMAND_TITLES.set(localize("hotkey.commands.title.start"),                      CMD_START);
+COMMAND_TITLES.set(localize("hotkey.commands.title.start.custom"),               CMD_CUSTOM);
+COMMAND_TITLES.set(localize("hotkey.commands.title.start.in.container"),         CMD_START_CONTAINER);
+COMMAND_TITLES.set(localize("hotkey.commands.title.debug"),                      CMD_DEBUG);
+COMMAND_TITLES.set(localize("hotkey.commands.title.stop"),                       CMD_STOP);
+COMMAND_TITLES.set(localize("hotkey.commands.title.run.tests"),                  CMD_RUN_TESTS);
+COMMAND_TITLES.set(localize("hotkey.commands.title.view.integration.test.report"), CMD_OPEN_FAILSAFE_REPORT);
+COMMAND_TITLES.set(localize("hotkey.commands.title.view.unit.test.report"),      CMD_OPEN_SUREFIRE_REPORT);
+COMMAND_TITLES.set(localize("hotkey.commands.title.view.test.report"),           CMD_OPEN_GRADLE_TEST_REPORT);
+COMMAND_TITLES.set(localize("hotkey.commands.title.add.project"),                CMD_ADD_PROJECT);
+COMMAND_TITLES.set(localize("hotkey.commands.title.remove.project"),             CMD_REMOVE_PROJECT);
+COMMAND_TITLES.set(localize("hotkey.commands.title.open.build.file"),            CMD_OPEN_BUILD_FILE);
 
-COMMAND_TITLES.set(localize("hotkey.commands.title.start"), "liberty.dev.start");
-COMMAND_TITLES.set(localize("hotkey.commands.title.start.custom"), "liberty.dev.custom");
-COMMAND_TITLES.set(localize("hotkey.commands.title.start.in.container"), "liberty.dev.start.container");
+// ---------------------------------------------------------------------------
+// Project Discovery
+// ---------------------------------------------------------------------------
+export const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target,build}/**";
 
-COMMAND_TITLES.set(localize("hotkey.commands.title.debug"), "liberty.dev.debug");
-
-COMMAND_TITLES.set(localize("hotkey.commands.title.stop"), "liberty.dev.stop");
-
-COMMAND_TITLES.set(localize("hotkey.commands.title.run.tests"), "liberty.dev.run.tests");
-COMMAND_TITLES.set(localize("hotkey.commands.title.view.integration.test.report"), "liberty.dev.open.failsafe.report");
-COMMAND_TITLES.set(localize("hotkey.commands.title.view.unit.test.report"), "liberty.dev.open.surefire.report");
-COMMAND_TITLES.set(localize("hotkey.commands.title.view.test.report"), "liberty.dev.open.gradle.test.report");
-
-COMMAND_TITLES.set(localize("hotkey.commands.title.add.project"), "liberty.dev.add.project");
-COMMAND_TITLES.set(localize("hotkey.commands.title.remove.project"), "liberty.dev.remove.project");
-COMMAND_TITLES.set(localize("hotkey.commands.title.open.build.file"), "liberty.dev.open.build.file");
+// ---------------------------------------------------------------------------
+// Runtime
+// ---------------------------------------------------------------------------
+export const LIBERTY_SERVER_ENV_PORT_REGEX        = /^WLP_DEBUG_ADDRESS=([\d]+)$/;
+export const LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY = "liberty.dashboard.data";
+export const TEST_REPORT_STRING                   = "Test Summary";
+export const UNTITLED_WORKSPACE                   = "Untitled (Workspace)";

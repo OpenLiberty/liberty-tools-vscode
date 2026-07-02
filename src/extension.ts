@@ -16,6 +16,12 @@ import { localize } from "./util/i18nUtil";
 import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "./util/requirements";
 import { prepareExecutable } from "./util/javaServerStarter";
 import * as helperUtil from "./util/helperUtil";
+import {
+    CMD_EXPLORER_REFRESH, CMD_SHOW_COMMANDS, CMD_OPEN_BUILD_FILE,
+    CMD_START, CMD_DEBUG, CMD_STOP, CMD_CUSTOM, CMD_START_CONTAINER,
+    CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
+    CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
+} from "./definitions/constants";
 import path = require('path');
 import * as fs from "fs";
 
@@ -147,7 +153,7 @@ function registerCommands(context: ExtensionContext) {
     handleWorkspaceSaveInProgress(context);
 
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.explorer.refresh", (async () => {
+        vscode.commands.registerCommand(CMD_EXPLORER_REFRESH, (async () => {
             projectProvider.refresh();
         }))
     );
@@ -156,43 +162,43 @@ function registerCommands(context: ExtensionContext) {
         vscode.commands.registerCommand("extension.open.project", (pomPath) => devCommands.openProject(pomPath)),
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.open.build.file", (libProject?: LibertyProject) => devCommands.openBuildFile(libProject)),
+        vscode.commands.registerCommand(CMD_OPEN_BUILD_FILE, (libProject?: LibertyProject) => devCommands.openBuildFile(libProject)),
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.show.commands", () => devCommands.listAllCommands()),
+        vscode.commands.registerCommand(CMD_SHOW_COMMANDS, () => devCommands.listAllCommands()),
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.start", (libProject?: LibertyProject) => devCommands.startDevMode(libProject)),
+        vscode.commands.registerCommand(CMD_START, (libProject?: LibertyProject) => devCommands.startDevMode(libProject)),
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.debug", (libProject?: LibertyProject) => devCommands.attachDebugger(libProject)),
+        vscode.commands.registerCommand(CMD_DEBUG, (libProject?: LibertyProject) => devCommands.attachDebugger(libProject)),
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.stop", (libProject?: LibertyProject) => devCommands.stopDevMode(libProject)),
+        vscode.commands.registerCommand(CMD_STOP, (libProject?: LibertyProject) => devCommands.stopDevMode(libProject)),
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.custom", (libProject?: LibertyProject) => devCommands.customDevModeWithHistory(libProject)),
+        vscode.commands.registerCommand(CMD_CUSTOM, (libProject?: LibertyProject) => devCommands.customDevModeWithHistory(libProject)),
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.start.container", (libProject?: LibertyProject) => devCommands.startContainerDevMode(libProject)),
+        vscode.commands.registerCommand(CMD_START_CONTAINER, (libProject?: LibertyProject) => devCommands.startContainerDevMode(libProject)),
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.run.tests", (libProject?: LibertyProject) => devCommands.runTests(libProject)),
+        vscode.commands.registerCommand(CMD_RUN_TESTS, (libProject?: LibertyProject) => devCommands.runTests(libProject)),
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.open.failsafe.report", (libProject?: LibertyProject) => devCommands.openReport("failsafe", libProject)),
+        vscode.commands.registerCommand(CMD_OPEN_FAILSAFE_REPORT, (libProject?: LibertyProject) => devCommands.openReport("failsafe", libProject)),
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.open.surefire.report", (libProject?: LibertyProject) => devCommands.openReport("surefire", libProject)),
+        vscode.commands.registerCommand(CMD_OPEN_SUREFIRE_REPORT, (libProject?: LibertyProject) => devCommands.openReport("surefire", libProject)),
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.open.gradle.test.report", (libProject?: LibertyProject) => devCommands.openReport("gradle", libProject)),
+        vscode.commands.registerCommand(CMD_OPEN_GRADLE_TEST_REPORT, (libProject?: LibertyProject) => devCommands.openReport("gradle", libProject)),
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.add.project", (uri: vscode.Uri) => devCommands.addProject(uri)),
+        vscode.commands.registerCommand(CMD_ADD_PROJECT, (uri: vscode.Uri) => devCommands.addProject(uri)),
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.remove.project", () => devCommands.removeProject()),
+        vscode.commands.registerCommand(CMD_REMOVE_PROJECT, () => devCommands.removeProject()),
     );
     context.subscriptions.push(
         vscode.window.onDidCloseTerminal((closedTerminal: vscode.Terminal) => {

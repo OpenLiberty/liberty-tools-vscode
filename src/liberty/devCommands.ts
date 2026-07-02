@@ -13,7 +13,12 @@ import { LibertyProject } from "./libertyProject";
 import { ProjectRegistry } from "./projectRegistry";
 import { ProjectTreeProvider } from "./projectTreeProvider";
 import { getReport } from "../util/helperUtil";
-import { COMMAND_TITLES, LIBERTY_SERVER_ENV_PORT_REGEX, isMaven, isGradle, MAVEN_GOAL_DEV, MAVEN_GOAL_DEVC, GRADLE_TASK_DEV, GRADLE_TASK_DEVC } from "../definitions/constants";
+import {
+    COMMAND_TITLES, LIBERTY_SERVER_ENV_PORT_REGEX, isMaven, isGradle,
+    MAVEN_GOAL_DEV, MAVEN_GOAL_DEVC, GRADLE_TASK_DEV, GRADLE_TASK_DEVC,
+    CMD_OPEN_BUILD_FILE, CMD_START, CMD_STOP, CMD_DEBUG, CMD_CUSTOM,
+    CMD_START_CONTAINER, CMD_RUN_TESTS,
+} from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
@@ -54,7 +59,7 @@ export async function openBuildFile(libProject?: LibertyProject): Promise<void> 
         vscode.commands.executeCommand("vscode.open", vscode.Uri.file(libProject.getPath()));
         return;
     }
-    const targetProject = await projectProvider.pickProject(undefined, "liberty.dev.open.build.file");
+    const targetProject = await projectProvider.pickProject(undefined, CMD_OPEN_BUILD_FILE);
     if (targetProject === undefined) {
         return;
     }
@@ -126,7 +131,7 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         vscode.window.showInformationMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, "liberty.dev.start");
+    const targetProject = await projectProvider.pickProject(libProject, CMD_START);
     if (targetProject === undefined) {
         return;
     }
@@ -254,7 +259,7 @@ export async function stopDevMode(libProject?: LibertyProject | undefined): Prom
         vscode.window.showInformationMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, "liberty.dev.stop");
+    const targetProject = await projectProvider.pickProject(libProject, CMD_STOP);
     if (targetProject === undefined) {
         return;
     }
@@ -282,7 +287,7 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
         vscode.window.showErrorMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, "liberty.dev.debug");
+    const targetProject = await projectProvider.pickProject(libProject, CMD_DEBUG);
     if (targetProject === undefined) {
         return;
     }
@@ -348,7 +353,7 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
         vscode.window.showInformationMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, "liberty.dev.custom");
+    const targetProject = await projectProvider.pickProject(libProject, CMD_CUSTOM);
     if (targetProject === undefined) {
         return;
     }
@@ -393,12 +398,12 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
     if (terminal !== undefined) {
 
         let placeHolderStr = "";
-        let promptString = localize("specify.custom.parms.maven");
+        let promptString = localize("specify.custom.params.maven");
         if (isMaven(targetProject.getContextValue())) {
             placeHolderStr = "e.g. -DhotTests=true";
         } else if (isGradle(targetProject.getContextValue())) {
             placeHolderStr = "e.g. --hotTests";
-            promptString = localize("specify.custom.parms.gradle");
+            promptString = localize("specify.custom.params.gradle");
         }
 
         // set focus on the Inputbox
@@ -445,7 +450,7 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
         vscode.window.showInformationMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, "liberty.dev.start.container");
+    const targetProject = await projectProvider.pickProject(libProject, CMD_START_CONTAINER);
     if (targetProject === undefined) {
         return;
     }
@@ -467,7 +472,7 @@ export async function runTests(libProject?: LibertyProject | undefined): Promise
         vscode.window.showInformationMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, "liberty.dev.run.tests");
+    const targetProject = await projectProvider.pickProject(libProject, CMD_RUN_TESTS);
     if (targetProject === undefined) {
         return;
     }
