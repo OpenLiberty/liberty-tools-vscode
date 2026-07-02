@@ -9,11 +9,11 @@ import { localize } from "../util/i18nUtil";
 // Use the helpers below (isMaven, isGradle, isContainer, isAggregator) instead
 // of direct string comparisons throughout the codebase.
 // ---------------------------------------------------------------------------
-export const LIBERTY_PROJECT_MAVEN             = "libertyProject:maven";
-export const LIBERTY_PROJECT_GRADLE            = "libertyProject:gradle";
-export const LIBERTY_PROJECT_MAVEN_CONTAINER   = "libertyProject:maven:container";
-export const LIBERTY_PROJECT_GRADLE_CONTAINER  = "libertyProject:gradle:container";
-export const LIBERTY_PROJECT_MAVEN_AGGREGATOR  = "libertyProject:maven:aggregator";
+export const LIBERTY_PROJECT_MAVEN = "libertyProject:maven";
+export const LIBERTY_PROJECT_GRADLE = "libertyProject:gradle";
+export const LIBERTY_PROJECT_MAVEN_CONTAINER = "libertyProject:maven:container";
+export const LIBERTY_PROJECT_GRADLE_CONTAINER = "libertyProject:gradle:container";
+export const LIBERTY_PROJECT_MAVEN_AGGREGATOR = "libertyProject:maven:aggregator";
 export const LIBERTY_PROJECT_GRADLE_AGGREGATOR = "libertyProject:gradle:aggregator";
 
 /** Returns true for any libertyProject contextValue (maven or gradle, any variant). */
@@ -43,9 +43,15 @@ export const LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION = "3.3.0";
 export const LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION = "3.1.0";
 export const LIBERTY_SERVER_ENV_PORT_REGEX = /^WLP_DEBUG_ADDRESS=([\d]+)$/;
 
+export const MAVEN_GOAL_DEV = "io.openliberty.tools:liberty-maven-plugin:dev";
+export const MAVEN_GOAL_DEVC = "io.openliberty.tools:liberty-maven-plugin:devc";
+
+export const GRADLE_TASK_DEV = "libertyDev";
+export const GRADLE_TASK_DEVC = "libertyDevc";
+
 export const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target,build}/**";
 export const COMMAND_TITLES = new Map();
-export const UNTITLED_WORKSPACE="Untitled (Workspace)";
+export const UNTITLED_WORKSPACE = "Untitled (Workspace)";
 COMMAND_TITLES.set(localize("hotkey.commands.title.refresh"), "liberty.explorer.refresh");
 
 COMMAND_TITLES.set(localize("hotkey.commands.title.start"), "liberty.dev.start");

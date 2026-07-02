@@ -13,7 +13,7 @@ import { LibertyProject } from "./libertyProject";
 import { ProjectRegistry } from "./projectRegistry";
 import { ProjectTreeProvider } from "./projectTreeProvider";
 import { getReport } from "../util/helperUtil";
-import { COMMAND_TITLES, LIBERTY_SERVER_ENV_PORT_REGEX, isMaven, isGradle, isContainer } from "../definitions/constants";
+import { COMMAND_TITLES, LIBERTY_SERVER_ENV_PORT_REGEX, isMaven, isGradle, MAVEN_GOAL_DEV, MAVEN_GOAL_DEVC, GRADLE_TASK_DEV, GRADLE_TASK_DEVC } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
@@ -80,6 +80,43 @@ export async function listAllCommands(): Promise<void> {
 }
 
 
+/**
+ * Ensures a terminal exists for the project, creates one if needed, shows it,
+ * and registers it. Returns the terminal, or undefined if creation failed.
+ */
+function ensureTerminal(project: LibertyProject): vscode.Terminal | undefined {
+    let terminal = project.getTerminal();
+    if (terminal === undefined) {
+        const terminalPath = project.parent
+            ? Path.dirname(project.parent.getPath())
+            : Path.dirname(project.getPath());
+        terminal = createTerminalforLiberty(project, terminal, terminalPath);
+    }
+    if (terminal !== undefined) {
+        terminal.show();
+        project.setTerminal(terminal);
+    }
+    return terminal;
+}
+
+async function sendDevModeCommand(
+    terminal: vscode.Terminal,
+    project: LibertyProject,
+    mavenGoal: string,
+    gradleTask: string,
+    customCommand?: string
+): Promise<void> {
+    if (isMaven(project.getContextValue())) {
+        const pomPath = project.parent ? project.parent.getPath() : project.getPath();
+        const artifactId = project.parent ? project.artifactId : undefined;
+        const cmd = await getCommandForMaven(pomPath, mavenGoal, project.getTerminalType(), customCommand, artifactId);
+        terminal.sendText(cmd);
+    } else if (isGradle(project.getContextValue())) {
+        const cmd = await getCommandForGradle(project.getPath(), gradleTask, project.getTerminalType(), customCommand);
+        terminal.sendText(cmd);
+    }
+}
+
 // start dev mode
 export async function startDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
@@ -94,32 +131,10 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         return;
     }
 
-    // Check if user selected a child from an aggregator
-    const originalIsAggregator = libProject?.isAggregator ?? false;
-    const clickedDirectlyOnChild = !originalIsAggregator && targetProject.parent;
-
     console.log(localize("starting.liberty.dev.on", targetProject.getLabel()));
-    let terminal = targetProject.getTerminal();
-    if (terminal === undefined) {
-        const terminalPath = targetProject.parent
-            ? Path.dirname(targetProject.parent.getPath())
-            : Path.dirname(targetProject.getPath());
-        terminal = createTerminalforLiberty(targetProject, terminal, terminalPath);
-    }
+    const terminal = ensureTerminal(targetProject);
     if (terminal !== undefined) {
-        terminal.show();
-        targetProject.setTerminal(terminal);
-        if (isMaven(targetProject.getContextValue())) {
-            const pomPath = targetProject.parent ? targetProject.parent.getPath() : targetProject.getPath();
-            const artifactId = (targetProject.parent && (clickedDirectlyOnChild || ProjectRegistry.getInstance().findLibertyDescendants(targetProject.parent).length > 1))
-                ? targetProject.artifactId
-                : undefined;
-            const cmd = await getCommandForMaven(pomPath, "io.openliberty.tools:liberty-maven-plugin:dev", targetProject.getTerminalType(), undefined, artifactId);
-            terminal.sendText(cmd);
-        } else if (isGradle(targetProject.getContextValue())) {
-            const cmd = await getCommandForGradle(targetProject.getPath(), "libertyDev", targetProject.getTerminalType());
-            terminal.sendText(cmd);
-        }
+        await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV);
         targetProject.isDevMode = true;
         projectProvider.notifyDevModeChanged(targetProject);
     }
@@ -374,19 +389,8 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
     const registry = ProjectRegistry.getInstance();
     const targetProject = libProject;
 
-    // Check if this is a child of an aggregator
-    const clickedDirectlyOnChild = targetProject.parent !== undefined;
-
-    let terminal = targetProject.getTerminal();
-    if (terminal === undefined) {
-        const terminalPath = targetProject.parent
-            ? Path.dirname(targetProject.parent.getPath())
-            : Path.dirname(targetProject.getPath());
-        terminal = createTerminalforLiberty(targetProject, terminal, terminalPath);
-    }
+    const terminal = ensureTerminal(targetProject);
     if (terminal !== undefined) {
-        terminal.show();
-        targetProject.setTerminal(terminal);
 
         let placeHolderStr = "";
         let promptString = localize("specify.custom.parms.maven");
@@ -425,17 +429,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
                 await helperUtil.saveStorageData(registry.getContext(), dashboardData);
             }
 
-            if (isMaven(targetProject.getContextValue())) {
-                const pomPath = targetProject.parent ? targetProject.parent.getPath() : targetProject.getPath();
-                const artifactId = (targetProject.parent && (clickedDirectlyOnChild || registry.findLibertyDescendants(targetProject.parent).length > 1))
-                    ? targetProject.artifactId
-                    : undefined;
-                const cmd = await getCommandForMaven(pomPath, "io.openliberty.tools:liberty-maven-plugin:dev", targetProject.getTerminalType(), customCommand, artifactId);
-                terminal.sendText(cmd);
-            } else if (isGradle(targetProject.getContextValue())) {
-                const cmd = await getCommandForGradle(targetProject.getPath(), "libertyDev", targetProject.getTerminalType(), customCommand);
-                terminal.sendText(cmd);
-            }
+            await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, customCommand);
             targetProject.isDevMode = true;
             projectProvider.notifyDevModeChanged(targetProject);
         }
@@ -456,29 +450,9 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
         return;
     }
 
-    const clickedDirectlyOnChild = !(libProject?.isAggregator ?? false) && targetProject.parent;
-
-    let terminal = targetProject.getTerminal();
-    if (terminal === undefined) {
-        const terminalPath = targetProject.parent
-            ? Path.dirname(targetProject.parent.getPath())
-            : Path.dirname(targetProject.getPath());
-        terminal = createTerminalforLiberty(targetProject, terminal, terminalPath);
-    }
+    const terminal = ensureTerminal(targetProject);
     if (terminal !== undefined) {
-        terminal.show();
-        targetProject.setTerminal(terminal);
-        if (isContainer(targetProject.getContextValue()) && isMaven(targetProject.getContextValue())) {
-            const pomPath = targetProject.parent ? targetProject.parent.getPath() : targetProject.getPath();
-            const artifactId = (targetProject.parent && (clickedDirectlyOnChild || ProjectRegistry.getInstance().findLibertyDescendants(targetProject.parent).length > 1))
-                ? targetProject.artifactId
-                : undefined;
-            const cmd = await getCommandForMaven(pomPath, "io.openliberty.tools:liberty-maven-plugin:devc", targetProject.getTerminalType(), undefined, artifactId);
-            terminal.sendText(cmd);
-        } else if (isContainer(targetProject.getContextValue()) && isGradle(targetProject.getContextValue())) {
-            const cmd = await getCommandForGradle(targetProject.getPath(), "libertyDevc", targetProject.getTerminalType());
-            terminal.sendText(cmd);
-        }
+        await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEVC, GRADLE_TASK_DEVC);
         targetProject.isDevMode = true;
         projectProvider.notifyDevModeChanged(targetProject);
     }
