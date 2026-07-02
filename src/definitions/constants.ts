@@ -2,7 +2,6 @@
  * IBM Confidential
  * Copyright IBM Corp. 2020, 2026
  */
-import { localize } from "../util/i18nUtil";
 
 // ---------------------------------------------------------------------------
 // Project Context Values
@@ -70,21 +69,6 @@ export const CMD_OPEN_SUREFIRE_REPORT    = "liberty.dev.open.surefire.report";
 export const CMD_OPEN_GRADLE_TEST_REPORT = "liberty.dev.open.gradle.test.report";
 export const CMD_ADD_PROJECT             = "liberty.dev.add.project";
 export const CMD_REMOVE_PROJECT          = "liberty.dev.remove.project";
-
-export const COMMAND_TITLES = new Map();
-COMMAND_TITLES.set(localize("hotkey.commands.title.refresh"),                    CMD_EXPLORER_REFRESH);
-COMMAND_TITLES.set(localize("hotkey.commands.title.start"),                      CMD_START);
-COMMAND_TITLES.set(localize("hotkey.commands.title.start.custom"),               CMD_CUSTOM);
-COMMAND_TITLES.set(localize("hotkey.commands.title.start.in.container"),         CMD_START_CONTAINER);
-COMMAND_TITLES.set(localize("hotkey.commands.title.debug"),                      CMD_DEBUG);
-COMMAND_TITLES.set(localize("hotkey.commands.title.stop"),                       CMD_STOP);
-COMMAND_TITLES.set(localize("hotkey.commands.title.run.tests"),                  CMD_RUN_TESTS);
-COMMAND_TITLES.set(localize("hotkey.commands.title.view.integration.test.report"), CMD_OPEN_FAILSAFE_REPORT);
-COMMAND_TITLES.set(localize("hotkey.commands.title.view.unit.test.report"),      CMD_OPEN_SUREFIRE_REPORT);
-COMMAND_TITLES.set(localize("hotkey.commands.title.view.test.report"),           CMD_OPEN_GRADLE_TEST_REPORT);
-COMMAND_TITLES.set(localize("hotkey.commands.title.add.project"),                CMD_ADD_PROJECT);
-COMMAND_TITLES.set(localize("hotkey.commands.title.remove.project"),             CMD_REMOVE_PROJECT);
-COMMAND_TITLES.set(localize("hotkey.commands.title.open.build.file"),            CMD_OPEN_BUILD_FILE);
 
 // ---------------------------------------------------------------------------
 // Project Discovery

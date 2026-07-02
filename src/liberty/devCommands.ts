@@ -14,10 +14,11 @@ import { ProjectRegistry } from "./projectRegistry";
 import { ProjectTreeProvider } from "./projectTreeProvider";
 import { getReport } from "../util/helperUtil";
 import {
-    COMMAND_TITLES, LIBERTY_SERVER_ENV_PORT_REGEX, isMaven, isGradle,
+    LIBERTY_SERVER_ENV_PORT_REGEX, isMaven, isGradle,
     MAVEN_GOAL_DEV, MAVEN_GOAL_DEVC, GRADLE_TASK_DEV, GRADLE_TASK_DEVC,
-    CMD_OPEN_BUILD_FILE, CMD_START, CMD_STOP, CMD_DEBUG, CMD_CUSTOM,
-    CMD_START_CONTAINER, CMD_RUN_TESTS,
+    CMD_EXPLORER_REFRESH, CMD_OPEN_BUILD_FILE, CMD_START, CMD_STOP, CMD_DEBUG, CMD_CUSTOM,
+    CMD_START_CONTAINER, CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
+    CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
 } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
@@ -66,7 +67,23 @@ export async function openBuildFile(libProject?: LibertyProject): Promise<void> 
     vscode.commands.executeCommand("vscode.open", vscode.Uri.file(targetProject.getPath()));
 }
 
-// List all liberty dev commands, triggerred by hotkey only (Shift+Cmd+L)
+// List all liberty dev commands, triggered by hotkey (Shift+Alt+L)
+const COMMAND_TITLES = new Map<string, string>([
+    [localize("hotkey.commands.title.refresh"),                      CMD_EXPLORER_REFRESH],
+    [localize("hotkey.commands.title.start"),                        CMD_START],
+    [localize("hotkey.commands.title.start.custom"),                 CMD_CUSTOM],
+    [localize("hotkey.commands.title.start.in.container"),           CMD_START_CONTAINER],
+    [localize("hotkey.commands.title.debug"),                        CMD_DEBUG],
+    [localize("hotkey.commands.title.stop"),                         CMD_STOP],
+    [localize("hotkey.commands.title.run.tests"),                    CMD_RUN_TESTS],
+    [localize("hotkey.commands.title.view.integration.test.report"), CMD_OPEN_FAILSAFE_REPORT],
+    [localize("hotkey.commands.title.view.unit.test.report"),        CMD_OPEN_SUREFIRE_REPORT],
+    [localize("hotkey.commands.title.view.test.report"),             CMD_OPEN_GRADLE_TEST_REPORT],
+    [localize("hotkey.commands.title.add.project"),                  CMD_ADD_PROJECT],
+    [localize("hotkey.commands.title.remove.project"),               CMD_REMOVE_PROJECT],
+    [localize("hotkey.commands.title.open.build.file"),              CMD_OPEN_BUILD_FILE],
+]);
+
 export async function listAllCommands(): Promise<void> {
     const libertyCommands = Array.from(COMMAND_TITLES.keys());
     vscode.window.showQuickPick(libertyCommands).then(selection => {
