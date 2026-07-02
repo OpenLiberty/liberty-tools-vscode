@@ -44,7 +44,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 
 	private _refreshing = false;
 
-	private _treeView: vscode.TreeView<LibertyProject> | undefined;
+
 
 	private _registry: ProjectRegistry;
 
@@ -78,7 +78,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		} finally {
 			statusMessage.dispose();
 			this.setLoading(false);
-			this.setMessage("");
+
 			this._refreshing = false;
 		}
 	}
@@ -106,15 +106,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		this._onDidChangeTreeData.fire(undefined);
 	}
 
-	public setTreeView(treeView: vscode.TreeView<LibertyProject>): void {
-		this._treeView = treeView;
-	}
 
-	public setMessage(message: string): void {
-		if (this._treeView) {
-			this._treeView.message = message;
-		}
-	}
 
 	private setLoading(loading: boolean): void {
 		vscode.commands.executeCommand('setContext', 'liberty:loading', loading);
@@ -285,9 +277,6 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 				// Progressive tree update after each folder
 				this._registry.setProjects(new Map(partial));
 				this._registry.setRootProjects(Array.from(partial.values()).filter(p => !p.parent));
-				if (foldersComplete < totalFolders) {
-					this.setMessage(localize("scanning.workspace.folders", foldersComplete, totalFolders));
-				}
 				this._onDidChangeTreeData.fire(undefined);
 			}
 		);

@@ -86,7 +86,5 @@
     "command.stop.dev.mode": "stop dev mode",
     "command.run.tests": "run tests",
     "command.attach.debugger": "attach debugger",
-    "command.view.test.report": "view test report",
-    "scanning.workspace.folders": "Scanning workspace\u2026 ({0} of {1} folders)",
-    "scanning.workspace.complete": ""
+    "command.view.test.report": "view test report"
 }

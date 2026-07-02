@@ -143,7 +143,6 @@ function registerCommands(context: ExtensionContext) {
             treeDataProvider: projectProvider,
             showCollapseAll: false,
         });
-        projectProvider.setTreeView(treeView);
         context.subscriptions.push(treeView);
         context.subscriptions.push(
             (vscode.window as any).registerFileDecorationProvider(projectProvider.decorationProvider)
