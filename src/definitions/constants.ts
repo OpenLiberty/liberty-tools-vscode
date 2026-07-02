@@ -37,44 +37,11 @@ export function isAggregator(contextValue: string): boolean {
     return /^libertyProject.*:aggregator/.test(contextValue);
 }
 
-// ---------------------------------------------------------------------------
-// Deprecated — kept temporarily for persisted storage migration only.
-// These are the old contextValue strings that may exist in workspaceState for
-// users upgrading. createLibertyProject maps these to new values on load.
-// Remove after one release cycle.
-// ---------------------------------------------------------------------------
-/** @deprecated Use LIBERTY_PROJECT_MAVEN */
-export const LIBERTY_MAVEN_PROJECT = "libertyMavenProject";
-/** @deprecated Use LIBERTY_PROJECT_GRADLE */
-export const LIBERTY_GRADLE_PROJECT = "libertyGradleProject";
-/** @deprecated Use LIBERTY_PROJECT_MAVEN_CONTAINER */
-export const LIBERTY_MAVEN_PROJECT_CONTAINER = "libertyMavenProjectContainer";
-/** @deprecated Use LIBERTY_PROJECT_GRADLE_CONTAINER */
-export const LIBERTY_GRADLE_PROJECT_CONTAINER = "libertyGradleProjectContainer";
-
 export const TEST_REPORT_STRING = "Test Summary";
 export const LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY = "liberty.dashboard.data";
 export const LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION = "3.3.0";
 export const LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION = "3.1.0";
 export const LIBERTY_SERVER_ENV_PORT_REGEX = /^WLP_DEBUG_ADDRESS=([\d]+)$/;
-
-// ---------------------------------------------------------------------------
-// Deprecated — COMMAND_AND_PROJECT_TYPE_MAP replaced by regex helpers above.
-// filterProjects in helperUtil.ts now uses isMaven/isGradle/isContainer.
-// Remove after migration is complete.
-// ---------------------------------------------------------------------------
-/** @deprecated Use isMaven/isGradle/isContainer helpers in filterProjects */
-export const COMMAND_AND_PROJECT_TYPE_MAP: { [command: string]: string[] } = {
-    "liberty.dev.start": [LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
-    "liberty.dev.stop":[LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
-    "liberty.dev.custom":[LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
-    "liberty.dev.start.container":[ LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
-    "liberty.dev.run.tests":[LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
-    "failsafe":[LIBERTY_MAVEN_PROJECT , LIBERTY_MAVEN_PROJECT_CONTAINER],
-    "surefire":[LIBERTY_MAVEN_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER],
-    "gradle":[ LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER],
-    "liberty.dev.debug": [LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
-};
 
 export const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target,build}/**";
 export const COMMAND_TITLES = new Map();

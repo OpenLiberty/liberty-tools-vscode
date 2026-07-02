@@ -56,7 +56,6 @@ export function devModeRequirement(command: string): boolean | undefined {
  * @returns a list of projects that the given command can be excuted on.
  */
 export function filterProjects(projects: LibertyProject[], command: string): LibertyProject[] {
-	// Replaced COMMAND_AND_PROJECT_TYPE_MAP array lookups with regex helpers.
 	// Aggregators are intentionally excluded — command palette picks leaf projects only;
 	// aggregator delegation is handled by pickProject in libertyProject.ts.
 	const req = devModeRequirement(command);

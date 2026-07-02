@@ -14,8 +14,6 @@ import {
 	LIBERTY_PROJECT_MAVEN_CONTAINER, LIBERTY_PROJECT_GRADLE_CONTAINER,
 	LIBERTY_PROJECT_MAVEN_AGGREGATOR, LIBERTY_PROJECT_GRADLE_AGGREGATOR,
 	isMaven, isGradle,
-	LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT,
-	LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER,
 } from "../definitions/constants";
 import { BuildFileImpl, GradleBuildFile } from "../util/buildFile";
 import { BaseLibertyProject } from "./baseLibertyProject";
@@ -41,21 +39,6 @@ export interface DiscoveryResult {
 }
 
 /**
- * Migration shim: map old persisted contextValue strings to new scheme.
- * Users upgrading from previous versions may have old strings in workspaceState.
- * Remove this shim after one release cycle.
- */
-export function migrateContextValue(cv: string): string {
-	const map: Record<string, string> = {
-		[LIBERTY_MAVEN_PROJECT]: LIBERTY_PROJECT_MAVEN,
-		[LIBERTY_GRADLE_PROJECT]: LIBERTY_PROJECT_GRADLE,
-		[LIBERTY_MAVEN_PROJECT_CONTAINER]: LIBERTY_PROJECT_MAVEN_CONTAINER,
-		[LIBERTY_GRADLE_PROJECT_CONTAINER]: LIBERTY_PROJECT_GRADLE_CONTAINER,
-	};
-	return map[cv] ?? cv;
-}
-
-/**
  * Create a LibertyProject from a folder path (no known type) or a build file path + type.
  */
 export async function createLibertyProjectFromPath(
@@ -67,12 +50,11 @@ export async function createLibertyProjectFromPath(
 	let project: LibertyProject | undefined;
 
 	if (type !== undefined) {
-		const migratedType = migrateContextValue(type);
-		if (fse.existsSync(path) && isMaven(migratedType)) {
+		if (fse.existsSync(path) && isMaven(type)) {
 			const xmlString = await fse.readFile(path, "utf8");
-			project = await createProject(context, path, migratedType, xmlString);
-		} else if (fse.existsSync(path) && isGradle(migratedType)) {
-			project = await createProject(context, path, migratedType);
+			project = await createProject(context, path, type, xmlString);
+		} else if (fse.existsSync(path) && isGradle(type)) {
+			project = await createProject(context, path, type);
 		}
 	} else {
 		const pomFile = vscodePath.resolve(path, "pom.xml");
