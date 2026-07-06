@@ -105,7 +105,7 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
                 logger.testFailed(`Liberty Tools shows items - ${config.buildTool}`, error);
                 throw error;
             }
-        }).timeout(360000);
+        }).timeout(480000);
 
         it(`Start ${config.buildTool} project from Liberty Tools`, async () => {
                 logger.testStart('Start Maven project from Liberty Tools');

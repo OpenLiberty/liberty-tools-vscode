@@ -526,6 +526,18 @@ export async function waitForDashboardToLoad(section: any): Promise<void> {
     const wait = getWaitHelper();
     logger.info('Waiting for Liberty Dashboard to load');
 
+    // Focus the Liberty Tools view before polling.  The extension has an
+    // "onView:liberty-dev" activation event — explicitly revealing the view
+    // triggers immediate activation and project scanning instead of waiting
+    // for the extension host to do it passively, which can take 5+ minutes
+    // on cold mac-previous runners after a prior heavy devmode suite.
+    try {
+        await new Workbench().executeCommand('liberty-dev.focus');
+        await wait.sleep(1000);
+    } catch {
+        // Non-fatal — falls back to the poll loop below if the command fails
+    }
+
     // Re-fetch a fresh section on every poll iteration.  The section reference
     // passed in (or obtained just before this call) goes stale on cold runners
     // once VS Code rebuilds the sidebar DOM after workspace activation.
@@ -551,7 +563,7 @@ export async function waitForDashboardToLoad(section: any): Promise<void> {
         }
         return;
     }, {
-        timeout: 340000, // stay inside the 360 s Mocha cap on "Liberty Tools shows items"
+        timeout: 460000, // stay inside the 480 s Mocha cap on "Liberty Tools shows items"
         pollInterval: 5000, // check every 5 seconds
         message: 'Dashboard items did not load'
     });
