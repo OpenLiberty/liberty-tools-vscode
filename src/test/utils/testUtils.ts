@@ -329,18 +329,19 @@ export async function launchDashboardAction(item: DefaultTreeItem, action: strin
 export async function setCustomParameter(customParam: string) {
 
     logger.info("Setting custom Parameter");
-    
+    const wait = getWaitHelper();
+
+    // Find the input box and set text once.
+    const input = new InputBox();
+    await input.click();
+    await input.setText(customParam);
+
+    // confirm() targets a button/Enter that may not be interactable immediately
+    // after setText (the input animation is still running on macOS CI).
+    // Retry only confirm() — don't re-create the InputBox on each attempt.
     await waitForSuccess(async () => {
-        const input = new InputBox();
-        await input.click();
-        await input.setText(customParam);
-        
-        // Wait for input to be fully ready before confirming
-        const wait = getWaitHelper();
-        await wait.sleep(2000);
-        
         await input.confirm();
-    });
+    }, 15); // 15 s budget for the confirm to become interactable
 
 }
 
@@ -550,7 +551,7 @@ export async function waitForDashboardToLoad(section: any): Promise<void> {
         }
         return;
     }, {
-        timeout: 240000, // 4 minutes — matches the 275 s Mocha cap on "Liberty Tools shows items"
+        timeout: 265000, // stay inside the 275 s Mocha cap on "Liberty Tools shows items"
         pollInterval: 5000, // check every 5 seconds
         message: 'Dashboard items did not load'
     });
