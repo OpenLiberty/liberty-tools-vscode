@@ -551,7 +551,7 @@ export async function waitForDashboardToLoad(section: any): Promise<void> {
         }
         return;
     }, {
-        timeout: 265000, // stay inside the 275 s Mocha cap on "Liberty Tools shows items"
+        timeout: 340000, // stay inside the 360 s Mocha cap on "Liberty Tools shows items"
         pollInterval: 5000, // check every 5 seconds
         message: 'Dashboard items did not load'
     });

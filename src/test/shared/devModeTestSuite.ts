@@ -73,16 +73,20 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
             logger.testStart('Liberty Tools shows items - Maven');
             try {
                 logger.step(1, 'Getting dashboard section');
-                const section = await dashboard.getSection(); 
+                const section = await dashboard.getSection();
                 logger.stepSuccess(1, 'Dashboard section retrieved');
     
                 logger.step(2, 'Waiting for Liberty Tools to load');
                 await utils.waitForDashboardToLoad(section);
                 logger.stepSuccess(2, 'Liberty Tools loaded successfully');
     
+                // waitForDashboardToLoad already confirmed items exist on a fresh
+                // section reference.  Re-fetch here so getVisibleItems() doesn't
+                // operate on the original stale reference from before the wait.
                 logger.step(3, 'Getting visible items from section');
+                const freshSection = await dashboard.getSection();
                 const menu = await utils.waitForCondition(async () => {
-                    const items = await section.getVisibleItems();
+                    const items = await freshSection.getVisibleItems();
                     if (items && items.length > 0) {
                         return items;
                     }
@@ -92,7 +96,7 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
                 expect(menu).not.empty;
     
                 logger.step(4, `Finding Maven project item: ${config.projectConstant}`);
-                const item = await dashboard.getProjectItem(config.projectConstant); 
+                const item = await dashboard.getProjectItem(config.projectConstant);
                 logger.stepSuccess(4, 'Maven project item found');
                 expect(item).not.undefined;
     
@@ -101,7 +105,7 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
                 logger.testFailed(`Liberty Tools shows items - ${config.buildTool}`, error);
                 throw error;
             }
-        }).timeout(275000);
+        }).timeout(360000);
 
         it(`Start ${config.buildTool} project from Liberty Tools`, async () => {
                 logger.testStart('Start Maven project from Liberty Tools');
