@@ -66,15 +66,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     try {
         api = await getJavaExtensionAPI();
     } catch (error: any) {
-        // Java extension not installed or failed to activate.
-        // Tree view and dev commands remain functional; language features (LCLS, Jakarta) unavailable.
+        // language features (LCLS, Jakarta) unavailable.
         console.warn("Java extension unavailable, language servers will not start:", error.message);
         return;
     }
 
     // Waits for the java language server to launch in standard mode
-    // before activating Tools for MicroProfile.
-    // If java ls was started in lightweight mode, it will prompt user to switch.
     resolveLclsRequirements(api).then().catch((error => {
         window.showErrorMessage(error.message, error.label).then((selection) => {
             if (error.label && error.label === selection && error.openUrl) {
@@ -95,10 +92,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         return;
     }
 
-    // Start both language servers in parallel and await both — activate() must
-    // not return until the LS processes are started. If activate() returns early,
-    // VS Code's extension host loses the LS lifecycle handle and surfaces
-    // "server connection failed" on reload/restart.
     await Promise.all([
         startLangServer(context, requirements, true).then(() => {
             console.log("Liberty client ready");
@@ -151,66 +144,31 @@ function registerCommands(context: ExtensionContext) {
 
     handleWorkspaceSaveInProgress(context);
 
+    // Command table — [id, handler] pairs registered in one pass.
+    const commandTable: [string, (...args: any[]) => any][] = [
+        [CMD_EXPLORER_REFRESH, () => projectProvider.refresh()],
+        ["extension.open.project", (pomPath: any) => devCommands.openProject(pomPath)],
+        [CMD_OPEN_BUILD_FILE, (p?: LibertyProject) => devCommands.openBuildFile(p)],
+        [CMD_SHOW_COMMANDS, () => devCommands.listAllCommands()],
+        [CMD_START, (p?: LibertyProject) => devCommands.startDevMode(p)],
+        [CMD_DEBUG, (p?: LibertyProject) => devCommands.attachDebugger(p)],
+        [CMD_STOP, (p?: LibertyProject) => devCommands.stopDevMode(p)],
+        [CMD_CUSTOM, (p?: LibertyProject) => devCommands.customDevModeWithHistory(p)],
+        [CMD_START_CONTAINER, (p?: LibertyProject) => devCommands.startContainerDevMode(p)],
+        [CMD_RUN_TESTS, (p?: LibertyProject) => devCommands.runTests(p)],
+        [CMD_OPEN_FAILSAFE_REPORT, (p?: LibertyProject) => devCommands.openReport("failsafe", p)],
+        [CMD_OPEN_SUREFIRE_REPORT, (p?: LibertyProject) => devCommands.openReport("surefire", p)],
+        [CMD_OPEN_GRADLE_TEST_REPORT, (p?: LibertyProject) => devCommands.openReport("gradle", p)],
+        [CMD_ADD_PROJECT, (uri: vscode.Uri) => devCommands.addProject(uri)],
+        [CMD_REMOVE_PROJECT, () => devCommands.removeProject()],
+    ];
     context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_EXPLORER_REFRESH, (async () => {
-            projectProvider.refresh();
-        }))
+        ...commandTable.map(([id, handler]) => vscode.commands.registerCommand(id, handler)),
+        vscode.window.onDidCloseTerminal((t: vscode.Terminal) => devCommands.deleteTerminal(t)),
+        vscode.workspace.onDidChangeWorkspaceFolders(() => projectProvider.refresh()),
     );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand("extension.open.project", (pomPath) => devCommands.openProject(pomPath)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_OPEN_BUILD_FILE, (libProject?: LibertyProject) => devCommands.openBuildFile(libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_SHOW_COMMANDS, () => devCommands.listAllCommands()),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_START, (libProject?: LibertyProject) => devCommands.startDevMode(libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_DEBUG, (libProject?: LibertyProject) => devCommands.attachDebugger(libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_STOP, (libProject?: LibertyProject) => devCommands.stopDevMode(libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_CUSTOM, (libProject?: LibertyProject) => devCommands.customDevModeWithHistory(libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_START_CONTAINER, (libProject?: LibertyProject) => devCommands.startContainerDevMode(libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_RUN_TESTS, (libProject?: LibertyProject) => devCommands.runTests(libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_OPEN_FAILSAFE_REPORT, (libProject?: LibertyProject) => devCommands.openReport("failsafe", libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_OPEN_SUREFIRE_REPORT, (libProject?: LibertyProject) => devCommands.openReport("surefire", libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_OPEN_GRADLE_TEST_REPORT, (libProject?: LibertyProject) => devCommands.openReport("gradle", libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_ADD_PROJECT, (uri: vscode.Uri) => devCommands.addProject(uri)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(CMD_REMOVE_PROJECT, () => devCommands.removeProject()),
-    );
-    context.subscriptions.push(
-        vscode.window.onDidCloseTerminal((closedTerminal: vscode.Terminal) => {
-            devCommands.deleteTerminal(closedTerminal);
-        })
-    );
-    // Listens for any new folders are added to the workspace
-    context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
-        projectProvider.refresh();
-    }));
 }
 
-// this method is called when your extension is deactivated
 // vscode-languageclient requires implementation of the deactivate() method to return the stop promise from each language client
 // this method is based on the deactivate() method from RedHat's Language support for Java for Visual Studio Code project (https://github.com/redhat-developer/vscode-java)
 export function deactivate(): Promise<void[]> {
