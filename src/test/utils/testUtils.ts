@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar, SideBarView } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
@@ -246,7 +246,6 @@ export async function getDashboardSection(sidebar: any): Promise<any> {
     return await wait.forCondition(async () => {
         try {
             // Re-create SideBarView on every iteration — on mac Previous the sidebar object goes stale during workspace transitions and getSections() returns dead nodes on every call.
-            const { SideBarView } = require('vscode-extension-tester');
             const freshSidebar = new SideBarView();
             const contentPart = freshSidebar.getContent();
             const sections = await contentPart.getSections();
@@ -285,7 +284,6 @@ export async function getDashboardItem(section: any, projectName: string): Promi
     // stale.  Getting a fresh section + fresh sidebar each time breaks that loop.
     return (await wait.forCondition(async () => {
         try {
-            const { SideBarView } = require('vscode-extension-tester');
             const freshSection = await getDashboardSection(new SideBarView());
             await freshSection.expand();
             await wait.sleep(1000);
@@ -526,26 +524,25 @@ export async function clearCommandPalette() {
 export async function waitForDashboardToLoad(section: any): Promise<void> {
     const wait = getWaitHelper();
     logger.info('Waiting for Liberty Dashboard to load');
-    
-    // Expand the section
-    await waitForSuccess(async () => {
-        await section.expand();
-    });
-    
-    // Wait for section container to become stable after expansion
-    await wait.sleep(2000);
-    
-    // Wait for items to appear with retry on ElementNotInteractableError
+
+    // Re-fetch a fresh section on every poll iteration.  The section reference
+    // passed in (or obtained just before this call) goes stale on cold runners
+    // once VS Code rebuilds the sidebar DOM after workspace activation.
+    // Using a stale reference causes ElementNotInteractableError on every
+    // getVisibleItems() call, looping forever until timeout.
     await wait.forCondition(async () => {
         try {
-            const items = await section.getVisibleItems();
+            const freshSection = await getDashboardSection(new SideBarView());
+            await freshSection.expand();
+            await wait.sleep(500);
+            const items = await freshSection.getVisibleItems();
             if (items && items.length > 0) {
                 logger.info(`Dashboard loaded with ${items.length} items`);
                 return true;
             }
         } catch (error: any) {
-            // Retry on ElementNotInteractableError
-            if (error.name === 'ElementNotInteractableError') {
+            if (error.name === 'ElementNotInteractableError' ||
+                error.name === 'StaleElementReferenceError') {
                 logger.info('Container not yet interactable, retrying...');
                 return;
             }
@@ -553,7 +550,7 @@ export async function waitForDashboardToLoad(section: any): Promise<void> {
         }
         return;
     }, {
-        timeout: 120000, // 2 minutes max
+        timeout: 240000, // 4 minutes — matches the 275 s Mocha cap on "Liberty Tools shows items"
         pollInterval: 5000, // check every 5 seconds
         message: 'Dashboard items did not load'
     });
@@ -745,7 +742,6 @@ export async function closeWorkspace(): Promise<void> {
         try {
             await wait.forCondition(async () => {
                 try {
-                    const { SideBarView } = require('vscode-extension-tester');
                     const sidebar = new SideBarView();
                     const sections = await sidebar.getContent().getSections();
                     for (const sec of sections) {

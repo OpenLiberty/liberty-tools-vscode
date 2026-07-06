@@ -200,7 +200,7 @@ describe('Maven-specific devmode action tests', () => {
      * The following after hook closes the workspace so the next test file starts with a clean slate.
      */
     after(async function() {
-        this.timeout(10000);
+        this.timeout(45000);
         await utils.closeWorkspace();
     });
 });
