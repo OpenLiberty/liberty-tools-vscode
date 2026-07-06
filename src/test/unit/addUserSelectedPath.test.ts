@@ -1,3 +1,8 @@
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2026
+ */
+
 // This test runs in plain Node, not inside a real VS Code window.
 // Set the minimum localization config early so extension imports do not crash.
 process.env.VSCODE_NLS_CONFIG = JSON.stringify({ locale: "en" });

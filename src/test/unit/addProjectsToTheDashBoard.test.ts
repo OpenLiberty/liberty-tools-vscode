@@ -1,3 +1,8 @@
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2026
+ */
+
 // This test runs in plain Node, not inside a real VS Code window.
 // The extension's localization helper expects this env var to exist during import.
 process.env.VSCODE_NLS_CONFIG = JSON.stringify({ locale: "en" });
