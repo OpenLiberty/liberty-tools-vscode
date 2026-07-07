@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar, SideBarView } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
@@ -198,20 +198,33 @@ export function getGradle9ProjectPath(): string {
 
 export async function getDashboardSection(sidebar: any): Promise<any> {
     logger.info("Getting Liberty Tools section");
-    return await waitForCondition(async () => {
-        // Get fresh content on each iteration to avoid stale references
-        const contentPart = sidebar.getContent();
-        const sections = await contentPart.getSections();
-        
-        // Find the Liberty Tools section
-        for (const sec of sections) {
-            const title = await sec.getTitle();
-            if (title === 'Liberty Tools') {
-                return sec;
+    const wait = getWaitHelper();
+    return await wait.forCondition(async () => {
+        try {
+            // Re-create SideBarView on every iteration — the captured sidebar
+            // reference goes stale on workspace transitions and getSections()
+            // throws on every call, bypassing the retry loop.
+            const freshSidebar = new SideBarView();
+            const sections = await freshSidebar.getContent().getSections();
+            for (const sec of sections) {
+                const title = await sec.getTitle();
+                if (title === 'Liberty Tools') {
+                    return sec;
+                }
             }
+        } catch (error: any) {
+            if (error.name === 'StaleElementReferenceError' ||
+                error.name === 'ElementNotInteractableError') {
+                return;
+            }
+            throw error;
         }
         return;
-    }, 30);
+    }, {
+        timeout: 30000,
+        pollInterval: 3000,
+        message: 'Liberty Tools section was not found in sidebar within 30 seconds'
+    });
 }
 
 export async function getDashboardItem(section: any, projectName: string): Promise<DefaultTreeItem> {
