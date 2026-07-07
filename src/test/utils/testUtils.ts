@@ -532,16 +532,6 @@ export async function waitForDashboardToLoad(section: any): Promise<void> {
     // Using a stale reference causes ElementNotInteractableError on every
     // getVisibleItems() call, looping forever until timeout.
     await wait.forCondition(async () => {
-        // Prod the extension to refresh on every iteration.  On cold previous
-        // runners registerTreeDataProvider is not called until the Liberty LS
-        // JVM has started (extension.ts registers the tree provider only after
-        // startLangServer resolves).  Executing liberty.explorer.refresh forces
-        // a repopulation once the provider is registered; before that the
-        // command simply isn't registered and the error is swallowed.
-        try {
-            await new Workbench().executeCommand('liberty.explorer.refresh');
-        } catch { /* command not yet registered — keep waiting */ }
-
         try {
             const freshSection = await getDashboardSection(new SideBarView());
             await freshSection.expand();
