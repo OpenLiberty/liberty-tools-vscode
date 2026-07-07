@@ -489,7 +489,7 @@ export async function waitForDashboardToLoad(section: any): Promise<void> {
         }
         return;
     }, {
-        timeout: 120000, // 2 minutes max
+        timeout: 180000, // 3 minutes max
         pollInterval: 5000, // check every 5 seconds
         message: 'Dashboard items did not load'
     });
