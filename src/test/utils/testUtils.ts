@@ -86,8 +86,8 @@ export async function waitForLanguageServerInit(
             return false;
         }
     }, {
-        timeout: timeout * 1000,
-        pollInterval: 2000,
+        timeout: seconds(timeout),
+        pollInterval: seconds(2),
         message: `The ${channelName} output channel did not initialize within ${timeout} seconds`
     });
 }
@@ -177,6 +177,13 @@ export async function waitForSuccess(func: () => Promise<any>, timeout: number =
     }, timeout);
 }
 
+/**
+ * Convert seconds to milliseconds for use in timeout parameters.
+ */
+export function seconds(s: number): number {
+    return s * 1000;
+}
+
 export function getMvnProjectPath(): string {
     const mvnProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "maven", "liberty-maven-test-wrapper-app");
     logger.info("Path is : " + mvnProjectPath);
@@ -221,8 +228,8 @@ export async function getDashboardSection(sidebar: any): Promise<any> {
         }
         return;
     }, {
-        timeout: 30000,
-        pollInterval: 3000,
+        timeout: seconds(30),
+        pollInterval: seconds(3),
         message: 'Liberty Tools section was not found in sidebar within 30 seconds'
     });
 }
@@ -252,7 +259,7 @@ export async function getDashboardItem(section: any, projectName: string): Promi
             }
             throw error;
         }
-    }, { timeout: 10000, message: 'Dashboard items did not appear after expansion' });
+    }, { timeout: seconds(10), message: 'Dashboard items did not appear after expansion' });
     
     // Find the item
     return await waitForCondition(async () => {
@@ -385,8 +392,8 @@ export async function checkTerminalforServerState(serverStatusCode: string): Pro
                 return;
             }
         }, {
-            timeout: 300000, // 300 seconds (5 minutes) max wait - increased for custom params
-            pollInterval: 10000, // check every 10 seconds
+            timeout: seconds(5 * 60),
+            pollInterval: seconds(10),
             message: `Server state '${serverStatusCode}' not found in terminal`
         });
         
@@ -413,8 +420,8 @@ export async function checkTestStatus(testStatus: string): Promise<boolean> {
             }
             return;
         }, {
-            timeout: 120000, // 120 seconds (2 minutes) max wait for tests to complete
-            pollInterval: 5000, // check every 5 seconds
+            timeout: seconds(2 * 60),
+            pollInterval: seconds(5),
             message: `Test status '${testStatus}' not found in terminal`
         });
         
@@ -455,7 +462,7 @@ export async function clearCommandPalette() {
         } catch {
             return;
         }
-    }, { timeout: 5000, message: 'Clear command history dialog did not appear' });
+    }, { timeout: seconds(5), message: 'Clear command history dialog did not appear' });
     
     await waitForSuccess(async () => {
         const dialog = new ModalDialog();
@@ -502,8 +509,8 @@ export async function waitForDashboardToLoad(section: any): Promise<void> {
         }
         return;
     }, {
-        timeout: 180000, // 3 minutes max
-        pollInterval: 5000, // check every 5 seconds
+        timeout: seconds(3 * 60),
+        pollInterval: seconds(5),
         message: 'Dashboard items did not load'
     });
 }
@@ -554,8 +561,8 @@ export async function waitForTestReport(reportPath: string, alternatePath?: stri
             }
             return;
         }, {
-            timeout: 50000, // 50 seconds max (for slow systems)
-            pollInterval: 1000, // check every 1 second (faster detection)
+            timeout: seconds(50),
+            pollInterval: seconds(1),
             message: alternatePath
                 ? `Test report not found at either ${reportPath} or ${alternatePath}`
                 : `Test report not found at ${reportPath}`
@@ -576,7 +583,7 @@ export async function waitForDebuggerAttach(): Promise<boolean> {
     
     try {
         // Wait for the debug toolbar to appear, which indicates debugger is attached
-        const findDebugBarTimeout = 30000;
+        const findDebugBarTimeout = seconds(30);
         await DebugToolbar.create(findDebugBarTimeout);
         logger.info('DebugToolbar appeared - debugger attached successfully');
         return true;
