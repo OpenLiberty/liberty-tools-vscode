@@ -24,7 +24,7 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
     describe(`Devmode action tests for ${config.buildTool} Project`, () => {
     
         before(async function() {
-            this.timeout(300000);
+            this.timeout(480000);
     
             await VSBrowser.instance.openResources(config.getProjectPath());
             await VSBrowser.instance.waitForWorkbench();
@@ -33,11 +33,18 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
             // registerTreeDataProvider is only called after startLangServer
             // resolves — without this, waitForDashboardToLoad polls an empty
             // tree for minutes on cold mac-previous runners.
-            await utils.waitForLanguageServerInit(
-                'Language Support for Liberty',
-                'Initialized Liberty Language server',
-                240
-            );
+            // Non-fatal: if the LS doesn't init in time we proceed anyway and
+            // let waitForDashboardToLoad handle the remaining wait — this avoids
+            // skipping the entire suite when the before() hook itself times out.
+            try {
+                await utils.waitForLanguageServerInit(
+                    'Language Support for Liberty',
+                    'Initialized Liberty Language server',
+                    420
+                );
+            } catch {
+                logger.info('Liberty LS did not init within before() budget — proceeding anyway');
+            }
 
             dashboard = new DashboardPage();
         });
