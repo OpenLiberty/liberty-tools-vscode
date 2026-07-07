@@ -526,24 +526,22 @@ export async function waitForDashboardToLoad(section: any): Promise<void> {
     const wait = getWaitHelper();
     logger.info('Waiting for Liberty Dashboard to load');
 
-    // Focus the Liberty Tools view before polling.  The extension has an
-    // "onView:liberty-dev" activation event — explicitly revealing the view
-    // triggers immediate activation and project scanning instead of waiting
-    // for the extension host to do it passively, which can take 5+ minutes
-    // on cold mac-previous runners after a prior heavy devmode suite.
-    try {
-        await new Workbench().executeCommand('liberty-dev.focus');
-        await wait.sleep(1000);
-    } catch {
-        // Non-fatal — falls back to the poll loop below if the command fails
-    }
-
     // Re-fetch a fresh section on every poll iteration.  The section reference
     // passed in (or obtained just before this call) goes stale on cold runners
     // once VS Code rebuilds the sidebar DOM after workspace activation.
     // Using a stale reference causes ElementNotInteractableError on every
     // getVisibleItems() call, looping forever until timeout.
     await wait.forCondition(async () => {
+        // Prod the extension to refresh on every iteration.  On cold previous
+        // runners registerTreeDataProvider is not called until the Liberty LS
+        // JVM has started (extension.ts registers the tree provider only after
+        // startLangServer resolves).  Executing liberty.explorer.refresh forces
+        // a repopulation once the provider is registered; before that the
+        // command simply isn't registered and the error is swallowed.
+        try {
+            await new Workbench().executeCommand('liberty.explorer.refresh');
+        } catch { /* command not yet registered — keep waiting */ }
+
         try {
             const freshSection = await getDashboardSection(new SideBarView());
             await freshSection.expand();
