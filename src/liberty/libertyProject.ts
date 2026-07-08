@@ -9,7 +9,7 @@ import * as gradleUtil from "../util/gradleUtil";
 import * as mavenUtil from "../util/mavenUtil";
 import * as util from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
-import { EXCLUDED_DIR_PATTERN, LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, UNTITLED_WORKSPACE } from "../definitions/constants";
+import { EXCLUDED_DIR_PATTERN, LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER } from "../definitions/constants";
 import { BuildFileImpl, GradleBuildFile } from "../util/buildFile";
 import { DashboardData } from "./dashboard";
 import { BaseLibertyProject } from "./baseLibertyProject";
@@ -31,11 +31,15 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	private _context: vscode.ExtensionContext;
 
+	// Resolves when the first refresh() completes. Callers that need a stable
+	// project map before acting (e.g. handleWorkspaceSaveInProgress) must await this.
+	public readonly initialRefresh: Promise<void>;
+
 	constructor(context: vscode.ExtensionContext) {
 		this._context = context;
 		this._onDidChangeTreeData = new vscode.EventEmitter<LibertyProject | undefined>();
 		this.onDidChangeTreeData = this._onDidChangeTreeData.event;
-		this.refresh();
+		this.initialRefresh = this.refresh();
 	}
 
 	public getContext(): vscode.ExtensionContext {
@@ -212,20 +216,20 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					'Save Workspace'
 				).then(async (selection) => {
 					if (selection === 'Save Workspace') {
+							await this._context.globalState.update('workspaceSaveInProgress', true);
+							console.log('[checkUntitledWorkspaceAndSaveIt] wrote workspaceSaveInProgress=true, selectedProject=' + this._context.globalState.get('selectedProject'));
+							// Do NOT clear globalState here: the new session needs workspaceSaveInProgress
+							// and selectedProject to restore the manually-added project to the dashboard.
+							await vscode.commands.executeCommand('workbench.action.saveWorkspaceAs');
+							console.log('[checkUntitledWorkspaceAndSaveIt] saveWorkspaceAs command returned');
+					} else {
 						/**
-						 * setting workspaceSaveInProgress to true and storing it in globalstate for identifyting that the
-						 * workspace is saved and needs to save the manually added projects to the dashboard
+						 * If the user cancels saving the workspace and exits without saving, the data stays in the global state,
+						 * which is shared across all VS Code instances. To prevent this data from being mistakenly used in other
+						 * sessions and added to the dashboard, it should be cleared if the user cancels the save.
 						 */
-						await this._context.globalState.update('workspaceSaveInProgress', true);
-						//opens the saveWorkspace as dialog box
-						await vscode.commands.executeCommand('workbench.action.saveWorkspaceAs');
+						util.clearDataSavedInGlobalState(this._context);
 					}
-					/**
-					 * If the user cancels saving the workspace and exits without saving, the data stays in the global state, 
-					 * which is shared across all VS Code instances. To prevent this data from being mistakenly used in other 
-					 * sessions and added to the dashboard, it should be cleared if the user cancels the save.
-					 */
-					util.clearDataSavedInGlobalState(this._context);
 					resolve();
 				});
 			} catch (error) {
@@ -237,12 +241,15 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 
 	/*
-	This method identifies a workspace that is untitled and contains more than one project 
-	*/
+	 * Returns true when the workspace has not yet been saved to a .code-workspace file,
+	 * meaning workspaceState will be lost if the user does "Save Workspace As...".
+	 * This covers both plain single-folder windows (workspace.name == folder name)
+	 * and VS Code's auto-created "Untitled (Workspace)" multi-root workspaces.
+	 */
 	public isMultiProjectUntitledWorkspace(): boolean {
 		const workspaceFolders = vscode.workspace.workspaceFolders;
-		if ((workspaceFolders && workspaceFolders.length > 1
-			&& vscode.workspace.name === UNTITLED_WORKSPACE)) {
+		if (workspaceFolders && workspaceFolders.length >= 1
+			&& vscode.workspace.workspaceFile === undefined) {
 			return true;
 		}
 		return false;

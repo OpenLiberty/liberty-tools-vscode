@@ -31,10 +31,40 @@ export interface FakeVscode {
     workspace: {
         workspaceFolders: any;
         name: any;
+        workspaceFile: any;
     };
 }
 
-export function installFakeVscode(windowOverrides: Partial<FakeVscode["window"]> = {}): FakeVscode {
+// Paths that must be evicted from Node's require cache so that re-importing
+// libertyProject (or anything that transitively imports it) picks up the new
+// fake instead of a version bound to a previously-installed fake.
+const EXTENSION_CACHE_KEYS = [
+    "liberty/libertyProject",
+    "liberty/dashboard",
+    "liberty/baseLibertyProject",
+    "util/helperUtil",
+    "util/gradleUtil",
+    "util/mavenUtil",
+    "util/buildFile",
+    "util/i18nUtil",
+    "definitions/constants",
+];
+
+/**
+ * @param windowOverrides  Optional overrides for window methods (e.g. a sinon stub).
+ * @param clearCache       Pass true to evict all cached extension modules before
+ *                         installing the fake. Required when another test file may
+ *                         have already loaded these modules against a different fake.
+ *                         Defaults to false so existing callers are unaffected.
+ */
+export function installFakeVscode(windowOverrides: Partial<FakeVscode["window"]> = {}, clearCache = false): FakeVscode {
+    if (clearCache) {
+        Object.keys(require.cache).forEach(key => {
+            if (EXTENSION_CACHE_KEYS.some(segment => key.includes(segment))) {
+                delete require.cache[key];
+            }
+        });
+    }
     const fakeVscode: FakeVscode = {
         EventEmitter: class { event = () => {}; fire() {} },
         TreeItemCollapsibleState: { None: 0 },
@@ -54,7 +84,8 @@ export function installFakeVscode(windowOverrides: Partial<FakeVscode["window"]>
         },
         workspace: {
             workspaceFolders: undefined,
-            name: undefined
+            name: undefined,
+            workspaceFile: undefined
         }
     };
 
