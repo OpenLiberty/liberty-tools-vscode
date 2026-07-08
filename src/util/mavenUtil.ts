@@ -8,22 +8,39 @@ import { localize } from "../util/i18nUtil";
 import * as semver from "semver";
 
 /**
- * Look for a valid parent pom.xml
- * A valid parent has the liberty-maven-plugin actively declared in <build><plugins> 
- * Return BuildFile object
+ * Look for a valid parent pom.xml.
  *
- * @param xmlString the xmlString version of the pom.xml
+ * A pom qualifies as a valid parent if either:
+ *   (a) it declares the liberty-maven-plugin in <build><plugins>, OR
+ *   (b) it lists <modules> AND at least one child pom declares this pom's
+ *       <artifactId> as its <parent> (bidirectional aggregator check).
+ *
+ * @param xmlString            the xmlString version of the pom.xml
+ * @param childParentArtifactIds  optional set of parentArtifactIds collected
+ *                             from all child poms in the workspace (two-pass).
+ *                             When provided, enables the bidirectional check.
  */
-export function validParentPom(xmlString: string): BuildFileImpl {
+export function validParentPom(xmlString: string, childParentArtifactIds?: Set<string>): BuildFileImpl {
     const parseString = require("xml2js").parseString;
     let parentPom: BuildFileImpl = new BuildFileImpl(false, "");
     parseString(xmlString, (err: any, result: any) => {
 
-        // Only check <build><plugins> for active plugins
+        // (a) Liberty plugin declared directly — existing behaviour unchanged
         const validPom: BuildFileImpl = mavenPluginDetected(result.project.build);
         if (validPom.isValidBuildFile()) {
             parentPom = validPom;
             return;
+        }
+
+        // (b) Bidirectional aggregator: has <modules> AND a child references this artifactId
+        if (childParentArtifactIds && childParentArtifactIds.size > 0) {
+            const artifactId: string | undefined = result.project?.artifactId?.[0];
+            const modules: any[] | undefined = result.project?.modules?.[0]?.module;
+            if (artifactId && modules && modules.length > 0 && childParentArtifactIds.has(artifactId)) {
+                const aggregatorBuildFile = new BuildFileImpl(true, LIBERTY_PROJECT_MAVEN);
+                parentPom = aggregatorBuildFile;
+                return;
+            }
         }
 
         if (err) {
