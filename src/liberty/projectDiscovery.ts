@@ -325,6 +325,26 @@ async function stampProjects(
 }
 
 /**
+ * Sorts root projects to match the order of workspace folders in the Explorer view.
+ * Projects not under any workspace folder are sorted last.
+ */
+export function sortByWorkspaceOrder(roots: LibertyProject[]): LibertyProject[] {
+	const wsFolders = vscode.workspace.workspaceFolders ?? [];
+	const folderIndex = (project: LibertyProject): number => {
+		const idx = wsFolders.findIndex(f => {
+			const folderPath = f.uri.fsPath.endsWith(vscodePath.sep) ? f.uri.fsPath : f.uri.fsPath + vscodePath.sep;
+			return project.path.startsWith(folderPath);
+		});
+		return idx === -1 ? wsFolders.length : idx;
+	};
+	return [...roots].sort((a, b) => {
+		const diff = folderIndex(a) - folderIndex(b);
+		if (diff !== 0) { return diff; }
+		return a.path.localeCompare(b.path);
+	});
+}
+
+/**
  * Wires parent-child relationships and computes rootProjects.
  */
 async function linkProjects(
@@ -333,33 +353,6 @@ async function linkProjects(
 	gradleMetadataMap: Map<string, gradleUtil.GradleProjectMetadata>
 ): Promise<LibertyProject[]> {
 	const t0 = Date.now();
-	const mavenProjectsByArtifactId = new Map<string, LibertyProject>();
-	const gradleProjectsByName = new Map<string, LibertyProject>();
-
-	for (const [path, metadata] of mavenMetadataMap.entries()) {
-		const project = projectsMap.get(path);
-		if (project) { mavenProjectsByArtifactId.set(metadata.artifactId, project); }
-	}
-	for (const [path, metadata] of gradleMetadataMap.entries()) {
-		const project = projectsMap.get(path);
-		if (project) { gradleProjectsByName.set(metadata.projectName, project); }
-	}
-
-	for (const project of projectsMap.values()) {
-		if (!project.parentArtifactId) { continue; }
-		const parent = project.path.endsWith("pom.xml")
-			? mavenProjectsByArtifactId.get(project.parentArtifactId)
-			: gradleProjectsByName.get(project.parentArtifactId);
-		console.log(`[link] ${project.artifactId} parentArtifactId=${project.parentArtifactId} -> parent found=${!!parent}`);
-		if (parent && !parent.children.includes(project)) {
-			project.parent = parent;
-			parent.children.push(project);
-			if (!project.isLibertyEnabled && parent.isLibertyEnabled) {
-				project.isLibertyEnabled = true;
-				console.debug(`${project.artifactId} inherits Liberty plugin from parent ${parent.artifactId}`);
-			}
-		}
-	}
 
 	for (const [parentPath, parentMetadata] of mavenMetadataMap.entries()) {
 		if (!parentMetadata.isAggregator || parentMetadata.modules.length === 0) { continue; }
@@ -382,6 +375,28 @@ async function linkProjects(
 		}
 	}
 
+	for (const [parentPath, parentMetadata] of gradleMetadataMap.entries()) {
+		if (!parentMetadata.isAggregator || parentMetadata.subprojects.length === 0) { continue; }
+		const parentProject = projectsMap.get(parentPath);
+		if (!parentProject) { continue; }
+		const parentDir = vscodePath.dirname(parentPath);
+		for (const subproject of parentMetadata.subprojects) {
+			const fsPath = subproject.replace(/:/g, "/").replace(/^\//, "");
+			const childBuildPath = vscodePath.resolve(parentDir, fsPath, "build.gradle");
+			const childProject = projectsMap.get(childBuildPath);
+			if (childProject && !childProject.parent) {
+				childProject.parent = parentProject;
+				if (!parentProject.children.includes(childProject)) {
+					parentProject.children.push(childProject);
+				}
+				if (!childProject.isLibertyEnabled && parentProject.isLibertyEnabled) {
+					childProject.isLibertyEnabled = true;
+				}
+				console.debug(`Linked gradle subproject ${subproject} to parent ${parentMetadata.projectName} via filesystem path`);
+			}
+		}
+	}
+
 	// Stamp aggregator contextValue
 	for (const project of projectsMap.values()) {
 		if (project.isAggregator) {
@@ -398,9 +413,11 @@ async function linkProjects(
 		return project.children.some(child => hasLibertyDescendants(child));
 	};
 
-	const rootProjects = Array.from(projectsMap.values())
-		.filter(p => !p.parent)
-		.filter(p => p.isLibertyEnabled || hasLibertyDescendants(p));
+	const rootProjects = sortByWorkspaceOrder(
+		Array.from(projectsMap.values())
+			.filter(p => !p.parent)
+			.filter(p => p.isLibertyEnabled || hasLibertyDescendants(p))
+	);
 	console.log(`[perf] linkProjects: ${Date.now() - t0}ms  (${rootProjects.length} roots)`);
 	return rootProjects;
 }

@@ -7,10 +7,10 @@ import * as vscode from "vscode";
 import * as util from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
 import { devModeRequirement } from "../util/helperUtil";
-import { UNTITLED_WORKSPACE } from "../definitions/constants";
+import { UNTITLED_WORKSPACE, SORT_ORDER_KEY, SortOrder } from "../definitions/constants";
 import { LibertyProject } from "./libertyProject";
 import { ProjectRegistry } from "./projectRegistry";
-import { discoverWorkspace } from "./projectDiscovery";
+import { discoverWorkspace, sortByWorkspaceOrder } from "./projectDiscovery";
 
 // URI scheme used to signal dev-mode state to the FileDecorationProvider (enables green UI)
 // Format: liberty-dev://running/<encoded-project-path>
@@ -44,8 +44,6 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 
 	private _refreshing = false;
 
-
-
 	private _registry: ProjectRegistry;
 
 	public readonly decorationProvider = new LibertyDevDecorationProvider();
@@ -54,7 +52,18 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		this._registry = registry;
 		this._onDidChangeTreeData = new vscode.EventEmitter<LibertyProject | undefined>();
 		this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+		vscode.commands.executeCommand('setContext', 'liberty:sortOrder', this.getSortOrder());
 		this.refresh();
+	}
+
+	public getSortOrder(): SortOrder {
+		return (this._registry.getContext().workspaceState.get<SortOrder>(SORT_ORDER_KEY)) ?? "workspace";
+	}
+
+	public async setSortOrder(order: SortOrder): Promise<void> {
+		await this._registry.getContext().workspaceState.update(SORT_ORDER_KEY, order);
+		vscode.commands.executeCommand('setContext', 'liberty:sortOrder', order);
+		await this.refresh();
 	}
 
 	public static getInstance(): ProjectTreeProvider {
@@ -153,6 +162,13 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 			? vscode.TreeItemCollapsibleState.Expanded
 			: vscode.TreeItemCollapsibleState.None;
 		return element;
+	}
+
+	private sortRoots(roots: LibertyProject[]): LibertyProject[] {
+		if (this.getSortOrder() === "alphabetical") {
+			return [...roots].sort((a, b) => a.label.localeCompare(b.label));
+		}
+		return sortByWorkspaceOrder(roots);
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -276,13 +292,13 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 			(partial, foldersComplete, totalFolders) => {
 				// Progressive tree update after each folder
 				this._registry.setProjects(new Map(partial));
-				this._registry.setRootProjects(Array.from(partial.values()).filter(p => !p.parent));
+				this._registry.setRootProjects(this.sortRoots(Array.from(partial.values()).filter(p => !p.parent)));
 				this._onDidChangeTreeData.fire(undefined);
 			}
 		);
 
 		this._registry.setProjects(projects);
-		this._registry.setRootProjects(rootProjects);
+		this._registry.setRootProjects(this.sortRoots(rootProjects));
 		console.log(`[perf] updateProjects total: ${Date.now() - t0}ms  (${projects.size} projects, ${rootProjects.length} roots)`);
 	}
 }

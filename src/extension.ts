@@ -21,6 +21,7 @@ import {
     CMD_START, CMD_DEBUG, CMD_STOP, CMD_CUSTOM, CMD_START_CONTAINER,
     CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
     CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
+    CMD_SORT_WORKSPACE, CMD_SORT_WORKSPACE_ACTIVE, CMD_SORT_ALPHABETICAL, CMD_SORT_ALPHABETICAL_ACTIVE,
 } from "./definitions/constants";
 import path = require('path');
 import * as fs from "fs";
@@ -161,6 +162,10 @@ function registerCommands(context: ExtensionContext) {
         [CMD_OPEN_GRADLE_TEST_REPORT, (p?: LibertyProject) => devCommands.openReport("gradle", p)],
         [CMD_ADD_PROJECT, (uri: vscode.Uri) => devCommands.addProject(uri)],
         [CMD_REMOVE_PROJECT, () => devCommands.removeProject()],
+        [CMD_SORT_WORKSPACE, () => projectProvider.setSortOrder("workspace")],
+        [CMD_SORT_WORKSPACE_ACTIVE, () => projectProvider.setSortOrder("workspace")],
+        [CMD_SORT_ALPHABETICAL, () => projectProvider.setSortOrder("alphabetical")],
+        [CMD_SORT_ALPHABETICAL_ACTIVE, () => projectProvider.setSortOrder("alphabetical")],
     ];
     context.subscriptions.push(
         ...commandTable.map(([id, handler]) => vscode.commands.registerCommand(id, handler)),

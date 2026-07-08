@@ -157,9 +157,39 @@
 				"category": "Liberty",
 				"title": "%commands.title.open.build.file%",
 				"icon": "$(go-to-file)"
+			},
+			{
+				"command": "liberty.explorer.sort.workspace",
+				"category": "Liberty",
+				"title": "Sort: Workspace"
+			},
+			{
+				"command": "liberty.explorer.sort.workspace.active",
+				"category": "Liberty",
+				"title": "✓ Sort: Workspace"
+			},
+			{
+				"command": "liberty.explorer.sort.alphabetical",
+				"category": "Liberty",
+				"title": "Sort: Alphabetical"
+			},
+			{
+				"command": "liberty.explorer.sort.alphabetical.active",
+				"category": "Liberty",
+				"title": "✓ Sort: Alphabetical"
 			}
 		],
 		"menus": {
+			"commandPalette": [
+				{
+					"command": "liberty.explorer.sort.workspace.active",
+					"when": "false"
+				},
+				{
+					"command": "liberty.explorer.sort.alphabetical.active",
+					"when": "false"
+				}
+			],
 			"explorer/context": [
 				{
 					"command": "liberty.dev.add.project",
@@ -192,6 +222,26 @@
 					"command": "liberty.dev.remove.project",
 					"when": "view == liberty-dev",
 					"group": "navigation@4"
+				},
+				{
+					"command": "liberty.explorer.sort.workspace",
+					"when": "view == liberty-dev && (liberty:sortOrder != workspace || !liberty:sortOrder)",
+					"group": "2_sort@1"
+				},
+				{
+					"command": "liberty.explorer.sort.workspace.active",
+					"when": "view == liberty-dev && liberty:sortOrder == workspace",
+					"group": "2_sort@1"
+				},
+				{
+					"command": "liberty.explorer.sort.alphabetical",
+					"when": "view == liberty-dev && liberty:sortOrder != alphabetical",
+					"group": "2_sort@2"
+				},
+				{
+					"command": "liberty.explorer.sort.alphabetical.active",
+					"when": "view == liberty-dev && liberty:sortOrder == alphabetical",
+					"group": "2_sort@2"
 				}
 			],
 			"view/item/context": [

@@ -69,6 +69,12 @@ export const CMD_OPEN_SUREFIRE_REPORT    = "liberty.dev.open.surefire.report";
 export const CMD_OPEN_GRADLE_TEST_REPORT = "liberty.dev.open.gradle.test.report";
 export const CMD_ADD_PROJECT             = "liberty.dev.add.project";
 export const CMD_REMOVE_PROJECT          = "liberty.dev.remove.project";
+export const CMD_SORT_WORKSPACE          = "liberty.explorer.sort.workspace";
+export const CMD_SORT_WORKSPACE_ACTIVE   = "liberty.explorer.sort.workspace.active";
+export const CMD_SORT_ALPHABETICAL       = "liberty.explorer.sort.alphabetical";
+export const CMD_SORT_ALPHABETICAL_ACTIVE = "liberty.explorer.sort.alphabetical.active";
+export const SORT_ORDER_KEY              = "liberty.sortOrder";
+export type SortOrder                    = "workspace" | "alphabetical";
 
 // ---------------------------------------------------------------------------
 // Project Discovery
