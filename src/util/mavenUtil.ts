@@ -205,6 +205,28 @@ function containerVersion(plugin: any): boolean {
 }
 
 /**
+ * Pass 1 of the two-pass aggregator detection.
+ * Iterates all parsed Maven entries and collects every <parent><artifactId> declared.
+ * The resulting Set is passed to validParentPom() in pass 2 to enable the
+ * bidirectional aggregator check without O(n²) cross-referencing.
+ *
+ * @param entries Array of objects carrying xmlString for each pom.xml
+ */
+export function collectChildParentArtifactIds(entries: Array<{ xmlString?: string }>): Set<string> {
+    const parseString = require("xml2js").parseString;
+    const result = new Set<string>();
+    for (const entry of entries) {
+        if (!entry.xmlString) { continue; }
+        parseString(entry.xmlString, (err: any, parsed: any) => {
+            if (err || !parsed?.project?.parent) { return; }
+            const parentArtifactId = parsed.project.parent[0]?.artifactId?.[0];
+            if (parentArtifactId) { result.add(parentArtifactId); }
+        });
+    }
+    return result;
+}
+
+/**
  * Interface for Maven project metadata used in multi-module hierarchy
  */
 export interface MavenProjectMetadata {

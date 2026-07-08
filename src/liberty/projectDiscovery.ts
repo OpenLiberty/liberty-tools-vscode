@@ -146,12 +146,14 @@ async function discoverProjects(
 	const gradleEntries = allEntries.filter(e => e.type === "gradle");
 
 	// ── Phase 2: classify parents ──────────────────────────────────────────
+	const childParentArtifactIds = mavenUtil.collectChildParentArtifactIds(mavenEntries);
+
 	let mavenChildMap: Map<string, string[]> = new Map();
 	const mavenParentPaths = new Set<string>();
 	const mavenChildPomPaths = new Set<string>();
 	for (const entry of mavenEntries) {
 		if (!entry.xmlString) { continue; }
-		const validParent = mavenUtil.validParentPom(entry.xmlString);
+		const validParent = mavenUtil.validParentPom(entry.xmlString, childParentArtifactIds);
 		console.log(`[discovery] phase2 validParentPom(${entry.path}): isValid=${validParent.isValidBuildFile()} type=${validParent.getProjectType()}`);
 		if (validParent.isValidBuildFile()) {
 			const childModules = mavenUtil.findChildMavenModules(entry.xmlString);
@@ -202,7 +204,7 @@ async function discoverProjects(
 			const isParent = mavenParentPaths.has(entry.path);
 			const isChild = mavenChildPomPaths.has(entry.path);
 			if (isParent) {
-				buildFile = mavenUtil.validParentPom(entry.xmlString);
+				buildFile = mavenUtil.validParentPom(entry.xmlString, childParentArtifactIds);
 			} else if (isChild) {
 				buildFile = new BuildFileImpl(true, LIBERTY_PROJECT_MAVEN);
 				buildFile.setBuildFilePath(entry.path);
