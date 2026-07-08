@@ -209,6 +209,22 @@ function extractChildrenFromSettings(settingsFile: any): string[] {
  * Given a settings.gradle file, determine if there are valid child gradle projects
  * The parent build.gradle must have subprojects in the `include` section and
  * apply the liberty-gradle-plugin to the subprojects, OR simply be an aggregator with modules
+/**
+ * Returns true if parsedSettings contains at least one include entry.
+ * Used in phase 2 of discovery to detect aggregator roots that have no
+ * Liberty plugin — allowing findChildGradleProjects to be called even
+ * when parsedBuild and regexBuildFile are both null.
+ *
+ * @param parsedSettings Parsed settings.gradle content, or null/undefined
+ */
+export function hasGradleSubprojects(parsedSettings: any): boolean {
+    if (!parsedSettings || !parsedSettings.include) { return false; }
+    if (Array.isArray(parsedSettings.include)) { return parsedSettings.include.length > 0; }
+    if (typeof parsedSettings.include === "string") { return parsedSettings.include.trim().length > 0; }
+    return false;
+}
+
+/**
  * Return GradleBuildFile object
  *
  * @param settingsFile settings.gradle file
@@ -411,29 +427,31 @@ export async function extractGradleMetadata(
     const subprojects = extractSubprojectsFromSettings(settingsFile);
 
     // Determine parent project name by inspecting the parent directory's settings.gradle.
-    // Re-use parsedSettings of the *parent* only if the caller already has it cached;
-    // otherwise fall back to a sync regex scan of the parent settings file to avoid
-    // an extra g2js.parseFile() per-project (the parent settings is not in our cache).
+    // Walk up the directory tree looking for a settings.gradle that includes
+    // this child module — handles both flat (one level up) and colon-path
+    // (two or more levels up) multi-module layouts.
     let parentProjectName: string | undefined;
     const buildDir = path.dirname(buildGradlePath);
-    const currentDirName = path.basename(buildDir);
-    const parentDir = path.dirname(buildDir);
-    const parentSettingsPath = path.join(parentDir, "settings.gradle");
+    const fsRoot = path.parse(buildDir).root;
+    let searchDir = path.dirname(buildDir);
 
-    if (fse.existsSync(parentSettingsPath)) {
-        try {
-            // Fast path: read raw text and extract rootProject.name + include list via regex
-            // to avoid an extra g2js.parseFile() per child module.
-            const parentSettingsText = fse.readFileSync(parentSettingsPath, "utf8");
-            const parentIncludesChild = /(?:^|[\n,])\s*['"]?:?([\w-]*)\b/.test(parentSettingsText) &&
-                parentSettingsText.includes(currentDirName);
-            if (parentIncludesChild) {
-                const nameMatch = parentSettingsText.match(/rootProject\.name\s*=\s*['"]([^'"]+)['"]/m);
-                parentProjectName = nameMatch ? nameMatch[1] : path.basename(parentDir);
+    while (searchDir !== fsRoot) {
+        const candidateSettings = path.join(searchDir, "settings.gradle");
+        if (fse.existsSync(candidateSettings)) {
+            try {
+                const settingsText = fse.readFileSync(candidateSettings, "utf8");
+                const relativePath = path.relative(searchDir, buildDir).replace(/\\/g, "/");
+                const colonPath = relativePath.replace(/\//g, ":");
+                if (settingsText.includes(relativePath) || settingsText.includes(colonPath)) {
+                    const nameMatch = settingsText.match(/rootProject\.name\s*=\s*['"]([^'"]+)['"]/m);
+                    parentProjectName = nameMatch ? nameMatch[1] : path.basename(searchDir);
+                    break;
+                }
+            } catch (err) {
+                console.error(localize("unable.to.parse.settings.gradle", candidateSettings, err));
             }
-        } catch (err) {
-            console.error(localize("unable.to.parse.settings.gradle", parentSettingsPath, err));
         }
+        searchDir = path.dirname(searchDir);
     }
 
     // Check for Liberty plugin
@@ -443,10 +461,13 @@ export async function extractGradleMetadata(
     // Check if this is an aggregator (has subprojects)
     const isAggregator = subprojects.length > 0;
 
-    // Determine context value
+    // Determine context value — aggregators without Liberty default to LIBERTY_PROJECT_GRADLE
+    // so downstream stamping and tree rendering work correctly
     let contextValue = "";
     if (hasLibertyPlugin) {
         contextValue = gradleBuildFile.getProjectType();
+    } else if (isAggregator) {
+        contextValue = LIBERTY_PROJECT_GRADLE;
     }
 
     return {

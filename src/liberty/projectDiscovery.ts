@@ -177,7 +177,9 @@ async function discoverProjects(
 	const gradleChildBuildPaths = new Set<string>();
 	const gradleParentPaths = new Set<string>();
 	for (const entry of gradleEntries) {
-		if ((!entry.parsedBuild && !entry.regexBuildFile) || !entry.parsedSettings) { continue; }
+		const hasParsedBuild = entry.parsedBuild || entry.regexBuildFile;
+		const isAggregatorBySettings = entry.parsedSettings && gradleUtil.hasGradleSubprojects(entry.parsedSettings);
+		if (!hasParsedBuild && !isAggregatorBySettings) { continue; }
 		const gradleBuildFile = gradleUtil.findChildGradleProjects(
 			entry.parsedBuild ?? {}, entry.parsedSettings, entry.path
 		);
@@ -230,7 +232,7 @@ async function discoverProjects(
 		}),
 
 		...gradleEntries.map(async (entry) => {
-			if (!entry.parsedBuild && !entry.regexBuildFile) { return; }
+			if (!entry.parsedBuild && !entry.regexBuildFile && !gradleParentPaths.has(entry.path)) { return; }
 			let buildFile: BuildFileImpl;
 
 			if (gradleParentPaths.has(entry.path)) {
@@ -304,7 +306,7 @@ async function stampProjects(
 				project.isAggregator = metadata.isAggregator;
 				project.isLibertyEnabled = metadata.isLibertyEnabled;
 				mavenMetadataMap.set(entry.path, metadata);
-			} else if (entry.type === "gradle" && (entry.parsedBuild || entry.regexBuildFile)) {
+			} else if (entry.type === "gradle" && (entry.parsedBuild || entry.regexBuildFile || entry.parsedSettings)) {
 				const metadata = await gradleUtil.extractGradleMetadata(entry.path, entry.parsedBuild ?? null, entry.parsedSettings);
 				console.log(`[stamp] gradle ${entry.path}: projectName=${metadata.projectName}, parentProjectName=${metadata.parentProjectName}, isAggregator=${metadata.isAggregator}, isLibertyEnabled=${metadata.isLibertyEnabled}`);
 				project.artifactId = metadata.projectName;
