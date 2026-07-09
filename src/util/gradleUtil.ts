@@ -8,12 +8,44 @@ import * as semver from "semver";
 import { JSONPath } from "jsonpath-plus";
 import { localize } from "../util/i18nUtil";
 import { getAllPaths, getReport } from "./helperUtil";
-import { TEST_REPORT_STRING, LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT } from "../definitions/constants";
+import { TEST_REPORT_STRING, LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION, LIBERTY_PROJECT_GRADLE_CONTAINER, LIBERTY_PROJECT_GRADLE } from "../definitions/constants";
 import { GradleBuildFile } from "./buildFile";
 
 // Regex patterns for Liberty plugin detection in modern Gradle syntax
 const LIBERTY_PLUGIN_ID_REGEX = /id\s*\(\s*["']io\.openliberty\.tools\.gradle\.Liberty["']\s*\)|id\s+['"]io\.openliberty\.tools\.gradle\.Liberty['"]/;
 const LIBERTY_PLUGIN_VERSION_REGEX = /id\s*\(\s*["']io\.openliberty\.tools\.gradle\.Liberty["']\s*\)\s+version\s+["']([^"']+)["']|id\s+['"]io\.openliberty\.tools\.gradle\.Liberty['"]\s+version\s+["']([^"']+)["']/;
+
+// Regex to detect legacy buildscript classpath plugin syntax (requires g2js to parse fully)
+const LEGACY_BUILDSCRIPT_REGEX = /buildscript\s*\{/;
+
+/**
+ * Detect Liberty plugin from raw build.gradle text content.
+ * Returns a GradleBuildFile if the modern plugin syntax is detected, null otherwise.
+ * Does NOT detect legacy buildscript.dependencies syntax — use the g2js path for that.
+ *
+ * @param content Raw text of a build.gradle file
+ * @returns GradleBuildFile if Liberty plugin detected via modern syntax, null otherwise
+ */
+export function detectLibertyPluginFromText(content: string): GradleBuildFile | null {
+    if (LIBERTY_PLUGIN_ID_REGEX.test(content)) {
+        const versionMatch = content.match(LIBERTY_PLUGIN_VERSION_REGEX);
+        const version = versionMatch ? (versionMatch[1] || versionMatch[2]) : null;
+        if (version && containerVersion(version)) {
+            return new GradleBuildFile(true, LIBERTY_PROJECT_GRADLE_CONTAINER);
+        }
+        return new GradleBuildFile(true, LIBERTY_PROJECT_GRADLE);
+    }
+    return null;
+}
+
+/**
+ * Return true if the raw build.gradle text MAY use legacy buildscript.dependencies
+ * syntax for the Liberty plugin. When true, g2js.parseFile() is still needed.
+ * @param content Raw text of a build.gradle file
+ */
+export function mightUseLegacyBuildscriptSyntax(content: string): boolean {
+    return LEGACY_BUILDSCRIPT_REGEX.test(content);
+}
 
 /**
  * Detect Liberty plugin using regex for Gradle plugin syntax.
@@ -25,23 +57,23 @@ function detectLibertyPluginViaRegex(buildFilePath: string): GradleBuildFile | n
     if (!buildFilePath || !fse.existsSync(buildFilePath)) {
         return null;
     }
-    
+
     try {
         const content = fse.readFileSync(buildFilePath, 'utf8');
-        
+
         if (LIBERTY_PLUGIN_ID_REGEX.test(content)) {
             const versionMatch = content.match(LIBERTY_PLUGIN_VERSION_REGEX);
             const version = versionMatch ? (versionMatch[1] || versionMatch[2]) : null;
-            
+
             if (version && containerVersion(version)) {
-                return new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT_CONTAINER);
+                return new GradleBuildFile(true, LIBERTY_PROJECT_GRADLE_CONTAINER);
             }
-            return new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT);
+            return new GradleBuildFile(true, LIBERTY_PROJECT_GRADLE);
         }
     } catch (error) {
         console.error(`Error reading build.gradle for Liberty plugin detection: ${buildFilePath}`, error);
     }
-    
+
     return null;
 }
 
@@ -59,25 +91,25 @@ export function validGradleBuild(buildFile: any, buildFilePath?: string): Gradle
         for ( const dependency of buildDependency ) {
             if ( "io.openliberty.tools" === dependency.group && "liberty-gradle-plugin" === dependency.name) {
                 if (containerVersion(dependency.version)) {
-                    return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT_CONTAINER));
+                    return (new GradleBuildFile(true, LIBERTY_PROJECT_GRADLE_CONTAINER));
                 }
-                return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT));
+                return (new GradleBuildFile(true, LIBERTY_PROJECT_GRADLE));
             }
         }
     }
-    
+
     const plugins = JSONPath({ path: "$..plugins", json: buildFile });
     for ( const plugin of plugins) {
         for (const onePlugin of plugin) {
             if ( "io.openliberty.tools.gradle.Liberty" === onePlugin.id ) {
                 if (containerVersion(onePlugin.version)) {
-                    return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT_CONTAINER));
+                    return (new GradleBuildFile(true, LIBERTY_PROJECT_GRADLE_CONTAINER));
                 }
-                return (new GradleBuildFile(true, LIBERTY_GRADLE_PROJECT));
+                return (new GradleBuildFile(true, LIBERTY_PROJECT_GRADLE));
             }
         }
      }
-    
+
     // Fallback: Use regex for modern plugin syntax that gradle-to-js can't parse
     if (buildFilePath) {
         const regexResult = detectLibertyPluginViaRegex(buildFilePath);
@@ -85,7 +117,7 @@ export function validGradleBuild(buildFile: any, buildFilePath?: string): Gradle
             return regexResult;
         }
     }
-    
+
     return (new GradleBuildFile(false, ""));
 }
 
@@ -108,6 +140,21 @@ export async function getGradleProjectName(gradlePath: string): Promise<string> 
                 return representation["rootProject.name"];
             }
         }).catch((err: any) => console.error(localize("unable.to.parse.settings.gradle", gradleSettings , err)));
+    }
+    return label;
+}
+
+/**
+ * Get the name of a gradle project from already-parsed settings content.
+ * Avoids re-parsing settings.gradle when the parsed representation is available.
+ * @param gradlePath build.gradle location (used to derive fallback directory name)
+ * @param parsedSettings Already-parsed settings.gradle JS object, or null/undefined
+ */
+export function getGradleProjectNameFromParsed(gradlePath: string, parsedSettings: any): string {
+    const dirName = path.dirname(gradlePath);
+    const label = path.basename(dirName);
+    if (parsedSettings && parsedSettings["rootProject.name"] !== undefined) {
+        return parsedSettings["rootProject.name"];
     }
     return label;
 }
@@ -145,16 +192,16 @@ function extractChildrenFromSettings(settingsFile: any): string[] {
     if (!settingsFile || !settingsFile.include) {
         return [];
     }
-    
+
     if (typeof settingsFile.include === "string") {
         const subprojects = settingsFile.include.replace(/['" ]+/g, "");
         return subprojects.split(",").filter((s: string) => s.length > 0);
     }
-    
+
     if (Array.isArray(settingsFile.include)) {
         return settingsFile.include;
     }
-    
+
     return [];
 }
 
@@ -162,21 +209,37 @@ function extractChildrenFromSettings(settingsFile: any): string[] {
  * Given a settings.gradle file, determine if there are valid child gradle projects
  * The parent build.gradle must have subprojects in the `include` section and
  * apply the liberty-gradle-plugin to the subprojects, OR simply be an aggregator with modules
+/**
+ * Returns true if parsedSettings contains at least one include entry.
+ * Used in phase 2 of discovery to detect aggregator roots that have no
+ * Liberty plugin — allowing findChildGradleProjects to be called even
+ * when parsedBuild and regexBuildFile are both null.
+ *
+ * @param parsedSettings Parsed settings.gradle content, or null/undefined
+ */
+export function hasGradleSubprojects(parsedSettings: any): boolean {
+    if (!parsedSettings || !parsedSettings.include) { return false; }
+    if (Array.isArray(parsedSettings.include)) { return parsedSettings.include.length > 0; }
+    if (typeof parsedSettings.include === "string") { return parsedSettings.include.trim().length > 0; }
+    return false;
+}
+
+/**
  * Return GradleBuildFile object
  *
  * @param settingsFile settings.gradle file
  */
 export function findChildGradleProjects(buildFile: any, settingsFile: any, buildFilePath?: string): GradleBuildFile {
     const gradleChildren = extractChildrenFromSettings(settingsFile);
-    
+
     if (gradleChildren.length === 0) {
         return new GradleBuildFile(false, "");
     }
-    
+
     // Check if the parent build.gradle has Liberty plugin
     const parent: GradleBuildFile = validGradleBuild(buildFile, buildFilePath);
-    const projectType = parent.hasLibertyPlugin() ? parent.getProjectType() : LIBERTY_GRADLE_PROJECT;
-    
+    const projectType = parent.hasLibertyPlugin() ? parent.getProjectType() : LIBERTY_PROJECT_GRADLE;
+
     // Mark as valid because it's an aggregator (even if no Liberty plugin)
     const result = new GradleBuildFile(true, projectType);
     result.setChildren(gradleChildren);
@@ -196,12 +259,12 @@ export async function isGradleAggregator(buildFile: any, gradlePath: string, vis
         console.warn(`Circular reference detected for Gradle project: ${gradlePath}`);
         return false;
     }
-    
+
     const gradleSettings = getGradleSettings(gradlePath);
     if (gradleSettings === "") {
         return false;
     }
-    
+
     try {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const g2js = require("gradle-to-js/lib/parser");
@@ -232,16 +295,16 @@ export async function validateGradleChildModule(
     if (gradleBuild.hasLibertyPlugin()) {
         return true;
     }
-    
+
     // Check if this child is itself an aggregator with settings.gradle
     const isAggregator = await isGradleAggregator(buildFile, gradlePath, visitedPaths);
     if (isAggregator) {
         // It's an aggregator, use default project type for interaction
-        const { LIBERTY_GRADLE_PROJECT } = require("../definitions/constants");
-        gradleBuild.setProjectType(LIBERTY_GRADLE_PROJECT);
+        const { LIBERTY_PROJECT_GRADLE } = require("../definitions/constants");
+        gradleBuild.setProjectType(LIBERTY_PROJECT_GRADLE);
         return true;
     }
-    
+
     // Not an aggregator and no Liberty plugin - don't include
     return false;
 }
@@ -276,8 +339,8 @@ export async function getGradleTestReport(gradlePath: any, projectRootPath: stri
 
 /**
  * Return true if the liberty-gradle-plugin version is compatible
- * for dev mode with containers 
- * 
+ * for dev mode with containers
+ *
  * @param version plugin version as string
  */
 function containerVersion(pluginVersion: string): boolean {
@@ -337,15 +400,15 @@ export interface GradleProjectMetadata {
  * @returns GradleProjectMetadata object
  */
 export async function extractGradleMetadata(
-    buildGradlePath: string, 
+    buildGradlePath: string,
     buildFileContent?: any,
     settingsContent?: any
 ): Promise<GradleProjectMetadata> {
     const g2js = require("gradle-to-js/lib/parser");
-    
+
     // Parse build.gradle if not provided
     const buildFile = buildFileContent || await g2js.parseFile(buildGradlePath);
-    
+
     // Parse settings.gradle if exists and not provided
     const settingsPath = getGradleSettings(buildGradlePath);
     let settingsFile = settingsContent;
@@ -356,48 +419,57 @@ export async function extractGradleMetadata(
             console.error(localize("unable.to.parse.settings.gradle", settingsPath, err));
         }
     }
-    
-    // Extract project name
-    const projectName = await getGradleProjectName(buildGradlePath);
-    
+
+    // Extract project name — use cached parsedSettings to avoid re-parsing settings.gradle
+    const projectName = getGradleProjectNameFromParsed(buildGradlePath, settingsFile);
+
     // Extract subprojects
     const subprojects = extractSubprojectsFromSettings(settingsFile);
-    
-    // Determine parent project name
+
+    // Determine parent project name by inspecting the parent directory's settings.gradle.
+    // Walk up the directory tree looking for a settings.gradle that includes
+    // this child module — handles both flat (one level up) and colon-path
+    // (two or more levels up) multi-module layouts.
     let parentProjectName: string | undefined;
     const buildDir = path.dirname(buildGradlePath);
-    const currentDirName = path.basename(buildDir);
-    const parentDir = path.dirname(buildDir);
-    const parentSettings = path.join(parentDir, "settings.gradle");
-    
-    // Check if parent directory has settings.gradle
-    if (fse.existsSync(parentSettings)) {
-        try {
-            const parentSettingsFile = await g2js.parseFile(parentSettings);
-            const parentSubprojects = extractSubprojectsFromSettings(parentSettingsFile);
-            
-            // If current directory is in parent's includes, this is a child module
-            if (parentSubprojects.includes(currentDirName)) {
-                parentProjectName = parentSettingsFile["rootProject.name"] || path.basename(parentDir);
+    const fsRoot = path.parse(buildDir).root;
+    let searchDir = path.dirname(buildDir);
+
+    while (searchDir !== fsRoot) {
+        const candidateSettings = path.join(searchDir, "settings.gradle");
+        if (fse.existsSync(candidateSettings)) {
+            try {
+                const settingsText = fse.readFileSync(candidateSettings, "utf8");
+                const relativePath = path.relative(searchDir, buildDir).replace(/\\/g, "/");
+                const colonPath = relativePath.replace(/\//g, ":");
+                if (settingsText.includes(relativePath) || settingsText.includes(colonPath)) {
+                    const nameMatch = settingsText.match(/rootProject\.name\s*=\s*['"]([^'"]+)['"]/m);
+                    parentProjectName = nameMatch ? nameMatch[1] : path.basename(searchDir);
+                    break;
+                }
+            } catch (err) {
+                console.error(localize("unable.to.parse.settings.gradle", candidateSettings, err));
             }
-        } catch (err) {
-            console.error(localize("unable.to.parse.settings.gradle", parentSettings, err));
         }
+        searchDir = path.dirname(searchDir);
     }
-    
+
     // Check for Liberty plugin
     const gradleBuildFile = validGradleBuild(buildFile, buildGradlePath);
     const hasLibertyPlugin = gradleBuildFile.isValidBuildFile();
-    
+
     // Check if this is an aggregator (has subprojects)
     const isAggregator = subprojects.length > 0;
-    
-    // Determine context value
+
+    // Determine context value — aggregators without Liberty default to LIBERTY_PROJECT_GRADLE
+    // so downstream stamping and tree rendering work correctly
     let contextValue = "";
     if (hasLibertyPlugin) {
         contextValue = gradleBuildFile.getProjectType();
+    } else if (isAggregator) {
+        contextValue = LIBERTY_PROJECT_GRADLE;
     }
-    
+
     return {
         projectName,
         parentProjectName,
@@ -419,16 +491,16 @@ function extractSubprojectsFromSettings(settingsFile: any): string[] {
     if (!settingsFile || !settingsFile.include) {
         return [];
     }
-    
+
     if (typeof settingsFile.include === "string") {
         // Handle string format: "'module1', 'module2'"
         const cleaned = settingsFile.include.replace(/['" ]+/g, "");
         return cleaned.split(",").filter((s: string) => s.length > 0);
     }
-    
+
     if (Array.isArray(settingsFile.include)) {
         return settingsFile.include;
     }
-    
+
     return [];
 }
