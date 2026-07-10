@@ -45,6 +45,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     item.tooltip = localize("liberty.ls.starting");
     toggleItem(window.activeTextEditor, item);
 
+    // Run after getJavaExtensionAPI so VS Code APIs (findFiles etc.) are ready,
+    // but before startLangServer so we don't wait for LS startup.
+    handleWorkspaceSaveInProgress(context).catch(err => console.error('[handleWorkspaceSaveInProgress] uncaught error:', err));
+
     resolveLclsRequirements(api).then().catch((error => {
         window.showErrorMessage(error.message, error.label).then((selection) => {
             if (error.label && error.label === selection && error.openUrl) {
@@ -60,7 +64,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             item.text = localize("liberty.ls.thumbs.up");
             item.tooltip = localize("liberty.ls.started");
             toggleItem(window.activeTextEditor, item);
-            handleWorkspaceSaveInProgress(context);
             registerCommands(context);
         }, (error: any) => {
             console.log("Liberty client was not ready. Did not initialize");
@@ -107,6 +110,10 @@ function registerCommands(context: ExtensionContext) {
     if (vscode.workspace.workspaceFolders !== undefined) {
         registerFileWatcher(projectProvider);
         vscode.window.registerTreeDataProvider("liberty-dev", projectProvider);
+        // Re-run refresh so that any project written to workspaceState by
+        // handleWorkspaceSaveInProgress (which ran before the tree was registered)
+        // is picked up and displayed immediately.
+        projectProvider.refresh();
     }
 
     context.subscriptions.push(
@@ -303,13 +310,21 @@ async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
     return Promise.resolve(api);
 }
 
-function handleWorkspaceSaveInProgress(context: vscode.ExtensionContext) {
-    let projectProvider = getProjectProvider(context);
-    if (projectProvider.getContext().globalState.get('workspaceSaveInProgress') &&
-        projectProvider.getContext().globalState.get('selectedProject') !== undefined) {
-        devCommands.addProjectsToTheDashBoard(projectProvider, projectProvider.getContext().globalState.get('selectedProject') as string);
+async function handleWorkspaceSaveInProgress(context: vscode.ExtensionContext): Promise<boolean> {
+    const projectProvider = getProjectProvider(context);
+    const wip = projectProvider.getContext().globalState.get('workspaceSaveInProgress');
+    const sel = projectProvider.getContext().globalState.get('selectedProject');
+    if (wip && sel !== undefined) {
+        // Wait for the initial refresh() to finish so the project map is fully populated.
+        await projectProvider.initialRefresh;
+        // Write the project into workspaceState. Do NOT call fireChangeEvent here —
+        // the tree data provider may not be registered yet. registerCommands() will
+        // call refresh() after registering the tree, which will display it.
+        await projectProvider.addUserSelectedPath(sel as string, projectProvider.getProjects());
         helperUtil.clearDataSavedInGlobalState(projectProvider.getContext());
+        return true;
     }
+    return false;
 }
 
 function getProjectProvider(context: vscode.ExtensionContext): ProjectProvider {
