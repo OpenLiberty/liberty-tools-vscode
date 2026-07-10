@@ -303,11 +303,29 @@ async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
     if (!vscodeJava) {
         throw new Error("VSCode java is not installed");
     }
+    const javaVersion: string = (vscodeJava.packageJSON as Record<string, unknown>).version as string ?? "";
+    if (javaVersion && isJavaVersionIncompatible(javaVersion)) {
+        window.showWarningMessage(
+            localize("redhat.java.version.incompatible", javaVersion),
+            localize("redhat.java.version.incompatible.open"),
+            localize("redhat.java.version.incompatible.dismiss")
+        ).then(selection => {
+            if (selection === localize("redhat.java.version.incompatible.open")) {
+                commands.executeCommand("extension.open", JAVA_EXTENSION_ID);
+            }
+        });
+    }
     const api = await vscodeJava.activate();
     if (!api) {
         throw new Error("VSCode java api not found");
     }
     return Promise.resolve(api);
+}
+
+function isJavaVersionIncompatible(version: string): boolean {
+    const parts = version.split(".").map(p => parseInt(p, 10));
+    const [major = 0, minor = 0] = parts;
+    return major > 1 || (major === 1 && minor >= 55);
 }
 
 async function handleWorkspaceSaveInProgress(context: vscode.ExtensionContext): Promise<boolean> {

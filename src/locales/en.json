@@ -72,5 +72,8 @@
     "hotkey.commands.title.add.project": "Liberty: Add Project to Liberty Tools",
     "hotkey.commands.title.remove.project": "Liberty: Remove Project from Liberty Tools",
     "hotkey.commands.title.show.commands": "Liberty: Show Liberty commands",
-    "workspace.not.saved.projects.may.not.persist": "Save the workspace first. Projects that you manually add to Liberty Tools might not persist in the next VS Code session if you don't save the workspace before you add the project."
+    "workspace.not.saved.projects.may.not.persist": "Save the workspace first. Projects that you manually add to Liberty Tools might not persist in the next VS Code session if you don't save the workspace before you add the project.",
+    "redhat.java.version.incompatible": "Liberty Tools: The installed 'Language Support for Java' extension (v{0}) is not compatible with this version of Liberty Tools. Jakarta EE diagnostics and quick-fixes will not work correctly. Downgrade 'Language Support for Java' to v1.54.0.",
+    "redhat.java.version.incompatible.open": "View in Marketplace",
+    "redhat.java.version.incompatible.dismiss": "Dismiss"
 }

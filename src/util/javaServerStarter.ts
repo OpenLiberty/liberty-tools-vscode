@@ -24,8 +24,8 @@ import * as glob from 'glob';
 import {JAKARTA_LS_JAR, LIBERTY_LS_JAR} from '../extension'
 
 const DEBUG = startedInDebugMode();
-const LIBERTY_LS_DEBUG_PORT = 8002;
-const JAKARTA_LS_DEBUG_PORT = 8003;
+const LIBERTY_LS_DEBUG_PORT = 0;
+const JAKARTA_LS_DEBUG_PORT = 0;
 
 // Referenced:
 // https://github.com/redhat-developer/vscode-microprofile/blob/master/src/languageServer/javaServerStarter.ts

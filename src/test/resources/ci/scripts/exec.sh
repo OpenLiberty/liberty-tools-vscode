@@ -23,6 +23,9 @@ VSCODE_VERSION_TO_RUN=$2
 #Build tool to test (maven or gradle)
 BUILD_TOOL=${3:-gradle}
 
+# Pinned version of redhat.java that is compatible with Liberty Tools (lsp4jakarta)
+REDHAT_JAVA_VERSION="1.54.0"
+
 # Current time.
 currentTime=(date +"%Y/%m/%d-%H:%M:%S:%3N")
 
@@ -51,6 +54,7 @@ main() {
 
         #Initialisation step
         npm run test-compile
+        installPinnedRedhatJava
         
         # Initialize Maven project if needed
         if [ "$BUILD_TOOL" = "maven" ]; then
@@ -114,6 +118,16 @@ main() {
 
         exit -1
     fi
+}
+
+# Download and install a pinned version of redhat.java from Open VSX to avoid
+# pulling 1.55.0+ which is incompatible with lsp4jakarta used by Liberty Tools.
+installPinnedRedhatJava() {
+    local vsix_url="https://open-vsx.org/api/redhat/java/${REDHAT_JAVA_VERSION}/file/redhat.java-${REDHAT_JAVA_VERSION}.vsix"
+    local vsix_file="/tmp/redhat.java-${REDHAT_JAVA_VERSION}.vsix"
+    echo "> $(${currentTime[@]}): Installing pinned redhat.java v${REDHAT_JAVA_VERSION} from Open VSX"
+    curl -fL "$vsix_url" -o "$vsix_file"
+    npx extest install-vsix "$vsix_file"
 }
 
 #start docker and display
