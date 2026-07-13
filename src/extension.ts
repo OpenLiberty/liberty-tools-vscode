@@ -18,6 +18,7 @@ import path = require('path');
 import * as fs from "fs";
 
 const JAVA_EXTENSION_ID = "redhat.java";
+const SUPPORTED_JAVA_VERSION = "1.54.0";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
@@ -304,28 +305,30 @@ async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
         throw new Error("VSCode java is not installed");
     }
     const javaVersion: string = (vscodeJava.packageJSON as Record<string, unknown>).version as string ?? "";
-    if (javaVersion && isJavaVersionIncompatible(javaVersion)) {
-        window.showWarningMessage(
-            localize("redhat.java.version.incompatible", javaVersion),
-            localize("redhat.java.version.incompatible.open"),
-            localize("redhat.java.version.incompatible.dismiss")
-        ).then(selection => {
-            if (selection === localize("redhat.java.version.incompatible.open")) {
-                commands.executeCommand("extension.open", JAVA_EXTENSION_ID);
-            }
-        });
+    if (javaVersion) {
+        const [supportedMajor, supportedMinor] = SUPPORTED_JAVA_VERSION.split(".").map(p => parseInt(p, 10));
+        const [major, minor] = javaVersion.split(".").map(p => parseInt(p, 10));
+        const isIncompatible = major > supportedMajor || (major === supportedMajor && minor > supportedMinor);
+        if (isIncompatible) {
+            window.showWarningMessage(
+                localize("redhat.java.version.incompatible", javaVersion, SUPPORTED_JAVA_VERSION),
+                localize("redhat.java.version.incompatible.install"),
+                localize("redhat.java.version.incompatible.open")
+            ).then(selection => {
+                if (selection === localize("redhat.java.version.incompatible.install")) {
+                    commands.executeCommand("workbench.extensions.installExtension", `${JAVA_EXTENSION_ID}@${SUPPORTED_JAVA_VERSION}`);
+                    commands.executeCommand("extension.open", JAVA_EXTENSION_ID);
+                } else if (selection === localize("redhat.java.version.incompatible.open")) {
+                    commands.executeCommand("extension.open", JAVA_EXTENSION_ID);
+                }
+            });
+        }
     }
     const api = await vscodeJava.activate();
     if (!api) {
         throw new Error("VSCode java api not found");
     }
     return Promise.resolve(api);
-}
-
-function isJavaVersionIncompatible(version: string): boolean {
-    const parts = version.split(".").map(p => parseInt(p, 10));
-    const [major = 0, minor = 0] = parts;
-    return major > 1 || (major === 1 && minor >= 55);
 }
 
 async function handleWorkspaceSaveInProgress(context: vscode.ExtensionContext): Promise<boolean> {
