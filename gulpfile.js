@@ -23,9 +23,9 @@ const libertyVersion = "2.4.1";
 const jakartaGroupId = "org.eclipse.lsp4jakarta";
 const jakartaJdtArtifactId = "org.eclipse.lsp4jakarta.jdt.core";
 const jakartaLSArtifactId = "org.eclipse.lsp4jakarta.ls";
-const jakartaVersion = "0.2.6-SNAPSHOT";
+const jakartaVersion = "0.2.6";
 var lclsReleaseLevel = "releases";  //snapshots or releases
-var jakartaReleaseLevel = "snapshots";
+var jakartaReleaseLevel = "releases";
 
 const libertyLemminxName = "liberty-langserver-lemminx-" + libertyVersion + "-jar-with-dependencies.jar";
 const libertyLemminxDir = "../liberty-language-server/lemminx-liberty";
