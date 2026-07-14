@@ -181,7 +181,7 @@
 				{
 					"command": "liberty.dev.start",
 					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
-					"group": "libertyCore@2"
+					"group": "libertyCore@1"
 				},
 				{
 					"command": "liberty.dev.debug",
@@ -272,7 +272,6 @@
 		"@typescript-eslint/eslint-plugin": "8.0.0",
 		"@typescript-eslint/parser": "8.0.0",
 		"@vscode/test-electron": "2.4.0",
-		"axios": "1.16.0",
 		"chai": "4.3.7",
 		"clipboardy": "2.3.0",
 		"eslint": "9.0.0",
@@ -300,11 +299,10 @@
 		"xml2js": "0.5.0"
 	},
 	"dependencies": {
-		"@microsoft/vscode-file-downloader-api": "1.0.1",
 		"@types/fs-extra": "8.1.0",
 		"@types/semver": "7.3.2",
 		"@types/xml2js": "0.4.5",
-		"axios": "0.27.2",
+		"axios": "1.16.0",
 		"brace-expansion": "5.0.6",
 		"expand-home-dir": "0.0.3",
 		"find-java-home": "2.0.0",
@@ -312,8 +310,6 @@
 		"gradle-to-js": "2.0.0",
 		"jsonpath-plus": "10.3.0",
 		"unzip-stream": "0.3.1",
-		"update": "0.7.4",
-		"vsce": "2.9.2",
 		"vscode-languageclient": "9.0.1"
 	}
 }
