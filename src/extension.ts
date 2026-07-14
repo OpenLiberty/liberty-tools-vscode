@@ -18,6 +18,7 @@ import path = require('path');
 import * as fs from "fs";
 
 const JAVA_EXTENSION_ID = "redhat.java";
+const SUPPORTED_JAVA_VERSION = "1.54.0";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
@@ -302,6 +303,26 @@ async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
     const vscodeJava = extensions.getExtension(JAVA_EXTENSION_ID);
     if (!vscodeJava) {
         throw new Error("VSCode java is not installed");
+    }
+    const javaVersion: string = (vscodeJava.packageJSON as Record<string, unknown>).version as string ?? "";
+    if (javaVersion) {
+        const [supportedMajor, supportedMinor] = SUPPORTED_JAVA_VERSION.split(".").map(p => parseInt(p, 10));
+        const [major, minor] = javaVersion.split(".").map(p => parseInt(p, 10));
+        const isIncompatible = major > supportedMajor || (major === supportedMajor && minor > supportedMinor);
+        if (isIncompatible) {
+            window.showWarningMessage(
+                localize("redhat.java.version.incompatible", javaVersion, SUPPORTED_JAVA_VERSION),
+                localize("redhat.java.version.incompatible.install"),
+                localize("redhat.java.version.incompatible.open")
+            ).then(selection => {
+                if (selection === localize("redhat.java.version.incompatible.install")) {
+                    commands.executeCommand("workbench.extensions.installExtension", `${JAVA_EXTENSION_ID}@${SUPPORTED_JAVA_VERSION}`);
+                    commands.executeCommand("extension.open", JAVA_EXTENSION_ID);
+                } else if (selection === localize("redhat.java.version.incompatible.open")) {
+                    commands.executeCommand("extension.open", JAVA_EXTENSION_ID);
+                }
+            });
+        }
     }
     const api = await vscodeJava.activate();
     if (!api) {
