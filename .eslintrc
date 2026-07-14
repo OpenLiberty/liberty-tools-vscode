@@ -27,6 +27,7 @@
   },
   "ignorePatterns": [
     "node_modules",
-    "out"
+    "out",
+    "gulpfile.js"
   ]
 }

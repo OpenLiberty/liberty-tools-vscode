@@ -3,9 +3,11 @@
 		"module": "commonjs",
 		"target": "es6",
 		"outDir": "out",
+		"skipLibCheck": true,
 		"lib": [
 			"es6"
 		],
+		"types": ["mocha", "node"],
 		"sourceMap": true,
 		"rootDir": "src",
 		"strict": true   /* enable all strict type-checking options */
@@ -16,6 +18,9 @@
 	},
 	"exclude": [
 		"node_modules",
-		".vscode-test"
+		".vscode-test",
+		"test-resources",
+		"test-resource-old",
+		"out"
 	]
 }
