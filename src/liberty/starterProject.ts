@@ -5,35 +5,22 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 
 export interface State {
-	a: QuickPickItem | string,
-	b: QuickPickItem | string,
-	e: QuickPickItem | string,
-	g: QuickPickItem | string,
-	j: QuickPickItem | string,
-	m: QuickPickItem | string,
-	step: number;
-	totalSteps: number;
-	dir: QuickPickItem | string;
+	a: string,
+	b: string,
+	e: string,
+	g: string,
+	j: string,
+	m: string,
+	dir: string;
 }
 
 export async function starterProject(context: ExtensionContext) {
 
     const projectOptions = await getProjectOptions();
 
-    const comparator = (a: any, b: any) => {
-        return b - a;
-      };
-
-    const buildTools: QuickPickItem[] = projectOptions.b.options
-        .map((label: any) => ({ label }));
-
-    const javaSEVersions: QuickPickItem[] = projectOptions.j.options
-        .sort(comparator)
-        .map((label: any) => ({ label }));
-
-    const javaEEVersions: QuickPickItem[] = projectOptions.e.options
-        .sort(comparator)
-        .map((label: any) => ({ label }));
+    const buildTools: QuickPickItem[] = projectOptions.b.options!.map(label => ({ label }));
+    const javaSEVersions: QuickPickItem[] = projectOptions.j.options!.map(label => ({ label }));
+    const javaEEVersions: QuickPickItem[] = projectOptions.e.options!.map(label => ({ label }));
 
     async function collectInputs() {
         const state = {} as Partial<State>;
@@ -70,22 +57,21 @@ export async function starterProject(context: ExtensionContext) {
     }
 
     async function pickResourceGroup(input: MultiStepInput, state: Partial<State>) {
-        state.b = await input.showQuickPick({
+        state.b = (await input.showQuickPick({
             title,
             step: 3,
             totalSteps: 6,
             placeholder: projectOptions.b.name,
-            activeItem: buildTools[buildTools.findIndex(item => item.label === projectOptions.b.default)],
+            activeItem: buildTools.find(item => item.label === projectOptions.b.default),
             items: buildTools,
             value: state.b,
             shouldResume: shouldResume
-        });
-        state.b = state.b.label;
+        })).label;
         return (input: MultiStepInput) => pickJavaSE(input, state);
     }
 
     async function pickJavaSE(input: MultiStepInput, state: Partial<State>) {
-        state.j = await input.showQuickPick({
+        state.j = (await input.showQuickPick({
             title,
             step: 4,
             totalSteps: 6,
@@ -94,13 +80,12 @@ export async function starterProject(context: ExtensionContext) {
             items: javaSEVersions,
             value: state.j,
             shouldResume: shouldResume
-        });
-        state.j = state.j.label;
+        })).label;
         return (input: MultiStepInput) => pickJavaEE(input, state);
     }
 
     async function pickJavaEE(input: MultiStepInput, state: Partial<State>) {
-        state.e = await input.showQuickPick({
+        state.e = (await input.showQuickPick({
             title,
             step: 5,
             totalSteps: 6,
@@ -109,84 +94,70 @@ export async function starterProject(context: ExtensionContext) {
             items: javaEEVersions,
             value: state.e,
             shouldResume: shouldResume
-        });
-        state.e = state.e.label;
-        var MPVersions: QuickPickItem[] = projectOptions.e.constraints[state.e].m
-        .sort(comparator)
-        .map((label: any) => ({ label }));
+        })).label;
+        var MPVersions: QuickPickItem[] = projectOptions.e.constraints![state.e].m
+            .map(label => ({ label }));
         return (input: MultiStepInput) => pickMP(input, state, MPVersions);
     }
 
     async function pickMP(input: MultiStepInput, state: Partial<State>, MPVersions: QuickPickItem[]) {
-        state.m = await input.showQuickPick({
+        state.m = (await input.showQuickPick({
             title,
             step: 6,
             totalSteps: 6,
             placeholder: projectOptions.m.name,
-            activeItem: MPVersions[MPVersions.findIndex(item => item.label === projectOptions.m.default)],
+            activeItem: MPVersions.find(item => item.label === projectOptions.m.default),
             items: MPVersions,
             value: state.m,
             shouldResume: shouldResume
-        });
-        state.m = state.m.label;
+        })).label;
         return (input: MultiStepInput) => pickDirectory(input, state);
     }
 
     async function pickDirectory(input: MultiStepInput, state: Partial<State>) {
-        const folder = await window.showOpenDialog({
-            canSelectMany: false,
-            openLabel: 'Select',
-            canSelectFiles: false,
-            canSelectFolders: true
+        while (true) {
+            const response = await window.showOpenDialog({
+                canSelectMany: false,
+                openLabel: 'Select',
+                canSelectFiles: false,
+                canSelectFolders: true
             })
-            .then(async response => {
-                if (response) {
-                    if (fs.existsSync(`${response[0].path}/${state.a}`)) {
-                        await window.showErrorMessage(`${state.a} already exists in ${response[0].path}. ${state.a} will be replaced, are you sure you want to continue?`, "yes", "no")
-                        .then(selection => {
-                            if (selection == "yes") {
-                                fs.rmdirSync(`${response[0].path}/${state.a}`, { recursive: true });
-                                state.dir = response[0].path;
-                            } else {
-                                return pickNewName(input, state);
-                            }
-                        });
-                    } else {
-                        state.dir = response[0].path;
-                    }
-                } else {
-                    const res = await shouldResume();
-                    if (res) {
-                        return pickDirectory(input, state);
-                    }
+            if (!response) {
+                if (!await shouldResume()) {
+                    return;
                 }
-        });        
-    }
-
-    async function pickNewName(input: MultiStepInput, state: Partial<State>) {
-        state.a = await input.showInputBox({
-            title,
-            step: 2,
-            totalSteps: 6,
-            value: state.a || projectOptions.a.default,
-            prompt: "Enter a different artifact name",
-            validate: validArtifactName,
-            shouldResume: shouldResume
-        });
-        return pickDirectory(input, state);
+                continue;
+            }
+            const path = response[0].path;
+            // TODO: do we need to make this async?
+            if (fs.existsSync(`${path}/${state.a}`)) {
+                const selection = await window.showWarningMessage(`${state.a} already exists in ${path}. ${state.a} will be replaced, are you sure you want to continue?`, "yes", "no")
+                if (selection !== "yes") {
+                    state.a = await input.showInputBox({
+                        title,
+                        step: 2,
+                        totalSteps: 6,
+                        value: state.a || projectOptions.a.default,
+                        prompt: "Enter a different artifact name",
+                        validate: validArtifactName,
+                        shouldResume: shouldResume
+                    });
+                    continue;
+                }
+                fs.rmdirSync(`${path}/${state.a}`, { recursive: true });
+            }
+            state.dir = path;
+            return;
+        }
     }
 
     async function shouldResume() {
-        return new Promise<boolean>((resolve) => {
-            window.showInformationMessage("Would you like to resume Liberty project generation?", "yes", "no") 
-            .then(selection => {
-                if (selection == "yes") {
-                    return resolve(true);
-                } else {
-                    return resolve(false);
-                }
-            });
-        });
+        const selection = await window.showInformationMessage("Would you like to resume Liberty project generation?", "yes", "no") 
+        if (selection == "yes") {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     async function validArtifactName(name: string) {
