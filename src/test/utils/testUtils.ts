@@ -671,6 +671,21 @@ export async function closeWorkspace(): Promise<void> {
         // Close the workspace/folder
         await workbench.executeCommand('workbench.action.closeFolder');
         await getWaitHelper().sleep(2000); // Wait for workspace to close
+
+        // Sometimes a modal pops up asking you to save workspace so bypass
+        try {
+            await getWaitHelper().forCondition(async () => {
+                try {
+                    await new ModalDialog().pushButton("Don't Save");
+                    return true;
+                }
+                catch {
+                    return;
+                }
+            }, { timeout: seconds(5) });
+        } catch {
+            // Bypass -> do nothing
+        }
         
         logger.info('Workspace closed successfully');
     } catch (error) {
