@@ -108,14 +108,12 @@
 			{
 				"command": "liberty.dev.add.project",
 				"category": "Liberty",
-				"title": "%commands.title.add.project%",
-				"icon": "$(add)"
+				"title": "%commands.title.add.project%"
 			},
 			{
 				"command": "liberty.dev.remove.project",
 				"category": "Liberty",
-				"title": "%commands.title.remove.project%",
-				"icon": "$(remove)"
+				"title": "%commands.title.remove.project%"
 			},
 			{
 				"command": "liberty.dev.stop",
@@ -190,18 +188,6 @@
 					"when": "false"
 				}
 			],
-			"explorer/context": [
-				{
-					"command": "liberty.dev.add.project",
-					"when": "explorerResourceIsRoot",
-					"group": "liberty"
-				},
-				{
-					"command": "liberty.dev.remove.project",
-					"when": "explorerResourceIsRoot",
-					"group": "liberty"
-				}
-			],
 			"view/title": [
 				{
 					"command": "liberty.explorer.refresh",
@@ -212,16 +198,6 @@
 					"command": "workbench.actions.treeView.liberty-dev.collapseAll",
 					"when": "view == liberty-dev",
 					"group": "navigation@2"
-				},
-				{
-					"command": "liberty.dev.add.project",
-					"when": "view == liberty-dev",
-					"group": "navigation@3"
-				},
-				{
-					"command": "liberty.dev.remove.project",
-					"when": "view == liberty-dev",
-					"group": "navigation@4"
 				},
 				{
 					"command": "liberty.explorer.sort.workspace",
