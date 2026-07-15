@@ -464,8 +464,23 @@ export async function buildStarterProject(state: starterProject.State): Promise<
     const apiURL = `https://start.openliberty.io/api/start?a=${state.a}&b=${state.b}&e=${state.e}&g=${state.g}&j=${state.j}&m=${state.m}`;
     const targetDir = `${state.dir}/${state.a}`;
 
-    const response = await axios.get<Readable>(apiURL, { responseType: "stream" });
-    await pipeline(response.data, unzip.Extract({ path: targetDir }));
+    await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Window,
+        cancellable: false,
+        title: `Creating starter code for ${state.a}`
+    }, async (progress) => {
+        progress.report({ increment: 0 });
+        let lastPercentage = 0.0;
+        const response = await axios.get<Readable>(apiURL, {
+            responseType: "stream",
+            onDownloadProgress(event) {
+                const diff = (event.progress ?? lastPercentage + 0.05) - lastPercentage;
+                progress.report({ increment: diff * 100 });
+            },
+        });
+        await pipeline(response.data, unzip.Extract({ path: targetDir }));
+        progress.report({ increment: 100 });
+    });
 
     vscode.commands.executeCommand("workbench.files.action.refreshFilesExplorer");
 

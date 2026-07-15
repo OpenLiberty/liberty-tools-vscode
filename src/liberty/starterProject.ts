@@ -175,19 +175,9 @@ export async function starterProject(context: ExtensionContext) {
     const state = {} as Partial<State>;
     await MultiStepInput.run(input => inputGroupName(input, state));
 
-    window.withProgress({
-        location: vscode.ProgressLocation.Window,
-        cancellable: false,
-        title: `Creating starter code for ${state.a}`
-    }, async (progress) => {
-        progress.report({  increment: 0 });
-        await new Promise((resolve) => {
-                setTimeout(() => { resolve(true); }, 3000);
-            });
-        progress.report({ increment: 100 });
-    });
-    
-    devCommands.buildStarterProject(state);
+    if (state.dir != null) {
+        await devCommands.buildStarterProject(state as State);
+    }
 }
 
 
