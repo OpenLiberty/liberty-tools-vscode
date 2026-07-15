@@ -22,12 +22,6 @@ export async function starterProject(context: ExtensionContext) {
     const javaSEVersions: QuickPickItem[] = projectOptions.j.options!.map(label => ({ label }));
     const javaEEVersions: QuickPickItem[] = projectOptions.e.options!.map(label => ({ label }));
 
-    async function collectInputs() {
-        const state = {} as Partial<State>;
-        await MultiStepInput.run(input => inputGroupName(input, state));
-        return state as State;
-    }
-
     const title = 'Create Open Liberty Starter Code';
 
     async function inputGroupName(input: MultiStepInput, state: Partial<State>) :Promise<any> {
@@ -178,7 +172,8 @@ export async function starterProject(context: ExtensionContext) {
         }
     }
 
-    const state = await collectInputs();
+    const state = {} as Partial<State>;
+    await MultiStepInput.run(input => inputGroupName(input, state));
 
     window.withProgress({
         location: vscode.ProgressLocation.Window,
