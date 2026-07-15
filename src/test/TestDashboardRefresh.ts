@@ -1,4 +1,4 @@
-import { VSBrowser, DefaultTreeItem, Workbench, InputBox, Notification, ModalDialog, EditorView } from 'vscode-extension-tester';
+import { VSBrowser, DefaultTreeItem, Workbench, InputBox, Notification } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import { logger } from './utils/testLogger';
 import * as path from 'path';
@@ -6,6 +6,16 @@ import { DashboardPage } from './pages/DashboardPage';
 import { expect } from 'chai';
 import * as constants from './definitions/constants';
 const { execSync } = require('child_process');
+
+/** Specifies the expected information for a project in the dashboard */
+interface ToolConfig {
+
+    /** The name of the project displayed in the dashboard; this may also be called `projectConstant` */
+    nameOfProject: string;
+
+    /** The file used to identify whether this project is a maven project or a gradle project */
+    identifyingFile: "build.gradle" | "pom.xml";
+}
 
 describe("Liberty Tools Dashboard Refresh", () => {
     let dashboard!: DashboardPage;
@@ -346,16 +356,6 @@ describe("Liberty Tools Dashboard Refresh", () => {
             env: process.env,
             stdio: "inherit"
         });
-    }
-
-    /** Specifies the expected information for a project in the dashboard */
-    interface ToolConfig {
-
-        /** The name of the project displayed in the dashboard; this may also be called `projectConstant` */
-        nameOfProject: string;
-
-        /** The file used to identify whether this project is a maven project or a gradle project */
-        identifyingFile: "build.gradle" | "pom.xml";
     }
 
     /**
