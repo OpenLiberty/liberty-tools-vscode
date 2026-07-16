@@ -44,7 +44,7 @@ describe("Liberty Tools Dashboard Refresh", () => {
                 cwd: projectPath,
                 env: process.env,
                 stdio: "inherit"
-            })
+            });
         }
    });
 
