@@ -215,7 +215,7 @@ describe("Liberty Tools Dashboard Refresh", () => {
 
     // Test that dashboard refreshes when project manually added & removed
     it("Liberty Tools shows correct tooltips after manually adding & removing new project", async () => {
-        logger.testStart("Liberty Tools shows correct tooltips after create new project");
+        logger.testStart("Liberty Tools shows correct tooltips after manually adding & removing new project");
         try {
             logger.step(1, "Create new gradle project: newProject");
             createNewGradleProject();
@@ -281,9 +281,9 @@ describe("Liberty Tools Dashboard Refresh", () => {
 
             await verifyDashboardIsCorrect(step, toolConfigsAfterNewProjectRemoval);
 
-            logger.testComplete("Liberty Tools shows correct tooltips after create new project");
+            logger.testComplete("Liberty Tools shows correct tooltips after manually adding & removing new project");
         } catch (error) {
-            logger.testFailed("Liberty Tools shows correct tooltips after create new project", error);
+            logger.testFailed("Liberty Tools shows correct tooltips after manually adding & removing new project", error);
             throw error;
         }
     }).timeout(utils.seconds(275));
