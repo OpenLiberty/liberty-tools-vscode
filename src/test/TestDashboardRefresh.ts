@@ -203,6 +203,16 @@ describe("Liberty Tools Dashboard Refresh", () => {
     }).timeout(utils.seconds(275));
     
     const NEW_PROJECT_NAME = "newProject";
+
+    /** Creates a project called newProject containing a build.gradle file. */
+    function createNewGradleProject() {
+        execSync(`mkdir ${NEW_PROJECT_NAME} && touch ${NEW_PROJECT_NAME}/build.gradle`, {
+            cwd: utils.getGradleProjectPath(),
+            env: process.env,
+            stdio: "inherit"
+        });
+    }
+
     // Test that dashboard refreshes when project manually added & removed
     it("Liberty Tools shows correct tooltips after manually adding & removing new project", async () => {
         logger.testStart("Liberty Tools shows correct tooltips after create new project");
@@ -348,15 +358,6 @@ describe("Liberty Tools Dashboard Refresh", () => {
             throw error;
         }
     }).timeout(utils.seconds(275));
-
-    /** Creates a project called newProject containing a build.gradle file. */
-    function createNewGradleProject() {
-        execSync(`mkdir ${NEW_PROJECT_NAME} && touch ${NEW_PROJECT_NAME}/build.gradle`, {
-            cwd: utils.getGradleProjectPath(),
-            env: process.env,
-            stdio: "inherit"
-        });
-    }
 
     /**
      * Verifies that the dashboard displays the expected projects with correct tooltips.
