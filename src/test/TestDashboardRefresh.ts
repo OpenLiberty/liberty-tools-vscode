@@ -1,8 +1,3 @@
-/*
- * IBM Confidential
- * Copyright IBM Corp. 2026
- */
-
 import { VSBrowser, DefaultTreeItem, Workbench, InputBox, Notification } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import { logger } from './utils/testLogger';
@@ -172,7 +167,7 @@ describe("Liberty Tools Dashboard Refresh", () => {
         logger.testStart("Liberty Tools shows correct tooltips after change maven project to gradle project");
         try {
             logger.step(1, "Copy build.gradle to maven project");
-            execSync("cp build.gradle ../../maven/liberty-maven-test-wrapper-app/", {
+            execSync(`cp build.gradle "${utils.getMvnProjectPath()}"`, {
                 cwd: utils.getGradleProjectPath(),
                 env: process.env,
                 stdio: "inherit"
