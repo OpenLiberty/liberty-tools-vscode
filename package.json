@@ -98,12 +98,14 @@
 			{
 				"command": "liberty.dev.start",
 				"category": "Liberty",
-				"title": "%commands.title.start%"
+				"title": "%commands.title.start%",
+				"enablement": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/"
 			},
 			{
 				"command": "liberty.dev.debug",
 				"category": "Liberty",
-				"title": "%commands.title.debug%"
+				"title": "%commands.title.debug%",
+				"enablement": "viewItem =~ /^libertyProject.*:running/ || viewItem =~ /^libertyProject.*:aggregator/"
 			},
 			{
 				"command": "liberty.dev.add.project",
@@ -118,22 +120,26 @@
 			{
 				"command": "liberty.dev.stop",
 				"category": "Liberty",
-				"title": "%commands.title.stop%"
+				"title": "%commands.title.stop%",
+				"enablement": "viewItem =~ /^libertyProject.*:running/ || viewItem =~ /^libertyProject.*:aggregator/"
 			},
 			{
 				"command": "liberty.dev.custom",
 				"category": "Liberty",
-				"title": "%commands.title.start.custom%"
+				"title": "%commands.title.start.custom%",
+				"enablement": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/"
 			},
 			{
 				"command": "liberty.dev.start.container",
 				"category": "Liberty",
-				"title": "%commands.title.start.in.container%"
+				"title": "%commands.title.start.in.container%",
+				"enablement": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/"
 			},
 			{
 				"command": "liberty.dev.run.tests",
 				"category": "Liberty",
-				"title": "%commands.title.run.tests%"
+				"title": "%commands.title.run.tests%",
+				"enablement": "viewItem =~ /^libertyProject.*:running/ || viewItem =~ /^libertyProject.*:aggregator/"
 			},
 			{
 				"command": "liberty.dev.open.failsafe.report",

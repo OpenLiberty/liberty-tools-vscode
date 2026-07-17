@@ -121,6 +121,9 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 			project.description = undefined;
 			project.resourceUri = undefined;
 		}
+		project.contextValue = project.isDevMode
+			? `${project.baseContextValue}:running`
+			: project.baseContextValue;
 		this._onDidChangeTreeData.fire(project);
 		if (project.resourceUri) {
 			this.decorationProvider.notify(project.resourceUri);
