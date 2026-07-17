@@ -6,6 +6,7 @@ import * as vscodePath from "path";
 import * as vscode from "vscode";
 import * as gradleUtil from "../util/gradleUtil";
 import * as util from "../util/helperUtil";
+import { computeContextValue } from "../util/helperUtil";
 import { isMaven, isGradle } from "../definitions/constants";
 
 const MAVEN_ICON = "maven-tag.png";
@@ -20,6 +21,7 @@ export class LibertyProject extends vscode.TreeItem {
 	public isDevMode: boolean = false;
 	public artifactId: string = "";
 	public parentArtifactId?: string;
+	public baseContextValue: string;
 
 	constructor(
 		private _context: vscode.ExtensionContext,
@@ -37,6 +39,8 @@ export class LibertyProject extends vscode.TreeItem {
 		super(label, collapsibleState);
 		this.tooltip = this.path;
 		this.children = [];
+		this.baseContextValue = contextValue;
+		this.contextValue = computeContextValue(contextValue, false);
 	}
 
 	private EXPLORER_ICON = this.setExplorerIcon();
@@ -71,7 +75,8 @@ export class LibertyProject extends vscode.TreeItem {
 	}
 
 	public setContextValue(contextValue: string): void {
-		this.contextValue = contextValue;
+		this.baseContextValue = contextValue;
+		this.contextValue = computeContextValue(contextValue, this.isDevMode);
 	}
 
 	public getTerminal(): vscode.Terminal | undefined {

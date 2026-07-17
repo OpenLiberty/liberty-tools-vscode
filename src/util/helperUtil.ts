@@ -7,7 +7,8 @@ import { DashboardData } from "./../liberty/dashboard";
 import * as fs from "fs";
 import * as vscode from "vscode";
 import { LibertyProject } from "./../liberty/libertyProject";
-import { LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY, isMaven, isGradle, isContainer, isLibertyProject, isAggregator,
+import {
+	LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY, isMaven, isGradle, isContainer, isLibertyProject, isAggregator,
 	CMD_START, CMD_CUSTOM, CMD_START_CONTAINER, CMD_STOP, CMD_RUN_TESTS, CMD_DEBUG,
 } from "../definitions/constants";
 import path = require('path');
@@ -49,6 +50,13 @@ export function devModeRequirement(command: string): boolean | undefined {
 		default:
 			return undefined; // no restriction
 	}
+}
+
+export function computeContextValue(base: string, isDevMode: boolean): string {
+	if (isDevMode && !base.includes(":aggregator")) {
+		return `${base}:running`;
+	}
+	return base;
 }
 
 /**
