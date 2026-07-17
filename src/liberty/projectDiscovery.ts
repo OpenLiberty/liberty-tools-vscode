@@ -354,6 +354,11 @@ async function linkProjects(
 ): Promise<LibertyProject[]> {
 	const t0 = Date.now();
 
+	for (const project of projectsMap.values()) {
+		project.parent = undefined;
+		project.children = [];
+	}
+
 	for (const [parentPath, parentMetadata] of mavenMetadataMap.entries()) {
 		if (!parentMetadata.isAggregator || parentMetadata.modules.length === 0) { continue; }
 		const parentProject = projectsMap.get(parentPath);
@@ -362,11 +367,9 @@ async function linkProjects(
 		for (const moduleName of parentMetadata.modules) {
 			const modulePomPath = vscodePath.resolve(parentDir, moduleName, "pom.xml");
 			const childProject = projectsMap.get(modulePomPath);
-			if (childProject && !childProject.parent) {
+			if (childProject) {
 				childProject.parent = parentProject;
-				if (!parentProject.children.includes(childProject)) {
-					parentProject.children.push(childProject);
-				}
+				parentProject.children.push(childProject);
 				if (!childProject.isLibertyEnabled && parentProject.isLibertyEnabled) {
 					childProject.isLibertyEnabled = true;
 				}
@@ -384,11 +387,9 @@ async function linkProjects(
 			const fsPath = subproject.replace(/:/g, "/").replace(/^\//, "");
 			const childBuildPath = vscodePath.resolve(parentDir, fsPath, "build.gradle");
 			const childProject = projectsMap.get(childBuildPath);
-			if (childProject && !childProject.parent) {
+			if (childProject) {
 				childProject.parent = parentProject;
-				if (!parentProject.children.includes(childProject)) {
-					parentProject.children.push(childProject);
-				}
+				parentProject.children.push(childProject);
 				if (!childProject.isLibertyEnabled && parentProject.isLibertyEnabled) {
 					childProject.isLibertyEnabled = true;
 				}
