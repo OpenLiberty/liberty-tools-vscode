@@ -160,7 +160,7 @@ function registerCommands(context: ExtensionContext) {
         [CMD_OPEN_FAILSAFE_REPORT, (p?: LibertyProject) => devCommands.openReport("failsafe", p)],
         [CMD_OPEN_SUREFIRE_REPORT, (p?: LibertyProject) => devCommands.openReport("surefire", p)],
         [CMD_OPEN_GRADLE_TEST_REPORT, (p?: LibertyProject) => devCommands.openReport("gradle", p)],
-        [CMD_ADD_PROJECT, (uri: vscode.Uri) => devCommands.addProject(uri)],
+        [CMD_ADD_PROJECT, () => devCommands.addProject()],
         [CMD_REMOVE_PROJECT, () => devCommands.removeProject()],
         [CMD_SORT_WORKSPACE, () => projectProvider.setSortOrder("workspace")],
         [CMD_SORT_WORKSPACE_ACTIVE, () => projectProvider.setSortOrder("workspace")],

@@ -202,70 +202,38 @@ export async function removeProject(): Promise<void> {
     }
 }
 
-function showListOfPathsToAdd(uris: string[]) {
+export async function addProject(): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
-    vscode.window.showQuickPick(uris).then(async selection => {
+    const registry = ProjectRegistry.getInstance();
+
+    // Folders with build files rejected by auto-detection — candidates for manual add.
+    const folderPaths: string[] = registry.getUnregisteredBuildFolders();
+
+    if (folderPaths.length === 0) {
+        const message = localize("add.project.manually.no.projects.available.to.add");
+        console.error(message);
+        vscode.window.showInformationMessage(message);
+        return;
+    }
+
+    const items: LibertyProjectQuickPickItem[] = folderPaths.map(folderPath => {
+        const wsFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(folderPath));
+        const displayPath = wsFolder
+            ? Path.relative(wsFolder.uri.fsPath, folderPath)
+            : folderPath;
+        return new LibertyProjectQuickPickItem(Path.basename(folderPath), folderPath, undefined, displayPath);
+    });
+
+    vscode.window.showQuickPick(items).then(async selection => {
         if (!selection) {
             return;
         }
         if (projectProvider.isMultiProjectUntitledWorkspace()) {
-            /**
-             * Saving the selected project to globalstate for adding it to the dashboard after 
-             * reinitialization of the extension when workspace is saved
-             */
-            await ProjectRegistry.getInstance().getContext().globalState.update('selectedProject', selection);
-            /*
-            if the workspace is untitled suggest the user to save the workspace first 
-            */
+            await ProjectRegistry.getInstance().getContext().globalState.update('selectedProject', selection.detail);
             await projectProvider.checkUntitledWorkspaceAndSaveIt();
         }
-        await addProjectsToTheDashBoard(projectProvider, selection);
+        await addProjectsToTheDashBoard(projectProvider, selection.detail);
     });
-}
-
-export async function addProject(uri: vscode.Uri): Promise<void> {
-    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
-    const registry = ProjectRegistry.getInstance();
-    if (uri !== undefined && uri !== null && uri.fsPath !== undefined) {
-        // Right mouse clicked on a root folder, or on empty space with only one folder in workspace.
-        // Add project if:
-        // 1. Not in liberty dashboard
-        // 2. Project has build files (pom.xml or build.gradle)
-        // 
-        // Once added, presist the data in workspace storage.
-        console.error("projects " + JSON.stringify(registry.getProjects()));
-        // scan the folder and get a list of folders with pom.xml and build.gradle
-        const uris: string[] = await registry.getListOfMavenAndGradleFolders(uri.fsPath);
-        console.log(JSON.stringify(uris));
-        if (uris.length > 0) {
-            // present the list to add
-            showListOfPathsToAdd(uris);
-        }
-
-
-    } else {
-        // clicked on the empty space and workspace has more than one folders, or
-        // from command palette or clicked on (+) button in Liberty dashboard
-        // Display the list of workspace folders for user to select.
-        // The list should not contain any existing projects
-        let uris: string[] = [];
-        const wsFolders = vscode.workspace.workspaceFolders;
-        if (wsFolders) {
-            for (const folder of wsFolders) {
-                const path = folder.uri.fsPath;
-                uris = uris.concat(await registry.getListOfMavenAndGradleFolders(path));
-            }
-        }
-        if (uris.length === 0) {
-            // show error
-            const message = localize("add.project.manually.no.projects.available.to.add");
-            console.error(message);
-            vscode.window.showInformationMessage(message);
-        } else {
-            // present the list
-            showListOfPathsToAdd(uris);
-        }
-    }
 }
 // stop dev mode
 export async function stopDevMode(libProject?: LibertyProject | undefined): Promise<void> {
@@ -618,7 +586,7 @@ Method adds a project which is selected by the user from the list to the liberty
 */
 export async function addProjectsToTheDashBoard(projectProvider: ProjectTreeProvider, selection: string): Promise<void> {
     const registry = ProjectRegistry.getInstance();
-    const result = await registry.addUserSelectedPath(selection, registry.getProjects());
+    const result = await registry.addUserSelectedPath(selection);
     const message = localize(`add.project.manually.message.${result}`, selection);
     (result !== 0) ? console.error(message) : console.info(message);
     vscode.window.showInformationMessage(message);

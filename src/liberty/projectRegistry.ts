@@ -26,6 +26,10 @@ export class ProjectRegistry {
 
 	private _rootProjects: LibertyProject[] = [];
 
+	private _rejectedBuildFiles: string[] = [];
+
+	private _addedProjects: Map<string, LibertyProject> = new Map();
+
 	constructor(context: vscode.ExtensionContext) {
 		this._context = context;
 	}
@@ -58,8 +62,30 @@ export class ProjectRegistry {
 		this._rootProjects = rootProjects;
 	}
 
+	public setRejectedBuildFiles(paths: string[]): void {
+		this._rejectedBuildFiles = paths;
+	}
+
+	public getUnregisteredBuildFolders(): string[] {
+		return this._rejectedBuildFiles
+			.filter(p => !this._projects.has(p) && !this._addedProjects.has(p))
+			.map(p => vscodePath.dirname(p));
+	}
+
 	public getUserAddedProjects(): BaseLibertyProject[] {
 		return util.getStorageData(this._context).projects;
+	}
+
+	public getAddedProjects(): LibertyProject[] {
+		return Array.from(this._addedProjects.values());
+	}
+
+	public addToAddedProjects(project: LibertyProject): void {
+		this._addedProjects.set(project.getPath(), project);
+	}
+
+	public removeFromAddedProjects(path: string): void {
+		this._addedProjects.delete(path);
 	}
 
 	/**
@@ -86,15 +112,16 @@ export class ProjectRegistry {
 	 * Adds a user-selected project path to the registry and persists it.
 	 * Returns: 0 = success, 1 = already exists, 2 = not a Maven/Gradle project.
 	 */
-	public async addUserSelectedPath(path: string, existingProjects: Map<string, LibertyProject>): Promise<number> {
+	public async addUserSelectedPath(path: string): Promise<number> {
 		const pomFile = vscodePath.resolve(path, "pom.xml");
 		const gradleFile = vscodePath.resolve(path, "build.gradle");
-		if (this._projects.has(pomFile) || this._projects.has(gradleFile)) {
+		if (this._projects.has(pomFile) || this._projects.has(gradleFile)
+			|| this._addedProjects.has(pomFile) || this._addedProjects.has(gradleFile)) {
 			return 1;
 		}
-		const project = await createLibertyProjectFromPath(this._context, path, undefined, existingProjects);
+		const project = await createLibertyProjectFromPath(this._context, path, undefined, this._projects);
 		if (project !== undefined) {
-			existingProjects.set(project.getPath(), project);
+			this._addedProjects.set(project.getPath(), project);
 			const baseProject = new BaseLibertyProject(project.getLabel(), project.getPath(), project.getContextValue());
 			const dashboardData: DashboardData = util.getStorageData(this._context);
 			dashboardData.addProjectToManualProjects(baseProject);
@@ -121,7 +148,7 @@ export class ProjectRegistry {
 		if (dashboard.isPathExists(path)) {
 			dashboard.removeProject(path);
 			util.saveStorageData(this._context, dashboard);
-			this._projects.delete(path);
+			this._addedProjects.delete(path);
 		}
 	}
 
@@ -140,7 +167,8 @@ export class ProjectRegistry {
 	}
 
 	/**
-	 * Load persisted (manually-added) projects into the registry.
+	 * Load persisted (manually-added) projects into _addedProjects.
+	 * Stale entries (build file no longer exists) are cleaned from DashboardData.
 	 */
 	public async loadPersistedProjects(): Promise<void> {
 		const dashboardData = util.getStorageData(this._context);
@@ -149,8 +177,8 @@ export class ProjectRegistry {
 		for (const p of projects) {
 			const project = await createLibertyProjectFromPath(this._context, p.path, p.contextValue, this._projects);
 			if (project !== undefined) {
-				this._projects.set(p.path, project);
-				console.debug("Project " + p.path + " added to Liberty Tools");
+				this._addedProjects.set(p.path, project);
+				console.debug("Project " + p.path + " loaded into manually-added projects");
 			} else {
 				projectsToBeRemoved.push(p);
 			}
