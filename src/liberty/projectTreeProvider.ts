@@ -52,7 +52,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		this._onDidChangeTreeData = new vscode.EventEmitter<LibertyProject | undefined>();
 		this.onDidChangeTreeData = this._onDidChangeTreeData.event;
 		vscode.commands.executeCommand('setContext', 'liberty:sortOrder', this.getSortOrder());
-		this.refresh();
+		this.manualRefresh();
 	}
 
 	public getSortOrder(): SortOrder {
@@ -62,7 +62,8 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 	public async setSortOrder(order: SortOrder): Promise<void> {
 		await this._registry.getContext().workspaceState.update(SORT_ORDER_KEY, order);
 		vscode.commands.executeCommand('setContext', 'liberty:sortOrder', order);
-		await this.refresh();
+		this._registry.setRootProjects(this.sortRoots(this._registry.getRootProjects()));
+		this._onDidChangeTreeData.fire(undefined);
 	}
 
 	public static getInstance(): ProjectTreeProvider {
@@ -80,13 +81,29 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		const statusMessage = vscode.window.setStatusBarMessage(localize("refreshing.liberty.dashboard"));
 		const t0 = Date.now();
 		try {
-			await this.updateProjects();
+			await this.updateProjects(false);
 			console.log(`[perf] refresh total: ${Date.now() - t0}ms`);
 			this._onDidChangeTreeData.fire(undefined);
 		} finally {
 			statusMessage.dispose();
 			this.setLoading(false);
+			this._refreshing = false;
+		}
+	}
 
+	public async manualRefresh(): Promise<void> {
+		if (this._refreshing) { return; }
+		this._refreshing = true;
+		this.setLoading(true);
+		const statusMessage = vscode.window.setStatusBarMessage(localize("refreshing.liberty.dashboard"));
+		const t0 = Date.now();
+		try {
+			await this.updateProjects(true);
+			console.log(`[perf] manualRefresh total: ${Date.now() - t0}ms`);
+			this._onDidChangeTreeData.fire(undefined);
+		} finally {
+			statusMessage.dispose();
+			this.setLoading(false);
 			this._refreshing = false;
 		}
 	}
@@ -263,15 +280,16 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		return project.children.some(child => this.hasLibertyDescendants(child));
 	}
 
-	private async updateProjects(): Promise<void> {
+	private async updateProjects(forceRebuild: boolean): Promise<void> {
 		const t0 = Date.now();
 		const context = this._registry.getContext();
 		const wsFolders = vscode.workspace.workspaceFolders ?? [];
+		const existingProjects = forceRebuild ? new Map() : this._registry.getProjects();
 
 		const { projects, rootProjects, rejectedBuildFiles } = await discoverWorkspace(
 			context,
 			wsFolders,
-			this._registry.getProjects(),
+			existingProjects,
 			(partial, foldersComplete, totalFolders) => {
 				// Progressive tree update after each folder
 				this._registry.setProjects(new Map(partial));

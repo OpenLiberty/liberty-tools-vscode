@@ -147,7 +147,7 @@ function registerCommands(context: ExtensionContext) {
 
     // Command table — [id, handler] pairs registered in one pass.
     const commandTable: [string, (...args: any[]) => any][] = [
-        [CMD_EXPLORER_REFRESH, () => projectProvider.refresh()],
+        [CMD_EXPLORER_REFRESH, () => projectProvider.manualRefresh()],
         ["extension.open.project", (pomPath: any) => devCommands.openProject(pomPath)],
         [CMD_OPEN_BUILD_FILE, (p?: LibertyProject) => devCommands.openBuildFile(p)],
         [CMD_SHOW_COMMANDS, () => devCommands.listAllCommands()],
