@@ -2,7 +2,6 @@
  * IBM Confidential
  * Copyright IBM Corp. 2020, 2026
  */
-import * as fse from "fs-extra";
 import * as vscode from "vscode";
 import * as util from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
@@ -269,26 +268,10 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		const context = this._registry.getContext();
 		const wsFolders = vscode.workspace.workspaceFolders ?? [];
 
-		// Clean up persisted projects whose files no longer exist
-		const persistedProjects = util.getStorageData(context).projects;
-		const persistedToRemove: typeof persistedProjects[0][] = [];
-		for (const p of persistedProjects) {
-			if (!fse.existsSync(p.path)) {
-				persistedToRemove.push(p);
-			}
-		}
-		if (persistedToRemove.length > 0) {
-			const dashboardData = util.getStorageData(context);
-			persistedToRemove.forEach(p => dashboardData.removeProject(p.path));
-			await util.saveStorageData(context, dashboardData);
-		}
-		const validPersisted = persistedProjects.filter(p => !persistedToRemove.includes(p));
-
-		const { projects, rootProjects } = await discoverWorkspace(
+		const { projects, rootProjects, rejectedBuildFiles } = await discoverWorkspace(
 			context,
 			wsFolders,
 			this._registry.getProjects(),
-			validPersisted,
 			(partial, foldersComplete, totalFolders) => {
 				// Progressive tree update after each folder
 				this._registry.setProjects(new Map(partial));
@@ -299,6 +282,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 
 		this._registry.setProjects(projects);
 		this._registry.setRootProjects(this.sortRoots(rootProjects));
+		this._registry.setRejectedBuildFiles(rejectedBuildFiles);
 		console.log(`[perf] updateProjects total: ${Date.now() - t0}ms  (${projects.size} projects, ${rootProjects.length} roots)`);
 	}
 }

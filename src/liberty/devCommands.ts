@@ -206,15 +206,8 @@ export async function addProject(): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     const registry = ProjectRegistry.getInstance();
 
-    // Collect all folders with pom.xml/build.gradle not already in the registry,
-    // across all workspace folders. These are projects auto-detection did not register.
-    let folderPaths: string[] = [];
-    const wsFolders = vscode.workspace.workspaceFolders;
-    if (wsFolders) {
-        for (const folder of wsFolders) {
-            folderPaths = folderPaths.concat(await registry.getListOfMavenAndGradleFolders(folder.uri.fsPath));
-        }
-    }
+    // Folders with build files rejected by auto-detection — candidates for manual add.
+    const folderPaths: string[] = registry.getUnregisteredBuildFolders();
 
     if (folderPaths.length === 0) {
         const message = localize("add.project.manually.no.projects.available.to.add");
@@ -593,7 +586,7 @@ Method adds a project which is selected by the user from the list to the liberty
 */
 export async function addProjectsToTheDashBoard(projectProvider: ProjectTreeProvider, selection: string): Promise<void> {
     const registry = ProjectRegistry.getInstance();
-    const result = await registry.addUserSelectedPath(selection, registry.getProjects());
+    const result = await registry.addUserSelectedPath(selection);
     const message = localize(`add.project.manually.message.${result}`, selection);
     (result !== 0) ? console.error(message) : console.info(message);
     vscode.window.showInformationMessage(message);

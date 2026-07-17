@@ -16,7 +16,6 @@ import {
 	isMaven, isGradle,
 } from "../definitions/constants";
 import { BuildFileImpl, GradleBuildFile } from "../util/buildFile";
-import { BaseLibertyProject } from "./baseLibertyProject";
 import { LibertyProject, createProject, getLabelFromBuildFile } from "./libertyProject";
 
 /**
@@ -36,6 +35,7 @@ export interface ParsedBuildEntry {
 export interface DiscoveryResult {
 	projects: Map<string, LibertyProject>;
 	rootProjects: LibertyProject[];
+	rejectedBuildFiles: string[];
 }
 
 /**
@@ -490,14 +490,12 @@ function projectRootPathExists(path: string, keys: Iterable<string>): boolean {
  * @param context         Extension context (for project creation, storage)
  * @param wsFolders       Workspace folders to scan
  * @param existingProjects Currently live projects (preserves terminal state across refreshes)
- * @param persistedProjects Projects persisted in workspace storage (manually added)
  * @param onFolderComplete Called after each folder completes — used for progressive tree updates
  */
 export async function discoverWorkspace(
 	context: vscode.ExtensionContext,
 	wsFolders: readonly vscode.WorkspaceFolder[],
 	existingProjects: Map<string, LibertyProject>,
-	persistedProjects: BaseLibertyProject[],
 	onFolderComplete?: (partial: Map<string, LibertyProject>, foldersComplete: number, totalFolders: number) => void
 ): Promise<DiscoveryResult> {
 	const t0 = Date.now();
@@ -520,15 +518,6 @@ export async function discoverWorkspace(
 		const pomPaths = pomUris.map(u => u.fsPath);
 		const gradlePaths = gradleUris.map(u => u.fsPath);
 
-		for (const p of persistedProjects) {
-			if (!p.path.startsWith(folderPath)) { continue; }
-			if (p.path.endsWith("pom.xml") && !pomPaths.includes(p.path)) {
-				pomPaths.push(p.path);
-			} else if (p.path.endsWith("build.gradle") && !gradlePaths.includes(p.path)) {
-				gradlePaths.push(p.path);
-			}
-		}
-
 		console.log(`[perf] folder ${folderPath} findFiles: ${Date.now() - t0}ms  (${pomPaths.length} pom, ${gradlePaths.length} gradle)`);
 
 		const folderMap: Map<string, LibertyProject> = new Map();
@@ -549,7 +538,8 @@ export async function discoverWorkspace(
 
 	const { mavenMetadataMap, gradleMetadataMap } = await stampProjects(newProjectsMap, allEntries);
 	const rootProjects = await linkProjects(newProjectsMap, mavenMetadataMap, gradleMetadataMap);
+	const rejectedBuildFiles = allEntries.map(e => e.path).filter(p => !newProjectsMap.has(p));
 
 	console.log(`[perf] discoverWorkspace total: ${Date.now() - t0}ms  (${newProjectsMap.size} projects, ${rootProjects.length} roots)`);
-	return { projects: newProjectsMap, rootProjects };
+	return { projects: newProjectsMap, rootProjects, rejectedBuildFiles };
 }
