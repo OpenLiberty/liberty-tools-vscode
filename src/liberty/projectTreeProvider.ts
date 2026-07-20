@@ -123,7 +123,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 	}
 
 	/**
-	 * Update the tree item to reflect the new dev mode state.
+	 * Update the tree item to reflect the new dev mode state. Also update aggregator
 	 */
 	public notifyDevModeChanged(project: LibertyProject): void {
 		const encoded = encodeURIComponent(project.path);
@@ -149,6 +149,20 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		this._onDidChangeTreeData.fire(project);
 		if (project.resourceUri) {
 			this.decorationProvider.notify(project.resourceUri);
+		}
+		if (project.parent) {
+			this._updateAggregatorDescription(project.parent);
+		}
+	}
+
+	private _updateAggregatorDescription(aggregator: LibertyProject): void {
+		const descendants = this._registry.findLibertyDescendants(aggregator);
+		const total = descendants.length;
+		const running = descendants.filter(d => d.state === "started").length;
+		aggregator.description = running > 0 ? `${running}/${total} Running...` : undefined;
+		this._onDidChangeTreeData.fire(aggregator);
+		if (aggregator.parent) {
+			this._updateAggregatorDescription(aggregator.parent);
 		}
 	}
 
