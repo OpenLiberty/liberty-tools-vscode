@@ -4,6 +4,7 @@
  */
 import { strict as assert } from "assert";
 import { computeContextValue } from "../../util/helperUtil";
+import { DevModeState } from "../../liberty/libertyProject";
 
 // ---------------------------------------------------------------------------
 // computeContextValue
@@ -17,22 +18,22 @@ describe("computeContextValue — state undefined (stopped)", () => {
 
 describe("computeContextValue — state 'started'", () => {
     it("appends :running when started", () => {
-        assert.equal(computeContextValue("libertyProject:maven", "started"), "libertyProject:maven:running");
+        assert.equal(computeContextValue("libertyProject:maven", DevModeState.Running), "libertyProject:maven:running");
     });
 });
 
 describe("computeContextValue — state 'starting' or 'stopping'", () => {
     it("does not append :running when starting", () => {
-        assert.equal(computeContextValue("libertyProject:maven", "starting"), "libertyProject:maven");
+        assert.equal(computeContextValue("libertyProject:maven", DevModeState.Starting), "libertyProject:maven");
     });
     it("does not append :running when stopping", () => {
-        assert.equal(computeContextValue("libertyProject:maven", "stopping"), "libertyProject:maven");
+        assert.equal(computeContextValue("libertyProject:maven", DevModeState.Stopping), "libertyProject:maven");
     });
 });
 
 describe("computeContextValue — aggregator", () => {
     it("never appends :running to an aggregator", () => {
-        assert.equal(computeContextValue("libertyProject:maven:aggregator", "started"), "libertyProject:maven:aggregator");
+        assert.equal(computeContextValue("libertyProject:maven:aggregator", DevModeState.Running), "libertyProject:maven:aggregator");
     });
 });
 

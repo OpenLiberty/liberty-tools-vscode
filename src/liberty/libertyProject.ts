@@ -13,7 +13,11 @@ const MAVEN_ICON = "maven-tag.png";
 const GRADLE_ICON = "gradle-tag-1.png";
 const OL_LOGO_ICON = "ol_logo.png";
 
-export type DevModeState = "starting" | "started" | "stopping";
+export enum DevModeState {
+	Starting = "starting",
+	Running  = "running",
+	Stopping = "stopping",
+}
 
 /**
  * CWWKF0011I = server ready (starting → started)
@@ -140,8 +144,8 @@ export class LibertyProject extends vscode.TreeItem {
 		(async () => {
 			for await (const chunk of stream) {
 				if (disposed) { break; }
-				if (chunk.includes(LIBERTY_MSG_STARTED) && this.state === "starting") {
-					this.setState("started");
+				if (chunk.includes(LIBERTY_MSG_STARTED) && this.state === DevModeState.Starting) {
+					this.setState(DevModeState.Running);
 					onStateChange(this);
 					vscode.window.showInformationMessage(`Liberty server started: ${this.label}`);
 				} else if (chunk.includes(LIBERTY_MSG_STOPPED)) {

@@ -9,7 +9,7 @@ import * as vscode from "vscode";
 import * as helperUtil from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
 import { QuickPickItem } from "vscode";
-import { LibertyProject } from "./libertyProject";
+import { LibertyProject, DevModeState } from "./libertyProject";
 import { ProjectRegistry } from "./projectRegistry";
 import { ProjectTreeProvider } from "./projectTreeProvider";
 import { getReport } from "../util/helperUtil";
@@ -186,7 +186,7 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
     const terminal = ensureTerminal(targetProject);
     if (terminal !== undefined) {
         const tracked = await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV);
-        targetProject.setState(tracked ? "starting" : "started");
+        targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
         projectProvider.notifyDevModeChanged(targetProject);
     }
 }
@@ -284,7 +284,7 @@ export async function stopDevMode(libProject?: LibertyProject | undefined): Prom
         terminal.show();
         terminal.sendText("exit");
         terminal.dispose();
-        targetProject.setState("stopping");
+        targetProject.setState(DevModeState.Stopping);
         projectProvider.notifyDevModeChanged(targetProject);
     } else {
         const message = localize("liberty.dev.not.started.on", targetProject.getLabel());
@@ -449,7 +449,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
             }
 
             const tracked = await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, customCommand);
-            targetProject.setState(tracked ? "starting" : "started");
+            targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
             projectProvider.notifyDevModeChanged(targetProject);
         }
     }
@@ -472,7 +472,7 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
     const terminal = ensureTerminal(targetProject);
     if (terminal !== undefined) {
         const tracked = await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEVC, GRADLE_TASK_DEVC);
-        targetProject.setState(tracked ? "starting" : "started");
+        targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
         projectProvider.notifyDevModeChanged(targetProject);
     }
 }

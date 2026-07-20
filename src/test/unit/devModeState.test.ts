@@ -3,7 +3,7 @@
  * These tests run with plain mocha + chai — no VS Code instance required.
  */
 import { strict as assert } from "assert";
-import { LibertyProject } from "../../liberty/libertyProject";
+import { LibertyProject, DevModeState } from "../../liberty/libertyProject";
 import { filterProjects, devModeRequirement } from "../../util/helperUtil";
 
 // Minimal vscode.ExtensionContext stub — only what LibertyProject constructor needs
@@ -34,25 +34,25 @@ describe("LibertyProject.state", () => {
 
     it("setState('starting') sets state to starting", () => {
         const project = makeProject("libertyProject:maven");
-        project.setState("starting");
-        assert.equal(project.state, "starting");
+        project.setState(DevModeState.Starting);
+        assert.equal(project.state, DevModeState.Starting);
     });
 
     it("setState('started') sets state to started", () => {
         const project = makeProject("libertyProject:maven");
-        project.setState("started");
-        assert.equal(project.state, "started");
+        project.setState(DevModeState.Running);
+        assert.equal(project.state, DevModeState.Running);
     });
 
     it("setState('stopping') sets state to stopping", () => {
         const project = makeProject("libertyProject:maven");
-        project.setState("stopping");
-        assert.equal(project.state, "stopping");
+        project.setState(DevModeState.Stopping);
+        assert.equal(project.state, DevModeState.Stopping);
     });
 
     it("setState(undefined) clears state back to stopped", () => {
         const project = makeProject("libertyProject:maven");
-        project.setState("started");
+        project.setState(DevModeState.Running);
         project.setState(undefined);
         assert.equal(project.state, undefined);
     });
@@ -65,13 +65,13 @@ describe("LibertyProject.state", () => {
 describe("filterProjects - liberty.dev.stop", () => {
     it("includes projects where state is 'started'", () => {
         const project = makeProject("libertyProject:maven");
-        project.setState("started");
+        project.setState(DevModeState.Running);
         assert.equal(filterProjects([project], "liberty.dev.stop").length, 1);
     });
 
     it("includes projects where state is 'starting'", () => {
         const project = makeProject("libertyProject:maven");
-        project.setState("starting");
+        project.setState(DevModeState.Starting);
         assert.equal(filterProjects([project], "liberty.dev.stop").length, 1);
     });
 
@@ -88,7 +88,7 @@ describe("filterProjects - liberty.dev.stop", () => {
 describe("filterProjects - liberty.dev.run.tests", () => {
     it("includes projects where state is defined", () => {
         const project = makeProject("libertyProject:maven");
-        project.setState("started");
+        project.setState(DevModeState.Running);
         assert.equal(filterProjects([project], "liberty.dev.run.tests").length, 1);
     });
 
@@ -105,7 +105,7 @@ describe("filterProjects - liberty.dev.run.tests", () => {
 describe("filterProjects - liberty.dev.debug", () => {
     it("includes projects where state is defined", () => {
         const project = makeProject("libertyProject:maven");
-        project.setState("started");
+        project.setState(DevModeState.Running);
         assert.equal(filterProjects([project], "liberty.dev.debug").length, 1);
     });
 
@@ -118,7 +118,7 @@ describe("filterProjects - liberty.dev.debug", () => {
 describe("filterProjects - liberty.dev.custom", () => {
     it("excludes projects where state is defined", () => {
         const project = makeProject("libertyProject:maven");
-        project.setState("started");
+        project.setState(DevModeState.Running);
         assert.equal(filterProjects([project], "liberty.dev.custom").length, 0);
     });
 });
@@ -135,7 +135,7 @@ describe("filterProjects - liberty.dev.start.container", () => {
 
     it("excludes container projects where state is defined", () => {
         const project = makeProject("libertyProject:maven:container");
-        project.setState("started");
+        project.setState(DevModeState.Running);
         assert.equal(filterProjects([project], "liberty.dev.start.container").length, 0);
     });
 
@@ -154,7 +154,7 @@ describe("filterProjects - liberty.dev.start", () => {
 
     it("excludes projects where state is defined", () => {
         const project = makeProject("libertyProject:maven");
-        project.setState("started");
+        project.setState(DevModeState.Running);
         const result = filterProjects([project], "liberty.dev.start");
         assert.equal(result.length, 0);
     });

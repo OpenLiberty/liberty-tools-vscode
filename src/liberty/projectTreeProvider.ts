@@ -7,7 +7,7 @@ import * as util from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
 import { devModeRequirement, computeContextValue } from "../util/helperUtil";
 import { UNTITLED_WORKSPACE, SORT_ORDER_KEY, SortOrder } from "../definitions/constants";
-import { LibertyProject } from "./libertyProject";
+import { LibertyProject, DevModeState } from "./libertyProject";
 import { ProjectRegistry } from "./projectRegistry";
 import { discoverWorkspace, sortByWorkspaceOrder } from "./projectDiscovery";
 
@@ -128,15 +128,15 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 	public notifyDevModeChanged(project: LibertyProject): void {
 		const encoded = encodeURIComponent(project.path);
 		switch (project.state) {
-			case "starting":
+			case DevModeState.Starting:
 				project.description = localize("liberty.view.starting");
 				project.resourceUri = vscode.Uri.parse(`${LIBERTY_DEV_SCHEME}://starting/${encoded}`);
 				break;
-			case "started":
+			case DevModeState.Running:
 				project.description = localize("liberty.view.running");
 				project.resourceUri = vscode.Uri.parse(`${LIBERTY_DEV_SCHEME}://running/${encoded}`);
 				break;
-			case "stopping":
+			case DevModeState.Stopping:
 				project.description = localize("liberty.view.stopping");
 				project.resourceUri = vscode.Uri.parse(`${LIBERTY_DEV_SCHEME}://stopping/${encoded}`);
 				break;
@@ -158,7 +158,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 	private _updateAggregatorDescription(aggregator: LibertyProject): void {
 		const descendants = this._registry.findLibertyDescendants(aggregator);
 		const total = descendants.length;
-		const running = descendants.filter(d => d.state === "started").length;
+		const running = descendants.filter(d => d.state === DevModeState.Running).length;
 		aggregator.description = running > 0 ? `${running}/${total} Running...` : undefined;
 		this._onDidChangeTreeData.fire(aggregator);
 		if (aggregator.parent) {
