@@ -3,6 +3,8 @@ import * as devCommands from "./devCommands";
 import { getProjectOptions } from '../definitions/starterOptions';
 import * as vscode from "vscode";
 import * as fs from "fs";
+import { localize } from '../util/i18nUtil';
+import path from 'path';
 
 export interface State {
 	a: string,
@@ -22,7 +24,7 @@ export async function starterProject(context: ExtensionContext) {
     const javaSEVersions: QuickPickItem[] = projectOptions.j.options!.map(label => ({ label }));
     const javaEEVersions: QuickPickItem[] = projectOptions.e.options!.map(label => ({ label }));
 
-    const title = 'Create Open Liberty Starter Code';
+    const title = localize("starter.title");
 
     async function inputGroupName(input: MultiStepInput, state: Partial<State>) :Promise<any> {
         state.g = await input.showInputBox({
@@ -30,7 +32,7 @@ export async function starterProject(context: ExtensionContext) {
             step: 1,
             totalSteps: 6,
             value: state.g || projectOptions.g.default,
-            prompt: projectOptions.g.name,
+            prompt: localize("starter.prompt.group"),
             validate: validGroupName,
             shouldResume: shouldResume
         });
@@ -43,7 +45,7 @@ export async function starterProject(context: ExtensionContext) {
             step: 2,
             totalSteps: 6,
             value: state.a || projectOptions.a.default,
-            prompt: projectOptions.a.name,
+            prompt: localize("starter.prompt.artifact"),
             validate: validArtifactName,
             shouldResume: shouldResume
         });
@@ -55,10 +57,9 @@ export async function starterProject(context: ExtensionContext) {
             title,
             step: 3,
             totalSteps: 6,
-            placeholder: projectOptions.b.name,
-            activeItem: buildTools.find(item => item.label === projectOptions.b.default),
+            placeholder: localize("starter.prompt.build.tool"),
+            activeItem: buildTools.find(item => item.label === (state.b || projectOptions.b.default)),
             items: buildTools,
-            value: state.b,
             shouldResume: shouldResume
         })).label;
         return (input: MultiStepInput) => pickJavaSE(input, state);
@@ -69,11 +70,10 @@ export async function starterProject(context: ExtensionContext) {
             title,
             step: 4,
             totalSteps: 6,
-            placeholder: projectOptions.j.name,
-            activeItem: javaSEVersions[javaSEVersions.findIndex(item => item.label === projectOptions.j.default)],
+            placeholder: localize("starter.prompt.java"),
+            activeItem: javaSEVersions.find(item => item.label === (state.j || projectOptions.j.default)),
             items: javaSEVersions,
-            value: state.j,
-            shouldResume: shouldResume
+            shouldResume: shouldResume,
         })).label;
         return (input: MultiStepInput) => pickJavaEE(input, state);
     }
@@ -83,10 +83,9 @@ export async function starterProject(context: ExtensionContext) {
             title,
             step: 5,
             totalSteps: 6,
-            placeholder: projectOptions.e.name,
-            activeItem: javaEEVersions[javaEEVersions.findIndex(item => item.label === projectOptions.e.default)],
+            placeholder: localize("starter.prompt.jakarta"),
+            activeItem: javaEEVersions.find(item => item.label === (state.e || projectOptions.e.default)),
             items: javaEEVersions,
-            value: state.e,
             shouldResume: shouldResume
         })).label;
         var MPVersions: QuickPickItem[] = projectOptions.e.constraints![state.e].m
@@ -99,10 +98,9 @@ export async function starterProject(context: ExtensionContext) {
             title,
             step: 6,
             totalSteps: 6,
-            placeholder: projectOptions.m.name,
-            activeItem: MPVersions.find(item => item.label === projectOptions.m.default),
+            placeholder: localize("starter.prompt.microprofile"),
+            activeItem: MPVersions.find(item => item.label === (state.m || projectOptions.m.default)),
             items: MPVersions,
-            value: state.m,
             shouldResume: shouldResume
         })).label;
         return (input: MultiStepInput) => pickDirectory(input, state);
@@ -112,7 +110,7 @@ export async function starterProject(context: ExtensionContext) {
         while (true) {
             const response = await window.showOpenDialog({
                 canSelectMany: false,
-                openLabel: 'Select',
+                openLabel: localize("starter.prompt.directory"),
                 canSelectFiles: false,
                 canSelectFolders: true
             })
@@ -122,42 +120,39 @@ export async function starterProject(context: ExtensionContext) {
                 }
                 continue;
             }
-            const path = response[0].path;
+            const dir = path.join(response[0].fsPath, state.a!);
             // TODO: do we need to make this async?
-            if (fs.existsSync(`${path}/${state.a}`)) {
-                const selection = await window.showWarningMessage(`${state.a} already exists in ${path}. ${state.a} will be replaced, are you sure you want to continue?`, "yes", "no")
-                if (selection !== "yes") {
-                    state.a = await input.showInputBox({
-                        title,
-                        step: 2,
-                        totalSteps: 6,
-                        value: state.a || projectOptions.a.default,
-                        prompt: "Enter a different artifact name",
-                        validate: validArtifactName,
-                        shouldResume: shouldResume
-                    });
+            if (fs.existsSync(dir)) {
+                const overwrite = localize("starter.button.overwrite");
+                const reselect = localize("starter.button.reselect");
+                const selection = await window.showWarningMessage(localize("starter.invalid.directory", state.a), overwrite, reselect)
+                if (!selection) {
+                    if (!await shouldResume()) {
+                        return;
+                    }
                     continue;
                 }
-                fs.rmdirSync(`${path}/${state.a}`, { recursive: true });
+                if (selection === reselect) {
+                    continue;
+                }
+                fs.rmdirSync(dir, { recursive: true });
             }
-            state.dir = path;
+            state.dir = dir;
             return;
         }
     }
 
     async function shouldResume() {
-        const selection = await window.showInformationMessage("Would you like to resume Liberty project generation?", "yes", "no") 
-        if (selection == "yes") {
-            return true;
-        } else {
-            return false;
-        }
+        const yes = localize("confirmation.button.label.yes");
+        const no = localize("confirmation.button.label.no");
+        const selection = await window.showInformationMessage(localize("starter.message.resume"), yes, no) 
+        return selection === yes;
     }
 
     async function validArtifactName(name: string) {
         const regexp = new RegExp("^([a-z]+-)*[a-z]+$", "i");
         if (! regexp.test(name) ) {
-            return("App name must be a-z characters separated by dashes");
+            return localize("starter.invalid.artifact");
         } else {
             return undefined;
         }
@@ -166,7 +161,7 @@ export async function starterProject(context: ExtensionContext) {
     async function validGroupName(name: string) {
         const regexp = new RegExp("^([a-z]+\\.)*[a-z]+$", "i");
         if (! regexp.test(name) ) {
-            return("Group name must be a-z separated by periods");
+            return localize("starter.invalid.group");
         } else {
             return undefined;
         }

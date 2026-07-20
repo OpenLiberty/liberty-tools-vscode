@@ -462,12 +462,12 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
  */
 export async function buildStarterProject(state: starterProject.State): Promise<void> {
     const apiURL = `https://start.openliberty.io/api/start?a=${state.a}&b=${state.b}&e=${state.e}&g=${state.g}&j=${state.j}&m=${state.m}`;
-    const targetDir = `${state.dir}/${state.a}`;
+    const targetDir = state.dir;
 
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Window,
         cancellable: false,
-        title: `Creating starter code for ${state.a}`
+        title: localize("starter.generating.label", state.a),
     }, async (progress) => {
         progress.report({ increment: 0 });
         let lastPercentage = 0.0;
@@ -487,11 +487,13 @@ export async function buildStarterProject(state: starterProject.State): Promise<
     // Decides what window to use when opening the project
     let newWin = false;
     if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath !== targetDir) {
-        const selection = await vscode.window.showInformationMessage("Where would you like to open the project?", "Current Window", "New Window");
+        const currentWindow = localize("starter.button.current");
+        const newWindow = localize("starter.button.new");
+        const selection = await vscode.window.showInformationMessage(localize("starter.message.open.project"), currentWindow, newWindow);
         if (!selection) {
             return;
         }
-        if (selection === "New Window") {
+        if (selection === newWindow) {
             newWin = true;
         }
     }
