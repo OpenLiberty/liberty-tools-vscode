@@ -266,7 +266,7 @@ async function discoverProjects(
 				if (existing.getLabel() !== gradleLabel) { existing.setLabel(gradleLabel); }
 				projectsMap.set(entry.path, existing);
 			} else {
-				const project = new LibertyProject(context, gradleLabel, vscode.TreeItemCollapsibleState.None, entry.path, "start", buildFile.getProjectType(), undefined, undefined);
+				const project = new LibertyProject(context, gradleLabel, vscode.TreeItemCollapsibleState.None, entry.path, undefined, buildFile.getProjectType(), undefined, undefined);
 				projectsMap.set(entry.path, project);
 			}
 			visitedPaths.add(entry.path);

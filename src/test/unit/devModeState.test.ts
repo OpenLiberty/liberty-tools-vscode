@@ -1,5 +1,5 @@
 /*
- * Unit tests for isDevMode flag and filterProjects state-based filtering.
+ * Unit tests for DevModeState and filterProjects state-based filtering.
  * These tests run with plain mocha + chai — no VS Code instance required.
  */
 import { strict as assert } from "assert";
@@ -17,19 +17,44 @@ const stubContext: any = {
 const None = 0;
 
 function makeProject(contextValue: string): LibertyProject {
-    const p = new LibertyProject(stubContext, "test-project", None, "/fake/path", "start", contextValue);
+    const p = new LibertyProject(stubContext, "test-project", None, "/fake/path", undefined, contextValue);
     p.isLibertyEnabled = true;
     return p;
 }
 
 // ---------------------------------------------------------------------------
-// isDevMode flag
+// DevModeState
 // ---------------------------------------------------------------------------
 
-describe("LibertyProject.isDevMode", () => {
-    it("defaults to false on a new project", () => {
+describe("LibertyProject.state", () => {
+    it("defaults to undefined (stopped) on a new project", () => {
         const project = makeProject("libertyProject:maven");
-        assert.equal(project.isDevMode, false);
+        assert.equal(project.state, undefined);
+    });
+
+    it("setState('starting') sets state to starting", () => {
+        const project = makeProject("libertyProject:maven");
+        project.setState("starting");
+        assert.equal(project.state, "starting");
+    });
+
+    it("setState('started') sets state to started", () => {
+        const project = makeProject("libertyProject:maven");
+        project.setState("started");
+        assert.equal(project.state, "started");
+    });
+
+    it("setState('stopping') sets state to stopping", () => {
+        const project = makeProject("libertyProject:maven");
+        project.setState("stopping");
+        assert.equal(project.state, "stopping");
+    });
+
+    it("setState(undefined) clears state back to stopped", () => {
+        const project = makeProject("libertyProject:maven");
+        project.setState("started");
+        project.setState(undefined);
+        assert.equal(project.state, undefined);
     });
 });
 
@@ -38,15 +63,20 @@ describe("LibertyProject.isDevMode", () => {
 // ---------------------------------------------------------------------------
 
 describe("filterProjects - liberty.dev.stop", () => {
-    it("includes projects where isDevMode is true", () => {
+    it("includes projects where state is 'started'", () => {
         const project = makeProject("libertyProject:maven");
-        project.isDevMode = true;
+        project.setState("started");
         assert.equal(filterProjects([project], "liberty.dev.stop").length, 1);
     });
 
-    it("excludes projects where isDevMode is false", () => {
+    it("includes projects where state is 'starting'", () => {
         const project = makeProject("libertyProject:maven");
-        project.isDevMode = false;
+        project.setState("starting");
+        assert.equal(filterProjects([project], "liberty.dev.stop").length, 1);
+    });
+
+    it("excludes projects where state is undefined (stopped)", () => {
+        const project = makeProject("libertyProject:maven");
         assert.equal(filterProjects([project], "liberty.dev.stop").length, 0);
     });
 });
@@ -56,15 +86,14 @@ describe("filterProjects - liberty.dev.stop", () => {
 // ---------------------------------------------------------------------------
 
 describe("filterProjects - liberty.dev.run.tests", () => {
-    it("includes projects where isDevMode is true", () => {
+    it("includes projects where state is defined", () => {
         const project = makeProject("libertyProject:maven");
-        project.isDevMode = true;
+        project.setState("started");
         assert.equal(filterProjects([project], "liberty.dev.run.tests").length, 1);
     });
 
-    it("excludes projects where isDevMode is false", () => {
+    it("excludes projects where state is undefined", () => {
         const project = makeProject("libertyProject:maven");
-        project.isDevMode = false;
         assert.equal(filterProjects([project], "liberty.dev.run.tests").length, 0);
     });
 });
@@ -74,23 +103,22 @@ describe("filterProjects - liberty.dev.run.tests", () => {
 // ---------------------------------------------------------------------------
 
 describe("filterProjects - liberty.dev.debug", () => {
-    it("includes projects where isDevMode is true", () => {
+    it("includes projects where state is defined", () => {
         const project = makeProject("libertyProject:maven");
-        project.isDevMode = true;
+        project.setState("started");
         assert.equal(filterProjects([project], "liberty.dev.debug").length, 1);
     });
 
-    it("excludes projects where isDevMode is false", () => {
+    it("excludes projects where state is undefined", () => {
         const project = makeProject("libertyProject:maven");
-        project.isDevMode = false;
         assert.equal(filterProjects([project], "liberty.dev.debug").length, 0);
     });
 });
 
 describe("filterProjects - liberty.dev.custom", () => {
-    it("excludes projects where isDevMode is true", () => {
+    it("excludes projects where state is defined", () => {
         const project = makeProject("libertyProject:maven");
-        project.isDevMode = true;
+        project.setState("started");
         assert.equal(filterProjects([project], "liberty.dev.custom").length, 0);
     });
 });
@@ -100,36 +128,33 @@ describe("filterProjects - liberty.dev.custom", () => {
 // ---------------------------------------------------------------------------
 
 describe("filterProjects - liberty.dev.start.container", () => {
-    it("includes container projects where isDevMode is false", () => {
+    it("includes container projects where state is undefined", () => {
         const project = makeProject("libertyProject:maven:container");
-        project.isDevMode = false;
         assert.equal(filterProjects([project], "liberty.dev.start.container").length, 1);
     });
 
-    it("excludes container projects where isDevMode is true", () => {
+    it("excludes container projects where state is defined", () => {
         const project = makeProject("libertyProject:maven:container");
-        project.isDevMode = true;
+        project.setState("started");
         assert.equal(filterProjects([project], "liberty.dev.start.container").length, 0);
     });
 
-    it("excludes non-container projects regardless of isDevMode", () => {
+    it("excludes non-container projects regardless of state", () => {
         const project = makeProject("libertyProject:maven");
-        project.isDevMode = false;
         assert.equal(filterProjects([project], "liberty.dev.start.container").length, 0);
     });
 });
 
 describe("filterProjects - liberty.dev.start", () => {
-    it("includes projects where isDevMode is false", () => {
+    it("includes projects where state is undefined", () => {
         const project = makeProject("libertyProject:maven");
-        project.isDevMode = false;
         const result = filterProjects([project], "liberty.dev.start");
         assert.equal(result.length, 1);
     });
 
-    it("excludes projects where isDevMode is true", () => {
+    it("excludes projects where state is defined", () => {
         const project = makeProject("libertyProject:maven");
-        project.isDevMode = true;
+        project.setState("started");
         const result = filterProjects([project], "liberty.dev.start");
         assert.equal(result.length, 0);
     });

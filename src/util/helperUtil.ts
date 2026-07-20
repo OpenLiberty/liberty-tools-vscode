@@ -52,8 +52,8 @@ export function devModeRequirement(command: string): boolean | undefined {
 	}
 }
 
-export function computeContextValue(base: string, isDevMode: boolean): string {
-	if (isDevMode && !base.includes(":aggregator")) {
+export function computeContextValue(base: string, state: import("../liberty/libertyProject").DevModeState | undefined): string {
+	if (state === "started" && !base.includes(":aggregator")) {
 		return `${base}:running`;
 	}
 	return base;
@@ -76,13 +76,13 @@ export function filterProjects(projects: LibertyProject[], command: string): Lib
 		switch (command) {
 			case CMD_START:
 			case CMD_CUSTOM:
-				return !isAggregator(cv) && !project.isDevMode;
+				return !isAggregator(cv) && project.state === undefined;
 			case CMD_START_CONTAINER:
-				return isContainer(cv) && !project.isDevMode;
+				return isContainer(cv) && project.state === undefined;
 			case CMD_STOP:
 			case CMD_RUN_TESTS:
 			case CMD_DEBUG:
-				return !isAggregator(cv) && project.isDevMode;
+				return !isAggregator(cv) && project.state !== undefined;
 			case "failsafe":
 			case "surefire":
 				return isMaven(cv) && !isAggregator(cv);

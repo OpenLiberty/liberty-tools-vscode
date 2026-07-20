@@ -37,7 +37,7 @@ function makeProject(buildFilePath: string, type: string): LibertyProject {
         path.basename(path.dirname(buildFilePath)),
         vscode.TreeItemCollapsibleState.None,
         buildFilePath,
-        "start",
+        undefined,
         type,
         undefined,
         undefined,

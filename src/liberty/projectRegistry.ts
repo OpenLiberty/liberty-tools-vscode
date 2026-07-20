@@ -11,6 +11,7 @@ import { DashboardData } from "./dashboard";
 import { BaseLibertyProject } from "./baseLibertyProject";
 import { LibertyProject, createProject } from "./libertyProject";
 import { createLibertyProjectFromPath } from "./projectDiscovery";
+import { ProjectTreeProvider } from "./projectTreeProvider";
 
 /**
  * Singleton registry: single source of truth for discovered LibertyProject objects.
@@ -32,6 +33,29 @@ export class ProjectRegistry {
 
 	constructor(context: vscode.ExtensionContext) {
 		this._context = context;
+		this._registerShellIntegrationListener();
+	}
+
+	private _registerShellIntegrationListener(): void {
+		console.log(`[ProjectRegistry] _registerShellIntegrationListener called, API available=${typeof vscode.window.onDidStartTerminalShellExecution === "function"}`);
+		if (typeof vscode.window.onDidStartTerminalShellExecution !== "function") { return; }
+		vscode.window.onDidStartTerminalShellExecution(event => {
+			const project = this._findProjectByTerminal(event.terminal);
+			if (project === undefined) { return; }
+			const pp = ProjectTreeProvider.getInstance();
+			project.enableShellListener(event.execution, (changed) => {
+				if (pp) { pp.notifyDevModeChanged(changed); }
+			});
+		});
+	}
+
+	private _findProjectByTerminal(terminal: vscode.Terminal): LibertyProject | undefined {
+		for (const project of [...this._projects.values(), ...this._addedProjects.values()]) {
+			if (project.getTerminal() === terminal) {
+				return project;
+			}
+		}
+		return undefined;
 	}
 
 	public static getInstance(): ProjectRegistry {

@@ -11,6 +11,8 @@
     "jakarta.ls.thumbs.up": "LSP4Jakarta $(thumbsup)",
     "jakarta.ls.started": "Language Server for Jakarta EE started.",
     "liberty.view.running": "Running...",
+    "liberty.view.starting": "Starting...",
+    "liberty.view.stopping": "Stopping...",
     "no.liberty.projects.found": "No Liberty projects found.",
     "starting.liberty.dev.on": "Starting Liberty dev mode on {0}.",
     "cannot.start.liberty.dev": "Cannot start Liberty dev mode on an undefined project.",
