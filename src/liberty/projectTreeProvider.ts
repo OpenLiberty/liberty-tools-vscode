@@ -249,10 +249,8 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		);
 	}
 
-	/**
-	 * Unified project picker. Handles command palette, aggregator delegation, and direct selection.
-	 */
-	public async pickProject(project: LibertyProject | undefined, command: string): Promise<LibertyProject | undefined> {
+	// Unified project picker. Handles command palette, aggregator delegation, and direct selection.
+	public async pickProject(project: LibertyProject | undefined, command: string): Promise<LibertyProject[] | undefined> {
 		const placeholder = localize("select.module.for.command");
 
 		if (project === undefined) {
@@ -265,7 +263,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 				return undefined;
 			}
 			if (projects.length === 1) {
-				return projects[0];
+				return [projects[0]];
 			}
 			const items = projects.map(p => ({
 				label: p.label,
@@ -273,8 +271,9 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 				detail: p.path,
 				project: p,
 			}));
-			const selected = await vscode.window.showQuickPick(items, { placeHolder: placeholder });
-			return selected?.project;
+			const selected = await vscode.window.showQuickPick(items, { placeHolder: placeholder, canPickMany: true });
+			if (!selected || selected.length === 0) { return undefined; }
+			return selected.map(s => s.project);
 		}
 
 		if (project.isAggregator && project.children.length > 0) {
@@ -297,7 +296,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 				return undefined;
 			}
 			if (eligible.length === 1) {
-				return eligible[0];
+				return [eligible[0]];
 			}
 			const items = eligible.map(c => ({
 				label: c.label,
@@ -305,12 +304,13 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 				detail: c.path,
 				project: c,
 			}));
-			const selected = await vscode.window.showQuickPick(items, { placeHolder: placeholder });
-			return selected?.project;
+			const selected = await vscode.window.showQuickPick(items, { placeHolder: placeholder, canPickMany: true });
+			if (!selected || selected.length === 0) { return undefined; }
+			return selected.map(s => s.project);
 		}
 
 		if (project.isLibertyEnabled) {
-			return project;
+			return [project];
 		}
 
 		vscode.window.showWarningMessage(
@@ -335,7 +335,6 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 			wsFolders,
 			existingProjects,
 			(partial, foldersComplete, totalFolders) => {
-				// Progressive tree update after each folder
 				this._registry.setProjects(new Map(partial));
 				this._registry.setRootProjects(this.sortRoots(Array.from(partial.values()).filter(p => !p.parent)));
 				this._onDidChangeTreeData.fire(undefined);

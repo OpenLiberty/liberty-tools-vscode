@@ -11,7 +11,7 @@
 	"preview": false,
 	"license": "EPL-2.0",
 	"engines": {
-		"vscode": ">=1.75.0"
+		"vscode": ">=1.93.0"
 	},
 	"categories": [
 		"Programming Languages"
@@ -40,7 +40,11 @@
 		"onCommand:liberty.dev.open.gradle.test.report",
 		"onCommand:liberty.dev.add.project",
 		"onCommand:liberty.dev.remove.project",
-		"onView:liberty-dev"
+		"onView:liberty-dev",
+		"onStartupFinished",
+		"onCommand:liberty.dev.debug",
+		"onCommand:liberty.dev.start.container",
+		"onCommand:liberty.dev.open.build.file"
 	],
 	"main": "./dist/extension",
 	"extensionDependencies": [
@@ -198,6 +202,36 @@
 				{
 					"command": "liberty.explorer.sort.alphabetical.active",
 					"when": "false"
+				},
+				{
+					"command": "liberty.dev.start"
+				},
+				{
+					"command": "liberty.dev.debug"
+				},
+				{
+					"command": "liberty.dev.stop"
+				},
+				{
+					"command": "liberty.dev.custom"
+				},
+				{
+					"command": "liberty.dev.start.container"
+				},
+				{
+					"command": "liberty.dev.run.tests"
+				},
+				{
+					"command": "liberty.dev.open.failsafe.report"
+				},
+				{
+					"command": "liberty.dev.open.surefire.report"
+				},
+				{
+					"command": "liberty.dev.open.gradle.test.report"
+				},
+				{
+					"command": "liberty.dev.open.build.file"
 				}
 			],
 			"view/title": [

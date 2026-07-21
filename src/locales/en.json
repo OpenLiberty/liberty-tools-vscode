@@ -80,7 +80,7 @@
     "no.liberty.modules.found": "No Liberty-enabled modules found in {0}",
     "all.modules.currently.running": "All modules in {0} are currently running.",
     "no.modules.currently.running": "No modules in {0} are currently running.",
-    "select.module.for.command": "Select a Liberty project or submodule",
+    "select.module.for.command": "Select Liberty projects or submodules",
     "project.not.liberty.enabled": "{0} is not Liberty-enabled",
     "command.start.dev.mode": "start dev mode",
     "command.start.container.dev.mode": "start container dev mode",
