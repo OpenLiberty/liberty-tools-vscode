@@ -56,6 +56,7 @@ export const LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION = "3.1.0";
 // Must match package.json contributes.commands[].command declarations.
 // ---------------------------------------------------------------------------
 export const CMD_EXPLORER_REFRESH        = "liberty.explorer.refresh";
+export const CMD_EXPLORER_EXPAND_ALL     = "liberty.explorer.expandAll";
 export const CMD_SHOW_COMMANDS           = "liberty.dev.show.commands";
 export const CMD_OPEN_BUILD_FILE         = "liberty.dev.open.build.file";
 export const CMD_START                   = "liberty.dev.start";

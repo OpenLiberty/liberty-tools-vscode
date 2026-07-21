@@ -17,7 +17,7 @@ import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "
 import { prepareExecutable } from "./util/javaServerStarter";
 import * as helperUtil from "./util/helperUtil";
 import {
-    CMD_EXPLORER_REFRESH, CMD_SHOW_COMMANDS, CMD_OPEN_BUILD_FILE,
+    CMD_EXPLORER_REFRESH, CMD_EXPLORER_EXPAND_ALL, CMD_SHOW_COMMANDS, CMD_OPEN_BUILD_FILE,
     CMD_START, CMD_DEBUG, CMD_STOP, CMD_CUSTOM, CMD_START_CONTAINER,
     CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
     CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
@@ -131,9 +131,10 @@ function bindRequest(request: string) {
 function registerCommands(context: ExtensionContext) {
     let projectProvider = getProjectProvider(context);
 
+    let treeView: vscode.TreeView<LibertyProject> | undefined;
     if (vscode.workspace.workspaceFolders !== undefined) {
         registerFileWatcher(projectProvider);
-        const treeView = vscode.window.createTreeView("liberty-dev", {
+        treeView = vscode.window.createTreeView("liberty-dev", {
             treeDataProvider: projectProvider,
             showCollapseAll: false,
         });
@@ -148,6 +149,17 @@ function registerCommands(context: ExtensionContext) {
     // Command table — [id, handler] pairs registered in one pass.
     const commandTable: [string, (...args: any[]) => any][] = [
         [CMD_EXPLORER_REFRESH, () => projectProvider.manualRefresh()],
+        [CMD_EXPLORER_EXPAND_ALL, async () => {
+            if (!treeView) { return; }
+            const registry = ProjectRegistry.getInstance();
+            const depth = registry.getMaxAggregatorDepth();
+            if (depth === 0) { return; }
+            for (const root of registry.getRootProjects()) {
+                if (root.isAggregator) {
+                    await treeView.reveal(root, { expand: depth, select: false, focus: false });
+                }
+            }
+        }],
         ["extension.open.project", (pomPath: any) => devCommands.openProject(pomPath)],
         [CMD_OPEN_BUILD_FILE, (p?: LibertyProject) => devCommands.openBuildFile(p)],
         [CMD_SHOW_COMMANDS, () => devCommands.listAllCommands()],

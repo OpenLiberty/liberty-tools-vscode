@@ -27,6 +27,8 @@ export class ProjectRegistry {
 
 	private _rootProjects: LibertyProject[] = [];
 
+	private _maxAggregatorDepth: number = 0;
+
 	private _rejectedBuildFiles: string[] = [];
 
 	private _addedProjects: Map<string, LibertyProject> = new Map();
@@ -84,6 +86,14 @@ export class ProjectRegistry {
 
 	public setRootProjects(rootProjects: LibertyProject[]): void {
 		this._rootProjects = rootProjects;
+	}
+
+	public getMaxAggregatorDepth(): number {
+		return this._maxAggregatorDepth;
+	}
+
+	public setMaxAggregatorDepth(depth: number): void {
+		this._maxAggregatorDepth = depth;
 	}
 
 	public setRejectedBuildFiles(paths: string[]): void {

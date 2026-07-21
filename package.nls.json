@@ -1,6 +1,7 @@
 {
     "views.explorer.name": "Liberty Tools",
     "commands.title.refresh": "Refresh projects",
+    "commands.title.expand.all": "Expand all",
     "commands.title.collapse.all": "Collapse all",
     "commands.title.start": "Start",
     "commands.title.debug": "Attach debugger",

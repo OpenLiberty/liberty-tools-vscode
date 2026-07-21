@@ -36,6 +36,7 @@ export interface DiscoveryResult {
 	projects: Map<string, LibertyProject>;
 	rootProjects: LibertyProject[];
 	rejectedBuildFiles: string[];
+	maxAggregatorDepth: number;
 }
 
 /**
@@ -351,7 +352,7 @@ async function linkProjects(
 	projectsMap: Map<string, LibertyProject>,
 	mavenMetadataMap: Map<string, mavenUtil.MavenProjectMetadata>,
 	gradleMetadataMap: Map<string, gradleUtil.GradleProjectMetadata>
-): Promise<LibertyProject[]> {
+): Promise<{ rootProjects: LibertyProject[]; maxAggregatorDepth: number }> {
 	const t0 = Date.now();
 
 	for (const project of projectsMap.values()) {
@@ -419,8 +420,17 @@ async function linkProjects(
 			.filter(p => !p.parent)
 			.filter(p => p.isLibertyEnabled || hasLibertyDescendants(p))
 	);
-	console.log(`[perf] linkProjects: ${Date.now() - t0}ms  (${rootProjects.length} roots)`);
-	return rootProjects;
+
+	const aggregatorDepth = (project: LibertyProject, current: number): number => {
+		if (!project.isAggregator || project.children.length === 0) { return current; }
+		return Math.max(...project.children.map(c => aggregatorDepth(c, current + 1)));
+	};
+	const maxAggregatorDepth = rootProjects
+		.filter(p => p.isAggregator)
+		.reduce((max, p) => Math.max(max, aggregatorDepth(p, 1)), 0);
+
+	console.log(`[perf] linkProjects: ${Date.now() - t0}ms  (${rootProjects.length} roots, maxAggregatorDepth=${maxAggregatorDepth})`);
+	return { rootProjects, maxAggregatorDepth };
 }
 
 /**
@@ -538,9 +548,9 @@ export async function discoverWorkspace(
 	await addServerXMLProjects(context, newProjectsMap, existingProjects);
 
 	const { mavenMetadataMap, gradleMetadataMap } = await stampProjects(newProjectsMap, allEntries);
-	const rootProjects = await linkProjects(newProjectsMap, mavenMetadataMap, gradleMetadataMap);
+	const { rootProjects, maxAggregatorDepth } = await linkProjects(newProjectsMap, mavenMetadataMap, gradleMetadataMap);
 	const rejectedBuildFiles = allEntries.map(e => e.path).filter(p => !newProjectsMap.has(p));
 
 	console.log(`[perf] discoverWorkspace total: ${Date.now() - t0}ms  (${newProjectsMap.size} projects, ${rootProjects.length} roots)`);
-	return { projects: newProjectsMap, rootProjects, rejectedBuildFiles };
+	return { projects: newProjectsMap, rootProjects, rejectedBuildFiles, maxAggregatorDepth };
 }
