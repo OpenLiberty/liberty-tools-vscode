@@ -5,14 +5,15 @@
 import * as vscode from "vscode";
 import * as util from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
-import { devModeRequirement } from "../util/helperUtil";
+import { devModeRequirement, computeContextValue } from "../util/helperUtil";
 import { UNTITLED_WORKSPACE, SORT_ORDER_KEY, SortOrder } from "../definitions/constants";
-import { LibertyProject } from "./libertyProject";
+import { LibertyProject, DevModeState } from "./libertyProject";
 import { ProjectRegistry } from "./projectRegistry";
 import { discoverWorkspace, sortByWorkspaceOrder } from "./projectDiscovery";
 
-// URI scheme used to signal dev-mode state to the FileDecorationProvider (enables green UI)
-// Format: liberty-dev://running/<encoded-project-path>
+// URI scheme used to signal dev-mode state to the FileDecorationProvider
+// Format: liberty-dev://<state>/<encoded-project-path>
+// Authorities: "running" | "starting" | "stopping"
 const LIBERTY_DEV_SCHEME = "liberty-dev";
 
 export class LibertyDevDecorationProvider {
@@ -24,13 +25,26 @@ export class LibertyDevDecorationProvider {
 	}
 
 	provideFileDecoration(uri: vscode.Uri): { color: vscode.ThemeColor; tooltip: string } | undefined {
-		if (uri.scheme === LIBERTY_DEV_SCHEME && uri.authority === "running") {
-			return {
-				color: new vscode.ThemeColor("debugIcon.startForeground"),
-				tooltip: "Dev mode is running",
-			};
+		if (uri.scheme !== LIBERTY_DEV_SCHEME) { return undefined; }
+		switch (uri.authority) {
+			case "running":
+				return {
+					color: new vscode.ThemeColor("debugIcon.startForeground"),
+					tooltip: "Dev mode is running",
+				};
+			case "starting":
+				return {
+					color: new vscode.ThemeColor("charts.yellow"),
+					tooltip: "Liberty server is starting",
+				};
+			case "stopping":
+				return {
+					color: new vscode.ThemeColor("charts.yellow"),
+					tooltip: "Liberty server is stopping",
+				};
+			default:
+				return undefined;
 		}
-		return undefined;
 	}
 }
 
@@ -109,24 +123,46 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 	}
 
 	/**
-	 * Update the tree item to reflect the new dev mode state.
+	 * Update the tree item to reflect the new dev mode state. Also update aggregator
 	 */
 	public notifyDevModeChanged(project: LibertyProject): void {
-		if (project.isDevMode) {
-			project.description = localize("liberty.view.running");
-			project.resourceUri = vscode.Uri.parse(
-				`${LIBERTY_DEV_SCHEME}://running/${encodeURIComponent(project.path)}`
-			);
-		} else {
-			project.description = undefined;
-			project.resourceUri = undefined;
+		const encoded = encodeURIComponent(project.path);
+		switch (project.state) {
+			case DevModeState.Starting:
+				project.description = localize("liberty.view.starting");
+				project.resourceUri = vscode.Uri.parse(`${LIBERTY_DEV_SCHEME}://starting/${encoded}`);
+				break;
+			case DevModeState.Running:
+				project.description = localize("liberty.view.running");
+				project.resourceUri = vscode.Uri.parse(`${LIBERTY_DEV_SCHEME}://running/${encoded}`);
+				break;
+			case DevModeState.Stopping:
+				project.description = localize("liberty.view.stopping");
+				project.resourceUri = vscode.Uri.parse(`${LIBERTY_DEV_SCHEME}://stopping/${encoded}`);
+				break;
+			default:
+				project.description = undefined;
+				project.resourceUri = undefined;
+				break;
 		}
-		project.contextValue = project.isDevMode
-			? `${project.baseContextValue}:running`
-			: project.baseContextValue;
+		project.contextValue = computeContextValue(project.baseContextValue, project.state);
 		this._onDidChangeTreeData.fire(project);
 		if (project.resourceUri) {
 			this.decorationProvider.notify(project.resourceUri);
+		}
+		if (project.parent) {
+			this._updateAggregatorDescription(project.parent);
+		}
+	}
+
+	private _updateAggregatorDescription(aggregator: LibertyProject): void {
+		const descendants = this._registry.findLibertyDescendants(aggregator);
+		const total = descendants.length;
+		const running = descendants.filter(d => d.state === DevModeState.Running).length;
+		aggregator.description = running > 0 ? `${running}/${total} Running...` : undefined;
+		this._onDidChangeTreeData.fire(aggregator);
+		if (aggregator.parent) {
+			this._updateAggregatorDescription(aggregator.parent);
 		}
 	}
 
@@ -247,7 +283,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 			const req = devModeRequirement(command);
 			const eligible = req === undefined
 				? libertyChildren
-				: libertyChildren.filter(c => c.isDevMode === req);
+				: libertyChildren.filter(c => req === true ? c.state !== undefined : c.state === undefined);
 			if (eligible.length === 0) {
 				const msg = req === true
 					? localize("no.modules.currently.running", project.label)

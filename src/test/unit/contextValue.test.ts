@@ -4,26 +4,36 @@
  */
 import { strict as assert } from "assert";
 import { computeContextValue } from "../../util/helperUtil";
+import { DevModeState } from "../../liberty/libertyProject";
 
 // ---------------------------------------------------------------------------
 // computeContextValue
 // ---------------------------------------------------------------------------
 
-describe("computeContextValue — isDevMode false", () => {
+describe("computeContextValue — state undefined (stopped)", () => {
     it("returns base unchanged when not running", () => {
-        assert.equal(computeContextValue("libertyProject:maven", false), "libertyProject:maven");
+        assert.equal(computeContextValue("libertyProject:maven", undefined), "libertyProject:maven");
     });
 });
 
-describe("computeContextValue — isDevMode true", () => {
-    it("appends :running when running", () => {
-        assert.equal(computeContextValue("libertyProject:maven", true), "libertyProject:maven:running");
+describe("computeContextValue — state 'started'", () => {
+    it("appends :running when started", () => {
+        assert.equal(computeContextValue("libertyProject:maven", DevModeState.Running), "libertyProject:maven:running");
+    });
+});
+
+describe("computeContextValue — state 'starting' or 'stopping'", () => {
+    it("does not append :running when starting", () => {
+        assert.equal(computeContextValue("libertyProject:maven", DevModeState.Starting), "libertyProject:maven");
+    });
+    it("does not append :running when stopping", () => {
+        assert.equal(computeContextValue("libertyProject:maven", DevModeState.Stopping), "libertyProject:maven");
     });
 });
 
 describe("computeContextValue — aggregator", () => {
     it("never appends :running to an aggregator", () => {
-        assert.equal(computeContextValue("libertyProject:maven:aggregator", true), "libertyProject:maven:aggregator");
+        assert.equal(computeContextValue("libertyProject:maven:aggregator", DevModeState.Running), "libertyProject:maven:aggregator");
     });
 });
 

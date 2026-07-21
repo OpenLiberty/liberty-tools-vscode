@@ -9,7 +9,7 @@ import * as vscode from "vscode";
 import * as helperUtil from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
 import { QuickPickItem } from "vscode";
-import { LibertyProject } from "./libertyProject";
+import { LibertyProject, DevModeState } from "./libertyProject";
 import { ProjectRegistry } from "./projectRegistry";
 import { ProjectTreeProvider } from "./projectTreeProvider";
 import { getReport } from "../util/helperUtil";
@@ -26,6 +26,25 @@ import { ProjectStartCmdParam } from "./projectStartCmdParam";
 import { getCommandForMaven, getCommandForGradle, defaultWindowsShell } from "../util/commandUtils";
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
+
+function waitForShellIntegration(terminal: vscode.Terminal, timeoutMs = 5000): Promise<vscode.TerminalShellIntegration | undefined> {
+    if (terminal.shellIntegration) { return Promise.resolve(terminal.shellIntegration); }
+    return new Promise(resolve => {
+        const timer = setTimeout(() => {
+            sub.dispose();
+            console.warn(`[waitForShellIntegration] timed out after ${timeoutMs}ms for terminal=${terminal.name}`);
+            resolve(undefined);
+        }, timeoutMs);
+        const sub = vscode.window.onDidChangeTerminalShellIntegration(event => {
+            console.log(`[waitForShellIntegration] onDidChangeTerminalShellIntegration fired, terminal=${event.terminal.name}, match=${event.terminal === terminal}`);
+            if (event.terminal === terminal) {
+                clearTimeout(timer);
+                sub.dispose();
+                resolve(event.shellIntegration);
+            }
+        });
+    });
+}
 
 class LibertyProjectQuickPickItem implements QuickPickItem {
 
@@ -69,19 +88,19 @@ export async function openBuildFile(libProject?: LibertyProject): Promise<void> 
 
 // List all liberty dev commands, triggered by hotkey (Shift+Alt+L)
 const COMMAND_TITLES = new Map<string, string>([
-    [localize("hotkey.commands.title.refresh"),                      CMD_EXPLORER_REFRESH],
-    [localize("hotkey.commands.title.start"),                        CMD_START],
-    [localize("hotkey.commands.title.start.custom"),                 CMD_CUSTOM],
-    [localize("hotkey.commands.title.start.in.container"),           CMD_START_CONTAINER],
-    [localize("hotkey.commands.title.debug"),                        CMD_DEBUG],
-    [localize("hotkey.commands.title.stop"),                         CMD_STOP],
-    [localize("hotkey.commands.title.run.tests"),                    CMD_RUN_TESTS],
+    [localize("hotkey.commands.title.refresh"), CMD_EXPLORER_REFRESH],
+    [localize("hotkey.commands.title.start"), CMD_START],
+    [localize("hotkey.commands.title.start.custom"), CMD_CUSTOM],
+    [localize("hotkey.commands.title.start.in.container"), CMD_START_CONTAINER],
+    [localize("hotkey.commands.title.debug"), CMD_DEBUG],
+    [localize("hotkey.commands.title.stop"), CMD_STOP],
+    [localize("hotkey.commands.title.run.tests"), CMD_RUN_TESTS],
     [localize("hotkey.commands.title.view.integration.test.report"), CMD_OPEN_FAILSAFE_REPORT],
-    [localize("hotkey.commands.title.view.unit.test.report"),        CMD_OPEN_SUREFIRE_REPORT],
-    [localize("hotkey.commands.title.view.test.report"),             CMD_OPEN_GRADLE_TEST_REPORT],
-    [localize("hotkey.commands.title.add.project"),                  CMD_ADD_PROJECT],
-    [localize("hotkey.commands.title.remove.project"),               CMD_REMOVE_PROJECT],
-    [localize("hotkey.commands.title.open.build.file"),              CMD_OPEN_BUILD_FILE],
+    [localize("hotkey.commands.title.view.unit.test.report"), CMD_OPEN_SUREFIRE_REPORT],
+    [localize("hotkey.commands.title.view.test.report"), CMD_OPEN_GRADLE_TEST_REPORT],
+    [localize("hotkey.commands.title.add.project"), CMD_ADD_PROJECT],
+    [localize("hotkey.commands.title.remove.project"), CMD_REMOVE_PROJECT],
+    [localize("hotkey.commands.title.open.build.file"), CMD_OPEN_BUILD_FILE],
 ]);
 
 export async function listAllCommands(): Promise<void> {
@@ -127,15 +146,25 @@ async function sendDevModeCommand(
     mavenGoal: string,
     gradleTask: string,
     customCommand?: string
-): Promise<void> {
+): Promise<boolean> {
+    let cmd: string | undefined;
     if (isMaven(project.getContextValue())) {
         const pomPath = project.parent ? project.parent.getPath() : project.getPath();
         const artifactId = project.parent ? project.artifactId : undefined;
-        const cmd = await getCommandForMaven(pomPath, mavenGoal, project.getTerminalType(), customCommand, artifactId);
-        terminal.sendText(cmd);
+        cmd = await getCommandForMaven(pomPath, mavenGoal, project.getTerminalType(), customCommand, artifactId);
     } else if (isGradle(project.getContextValue())) {
-        const cmd = await getCommandForGradle(project.getPath(), gradleTask, project.getTerminalType(), customCommand);
+        cmd = await getCommandForGradle(project.getPath(), gradleTask, project.getTerminalType(), customCommand);
+    }
+    if (cmd === undefined) { return false; }
+    const si = terminal.shellIntegration ?? await waitForShellIntegration(terminal);
+    if (si) {
+        console.log(`[sendDevModeCommand] using shellIntegration.executeCommand for ${project.label}`);
+        si.executeCommand(cmd);
+        return true;
+    } else {
+        console.log(`[sendDevModeCommand] shellIntegration not ready after timeout, falling back to sendText for ${project.label}`);
         terminal.sendText(cmd);
+        return false;
     }
 }
 
@@ -156,8 +185,8 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
     console.log(localize("starting.liberty.dev.on", targetProject.getLabel()));
     const terminal = ensureTerminal(targetProject);
     if (terminal !== undefined) {
-        await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV);
-        targetProject.isDevMode = true;
+        const tracked = await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV);
+        targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
         projectProvider.notifyDevModeChanged(targetProject);
     }
 }
@@ -255,7 +284,7 @@ export async function stopDevMode(libProject?: LibertyProject | undefined): Prom
         terminal.show();
         terminal.sendText("exit");
         terminal.dispose();
-        targetProject.isDevMode = false;
+        targetProject.setState(DevModeState.Stopping);
         projectProvider.notifyDevModeChanged(targetProject);
     } else {
         const message = localize("liberty.dev.not.started.on", targetProject.getLabel());
@@ -419,8 +448,8 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
                 await helperUtil.saveStorageData(registry.getContext(), dashboardData);
             }
 
-            await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, customCommand);
-            targetProject.isDevMode = true;
+            const tracked = await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, customCommand);
+            targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
             projectProvider.notifyDevModeChanged(targetProject);
         }
     }
@@ -442,8 +471,8 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
 
     const terminal = ensureTerminal(targetProject);
     if (terminal !== undefined) {
-        await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEVC, GRADLE_TASK_DEVC);
-        targetProject.isDevMode = true;
+        const tracked = await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEVC, GRADLE_TASK_DEVC);
+        targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
         projectProvider.notifyDevModeChanged(targetProject);
     }
 }
@@ -514,10 +543,9 @@ export async function deleteTerminal(terminal: vscode.Terminal): Promise<void> {
     try {
         const pid = await terminal.processId;
         const libProject = terminals[Number(pid)];
-        libProject.isDevMode = false;
+        libProject.deleteTerminal();
         const pp = ProjectTreeProvider.getInstance();
         if (pp) { pp.notifyDevModeChanged(libProject); }
-        libProject.deleteTerminal();
     } catch {
         console.error(localize("unable.to.delete.terminal", terminal.name));
     }

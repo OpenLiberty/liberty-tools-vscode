@@ -13,15 +13,30 @@ const MAVEN_ICON = "maven-tag.png";
 const GRADLE_ICON = "gradle-tag-1.png";
 const OL_LOGO_ICON = "ol_logo.png";
 
+export enum DevModeState {
+	Starting = "starting",
+	Running  = "running",
+	Stopping = "stopping",
+}
+
+/**
+ * CWWKF0011I = server ready (starting → started)
+ * CWWKE0036I = server stopped (stopping → cleared)
+ */
+export const LIBERTY_MSG_STARTED = "CWWKF0011I";
+export const LIBERTY_MSG_STOPPED = "CWWKE0036I";
+
 export class LibertyProject extends vscode.TreeItem {
 	public parent?: LibertyProject;
 	public children: LibertyProject[] = [];
 	public isAggregator: boolean = false;
 	public isLibertyEnabled: boolean = false;
-	public isDevMode: boolean = false;
 	public artifactId: string = "";
 	public parentArtifactId?: string;
 	public baseContextValue: string;
+
+	// disposable for the project shell execution listener. disposes on terminal close.
+	private _monitorDisposable?: vscode.Disposable;
 
 	constructor(
 		private _context: vscode.ExtensionContext,
@@ -29,7 +44,7 @@ export class LibertyProject extends vscode.TreeItem {
 		public collapsibleState: vscode.TreeItemCollapsibleState,
 		// tslint:disable-next-line: no-shadowed-variable
 		public readonly path: string,
-		public state: string,
+		public state: DevModeState | undefined,
 		// valid context values are defined in src/definitions/constants.ts
 		public contextValue: string,
 		public terminal?: vscode.Terminal,
@@ -40,7 +55,7 @@ export class LibertyProject extends vscode.TreeItem {
 		this.tooltip = this.path;
 		this.children = [];
 		this.baseContextValue = contextValue;
-		this.contextValue = computeContextValue(contextValue, false);
+		this.contextValue = computeContextValue(contextValue, undefined);
 	}
 
 	private EXPLORER_ICON = this.setExplorerIcon();
@@ -58,12 +73,13 @@ export class LibertyProject extends vscode.TreeItem {
 		this.label = label;
 	}
 
-	public getState(): string {
-		return `${this.state}`;
+	public getState(): DevModeState | undefined {
+		return this.state;
 	}
 
-	public setState(state: string): void {
+	public setState(state: DevModeState | undefined): void {
 		this.state = state;
+		this.contextValue = computeContextValue(this.baseContextValue, state);
 	}
 
 	public getPath(): string {
@@ -76,7 +92,7 @@ export class LibertyProject extends vscode.TreeItem {
 
 	public setContextValue(contextValue: string): void {
 		this.baseContextValue = contextValue;
-		this.contextValue = computeContextValue(contextValue, this.isDevMode);
+		this.contextValue = computeContextValue(contextValue, this.state);
 	}
 
 	public getTerminal(): vscode.Terminal | undefined {
@@ -106,7 +122,7 @@ export class LibertyProject extends vscode.TreeItem {
 					env = { JAVA_HOME: javaHome };
 				}
 			}
-			const terminal = vscode.window.createTerminal({ cwd: projectHome, name: this.label + " (liberty dev)", env: env, message: "" } as any);
+			const terminal = vscode.window.createTerminal({ cwd: projectHome, name: this.label + " (liberty dev)", env: env } as vscode.TerminalOptions);
 			return terminal;
 		}
 		return undefined;
@@ -114,6 +130,38 @@ export class LibertyProject extends vscode.TreeItem {
 
 	public deleteTerminal(): void {
 		delete this.terminal;
+		this.cleanupShellListener();
+		this.setState(undefined);
+	}
+
+	public enableShellListener(execution: vscode.TerminalShellExecution, onStateChange: (project: LibertyProject) => void): void {
+		console.log(`[startMonitoring] called for ${this.label}, state=${this.state}`);
+		this.cleanupShellListener();
+		const stream = execution.read();
+		let disposed = false;
+		const disposable = { dispose: () => { disposed = true; } };
+		this._monitorDisposable = disposable;
+		(async () => {
+			for await (const chunk of stream) {
+				if (disposed) { break; }
+				if (chunk.includes(LIBERTY_MSG_STARTED) && this.state === DevModeState.Starting) {
+					this.setState(DevModeState.Running);
+					onStateChange(this);
+					vscode.window.showInformationMessage(`Liberty server started: ${this.label}`);
+				} else if (chunk.includes(LIBERTY_MSG_STOPPED)) {
+					this.setState(undefined);
+					onStateChange(this);
+					break;
+				}
+			}
+		})();
+	}
+
+	private cleanupShellListener(): void {
+		if (this._monitorDisposable) {
+			this._monitorDisposable.dispose();
+			this._monitorDisposable = undefined;
+		}
 	}
 
 	public setExplorerIcon() {
@@ -125,7 +173,7 @@ export class LibertyProject extends vscode.TreeItem {
 
 export async function createProject(context: vscode.ExtensionContext, buildFile: string, contextValue: string, xmlString?: string): Promise<LibertyProject> {
 	const label = await getLabelFromBuildFile(buildFile, xmlString);
-	const project: LibertyProject = new LibertyProject(context, label, vscode.TreeItemCollapsibleState.None, buildFile, "start", contextValue, undefined, undefined);
+	const project: LibertyProject = new LibertyProject(context, label, vscode.TreeItemCollapsibleState.None, buildFile, undefined, contextValue, undefined, undefined);
 	// command: "extension.open.project",
 	// title: "",
 	// arguments: [buildFile],
