@@ -15,7 +15,7 @@ const OL_LOGO_ICON = "ol_logo.png";
 
 export enum DevModeState {
 	Starting = "starting",
-	Running  = "running",
+	Running = "running",
 	Stopping = "stopping",
 }
 
@@ -153,6 +153,11 @@ export class LibertyProject extends vscode.TreeItem {
 					onStateChange(this);
 					break;
 				}
+			}
+			if (!disposed && this.state === DevModeState.Starting) {
+				console.log(`[startMonitoring] stream ended while Starting for ${this.label} — build likely failed, resetting state`);
+				this.setState(undefined);
+				onStateChange(this);
 			}
 		})();
 	}

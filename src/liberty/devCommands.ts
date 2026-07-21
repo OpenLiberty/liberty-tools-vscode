@@ -27,6 +27,20 @@ import { getCommandForMaven, getCommandForGradle, defaultWindowsShell } from "..
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 
+async function revealProjectsInTree(projects: LibertyProject[], treeView: vscode.TreeView<LibertyProject>): Promise<void> {
+    for (const project of projects) {
+        const chain: LibertyProject[] = [];
+        let cursor: LibertyProject | undefined = project;
+        while (cursor) {
+            chain.unshift(cursor);
+            cursor = cursor.parent;
+        }
+        for (const node of chain) {
+            await treeView.reveal(node, { expand: node !== project, select: node === project, focus: false });
+        }
+    }
+}
+
 function waitForShellIntegration(terminal: vscode.Terminal, timeoutMs = 5000): Promise<vscode.TerminalShellIntegration | undefined> {
     if (terminal.shellIntegration) { return Promise.resolve(terminal.shellIntegration); }
     return new Promise(resolve => {
@@ -165,7 +179,7 @@ async function sendDevModeCommand(
     }
 }
 
-export async function startDevMode(libProject?: LibertyProject | undefined): Promise<void> {
+export async function startDevMode(libProject?: LibertyProject | undefined, treeView?: vscode.TreeView<LibertyProject>): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
         const message = localize("cannot.start.liberty.dev");
@@ -177,6 +191,7 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
     if (targetProjects === undefined) {
         return;
     }
+    if (libProject === undefined && treeView) { await revealProjectsInTree(targetProjects, treeView); }
 
     await Promise.all(targetProjects.map(async targetProject => {
         console.log(localize("starting.liberty.dev.on", targetProject.getLabel()));
@@ -358,7 +373,7 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
 
 
 
-export async function customDevModeWithHistory(libProject?: LibertyProject | undefined): Promise<void> {
+export async function customDevModeWithHistory(libProject?: LibertyProject | undefined, treeView?: vscode.TreeView<LibertyProject>): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
         const message = localize("cannot.custom.start.liberty.dev");
@@ -370,6 +385,7 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
     if (targetProjects === undefined) {
         return;
     }
+    if (libProject === undefined && treeView) { await revealProjectsInTree(targetProjects, treeView); }
 
     for (const targetProject of targetProjects) {
         const dashboardData: DashboardData = helperUtil.getStorageData(ProjectRegistry.getInstance().getContext());
@@ -453,7 +469,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
     }
 }
 
-export async function startContainerDevMode(libProject?: LibertyProject | undefined): Promise<void> {
+export async function startContainerDevMode(libProject?: LibertyProject | undefined, treeView?: vscode.TreeView<LibertyProject>): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
         const message = localize("cannot.start.liberty.dev.in.container.on.undefined.project");
@@ -465,6 +481,7 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
     if (targetProjects === undefined) {
         return;
     }
+    if (libProject === undefined && treeView) { await revealProjectsInTree(targetProjects, treeView); }
 
     await Promise.all(targetProjects.map(async targetProject => {
         const terminal = ensureTerminal(targetProject);
