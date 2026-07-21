@@ -76,7 +76,7 @@
 			{
 				"command": "liberty.starterProject",
 				"category": "Liberty",
-				"title": "Open Liberty Starter Project"
+				"title": "%commands.title.starter.project%"
 			},
 			{
 				"command": "liberty.dev.show.commands",
