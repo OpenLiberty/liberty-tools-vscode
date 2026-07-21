@@ -26,7 +26,7 @@ export async function starterProject(context: ExtensionContext) {
 
     const title = localize("starter.title");
 
-    async function inputGroupName(input: MultiStepInput, state: Partial<State>) :Promise<any> {
+    async function inputGroupName(input: MultiStepInput, state: Partial<State>) {
         state.g = await input.showInputBox({
             title,
             step: 1,
@@ -39,7 +39,7 @@ export async function starterProject(context: ExtensionContext) {
         return (input: MultiStepInput) => inputArtifactName(input, state);
     }
 
-    async function inputArtifactName(input: MultiStepInput, state: Partial<State>) :Promise<any> {
+    async function inputArtifactName(input: MultiStepInput, state: Partial<State>) {
         state.a = await input.showInputBox({
             title,
             step: 2,
