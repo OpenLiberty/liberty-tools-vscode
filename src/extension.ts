@@ -138,6 +138,7 @@ function registerCommands(context: ExtensionContext) {
             treeDataProvider: projectProvider,
             showCollapseAll: false,
         });
+
         context.subscriptions.push(treeView);
         context.subscriptions.push(
             (vscode.window as any).registerFileDecorationProvider(projectProvider.decorationProvider)
@@ -163,11 +164,11 @@ function registerCommands(context: ExtensionContext) {
         ["extension.open.project", (pomPath: any) => devCommands.openProject(pomPath)],
         [CMD_OPEN_BUILD_FILE, (p?: LibertyProject) => devCommands.openBuildFile(p)],
         [CMD_SHOW_COMMANDS, () => devCommands.listAllCommands()],
-        [CMD_START, (p?: LibertyProject) => devCommands.startDevMode(p)],
+        [CMD_START, (p?: LibertyProject) => devCommands.startDevMode(p, treeView)],
         [CMD_DEBUG, (p?: LibertyProject) => devCommands.attachDebugger(p)],
         [CMD_STOP, (p?: LibertyProject) => devCommands.stopDevMode(p)],
-        [CMD_CUSTOM, (p?: LibertyProject) => devCommands.customDevModeWithHistory(p)],
-        [CMD_START_CONTAINER, (p?: LibertyProject) => devCommands.startContainerDevMode(p)],
+        [CMD_CUSTOM, (p?: LibertyProject) => devCommands.customDevModeWithHistory(p, treeView)],
+        [CMD_START_CONTAINER, (p?: LibertyProject) => devCommands.startContainerDevMode(p, treeView)],
         [CMD_RUN_TESTS, (p?: LibertyProject) => devCommands.runTests(p)],
         [CMD_OPEN_FAILSAFE_REPORT, (p?: LibertyProject) => devCommands.openReport("failsafe", p)],
         [CMD_OPEN_SUREFIRE_REPORT, (p?: LibertyProject) => devCommands.openReport("surefire", p)],

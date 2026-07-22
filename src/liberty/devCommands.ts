@@ -27,6 +27,20 @@ import { getCommandForMaven, getCommandForGradle, defaultWindowsShell } from "..
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 
+async function revealProjectsInTree(projects: LibertyProject[], treeView: vscode.TreeView<LibertyProject>): Promise<void> {
+    for (const project of projects) {
+        const chain: LibertyProject[] = [];
+        let cursor: LibertyProject | undefined = project;
+        while (cursor) {
+            chain.unshift(cursor);
+            cursor = cursor.parent;
+        }
+        for (const node of chain) {
+            await treeView.reveal(node, { expand: node !== project, select: node === project, focus: false });
+        }
+    }
+}
+
 function waitForShellIntegration(terminal: vscode.Terminal, timeoutMs = 5000): Promise<vscode.TerminalShellIntegration | undefined> {
     if (terminal.shellIntegration) { return Promise.resolve(terminal.shellIntegration); }
     return new Promise(resolve => {
@@ -60,12 +74,10 @@ class LibertyProjectQuickPickItem implements QuickPickItem {
         this.description = itemDescription;
     }
 }
-// opens pom associated with LibertyProject and starts dev mode
 export async function openProject(pomPath: string): Promise<void> {
     vscode.commands.executeCommand("vscode.open", vscode.Uri.file(pomPath));
 }
 
-// open the build file (pom.xml / build.gradle) for a Liberty project
 export async function openBuildFile(libProject?: LibertyProject): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
@@ -74,16 +86,15 @@ export async function openBuildFile(libProject?: LibertyProject): Promise<void> 
         vscode.window.showInformationMessage(message);
         return;
     }
-    // If the command is selected by the icon in the tree view, directly open that build file.
     if (libProject !== undefined) {
         vscode.commands.executeCommand("vscode.open", vscode.Uri.file(libProject.getPath()));
         return;
     }
-    const targetProject = await projectProvider.pickProject(undefined, CMD_OPEN_BUILD_FILE);
-    if (targetProject === undefined) {
+    const targetProjects = await projectProvider.pickProject(undefined, CMD_OPEN_BUILD_FILE);
+    if (targetProjects === undefined) {
         return;
     }
-    vscode.commands.executeCommand("vscode.open", vscode.Uri.file(targetProject.getPath()));
+    await Promise.all(targetProjects.map(p => vscode.commands.executeCommand("vscode.open", vscode.Uri.file(p.getPath()))));
 }
 
 // List all liberty dev commands, triggered by hotkey (Shift+Alt+L)
@@ -168,8 +179,7 @@ async function sendDevModeCommand(
     }
 }
 
-// start dev mode
-export async function startDevMode(libProject?: LibertyProject | undefined): Promise<void> {
+export async function startDevMode(libProject?: LibertyProject | undefined, treeView?: vscode.TreeView<LibertyProject>): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
         const message = localize("cannot.start.liberty.dev");
@@ -177,18 +187,21 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
         vscode.window.showInformationMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, CMD_START);
-    if (targetProject === undefined) {
+    const targetProjects = await projectProvider.pickProject(libProject, CMD_START);
+    if (targetProjects === undefined) {
         return;
     }
+    if (libProject === undefined && treeView) { await revealProjectsInTree(targetProjects, treeView); }
 
-    console.log(localize("starting.liberty.dev.on", targetProject.getLabel()));
-    const terminal = ensureTerminal(targetProject);
-    if (terminal !== undefined) {
-        const tracked = await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV);
-        targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
-        projectProvider.notifyDevModeChanged(targetProject);
-    }
+    await Promise.all(targetProjects.map(async targetProject => {
+        console.log(localize("starting.liberty.dev.on", targetProject.getLabel()));
+        const terminal = ensureTerminal(targetProject);
+        if (terminal !== undefined) {
+            const tracked = await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV);
+            targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
+            projectProvider.notifyDevModeChanged(targetProject);
+        }
+    }));
 }
 
 export async function removeProject(): Promise<void> {
@@ -264,7 +277,6 @@ export async function addProject(): Promise<void> {
         await addProjectsToTheDashBoard(projectProvider, selection.detail);
     });
 }
-// stop dev mode
 export async function stopDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
@@ -273,26 +285,27 @@ export async function stopDevMode(libProject?: LibertyProject | undefined): Prom
         vscode.window.showInformationMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, CMD_STOP);
-    if (targetProject === undefined) {
+    const targetProjects = await projectProvider.pickProject(libProject, CMD_STOP);
+    if (targetProjects === undefined) {
         return;
     }
 
-    console.log(localize("stopping.liverty.dev.on", targetProject.getLabel()));
-    const terminal = targetProject.getTerminal();
-    if (terminal !== undefined) {
-        terminal.show();
-        terminal.sendText("exit");
-        terminal.dispose();
-        targetProject.setState(DevModeState.Stopping);
-        projectProvider.notifyDevModeChanged(targetProject);
-    } else {
-        const message = localize("liberty.dev.not.started.on", targetProject.getLabel());
-        vscode.window.showWarningMessage(message);
-    }
+    await Promise.all(targetProjects.map(async targetProject => {
+        console.log(localize("stopping.liverty.dev.on", targetProject.getLabel()));
+        const terminal = targetProject.getTerminal();
+        if (terminal !== undefined) {
+            terminal.show();
+            terminal.sendText("exit");
+            terminal.dispose();
+            targetProject.setState(DevModeState.Stopping);
+            projectProvider.notifyDevModeChanged(targetProject);
+        } else {
+            const message = localize("liberty.dev.not.started.on", targetProject.getLabel());
+            vscode.window.showWarningMessage(message);
+        }
+    }));
 }
 
-// attach debugger
 export async function attachDebugger(libProject?: LibertyProject | undefined): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
@@ -301,65 +314,66 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
         vscode.window.showErrorMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, CMD_DEBUG);
-    if (targetProject === undefined) {
+    const targetProjects = await projectProvider.pickProject(libProject, CMD_DEBUG);
+    if (targetProjects === undefined) {
         return;
     }
 
-    const EXCLUDED_DIR_PATTERN = "**/{bin,classes}/**";
-    let pathPrefix = "";
-    if (isMaven(targetProject.getContextValue())) {
-        pathPrefix = "target";
-    } else if (isGradle(targetProject.getContextValue())) {
-        pathPrefix = "build";
-    }
-    let paths: string[] = [];
-    if (pathPrefix !== "") {
-        const serverEnvPattern = new vscode.RelativePattern(Path.dirname(targetProject.getPath()), pathPrefix + "/**/server.env");
-        paths = (await vscode.workspace.findFiles(serverEnvPattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
-    }
-    if (paths.length === 1) {
-        console.log(localize("attach.debugger.liverty.dev.in", targetProject.getLabel()));
-        const file = Path.resolve(paths[0]);
-        const lines = await fse.readFileSync(file, "utf8").split("\n");
-        let port = "";
-        for (let i = 0; i < lines.length && port === ""; i++) {
-            const line = lines[i];
-            let match = undefined;
-            if ((match = LIBERTY_SERVER_ENV_PORT_REGEX.exec(line)) !== null) {
-                port = match[1];
-            }
+    for (const targetProject of targetProjects) {
+
+        const EXCLUDED_DIR_PATTERN = "**/{bin,classes}/**";
+        let pathPrefix = "";
+        if (isMaven(targetProject.getContextValue())) {
+            pathPrefix = "target";
+        } else if (isGradle(targetProject.getContextValue())) {
+            pathPrefix = "build";
         }
-        if (port !== "") {
-            const path = Path.dirname(targetProject.getPath());
-            const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(targetProject.getPath()));
-            vscode.debug.startDebugging(workspaceFolder, {
-                "type": "java",
-                "name": localize("liberty.dev.debug.label", Path.dirname(targetProject.getPath())),
-                "request": "attach",
-                "hostName": "localhost",
-                "port": port,
-                "cwd": path,
-                "projectName": targetProject.getLabel()
-            }).then(() => {
-                // do not show any message
-            }, err => {
-                vscode.window.showErrorMessage(localize("liberty.dev.attach.debugger.failed.with.error", err.message));
-            });
+        let paths: string[] = [];
+        if (pathPrefix !== "") {
+            const serverEnvPattern = new vscode.RelativePattern(Path.dirname(targetProject.getPath()), pathPrefix + "/**/server.env");
+            paths = (await vscode.workspace.findFiles(serverEnvPattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
+        }
+        if (paths.length === 1) {
+            console.log(localize("attach.debugger.liverty.dev.in", targetProject.getLabel()));
+            const file = Path.resolve(paths[0]);
+            const lines = await fse.readFileSync(file, "utf8").split("\n");
+            let port = "";
+            for (let i = 0; i < lines.length && port === ""; i++) {
+                const line = lines[i];
+                let match = undefined;
+                if ((match = LIBERTY_SERVER_ENV_PORT_REGEX.exec(line)) !== null) {
+                    port = match[1];
+                }
+            }
+            if (port !== "") {
+                const path = Path.dirname(targetProject.getPath());
+                const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(targetProject.getPath()));
+                vscode.debug.startDebugging(workspaceFolder, {
+                    "type": "java",
+                    "name": localize("liberty.dev.debug.label", Path.dirname(targetProject.getPath())),
+                    "request": "attach",
+                    "hostName": "localhost",
+                    "port": port,
+                    "cwd": path,
+                    "projectName": targetProject.getLabel()
+                }).then(() => {
+                }, err => {
+                    vscode.window.showErrorMessage(localize("liberty.dev.attach.debugger.failed.with.error", err.message));
+                });
+            } else {
+                const message = localize("liberty.dev.attach.debugger.failed.no.port.in.server.env", file);
+                vscode.window.showErrorMessage(message);
+            }
         } else {
-            const message = localize("liberty.dev.attach.debugger.failed.no.port.in.server.env", file);
+            const message = localize("liberty.dev.attach.debugger.failed");
             vscode.window.showErrorMessage(message);
         }
-    } else {
-        const message = localize("liberty.dev.attach.debugger.failed");
-        vscode.window.showErrorMessage(message);
     }
 }
 
 
 
-// custom start dev mode command with history list
-export async function customDevModeWithHistory(libProject?: LibertyProject | undefined): Promise<void> {
+export async function customDevModeWithHistory(libProject?: LibertyProject | undefined, treeView?: vscode.TreeView<LibertyProject>): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
         const message = localize("cannot.custom.start.liberty.dev");
@@ -367,30 +381,30 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
         vscode.window.showInformationMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, CMD_CUSTOM);
-    if (targetProject === undefined) {
+    const targetProjects = await projectProvider.pickProject(libProject, CMD_CUSTOM);
+    if (targetProjects === undefined) {
         return;
     }
+    if (libProject === undefined && treeView) { await revealProjectsInTree(targetProjects, treeView); }
 
-    // check if we have history for the selected project.
-    const dashboardData: DashboardData = helperUtil.getStorageData(ProjectRegistry.getInstance().getContext());
-    const history = dashboardData.lastUsedStartParams.filter(element => element.path === targetProject.getPath());
-    if (history.length === 0) {
-        // no history, show input.
-        await customDevMode(targetProject);
-    } else {
-        // show history — first item is the default (no params)
-        const items: LibertyProjectQuickPickItem[] = [];
-        items.push(new LibertyProjectQuickPickItem(" ", history[0].path, targetProject));
-        for (const item of history) {
-            items.push(new LibertyProjectQuickPickItem(item.param, item.path, targetProject));
-        }
-        vscode.window.showQuickPick(items).then(selection => {
-            if (!selection) {
-                return;
+    for (const targetProject of targetProjects) {
+        const dashboardData: DashboardData = helperUtil.getStorageData(ProjectRegistry.getInstance().getContext());
+        const history = dashboardData.lastUsedStartParams.filter(element => element.path === targetProject.getPath());
+        if (history.length === 0) {
+            await customDevMode(targetProject);
+        } else {
+            const items: LibertyProjectQuickPickItem[] = [];
+            items.push(new LibertyProjectQuickPickItem(" ", history[0].path, targetProject));
+            for (const item of history) {
+                items.push(new LibertyProjectQuickPickItem(item.param, item.path, targetProject));
             }
-            customDevMode(selection.project, selection.label);
-        });
+            vscode.window.showQuickPick(items).then(selection => {
+                if (!selection) {
+                    return;
+                }
+                customDevMode(selection.project, selection.label);
+            });
+        }
     }
 }
 
@@ -455,8 +469,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
     }
 }
 
-// start dev mode in a container
-export async function startContainerDevMode(libProject?: LibertyProject | undefined): Promise<void> {
+export async function startContainerDevMode(libProject?: LibertyProject | undefined, treeView?: vscode.TreeView<LibertyProject>): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
         const message = localize("cannot.start.liberty.dev.in.container.on.undefined.project");
@@ -464,20 +477,22 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
         vscode.window.showInformationMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, CMD_START_CONTAINER);
-    if (targetProject === undefined) {
+    const targetProjects = await projectProvider.pickProject(libProject, CMD_START_CONTAINER);
+    if (targetProjects === undefined) {
         return;
     }
+    if (libProject === undefined && treeView) { await revealProjectsInTree(targetProjects, treeView); }
 
-    const terminal = ensureTerminal(targetProject);
-    if (terminal !== undefined) {
-        const tracked = await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEVC, GRADLE_TASK_DEVC);
-        targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
-        projectProvider.notifyDevModeChanged(targetProject);
-    }
+    await Promise.all(targetProjects.map(async targetProject => {
+        const terminal = ensureTerminal(targetProject);
+        if (terminal !== undefined) {
+            const tracked = await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEVC, GRADLE_TASK_DEVC);
+            targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
+            projectProvider.notifyDevModeChanged(targetProject);
+        }
+    }));
 }
 
-// run tests on dev mode
 export async function runTests(libProject?: LibertyProject | undefined): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
@@ -486,19 +501,21 @@ export async function runTests(libProject?: LibertyProject | undefined): Promise
         vscode.window.showInformationMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, CMD_RUN_TESTS);
-    if (targetProject === undefined) {
+    const targetProjects = await projectProvider.pickProject(libProject, CMD_RUN_TESTS);
+    if (targetProjects === undefined) {
         return;
     }
 
-    console.log(localize("running.liberty.dev.tests.on", targetProject.getLabel()));
-    const terminal = targetProject.getTerminal();
-    if (terminal !== undefined) {
-        terminal.show();
-        terminal.sendText(" ");
-    } else {
-        vscode.window.showWarningMessage(localize("liberty.dev.has.not.been.started.on", targetProject.getLabel()));
-    }
+    await Promise.all(targetProjects.map(async targetProject => {
+        console.log(localize("running.liberty.dev.tests.on", targetProject.getLabel()));
+        const terminal = targetProject.getTerminal();
+        if (terminal !== undefined) {
+            terminal.show();
+            terminal.sendText(" ");
+        } else {
+            vscode.window.showWarningMessage(localize("liberty.dev.has.not.been.started.on", targetProject.getLabel()));
+        }
+    }));
 }
 
 // open surefire, failsafe, or gradle test report
@@ -510,35 +527,36 @@ export async function openReport(reportType: string, libProject?: LibertyProject
         vscode.window.showInformationMessage(message);
         return;
     }
-    const targetProject = await projectProvider.pickProject(libProject, reportType);
-    if (targetProject === undefined) {
+    const targetProjects = await projectProvider.pickProject(libProject, reportType);
+    if (targetProjects === undefined) {
         return;
     }
 
-    const path = Path.dirname(targetProject.getPath());
-    if (path !== undefined) {
-        let report: any;
-        let reportTypeLabel = reportType;
-        if (reportType === "gradle") {
-            reportTypeLabel = "test";
-        }
-        let showErrorMessage: boolean = true;
-        if (isMaven(targetProject.getContextValue())) {
-            report = getReportFile(path, "reports", reportType + ".html");
-            showErrorMessage = false;
-            if (!await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage)) {
-                report = getReportFile(path, "site", reportType + "-report.html");
-                showErrorMessage = true;
+    await Promise.all(targetProjects.map(async targetProject => {
+        const path = Path.dirname(targetProject.getPath());
+        if (path !== undefined) {
+            let report: any;
+            let reportTypeLabel = reportType;
+            if (reportType === "gradle") {
+                reportTypeLabel = "test";
+            }
+            let showErrorMessage: boolean = true;
+            if (isMaven(targetProject.getContextValue())) {
+                report = getReportFile(path, "reports", reportType + ".html");
+                showErrorMessage = false;
+                if (!await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage)) {
+                    report = getReportFile(path, "site", reportType + "-report.html");
+                    showErrorMessage = true;
+                    await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
+                }
+            } else if (isGradle(targetProject.getContextValue())) {
+                report = await getGradleTestReport(targetProject.path, path);
                 await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
             }
-        } else if (isGradle(targetProject.getContextValue())) {
-            report = await getGradleTestReport(targetProject.path, path);
-            await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
         }
-    }
+    }));
 }
 
-// retrieve LibertyProject corresponding to closed terminal and delete terminal
 export async function deleteTerminal(terminal: vscode.Terminal): Promise<void> {
     try {
         const pid = await terminal.processId;
@@ -609,9 +627,6 @@ function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel:
     });
 }
 
-/*
-Method adds a project which is selected by the user from the list to the liberty dashboard 
-*/
 export async function addProjectsToTheDashBoard(projectProvider: ProjectTreeProvider, selection: string): Promise<void> {
     const registry = ProjectRegistry.getInstance();
     const result = await registry.addUserSelectedPath(selection);

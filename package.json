@@ -11,7 +11,7 @@
 	"preview": false,
 	"license": "EPL-2.0",
 	"engines": {
-		"vscode": ">=1.75.0"
+		"vscode": ">=1.93.0"
 	},
 	"categories": [
 		"Programming Languages"
@@ -40,7 +40,11 @@
 		"onCommand:liberty.dev.open.gradle.test.report",
 		"onCommand:liberty.dev.add.project",
 		"onCommand:liberty.dev.remove.project",
-		"onView:liberty-dev"
+		"onView:liberty-dev",
+		"onStartupFinished",
+		"onCommand:liberty.dev.debug",
+		"onCommand:liberty.dev.start.container",
+		"onCommand:liberty.dev.open.build.file"
 	],
 	"main": "./dist/extension",
 	"extensionDependencies": [
@@ -104,14 +108,12 @@
 			{
 				"command": "liberty.dev.start",
 				"category": "Liberty",
-				"title": "%commands.title.start%",
-				"enablement": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/"
+				"title": "%commands.title.start%"
 			},
 			{
 				"command": "liberty.dev.debug",
 				"category": "Liberty",
-				"title": "%commands.title.debug%",
-				"enablement": "viewItem =~ /^libertyProject.*:running/ || viewItem =~ /^libertyProject.*:aggregator/"
+				"title": "%commands.title.debug%"
 			},
 			{
 				"command": "liberty.dev.add.project",
@@ -126,26 +128,22 @@
 			{
 				"command": "liberty.dev.stop",
 				"category": "Liberty",
-				"title": "%commands.title.stop%",
-				"enablement": "viewItem =~ /^libertyProject.*:running/ || viewItem =~ /^libertyProject.*:aggregator/"
+				"title": "%commands.title.stop%"
 			},
 			{
 				"command": "liberty.dev.custom",
 				"category": "Liberty",
-				"title": "%commands.title.start.custom%",
-				"enablement": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/"
+				"title": "%commands.title.start.custom%"
 			},
 			{
 				"command": "liberty.dev.start.container",
 				"category": "Liberty",
-				"title": "%commands.title.start.in.container%",
-				"enablement": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/"
+				"title": "%commands.title.start.in.container%"
 			},
 			{
 				"command": "liberty.dev.run.tests",
 				"category": "Liberty",
-				"title": "%commands.title.run.tests%",
-				"enablement": "viewItem =~ /^libertyProject.*:running/ || viewItem =~ /^libertyProject.*:aggregator/"
+				"title": "%commands.title.run.tests%"
 			},
 			{
 				"command": "liberty.dev.open.failsafe.report",
@@ -198,6 +196,36 @@
 				{
 					"command": "liberty.explorer.sort.alphabetical.active",
 					"when": "false"
+				},
+				{
+					"command": "liberty.dev.start"
+				},
+				{
+					"command": "liberty.dev.debug"
+				},
+				{
+					"command": "liberty.dev.stop"
+				},
+				{
+					"command": "liberty.dev.custom"
+				},
+				{
+					"command": "liberty.dev.start.container"
+				},
+				{
+					"command": "liberty.dev.run.tests"
+				},
+				{
+					"command": "liberty.dev.open.failsafe.report"
+				},
+				{
+					"command": "liberty.dev.open.surefire.report"
+				},
+				{
+					"command": "liberty.dev.open.gradle.test.report"
+				},
+				{
+					"command": "liberty.dev.open.build.file"
 				}
 			],
 			"view/title": [
@@ -240,22 +268,22 @@
 			"view/item/context": [
 				{
 					"command": "liberty.dev.start",
-					"when": "viewItem =~ /^libertyProject/",
+					"when": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/",
 					"group": "libertyCore@1"
 				},
 				{
 					"command": "liberty.dev.debug",
-					"when": "viewItem =~ /^libertyProject/",
+					"when": "viewItem =~ /^libertyProject.*:running/ || viewItem =~ /^libertyProject.*:aggregator/",
 					"group": "libertyCore@3"
 				},
 				{
 					"command": "liberty.dev.stop",
-					"when": "viewItem =~ /^libertyProject/",
+					"when": "viewItem =~ /^libertyProject.*:running/ || viewItem =~ /^libertyProject.*:aggregator/",
 					"group": "libertyCore@3"
 				},
 				{
 					"command": "liberty.dev.custom",
-					"when": "viewItem =~ /^libertyProject/",
+					"when": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/",
 					"group": "libertyCore@2"
 				},
 				{
@@ -265,7 +293,7 @@
 				},
 				{
 					"command": "liberty.dev.run.tests",
-					"when": "viewItem =~ /^libertyProject/",
+					"when": "viewItem =~ /^libertyProject.*:running/ || viewItem =~ /^libertyProject.*:aggregator/",
 					"group": "libertyCore@4"
 				},
 				{
