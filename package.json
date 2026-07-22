@@ -74,11 +74,6 @@
 		],
 		"commands": [
 			{
-				"command": "liberty.starterProject",
-				"category": "Liberty",
-				"title": "%commands.title.starter.project%"
-			},
-			{
 				"command": "liberty.dev.show.commands",
 				"category": "Liberty",
 				"title": "%commands.title.show.commands%"
@@ -145,6 +140,11 @@
 				"command": "liberty.dev.open.gradle.test.report",
 				"category": "Liberty",
 				"title": "%commands.title.view.test.report%"
+			},
+			{
+				"command": "liberty.starterProject",
+				"category": "Liberty",
+				"title": "%commands.title.starter.project%"
 			}
 		],
 		"menus": {
