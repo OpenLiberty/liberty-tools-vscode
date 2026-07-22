@@ -467,7 +467,7 @@ export async function buildStarterProject(state: starterProject.State): Promise<
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Window,
         cancellable: false,
-        title: localize("starter.generating.label", state.a),
+        title: localize("starter.label.generating", state.a),
     }, async (progress) => {
         progress.report({ increment: 0 });
         let lastPercentage = 0.0;

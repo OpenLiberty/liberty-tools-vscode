@@ -24,7 +24,7 @@ export async function starterProject(context: ExtensionContext) {
     const javaSEVersions: QuickPickItem[] = projectOptions.j.options!.map(label => ({ label }));
     const javaEEVersions: QuickPickItem[] = projectOptions.e.options!.map(label => ({ label }));
 
-    const title = localize("starter.title");
+    const title = localize("starter.label.flow");
 
     async function inputGroupName(input: MultiStepInput, state: Partial<State>) {
         state.g = await input.showInputBox({
