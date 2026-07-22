@@ -84,6 +84,12 @@
 				"title": "%commands.title.show.commands%"
 			},
 			{
+				"command": "liberty.explorer.expandAll",
+				"title": "%commands.title.expand.all%",
+				"category": "Liberty",
+				"icon": "$(expand-all)"
+			},
+			{
 				"command": "liberty.explorer.refresh",
 				"title": "%commands.title.refresh%",
 				"category": "Liberty",
@@ -196,7 +202,7 @@
 			],
 			"view/title": [
 				{
-					"command": "liberty.explorer.refresh",
+					"command": "liberty.explorer.expandAll",
 					"when": "view == liberty-dev",
 					"group": "navigation@1"
 				},
@@ -204,6 +210,11 @@
 					"command": "workbench.actions.treeView.liberty-dev.collapseAll",
 					"when": "view == liberty-dev",
 					"group": "navigation@2"
+				},
+				{
+					"command": "liberty.explorer.refresh",
+					"when": "view == liberty-dev",
+					"group": "navigation@3"
 				},
 				{
 					"command": "liberty.explorer.sort.workspace",

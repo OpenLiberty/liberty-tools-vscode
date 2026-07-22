@@ -227,6 +227,11 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	// required by reveal() for expand-all command
+	public getParent(element: LibertyProject): LibertyProject | undefined {
+		return element.parent;
+	}
+
 	public async getChildren(element?: LibertyProject): Promise<LibertyProject[]> {
 		if (vscode.workspace.workspaceFolders === undefined) {
 			vscode.window.showInformationMessage(localize("no.liberty.project.found.in.empty.workspace"));
@@ -325,7 +330,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		const wsFolders = vscode.workspace.workspaceFolders ?? [];
 		const existingProjects = forceRebuild ? new Map() : this._registry.getProjects();
 
-		const { projects, rootProjects, rejectedBuildFiles } = await discoverWorkspace(
+		const { projects, rootProjects, rejectedBuildFiles, maxAggregatorDepth } = await discoverWorkspace(
 			context,
 			wsFolders,
 			existingProjects,
@@ -340,6 +345,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		this._registry.setProjects(projects);
 		this._registry.setRootProjects(this.sortRoots(rootProjects));
 		this._registry.setRejectedBuildFiles(rejectedBuildFiles);
+		this._registry.setMaxAggregatorDepth(maxAggregatorDepth);
 		console.log(`[perf] updateProjects total: ${Date.now() - t0}ms  (${projects.size} projects, ${rootProjects.length} roots)`);
 	}
 }
