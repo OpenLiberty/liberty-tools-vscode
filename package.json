@@ -266,7 +266,7 @@
 		"@typescript-eslint/eslint-plugin": "8.0.0",
 		"@typescript-eslint/parser": "8.0.0",
 		"@vscode/test-electron": "2.4.0",
-		"axios": "1.16.0",
+		"axios": "1.18.0",
 		"chai": "4.3.7",
 		"clipboardy": "2.3.0",
 		"eslint": "9.0.0",
