@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2026
  */
 
-import { SideBarView, ViewSection, DefaultTreeItem } from 'vscode-extension-tester';
+import { SideBarView, ViewSection, DefaultTreeItem, ViewPanelAction } from 'vscode-extension-tester';
 import * as utils from '../utils/testUtils';
 
 export class DashboardPage {
@@ -35,5 +35,15 @@ export class DashboardPage {
         await utils.launchDashboardAction(item, action, macAction);
     }
 
-
+    /**
+     * Click a panel-level action button on the dashboard section (e.g. the
+     * refresh icon in the section toolbar).
+     *
+     * @param buttonLabel The accessible label of the button to click.
+     */
+    async clickActionButton(buttonLabel: string): Promise<void> {
+        const section: ViewSection = await this.getSection();
+        const action = (await section.getAction(buttonLabel)) as ViewPanelAction;
+        await action.click();
+    }
 }
