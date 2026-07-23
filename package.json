@@ -31,6 +31,7 @@
 	"activationEvents": [
 		"workspaceContains:**/pom.xml",
 		"workspaceContains:**/build.gradle",
+		"onCommand:liberty.starterProject",
 		"onCommand:liberty.dev.start",
 		"onCommand:liberty.dev.stop",
 		"onCommand:liberty.dev.custom",
@@ -139,6 +140,11 @@
 				"command": "liberty.dev.open.gradle.test.report",
 				"category": "Liberty",
 				"title": "%commands.title.view.test.report%"
+			},
+			{
+				"command": "liberty.starterProject",
+				"category": "Liberty",
+				"title": "%commands.title.starter.project%"
 			}
 		],
 		"menus": {
@@ -262,11 +268,11 @@
 		"@types/node": "20.0.0",
 		"@types/selenium-webdriver": "4.1.22",
 		"@types/sinon": "^21.0.1",
+		"@types/unzip-stream": "^0.3.4",
 		"@types/vscode": "1.42.0",
 		"@typescript-eslint/eslint-plugin": "8.0.0",
 		"@typescript-eslint/parser": "8.0.0",
 		"@vscode/test-electron": "2.4.0",
-		"axios": "1.18.0",
 		"chai": "4.3.7",
 		"clipboardy": "2.3.0",
 		"eslint": "9.0.0",
@@ -297,12 +303,14 @@
 		"@types/fs-extra": "8.1.0",
 		"@types/semver": "7.3.2",
 		"@types/xml2js": "0.4.5",
+		"axios": "1.18.0",
 		"brace-expansion": "5.0.7",
 		"expand-home-dir": "0.0.3",
 		"find-java-home": "2.0.0",
 		"fs-extra": "9.0.0",
 		"gradle-to-js": "2.0.0",
 		"jsonpath-plus": "10.3.0",
+		"unzip-stream": "0.3.1",
 		"vscode-languageclient": "9.0.1"
 	}
 }

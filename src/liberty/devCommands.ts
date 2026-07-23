@@ -9,13 +9,18 @@ import * as vscode from "vscode";
 import * as helperUtil from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
 import { QuickPickItem } from "vscode";
+import axios from "axios";
+import * as unzip from "unzip-stream";
 import { LibertyProject, ProjectProvider } from "./libertyProject";
+import * as starterProject from "./starterProject";
 import { getReport, filterProjects } from "../util/helperUtil";
 import { COMMAND_TITLES, LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_SERVER_ENV_PORT_REGEX } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
 import { getCommandForMaven, getCommandForGradle, defaultWindowsShell } from "../util/commandUtils";
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 
@@ -449,6 +454,50 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
         console.error(message);
         vscode.window.showInformationMessage(message);
     }
+}
+
+/**
+ * Downloads a starter project from https://start.openliberty.io/
+ * @param state see {@link starterProject.State}
+ */
+export async function buildStarterProject(state: starterProject.State): Promise<void> {
+    const apiURL = `https://start.openliberty.io/api/start?a=${state.a}&b=${state.b}&e=${state.e}&g=${state.g}&j=${state.j}&m=${state.m}`;
+    const targetDir = state.dir;
+
+    await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Window,
+        cancellable: false,
+        title: localize("starter.label.generating", state.a),
+    }, async (progress) => {
+        progress.report({ increment: 0 });
+        let lastPercentage = 0.0;
+        const response = await axios.get<Readable>(apiURL, {
+            responseType: "stream",
+            onDownloadProgress(event) {
+                const diff = (event.progress ?? lastPercentage + 0.05) - lastPercentage;
+                progress.report({ increment: diff * 100 });
+            },
+        });
+        await pipeline(response.data, unzip.Extract({ path: targetDir }));
+        progress.report({ increment: 100 });
+    });
+
+    vscode.commands.executeCommand("workbench.files.action.refreshFilesExplorer");
+
+    // Decides what window to use when opening the project
+    let newWin = false;
+    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath !== targetDir) {
+        const currentWindow = localize("starter.button.current");
+        const newWindow = localize("starter.button.new");
+        const selection = await vscode.window.showInformationMessage(localize("starter.message.open.project"), currentWindow, newWindow);
+        if (!selection) {
+            return;
+        }
+        if (selection === newWindow) {
+            newWin = true;
+        }
+    }
+    vscode.commands.executeCommand("vscode.openFolder", vscode.Uri.file(targetDir), newWin);
 }
 
 // run tests on dev mode

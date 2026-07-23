@@ -4,6 +4,7 @@
  */
 import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
+import { starterProject } from './liberty/starterProject';
 import * as lsp4jakartaLS from "./definitions/lsp4jakartaLSRequestNames";
 
 import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
@@ -162,6 +163,9 @@ function registerCommands(context: ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand("liberty.dev.remove.project", () => devCommands.removeProject()),
 	);
+    context.subscriptions.push(
+        vscode.commands.registerCommand('liberty.starterProject', () => starterProject(context))
+    );
     context.subscriptions.push(
         vscode.window.onDidCloseTerminal((closedTerminal: vscode.Terminal) => {
             devCommands.deleteTerminal(closedTerminal);
