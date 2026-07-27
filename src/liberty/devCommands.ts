@@ -24,11 +24,13 @@ class LibertyProjectQuickPickItem implements QuickPickItem {
     project: LibertyProject | undefined;
     label: string;
     detail: string;
+    description: string | undefined;
 
-    constructor(itemLabel: string, itemDetail: string, itemProject?: LibertyProject) {
+    constructor(itemLabel: string, itemDetail: string, itemProject?: LibertyProject, itemDescription?: string) {
         this.label = itemLabel;
         this.detail = itemDetail;
         this.project = itemProject;
+        this.description = itemDescription;
     }
 }
 
@@ -324,7 +326,7 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
             // first item is the default custom command with no params
             const items: LibertyProjectQuickPickItem[] = [];
             const qpItem = new LibertyProjectQuickPickItem(" ",
-                history[0].path, libProject);
+                "", libProject, localize("new.liberty.dev.with.custom.params"));
             items.push(qpItem);
 
             for (let index = 0; index < history.length; index++) {
