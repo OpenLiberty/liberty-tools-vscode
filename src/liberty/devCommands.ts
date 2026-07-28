@@ -24,6 +24,7 @@ class LibertyProjectQuickPickItem implements QuickPickItem {
     project: LibertyProject | undefined;
     label: string;
     detail: string;
+    buttons?: vscode.QuickInputButton[];
 
     constructor(itemLabel: string, itemDetail: string, itemProject?: LibertyProject) {
         this.label = itemLabel;
@@ -322,6 +323,10 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
         } else {
             // show history
             // first item is the default custom command with no params
+            const deleteButton: vscode.QuickInputButton = {
+                iconPath: new vscode.ThemeIcon("trash"),
+                tooltip: localize("delete.custom.params.from.history"),
+            };
             const items: LibertyProjectQuickPickItem[] = [];
             const qpItem = new LibertyProjectQuickPickItem(" ",
                 history[0].path, libProject);
@@ -331,14 +336,31 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
                 const item = history[index];
                 const qpItem = new LibertyProjectQuickPickItem(item.param,
                     item.path, libProject);
+                qpItem.buttons = [deleteButton];
                 items.push(qpItem);
             }
-            vscode.window.showQuickPick(items).then(selection => {
+            const qp = vscode.window.createQuickPick<LibertyProjectQuickPickItem>();
+            qp.items = items;
+            qp.keepScrollPosition = true;
+            qp.onDidAccept(() => {
+                const selection = qp.selectedItems[0];
+                qp.dispose();
                 if (!selection) {
                     return;
                 }
                 customDevMode(selection.project, selection.label);
             });
+            qp.onDidTriggerItemButton(async ({ item }) => {
+                dashboardData.removeStartCmdParam(new ProjectStartCmdParam(item.detail, item.label));
+                await helperUtil.saveStorageData(projectProvider.getContext(), dashboardData);
+                qp.items = qp.items.filter(element => element !== item);
+                if (qp.items.length <= 1) {
+                    qp.dispose();
+                    customDevMode(libProject);
+                }
+            });
+            qp.onDidHide(() => qp.dispose());
+            qp.show();
         }
 
     } else if (ProjectProvider.getInstance()) {
