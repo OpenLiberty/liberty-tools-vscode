@@ -23,8 +23,8 @@ const SETTINGS_NO_SUBPROJECTS: any = {
     "rootProject.name": "my-root"
 };
 
-// Real project paths for parentProjectName resolution (requires filesystem)
-const REAL_ROOT = "/Users/dshi/test/multi-module-test-projects/bob-nested-gradle-ears";
+// Real project paths for parentProjectName resolution (fixture in repo)
+const REAL_ROOT = `${__dirname}/../../../src/test/resources/gradle/bob-nested-gradle-ears`;
 const REAL_CHILD = `${REAL_ROOT}/application-one/app-one-ear/build.gradle`;
 
 // ── Aggregator with no Liberty (bob-nested-gradle-ears root pattern) ──────────
