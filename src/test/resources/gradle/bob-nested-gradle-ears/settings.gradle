@@ -1,0 +1,2 @@
+rootProject.name = 'bob-nested-gradle-ears'
+include 'application-one:app-one-ear'
