@@ -337,12 +337,37 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
                     item.path, libProject);
                 items.push(qpItem);
             }
-            vscode.window.showQuickPick(items).then(selection => {
+            const qp = vscode.window.createQuickPick<LibertyProjectQuickPickItem>();
+            qp.items = items;
+            qp.keepScrollPosition = true;
+            qp.onDidChangeValue(() => {
+                let validationMessage = "";
+                if (qp.value && qp.value.trim().length > 0 && !qp.value.trim().startsWith("-")) {
+                    validationMessage = localize("params.must.start.with.dash");
+                }
+                qp.items[0].label = qp.value.trim();
+                qp.items[0].detail = localize("new.liberty.dev.with.custom.params");
+                qp.items[0].description = validationMessage;
+                qp.items = qp.items;
+            });
+            qp.onDidAccept(() => {
+                const selection = qp.selectedItems[0];
                 if (!selection) {
+                    qp.dispose();
                     return;
                 }
-                customDevMode(selection.project, selection.label);
+                if (selection.detail != localize("new.liberty.dev.with.custom.params") && selection.description != localize("new.liberty.dev.with.custom.params")) {
+                    qp.value = selection.label;
+                    return;
+                }
+                if (qp.value && qp.value.trim().length > 0 && !qp.value.trim().startsWith("-")) {
+                    return;
+                }
+                qp.dispose();
+                customDevMode(selection.project, qp.value.trim());
             });
+            qp.onDidHide(() => qp.dispose());
+            qp.show();
         }
 
     } else if (ProjectProvider.getInstance()) {
@@ -368,6 +393,7 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
             terminal.show();
             libProject.setTerminal(terminal);
 
+            /*
             let placeHolderStr = "";
             let promptString = localize("specify.custom.parms.maven");
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
@@ -396,6 +422,8 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
                     value: _customParameters
                 },
             ));
+            */
+           let customCommand = _customParameters;
             if (customCommand !== undefined) {
                 // save command
                 customCommand = customCommand.trim();
