@@ -52,7 +52,9 @@ function showProjects(command: string, callback: Function, reportType?: string):
                 item.path, item);
             items.push(qpItem);
         }
-        vscode.window.showQuickPick(items).then(selection => {
+        vscode.window.showQuickPick(items, {
+            placeHolder: localize("select.liberty.project"),
+        }).then(selection => {
             if (!selection) {
                 return;
             }
