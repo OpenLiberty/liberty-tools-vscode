@@ -23,11 +23,11 @@ const SETTINGS_NO_SUBPROJECTS: any = {
     "rootProject.name": "my-root"
 };
 
-// Real project paths for parentProjectName resolution (requires filesystem)
-const REAL_ROOT = "/Users/dshi/test/multi-module-test-projects/bob-nested-gradle-ears";
+// Real project paths for parentProjectName resolution (fixture in repo)
+const REAL_ROOT = `${__dirname}/../../../src/test/resources/gradle/liberty-gradle-aggregator-app`;
 const REAL_CHILD = `${REAL_ROOT}/application-one/app-one-ear/build.gradle`;
 
-// ── Aggregator with no Liberty (bob-nested-gradle-ears root pattern) ──────────
+// ── Aggregator with no Liberty (liberty-gradle-aggregator-app root pattern) ──────────
 
 describe("extractGradleMetadata — no-Liberty aggregator root", () => {
     it("isAggregator is true when settings has subprojects", async () => {
@@ -115,14 +115,14 @@ describe("extractGradleMetadata — no Liberty, no subprojects", () => {
 });
 
 // ── parentProjectName resolution (real filesystem) ────────────────────────────
-// Verifies that a child in bob-nested-gradle-ears resolves its parent name
+// Verifies that a child in liberty-gradle-aggregator-app resolves its parent name
 // by reading the parent directory's settings.gradle from disk.
 
 describe("extractGradleMetadata — parentProjectName resolution", () => {
     it("child resolves parentProjectName from parent settings.gradle", async () => {
         const metadata = await extractGradleMetadata(REAL_CHILD, LIBERTY_BUILD, SETTINGS_NO_SUBPROJECTS);
         console.log("    parentProjectName:", metadata.parentProjectName);
-        assert.equal(metadata.parentProjectName, "bob-nested-gradle-ears");
+        assert.equal(metadata.parentProjectName, "liberty-gradle-aggregator-app");
     });
 
     it("root has no parentProjectName", async () => {

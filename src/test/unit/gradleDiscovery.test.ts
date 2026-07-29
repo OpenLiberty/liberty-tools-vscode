@@ -19,9 +19,9 @@
  *   3    |  N |  N |  Y | Both excluded (no Liberty anywhere)
  *   4    |  N |  Y |  N | Child standalone, root excluded
  *
- * Reference test project: ~/test/multi-module-test-projects/bob-nested-gradle-ears
+ * Reference test project: src/test/resources/gradle/liberty-gradle-aggregator-app
  *   - Root build.gradle has no Liberty plugin
- *   - app-one-ear/build.gradle and app-two-ear/build.gradle declare Liberty directly
+ *   - application-one/app-one-ear/build.gradle declares Liberty directly
  *   - settings.gradle includes all subprojects via colon-separated paths
  */
 import { strict as assert } from "assert";
@@ -160,25 +160,21 @@ describe("gradle group 4 — child has Liberty, not in settings", () => {
 
 describe("gradle colon-path subproject inclusion", () => {
     const parsedSettings = {
-        "rootProject.name": "bob-nested-gradle-ears",
+        "rootProject.name": "liberty-gradle-aggregator-app",
         include: [
             "application-one:app-one-ear",
-            "application-one:app-one-ejb",
-            "application-two:app-two-ear",
         ],
     };
 
-    it("findChildGradleProjects returns all colon-path children", () => {
+    it("findChildGradleProjects returns colon-path children", () => {
         const result = findChildGradleProjects({}, parsedSettings, "/workspace/build.gradle");
         const children = result.getChildren();
         assert.ok(children.includes("application-one:app-one-ear"));
-        assert.ok(children.includes("application-one:app-one-ejb"));
-        assert.ok(children.includes("application-two:app-two-ear"));
     });
 
-    it("colon paths cover all three ear subprojects from bob-nested-gradle-ears", () => {
+    it("colon paths cover the subproject from liberty-gradle-aggregator-app", () => {
         const result = findChildGradleProjects({}, parsedSettings, "/workspace/build.gradle");
-        assert.equal(result.getChildren().length, 3);
+        assert.equal(result.getChildren().length, 1);
     });
 });
 
@@ -186,7 +182,7 @@ describe("gradle colon-path subproject inclusion", () => {
 // The bug: phase 2 skips no-Liberty roots because parsedBuild/regexBuildFile
 // are null. hasGradleSubprojects() lets discovery check settings.gradle
 // independently of whether the root has Liberty, so findChildGradleProjects
-// is called for no-Liberty aggregators like bob-nested-gradle-ears.
+// is called for no-Liberty aggregators like liberty-gradle-aggregator-app.
 
 describe("hasGradleSubprojects — detects aggregator from settings alone", () => {
     it("returns true when parsedSettings has include entries", () => {
@@ -207,13 +203,11 @@ describe("hasGradleSubprojects — detects aggregator from settings alone", () =
         assert.equal(hasGradleSubprojects(undefined), false);
     });
 
-    it("returns true for colon-path includes (bob-nested-gradle-ears pattern)", () => {
+    it("returns true for colon-path includes (liberty-gradle-aggregator-app pattern)", () => {
         const parsedSettings = {
-            "rootProject.name": "bob-nested-gradle-ears",
+            "rootProject.name": "liberty-gradle-aggregator-app",
             include: [
                 "application-one:app-one-ear",
-                "application-one:app-one-ejb",
-                "application-two:app-two-ear",
             ],
         };
         assert.equal(hasGradleSubprojects(parsedSettings), true);
@@ -221,8 +215,8 @@ describe("hasGradleSubprojects — detects aggregator from settings alone", () =
 
     it("no-Liberty root + subprojects → findChildGradleProjects returns valid aggregator", () => {
         const parsedSettings = {
-            "rootProject.name": "bob-nested-gradle-ears",
-            include: ["application-one:app-one-ear", "application-two:app-two-ear"],
+            "rootProject.name": "liberty-gradle-aggregator-app",
+            include: ["application-one:app-one-ear"],
         };
         // Simulate what phase 2 should do: check hasGradleSubprojects first,
         // then call findChildGradleProjects with empty parsedBuild for no-Liberty root
@@ -232,6 +226,5 @@ describe("hasGradleSubprojects — detects aggregator from settings alone", () =
         const result = findChildGradleProjects({}, parsedSettings, "/workspace/build.gradle");
         assert.equal(result.isValidBuildFile(), true);
         assert.ok(result.getChildren().includes("application-one:app-one-ear"));
-        assert.ok(result.getChildren().includes("application-two:app-two-ear"));
     });
 });

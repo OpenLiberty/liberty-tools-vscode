@@ -33,7 +33,7 @@ jobs:
     steps:
       # Checkout the eclipse plugin repository.
       - name: 'Setup: Checkout plugin'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Install the required software.
       - name: 'Setup: Install required software'
