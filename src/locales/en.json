@@ -89,9 +89,9 @@
     "starter.invalid.directory": "{0} already exists in this directory.",
     "starter.button.overwrite": "Overwrite",
     "starter.button.reselect": "Select another directory",
-    "starter.message.resume": "Would you like to resume Liberty project generation?",
+    "starter.message.resume": "Resume Liberty project generation?",
     "starter.label.generating": "Creating starter code for {0}",
-    "starter.message.open.project": "Where would you like to open the project?",
+    "starter.message.open.project": "Where do you want to open the project?",
     "starter.button.current": "Current Window",
     "starter.button.new": "New Window"
 }
