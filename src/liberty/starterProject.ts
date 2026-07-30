@@ -24,6 +24,10 @@ export async function starterProject(context: ExtensionContext) {
     const javaSEVersions: QuickPickItem[] = projectOptions.j.options!.map(label => ({ label }));
     const javaEEVersions: QuickPickItem[] = projectOptions.e.options!.map(label => ({ label }));
 
+    // Reversing so that newer versions are at the top
+    javaSEVersions.reverse();
+    javaEEVersions.reverse();
+
     const title = localize("starter.label.flow");
 
     async function inputGroupName(input: MultiStepInput, state: Partial<State>) {
@@ -90,6 +94,8 @@ export async function starterProject(context: ExtensionContext) {
         })).label;
         var MPVersions: QuickPickItem[] = projectOptions.e.constraints![state.e].m
             .map(label => ({ label }));
+        // Reversing so that newer versions are at the top
+        MPVersions.reverse();
         return (input: MultiStepInput) => pickMP(input, state, MPVersions);
     }
 
