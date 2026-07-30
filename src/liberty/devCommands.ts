@@ -26,6 +26,7 @@ class LibertyProjectQuickPickItem implements QuickPickItem {
     detail: string;
     description: string | undefined;
     alwaysShow?: boolean | undefined;
+    buttons?: vscode.QuickInputButton[];
 
     constructor(itemLabel: string, itemDetail: string, itemProject?: LibertyProject, itemDescription?: string) {
         this.label = itemLabel;
@@ -322,6 +323,11 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
         const dashboardData: DashboardData = helperUtil.getStorageData(projectProvider.getContext());
         const history = dashboardData.lastUsedStartParams.filter(element => element.path === libProject.getPath());
 
+        const deleteButton: vscode.QuickInputButton = {
+            iconPath: new vscode.ThemeIcon("trash"),
+            tooltip: localize("delete.custom.params.from.history"),
+        };
+
         let placeHolderStr = "";
         let promptString = localize("specify.custom.parms.maven");
         if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
@@ -337,6 +343,7 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
             const item = history[index];
             const qpItem = new LibertyProjectQuickPickItem(item.param,
                 item.path, libProject);
+            qpItem.buttons = [deleteButton];
             items.push(qpItem);
         }
         const qp = vscode.window.createQuickPick<LibertyProjectQuickPickItem>();
@@ -378,6 +385,11 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
                     }
                     qp.value = selection.label;
                     qp.selectedItems = [];
+                }));
+                disposables.push(qp.onDidTriggerItemButton(async ({ item }) => {
+                    dashboardData.removeStartCmdParam(new ProjectStartCmdParam(item.detail, item.label));
+                    await helperUtil.saveStorageData(projectProvider.getContext(), dashboardData);
+                    qp.items = qp.items.filter(element => element !== item);
                 }));
                 disposables.push(qp.onDidHide(() => resolve()));
             });

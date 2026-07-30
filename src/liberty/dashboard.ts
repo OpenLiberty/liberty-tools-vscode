@@ -35,6 +35,12 @@ export class DashboardData {
     }
   }
 
+  public removeStartCmdParam(cmdParam: ProjectStartCmdParam): void {
+    this.lastUsedStartParams = this.lastUsedStartParams.filter(
+      element => !(element.path === cmdParam.path && element.param === cmdParam.param)
+    );
+  }
+
   public removeProject(path: string): void {
     this.projects = this.projects.filter(function (baseLibertyProject) {
       return baseLibertyProject.path !== path;
