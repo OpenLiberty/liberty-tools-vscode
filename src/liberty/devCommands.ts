@@ -478,7 +478,16 @@ export async function buildStarterProject(state: starterProject.State): Promise<
                 progress.report({ increment: diff * 100 });
             },
         });
+        // unzip into targetDir
         await pipeline(response.data, unzip.Extract({ path: targetDir }));
+        // set executable bits on wrapper scripts
+        for (const filename of ["mvnw", "gradlew"]) {
+            try {
+                fs.chmodSync(Path.join(targetDir, filename), 0o755);
+            } catch {
+                // ignore if missing
+            }
+        }
         progress.report({ increment: 100 });
     });
 
