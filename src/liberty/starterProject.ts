@@ -176,7 +176,7 @@ export async function starterProject(context: ExtensionContext) {
     const state = {} as Partial<State>;
     await MultiStepInput.run(input => inputGroupName(input, state));
 
-    if (state.dir != null) {
+    if (state.dir !== undefined) {
         await devCommands.buildStarterProject(state as State);
     }
 }
