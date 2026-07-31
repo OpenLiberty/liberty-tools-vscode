@@ -24,15 +24,14 @@ class LibertyProjectQuickPickItem implements QuickPickItem {
     project: LibertyProject | undefined;
     label: string;
     detail: string;
-    description: string | undefined;
-    alwaysShow?: boolean | undefined;
+    description?: string;
+    alwaysShow?: boolean;
     buttons?: vscode.QuickInputButton[];
 
-    constructor(itemLabel: string, itemDetail: string, itemProject?: LibertyProject, itemDescription?: string) {
+    constructor(itemLabel: string, itemDetail: string, itemProject?: LibertyProject) {
         this.label = itemLabel;
         this.detail = itemDetail;
         this.project = itemProject;
-        this.description = itemDescription;
     }
 }
 
@@ -324,7 +323,7 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
         const history = dashboardData.lastUsedStartParams.filter(element => element.path === libProject.getPath());
 
         const deleteButton: vscode.QuickInputButton = {
-            iconPath: new vscode.ThemeIcon("trash"),
+            iconPath: new vscode.ThemeIcon("close"),
             tooltip: localize("delete.custom.params.from.history"),
         };
 
@@ -346,58 +345,67 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
             qpItem.buttons = [deleteButton];
             items.push(qpItem);
         }
+
+        // prompt for custom command
         const qp = vscode.window.createQuickPick<LibertyProjectQuickPickItem>();
-        qp.title = promptString;
-        qp.placeholder = placeHolderStr;
-        qp.items = items;
-        qp.keepScrollPosition = true;
-        qp.activeItems = [];
-        qp.show();
         const disposables: vscode.Disposable[] = [];
         try {
+            qp.title = promptString;
+            qp.placeholder = placeHolderStr;
+            qp.items = items;
+            qp.keepScrollPosition = true;
+            qp.show();
             const params = await new Promise<string | void>(resolve => {
                 disposables.push(qp.onDidChangeValue(value => {
-                    if (value.trimStart()[0] === "-") {
+                    // show history only if input doesn't look like parameters
+                    if (qp.value.trimStart().startsWith("-")) {
                         qp.items = [];
                     } else {
                         qp.items = items;
                     }
                 }));
                 disposables.push(qp.onDidAccept(() => {
-                    const selection = qp.selectedItems[0];
-                    if (!selection) {
-                        if (qp.value.trimStart()[0] === "-") {
-                            resolve(qp.value);
-                            return;
+                    if (qp.selectedItems.length > 0) {
+                        // history item selected, overwrite input with its params
+                        const selection = qp.selectedItems[0];
+                        if (selection.project) {
+                            qp.value = selection.label;
                         }
+                        qp.selectedItems = [];
+                    } else if (qp.value.trimStart().startsWith("-")) {
+                        // valid parameters, return params for custom dev mode
+                        resolve(qp.value);
+                    } else {
+                        // invalid parameters, show validation message
                         qp.items = [{
-                            label: " ",
                             project: undefined,
-                            description: localize("params.must.start.with.dash"),
+                            label: " ",
                             detail: "",
+                            description: localize("params.must.start.with.dash"),
                             alwaysShow: true,
                         }];
                         qp.activeItems = [];
-                        return;
                     }
-                    if (selection.detail === localize("params.must.start.with.dash")) {
-                        return;
-                    }
-                    qp.value = selection.label;
-                    qp.selectedItems = [];
                 }));
                 disposables.push(qp.onDidTriggerItemButton(async ({ item }) => {
+                    // delete button pressed, remove history item
                     dashboardData.removeStartCmdParam(new ProjectStartCmdParam(item.detail, item.label));
                     await helperUtil.saveStorageData(projectProvider.getContext(), dashboardData);
-                    qp.items = qp.items.filter(element => element !== item);
+                    items.splice(items.indexOf(item), 1);
+                    qp.items = items;
                 }));
-                disposables.push(qp.onDidHide(() => resolve()));
+                disposables.push(qp.onDidHide(() => {
+                    // return so the UI is disposed
+                    resolve();
+                }));
             });
-            if (params) {
+            if (params !== undefined) {
                 customDevMode(libProject, params);
             }
+
         } finally {
-            disposables.forEach(d => d.dispose())
+            disposables.forEach(d => d.dispose());
+            qp.dispose();
         }
 
     } else if (ProjectProvider.getInstance()) {
