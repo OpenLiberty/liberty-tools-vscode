@@ -461,8 +461,8 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
  * @param state see {@link starterProject.State}
  */
 export async function buildStarterProject(state: starterProject.State): Promise<void> {
-    const apiURL = `https://start.openliberty.io/api/start?a=${state.a}&b=${state.b}&e=${state.e}&g=${state.g}&j=${state.j}&m=${state.m}`;
-    const targetDir = state.dir;
+    const apiURL = "https://start.openliberty.io/api/start"
+    const { a, b, e, g, j, m, dir: targetDir } = state;
 
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Window,
@@ -472,6 +472,7 @@ export async function buildStarterProject(state: starterProject.State): Promise<
         progress.report({ increment: 0 });
         let lastPercentage = 0.0;
         const response = await axios.get<Readable>(apiURL, {
+            params: { a, b, e, g, j, m },
             responseType: "stream",
             onDownloadProgress(event) {
                 const diff = (event.progress ?? lastPercentage + 0.05) - lastPercentage;
