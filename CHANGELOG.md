@@ -2,6 +2,16 @@
 
 All notable changes to the Liberty Tools extension will be documented below.
 
+## 26.0.7
+
+Version 26.0.7 of Liberty Tools for Visual Studio Code requires Visual Studio Code version 1.78+ and requires Java 21 or later.
+
+Notable changes:
+
+- Improved Java runtime detection for language server startup. Liberty Tools now checks all available Java sources (Red Hat extension embedded JRE, VS Code settings, system path) and skips any source that provides a Java version older than 21, rather than stopping with an error at the first source found. This means that having `java.jdt.ls.java.home` pointing to Java 17 will no longer prevent the extension from loading if Java 21 is available elsewhere on the machine.
+
+- Added per-project Java terminal support. When starting a Liberty project in dev mode, Liberty Tools now resolves the correct `JAVA_HOME` for each specific project by reading that project's `.vscode/settings.json` via `java.configuration.runtimes`. Each project in a multi-root workspace independently resolves its own JDK. A `liberty.java.home` setting can be used as a manual override.
+
 ## 25.0.11
 
 Version 25.0.11 of Liberty Tools for Visual Studio Code is a fix release that contains minor enhancements and fixes. Version 25.0.11 requires Visual Studio Code version 1.78+ and requires Java 17 or later.

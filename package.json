@@ -227,6 +227,13 @@
 						"type": "boolean",
 						"default": false,
 						"description": "If this value is true, and if the setting java.home has a value, then the environment variable JAVA_HOME will be set to the value of java.home when a new terminal window is created.",
+						"scope": "window",
+						"deprecationMessage": "This setting is deprecated. Use 'liberty.java.home' to manually set the JDK for Liberty terminals."
+					},
+					"liberty.java.home": {
+						"type": "string",
+						"default": "",
+						"description": "Path to the JDK used to run Liberty dev mode in the terminal. When set, this overrides any JDK detected from VS Code Java settings (java.configuration.runtimes, java.jdt.ls.java.home). Leave empty to use the JDK configured via VS Code Java settings, or the system PATH if none is set.",
 						"scope": "window"
 					}
 				}
@@ -303,6 +310,7 @@
 		"fs-extra": "9.0.0",
 		"gradle-to-js": "2.0.0",
 		"jsonpath-plus": "10.3.0",
-		"vscode-languageclient": "9.0.1"
+		"vscode-languageclient": "9.0.1",
+		"jdk-utils": "^0.4.4"
 	}
 }

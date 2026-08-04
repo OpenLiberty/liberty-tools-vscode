@@ -12,6 +12,7 @@ import { LanguageClient } from "vscode-languageclient/node";
 import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor } from "vscode";
 import { localize } from "./util/i18nUtil";
 import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "./util/requirements";
+import { JavaSelector } from "./util/javaSelector";
 import { prepareExecutable } from "./util/javaServerStarter";
 import * as helperUtil from "./util/helperUtil";
 import path = require('path');
@@ -49,6 +50,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Run after getJavaExtensionAPI so VS Code APIs (findFiles etc.) are ready,
     // but before startLangServer so we don't wait for LS startup.
     handleWorkspaceSaveInProgress(context).catch(err => console.error('[handleWorkspaceSaveInProgress] uncaught error:', err));
+
+    // Invalidate the JavaSelector cache whenever the user changes a Java-related
+    // VS Code setting so the next findFirstValid() call picks up the new value.
+    context.subscriptions.push(JavaSelector.getInstance().watchConfigChanges());
 
     resolveLclsRequirements(api).then().catch((error => {
         window.showErrorMessage(error.message, error.label).then((selection) => {
