@@ -98,19 +98,30 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
     if (libProject !== undefined) {
         console.log(localize("starting.liberty.dev.on", libProject.getLabel()));
         let terminal = libProject.getTerminal();
+        let javaHome = "";
+        // If the stored terminal is no longer open, clear it so createTerminal
+        // runs again with fresh JAVA_HOME resolution.
+        if (terminal !== undefined && !vscode.window.terminals.includes(terminal)) {
+            libProject.deleteTerminal();
+            terminal = undefined;
+        }
         if (terminal === undefined) {
             //function call to create new terminal for LTV
-            terminal = createTerminalforLiberty(libProject, terminal);
+            const result = await createTerminalforLiberty(libProject, terminal);
+            if (result !== undefined) {
+                terminal = result.terminal;
+                javaHome = result.javaHome;
+            }
         }
         if (terminal !== undefined) {
             terminal.show();
             libProject.setTerminal(terminal);
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                 const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType());
-                terminal.sendText(cmd); // start dev mode on current project
+                terminal.sendText(prependJavaHome(cmd, javaHome)); // start dev mode on current project
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
                 const cmd = await getCommandForGradle(libProject.getPath(), "libertyDev", libProject.getTerminalType());
-                terminal.sendText(cmd); // start dev mode on current project
+                terminal.sendText(prependJavaHome(cmd, javaHome)); // start dev mode on current project
             }
         }
     } else if (ProjectProvider.getInstance()) {
@@ -423,9 +434,18 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
     const customCommand = (params === undefined) ? "" : params.trim();
     if (libProject !== undefined) {
         let terminal = libProject.getTerminal();
+        let javaHome = "";
+        if (terminal !== undefined && !vscode.window.terminals.includes(terminal)) {
+            libProject.deleteTerminal();
+            terminal = undefined;
+        }
         if (terminal === undefined) {
             //function call to create new terminal for LTV
-            terminal = createTerminalforLiberty(libProject, terminal);
+            const result = await createTerminalforLiberty(libProject, terminal);
+            if (result !== undefined) {
+                terminal = result.terminal;
+                javaHome = result.javaHome;
+            }
         }
         if (terminal !== undefined) {
             terminal.show();
@@ -442,10 +462,10 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
 
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT || libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                 const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:dev", libProject.getTerminalType(), customCommand);
-                terminal.sendText(cmd);
+                terminal.sendText(prependJavaHome(cmd, javaHome));
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT || libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
                 const cmd = await getCommandForGradle(libProject.getPath(), "libertyDev", libProject.getTerminalType(), customCommand);
-                terminal.sendText(cmd);
+                terminal.sendText(prependJavaHome(cmd, javaHome));
             }
         }
     } else if (ProjectProvider.getInstance()) {
@@ -462,19 +482,28 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
 export async function startContainerDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     if (libProject !== undefined) {
         let terminal = libProject.getTerminal();
+        let javaHome = "";
+        if (terminal !== undefined && !vscode.window.terminals.includes(terminal)) {
+            libProject.deleteTerminal();
+            terminal = undefined;
+        }
         if (terminal === undefined) {
             //function call to create new terminal for LTV
-            terminal = createTerminalforLiberty(libProject, terminal);
+            const result = await createTerminalforLiberty(libProject, terminal);
+            if (result !== undefined) {
+                terminal = result.terminal;
+                javaHome = result.javaHome;
+            }
         }
         if (terminal !== undefined) {
             terminal.show();
             libProject.setTerminal(terminal);
             if (libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER) {
                 const cmd = await getCommandForMaven(libProject.getPath(), "io.openliberty.tools:liberty-maven-plugin:devc", libProject.getTerminalType());
-                terminal.sendText(cmd);
+                terminal.sendText(prependJavaHome(cmd, javaHome));
             } else if (libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER) {
                 const cmd = await getCommandForGradle(libProject.getPath(), "libertyDevc", libProject.getTerminalType());
-                terminal.sendText(cmd);
+                terminal.sendText(prependJavaHome(cmd, javaHome));
             }
         }
     } else if (ProjectProvider.getInstance()) {
@@ -547,26 +576,40 @@ export async function openReport(reportType: string, libProject?: LibertyProject
 
 // retrieve LibertyProject corresponding to closed terminal and delete terminal
 export function deleteTerminal(terminal: vscode.Terminal): void {
-    try {
-        const libProject = terminals[Number(terminal.processId)];
-        libProject.deleteTerminal();
-    } catch {
-        console.error(localize("unable.to.delete.terminal", terminal.name));
-    }
+    terminal.processId.then(pid => {
+        try {
+            const libProject = terminals[Number(pid)];
+            libProject.deleteTerminal();
+        } catch {
+            console.error(localize("unable.to.delete.terminal", terminal.name));
+        }
+    });
 }
 /**
- * function to create new terminal of default type 
+ * Prepends JAVA_HOME=<path> to a shell command so it takes effect regardless
+ * of what the shell's startup scripts set. No-op when javaHome is empty.
  */
-function createTerminalforLiberty(libProject: LibertyProject, terminal: vscode.Terminal | undefined) {
+function prependJavaHome(cmd: string, javaHome: string): string {
+    if (!javaHome) {
+        return cmd;
+    }
+    return `JAVA_HOME="${javaHome}" ${cmd}`;
+}
+
+/**
+ * function to create new terminal of default type
+ */
+async function createTerminalforLiberty(libProject: LibertyProject, terminal: vscode.Terminal | undefined): Promise<{ terminal: vscode.Terminal; javaHome: string } | undefined> {
     const path = Path.dirname(libProject.getPath());
-    //fetch the default terminal details and store it in LibertyProject object 
+    //fetch the default terminal details and store it in LibertyProject object
     const terminalType = defaultWindowsShell();
     libProject.setTerminalType(terminalType);
-    terminal = libProject.createTerminal(path);
-    if (terminal !== undefined) {
-        terminals[Number(terminal.processId)] = libProject;
+    const result = await libProject.createTerminal(path);
+    if (result !== undefined) {
+        const pid = await result.terminal.processId;
+        terminals[Number(pid)] = libProject;
     }
-    return terminal;
+    return result;
 }
 
 /*
