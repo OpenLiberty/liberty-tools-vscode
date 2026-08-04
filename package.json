@@ -2,7 +2,7 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Liberty Tools",
 	"description": "Liberty Tools for Visual Studio Code",
-	"version": "26.0.7-SNAPSHOT",
+	"version": "26.0.9-SNAPSHOT",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
@@ -11,7 +11,7 @@
 	"preview": false,
 	"license": "EPL-2.0",
 	"engines": {
-		"vscode": ">=1.75.0"
+		"vscode": ">=1.76.0"
 	},
 	"categories": [
 		"Programming Languages"
@@ -269,7 +269,7 @@
 		"@types/node": "20.0.0",
 		"@types/selenium-webdriver": "4.1.22",
 		"@types/sinon": "^21.0.1",
-		"@types/vscode": "1.42.0",
+		"@types/vscode": "^1.76.0",
 		"@typescript-eslint/eslint-plugin": "8.0.0",
 		"@typescript-eslint/parser": "8.0.0",
 		"@vscode/test-electron": "2.4.0",
@@ -304,13 +304,13 @@
 		"@types/fs-extra": "8.1.0",
 		"@types/semver": "7.3.2",
 		"@types/xml2js": "0.4.5",
-		"brace-expansion": "5.0.7",
+		"brace-expansion": "5.0.8",
 		"expand-home-dir": "0.0.3",
 		"find-java-home": "2.0.0",
 		"fs-extra": "9.0.0",
 		"gradle-to-js": "2.0.0",
+		"jdk-utils": "^0.4.4",
 		"jsonpath-plus": "10.3.0",
-		"vscode-languageclient": "9.0.1",
-		"jdk-utils": "^0.4.4"
+		"vscode-languageclient": "9.0.1"
 	}
 }
