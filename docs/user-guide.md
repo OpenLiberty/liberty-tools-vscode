@@ -35,6 +35,7 @@ For information regarding known issues and limitations, refer to our [Common Iss
 ### Application requirements
 
 - Define a Liberty `server.xml` configuration file in the `src/main/liberty/config` location.
+- Ensure the `src/main/webapp` directory exists in your project. If your application serves web content, this directory is required for Liberty to resolve file paths correctly (for example, `getRealPath()` returns `null` without it). If you use a deployment descriptor, place your `web.xml` file at `src/main/webapp/WEB-INF/web.xml`.
 - [Configure the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven#configuration) or [configure the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle#adding-the-plugin-to-the-build-script). We recommend using the most recent versions of the plugins as they include several important bug fixes.
 
     - [Liberty Maven Plugin latest release](https://github.com/OpenLiberty/ci.maven/releases/latest)
