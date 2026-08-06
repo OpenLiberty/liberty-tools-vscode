@@ -1,6 +1,6 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2020, 2024
+ * Copyright IBM Corp. 2020, 2026
  */
 import * as fs from "fs";
 import * as fse from "fs-extra";
@@ -15,7 +15,7 @@ import { COMMAND_TITLES, LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
-import { getCommandForMaven, getCommandForGradle, defaultWindowsShell } from "../util/commandUtils";
+import { getCommandForMaven, getCommandForGradle, defaultWindowsShell, isWin } from "../util/commandUtils";
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 
@@ -586,12 +586,16 @@ export function deleteTerminal(terminal: vscode.Terminal): void {
     });
 }
 /**
- * Prepends JAVA_HOME=<path> to a shell command so it takes effect regardless
+ * Prepends JAVA_HOME to a shell command so it takes effect regardless
  * of what the shell's startup scripts set. No-op when javaHome is empty.
+ * Uses cmd.exe syntax on Windows and POSIX inline-variable syntax on macOS/Linux.
  */
 function prependJavaHome(cmd: string, javaHome: string): string {
     if (!javaHome) {
         return cmd;
+    }
+    if (isWin()) {
+        return `set "JAVA_HOME=${javaHome}" && ${cmd}`;
     }
     return `JAVA_HOME="${javaHome}" ${cmd}`;
 }

@@ -1,6 +1,6 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2020, 2025
+ * Copyright IBM Corp. 2020, 2026
  */
 import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
