@@ -1,5 +1,5 @@
 /**
- * Copyright IBM Corp. 2025
+ * Copyright IBM Corp. 2026
  *
  *
  * Activates the redhat.java extension and reads api.javaRequirement.tooling_jre.
