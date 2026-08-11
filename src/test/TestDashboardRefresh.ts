@@ -361,6 +361,206 @@ describe("Liberty Tools Dashboard Refresh", () => {
         }
     }).timeout(utils.seconds(275));
 
+    function removeServerXMLFromProject(projectPath: string) {
+        execSync("rm src/main/liberty/config/server.xml", {
+            cwd: projectPath,
+            env: process.env,
+            stdio: "inherit"
+        });
+    }
+
+    // Test that dashboard detects Maven project with only server.xml file
+    it("Liberty Tools shows correct tooltips without LMP and only with server.xml (maven)", async () => {
+        logger.testStart("Liberty Tools shows correct tooltips without LMP and only with server.xml (maven)");
+        try {
+            logger.step(1, "Remove LMP from pom.xml");
+            execSync("mv pom-noLMP.xml pom.xml", {
+                cwd: utils.getMvnProjectPath(),
+                env: process.env,
+                stdio: "inherit"
+            });
+            logger.stepSuccess(1, "LMP removed from pom.xml");
+
+            const toolConfigWithoutLMP: ToolConfig[] = [
+                {  // Maven project should have pom.xml (unchanged)
+                    nameOfProject: constants.MAVEN_PROJECT,
+                    identifyingFile: "pom.xml"
+                },
+                {  // Gradle project (unchanged)
+                    nameOfProject: constants.GRADLE_PROJECT,
+                    identifyingFile: "build.gradle"
+                }
+            ];
+
+            const step: number = await verifyDashboardIsCorrect(2, toolConfigWithoutLMP);
+
+            // Now remove server.xml and verify no project detected
+            logger.step(step, "Remove server.xml");
+            removeServerXMLFromProject(utils.getMvnProjectPath());
+            logger.stepSuccess(step, "server.xml removed");
+
+            const toolConfigWithNoMavenProject: ToolConfig[] = [
+                // Maven project GONE since no LMP in pom.xml and no server.xml
+
+                {  // Gradle project (unchanged)
+                    nameOfProject: constants.GRADLE_PROJECT,
+                    identifyingFile: "build.gradle"
+                }
+            ];
+
+            await verifyDashboardIsCorrect(step, toolConfigWithNoMavenProject);
+
+            logger.testComplete("Liberty Tools shows correct tooltips without LMP and only with server.xml (maven)");
+        } catch (error) {
+            logger.testFailed("Liberty Tools shows correct tooltips without LMP and only with server.xml (maven)", error);
+            throw error;
+        }
+    }).timeout(utils.seconds(275));
+
+    // Test that dashboard detects Gradle project with only server.xml file
+    it("Liberty Tools shows correct tooltips without LGP and only with server.xml (gradle)", async () => {
+        logger.testStart("Liberty Tools shows correct tooltips without LGP and only with server.xml (gradle)");
+        try {
+            logger.step(1, "Remove LGP from build.gradle");
+            execSync("mv build-noLGP.gradle build.gradle", {
+                cwd: utils.getGradleProjectPath(),
+                env: process.env,
+                stdio: "inherit"
+            });
+            logger.stepSuccess(1, "LGP removed from build.gradle");
+
+            const toolConfigWithoutLGP: ToolConfig[] = [
+                {  // Maven project (unchanged)
+                    nameOfProject: constants.MAVEN_PROJECT,
+                    identifyingFile: "pom.xml"
+                },
+                {  // Gradle project should have build.gradle (unchanged)
+                    nameOfProject: constants.GRADLE_PROJECT,
+                    identifyingFile: "build.gradle"
+                }
+            ];
+
+            const step: number = await verifyDashboardIsCorrect(2, toolConfigWithoutLGP);
+
+            // Now remove server.xml and verify no project detected
+            logger.step(step, "Remove server.xml");
+            removeServerXMLFromProject(utils.getGradleProjectPath());
+            logger.stepSuccess(step, "server.xml removed");
+
+            const toolConfigWithNoGradleProject: ToolConfig[] = [
+                // Gradle project GONE since no LGP in build.gradle and no server.xml
+
+                {  // Maven project (unchanged)
+                    nameOfProject: constants.MAVEN_PROJECT,
+                    identifyingFile: "pom.xml"
+                },
+            ];
+
+            await verifyDashboardIsCorrect(step, toolConfigWithNoGradleProject);
+
+            logger.testComplete("Liberty Tools shows correct tooltips without LGP and only with server.xml (gradle)");
+        } catch (error) {
+            logger.testFailed("Liberty Tools shows correct tooltips without LGP and only with server.xml (gradle)", error);
+            throw error;
+        }
+    }).timeout(utils.seconds(275));
+
+    // Test that dashboard detects Maven project with LMP and no server.xml file
+    it("Liberty Tools shows correct tooltips LMP only (maven)", async () => {
+        logger.testStart("Liberty Tools shows correct tooltips LMP only (maven)");
+        try {
+            logger.step(1, "Remove server.xml");
+            removeServerXMLFromProject(utils.getMvnProjectPath());
+            logger.stepSuccess(1, "server.xml removed");
+
+            const toolConfigWithoutServerXML: ToolConfig[] = [
+                {  // Maven project should have pom.xml (unchanged)
+                    nameOfProject: constants.MAVEN_PROJECT,
+                    identifyingFile: "pom.xml"
+                },
+                {  // Gradle project (unchanged)
+                    nameOfProject: constants.GRADLE_PROJECT,
+                    identifyingFile: "build.gradle"
+                }
+            ];
+
+            const step: number = await verifyDashboardIsCorrect(2, toolConfigWithoutServerXML);
+
+            // Now remove LMP and verify no project detected
+            logger.step(step, "Remove LMP from pom.xml");
+            execSync("mv pom-noLMP.xml pom.xml", {
+                cwd: utils.getMvnProjectPath(),
+                env: process.env,
+                stdio: "inherit"
+            });
+            logger.stepSuccess(step, "LMP removed from pom.xml");
+
+            const toolConfigWithNoMavenProject: ToolConfig[] = [
+                // Maven project GONE since no LMP in pom.xml and no server.xml
+
+                {  // Gradle project (unchanged)
+                    nameOfProject: constants.GRADLE_PROJECT,
+                    identifyingFile: "build.gradle"
+                }
+            ];
+
+            await verifyDashboardIsCorrect(step, toolConfigWithNoMavenProject);
+
+            logger.testComplete("Liberty Tools shows correct tooltips LMP only (maven)");
+        } catch (error) {
+            logger.testFailed("Liberty Tools shows correct tooltips LMP only (maven)", error);
+            throw error;
+        }
+    }).timeout(utils.seconds(275));
+
+    // Test that dashboard detects Gradle project with LGP and no server.xml file
+    it("Liberty Tools shows correct tooltips LGP only (gradle)", async () => {
+        logger.testStart("Liberty Tools shows correct tooltips LGP only (gradle)");
+        try {
+            logger.step(1, "Remove server.xml");
+            removeServerXMLFromProject(utils.getGradleProjectPath());
+            logger.stepSuccess(1, "server.xml removed");
+
+            const toolConfigWithoutServerXML: ToolConfig[] = [
+                {  // Maven project should have pom.xml (unchanged)
+                    nameOfProject: constants.MAVEN_PROJECT,
+                    identifyingFile: "pom.xml"
+                },
+                {  // Gradle project (unchanged)
+                    nameOfProject: constants.GRADLE_PROJECT,
+                    identifyingFile: "build.gradle"
+                }
+            ];
+
+            const step: number = await verifyDashboardIsCorrect(2, toolConfigWithoutServerXML);
+
+            // Now remove LGP and verify no project detected
+            logger.step(step, "Remove LGP from build.gradle");
+            execSync("mv build-noLGP.gradle build.gradle", {
+                cwd: utils.getGradleProjectPath(),
+                env: process.env,
+                stdio: "inherit"
+            });
+            logger.stepSuccess(step, "LGP removed from build.gradle");
+
+            const toolConfigWithNoGradleProject: ToolConfig[] = [
+                // Gradle project GONE since no LGP in build.gradle and no server.xml
+
+                {  // Maven project (unchanged)
+                    nameOfProject: constants.MAVEN_PROJECT,
+                    identifyingFile: "pom.xml"
+                },
+            ];
+
+            await verifyDashboardIsCorrect(step, toolConfigWithNoGradleProject);
+
+            logger.testComplete("Liberty Tools shows correct tooltips LGP only (gradle)");
+        } catch (error) {
+            logger.testFailed("Liberty Tools shows correct tooltips LGP only (gradle)", error);
+            throw error;
+        }
+    }).timeout(utils.seconds(275));
+
     /**
      * Verifies that the dashboard displays the expected projects with correct tooltips.
      * @returns The next step number after all verification steps have completed.
