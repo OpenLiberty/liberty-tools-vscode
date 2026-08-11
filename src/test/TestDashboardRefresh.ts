@@ -264,7 +264,9 @@ describe("Liberty Tools Dashboard Refresh", () => {
                 }
             }
             expect(removeProjectNotification).not.undefined;
-            await removeProjectNotification?.takeAction("Yes");
+            await utils.waitForSuccess(async () => {  // Use waitForSuccess to handle ElementNotInteractableError
+                await removeProjectNotification?.takeAction("Yes");
+            });
             logger.stepSuccess(step, "Removed project");
             step++;
 
