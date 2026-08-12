@@ -2,6 +2,7 @@
     "views.explorer.name": "Liberty Tools",
     "commands.title.refresh": "Refresh projects",
     "commands.title.start": "Start",
+    "commands.title.start.debug": "Start in debug mode",
     "commands.title.debug": "Attach debugger",
     "commands.title.stop": "Stop",
     "commands.title.start.custom": "Start...",
