@@ -2,6 +2,22 @@
 
 All notable changes to the Liberty Tools extension will be documented below.
 
+## 26.0.8
+
+Version 26.0.8 of Liberty Tools for Visual Studio Code contains minor enhancements and fixes. Version 26.0.8 requires Visual Studio Code version 1.78+ and requires Java 21 or later.
+
+Notable changes:
+- Java 21 is required for language server functionality. See the [user guide](docs/user-guide.md) for more info.
+- The extenxion's side bar item `Liberty Dashboard` was renamed to `Liberty Tools`.
+- Updated [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta) version to 0.2.6:
+  - There is a known conflict between this version of LSP4Jakarta and `Language Support for Java by Red Hat` version `1.55.0 or higher`. An notification has been added for this case. Use version `1.54.0` to resolve any issues with LSP4Jakarta features. This will be updated in the next release.
+  - For more information regarding changes for version 0.2.6, refer to the release notes: https://github.com/eclipse-lsp4jakarta/lsp4jakarta/releases/tag/0.2.6.
+- Updated [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) version to 2.4.1, which includes multiple enhancements and bug fixes. For more information regarding changes for version 2.4.1, refer to the release notes:
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/liberty-langserver-2.4.1
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/lemminx-liberty-2.4.1
+
+See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/25.0.11...26.0.8) for the full set of changes since the previous release.
+
 ## 25.0.11
 
 Version 25.0.11 of Liberty Tools for Visual Studio Code is a fix release that contains minor enhancements and fixes. Version 25.0.11 requires Visual Studio Code version 1.78+ and requires Java 17 or later.
