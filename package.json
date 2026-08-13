@@ -32,6 +32,7 @@
 		"workspaceContains:**/pom.xml",
 		"workspaceContains:**/build.gradle",
 		"onCommand:liberty.dev.start",
+		"onCommand:liberty.dev.start.debug",
 		"onCommand:liberty.dev.stop",
 		"onCommand:liberty.dev.custom",
 		"onCommand:liberty.dev.run.tests",
@@ -87,6 +88,11 @@
 				"command": "liberty.dev.start",
 				"category": "Liberty",
 				"title": "%commands.title.start%"
+			},
+			{
+				"command": "liberty.dev.start.debug",
+				"category": "Liberty",
+				"title": "%commands.title.start.debug%"
 			},
 			{
 				"command": "liberty.dev.debug",
@@ -174,6 +180,11 @@
 			"view/item/context": [
 				{
 					"command": "liberty.dev.start",
+					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
+					"group": "libertyCore@1"
+				},
+				{
+					"command": "liberty.dev.start.debug",
 					"when": "viewItem == libertyMavenProject || viewItem == libertyGradleProject || viewItem == libertyMavenProjectContainer || viewItem == libertyGradleProjectContainer",
 					"group": "libertyCore@1"
 				},
