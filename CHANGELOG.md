@@ -9,6 +9,8 @@ Version 26.0.8 of Liberty Tools for Visual Studio Code contains minor enhancemen
 Notable changes:
 - Java 21 is required for language server functionality. See the [user guide](docs/user-guide.md) for more info.
 - The extenxion's side bar item `Liberty Dashboard` was renamed to `Liberty Tools`.
+- Improved Java runtime detection for language server startup. Liberty Tools now checks all available Java sources (VS Code settings, extensions, system path) and skips sources that provide a Java version older than 21. Properties pointing to unsupported Java versions will no longer prevent the extension from loading if Java 21, or higher, is available elsewhere on the machine.
+- Added per-project Java support. When starting a Liberty project in dev mode, Liberty Tools now resolves `JAVA_HOME` for each project by reading the project's VS Code settings. Each project in a multi-root workspace independently resolves its own JDK. Use `liberty.java.home` to override all other JVM location properties when running dev mode. For more information check the [user guide](https://github.com/OpenLiberty/liberty-tools-vscode/blob/main/docs/user-guide.md#configure-your-java-runtime-for-language-servers).
 - Updated [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta) version to 0.2.6:
   - There is a known conflict between this version of LSP4Jakarta and `Language Support for Java by Red Hat` version `1.55.0 or higher`. An notification has been added for this case. Use version `1.54.0` to resolve any issues with LSP4Jakarta features. This will be updated in the next release.
   - For more information regarding changes for version 0.2.6, refer to the release notes: https://github.com/eclipse-lsp4jakarta/lsp4jakarta/releases/tag/0.2.6.
