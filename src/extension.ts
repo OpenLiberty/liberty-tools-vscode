@@ -1,6 +1,6 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2020, 2025
+ * Copyright IBM Corp. 2020, 2026
  */
 import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
@@ -12,6 +12,7 @@ import { LanguageClient } from "vscode-languageclient/node";
 import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor } from "vscode";
 import { localize } from "./util/i18nUtil";
 import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "./util/requirements";
+import { JavaSelector } from "./util/javaSelector";
 import { prepareExecutable } from "./util/javaServerStarter";
 import * as helperUtil from "./util/helperUtil";
 import path = require('path');
@@ -49,6 +50,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Run after getJavaExtensionAPI so VS Code APIs (findFiles etc.) are ready,
     // but before startLangServer so we don't wait for LS startup.
     handleWorkspaceSaveInProgress(context).catch(err => console.error('[handleWorkspaceSaveInProgress] uncaught error:', err));
+
+    // Invalidate the JavaSelector cache whenever the user changes a Java-related
+    // VS Code setting so the next findFirstValid() call picks up the new value.
+    context.subscriptions.push(JavaSelector.getInstance().watchConfigChanges());
+
+    // Warn users who still have the deprecated liberty.terminal.useJavaHome setting enabled.
+    const useJavaHome = workspace.getConfiguration("liberty").get<boolean>("terminal.useJavaHome");
+    if (useJavaHome) {
+        window.showWarningMessage(
+            "The 'liberty.terminal.useJavaHome' setting is deprecated and no longer has any effect. " +
+            "Set 'liberty.java.home' to the JDK path you want Liberty dev mode to use, or remove the setting to use automatic JDK detection."
+        );
+    }
 
     resolveLclsRequirements(api).then().catch((error => {
         window.showErrorMessage(error.message, error.label).then((selection) => {

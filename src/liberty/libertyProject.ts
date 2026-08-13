@@ -13,6 +13,7 @@ import { EXCLUDED_DIR_PATTERN, LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CO
 import { BuildFileImpl, GradleBuildFile } from "../util/buildFile";
 import { DashboardData } from "./dashboard";
 import { BaseLibertyProject } from "./baseLibertyProject";
+import { JavaSelector } from "../util/javaSelector";
 
 const MAVEN_ICON = "maven-tag.png";
 const GRADLE_ICON = "gradle-tag-1.png";
@@ -549,19 +550,30 @@ export class LibertyProject extends vscode.TreeItem {
 		this.terminalType = terminalType;
 	}
 
-	public createTerminal(projectHome: string): vscode.Terminal | undefined {
+	// Returns a bundled object with the terminal and resolved JAVA_HOME path,
+	// or undefined if a terminal already exists for this project.
+	public async createTerminal(projectHome: string): Promise<{ terminal: vscode.Terminal; javaHome: string } | undefined> {
 		if (this.terminal === undefined) {
-			// configure terminal to use java.home if liberty.terminal.useJavaHome is true
-			const useJavaHome: any = util.getConfiguration("terminal.useJavaHome");
-			let env: { [envKey: string]: string } = {};
-			if (useJavaHome) {
-				const javaHome: string | undefined = vscode.workspace.getConfiguration("java").get<string>("home");
-				if (javaHome) {
-					env = { JAVA_HOME: javaHome };
-				}
+			let javaHome = "";
+
+			// 1. Honour the liberty.java.home manual override first.
+			const libertyJavaHome: string | undefined = util.getConfiguration("java.home");
+			if (libertyJavaHome && libertyJavaHome.trim().length > 0) {
+				javaHome = libertyJavaHome.trim();
+			} else {
+				// 2. Delegate to JavaSelector's per-project resolver.
+				// Reads this project's .vscode/settings.json (scoped to this.path)
+				// then falls back to system PATH. Never throws.
+				javaHome = await JavaSelector.getInstance().findForProject(
+					vscode.Uri.file(this.path)
+				);
 			}
-			const terminal = vscode.window.createTerminal({cwd: projectHome, name: this.label + " (liberty dev)", env:env });
-			return terminal;
+
+			// Terminal created plain with no env injection so shell startup scripts
+			// (e.g. ~/.zshrc) cannot overwrite JAVA_HOME. The caller prepends
+			// JAVA_HOME="..." directly to the mvn/gradle command via prependJavaHome().
+			const terminal = vscode.window.createTerminal({ cwd: projectHome, name: this.label + " (liberty dev)" });
+			return { terminal, javaHome };
 		}
 		return undefined;
 	}
