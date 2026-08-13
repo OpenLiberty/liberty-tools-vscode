@@ -55,6 +55,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // VS Code setting so the next findFirstValid() call picks up the new value.
     context.subscriptions.push(JavaSelector.getInstance().watchConfigChanges());
 
+    // Warn users who still have the deprecated liberty.terminal.useJavaHome setting enabled.
+    const useJavaHome = workspace.getConfiguration("liberty").get<boolean>("terminal.useJavaHome");
+    if (useJavaHome) {
+        window.showWarningMessage(
+            "The 'liberty.terminal.useJavaHome' setting is deprecated and no longer has any effect. " +
+            "Set 'liberty.java.home' to the JDK path you want Liberty dev mode to use, or remove the setting to use automatic JDK detection."
+        );
+    }
+
     resolveLclsRequirements(api).then().catch((error => {
         window.showErrorMessage(error.message, error.label).then((selection) => {
             if (error.label && error.label === selection && error.openUrl) {

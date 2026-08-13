@@ -87,13 +87,15 @@ When you start a Liberty project, Liberty Tools sets `JAVA_HOME` in the terminal
 
 1. `liberty.java.home` in settings.json — manual override, takes priority over everything else.
 2. `java.configuration.runtimes` in the project's `.vscode/settings.json` (entry marked `default: true` is preferred).
-3. `java.jdt.ls.java.home`, `xml.java.home`, `java.import.maven.java.home`, or `java.import.gradle.java.home` in settings.json.
+3. `java.jdt.ls.java.home`, `xml.java.home`, `java.import.maven.java.home`, `java.import.gradle.java.home`, or `java.home` in settings.json.
 4. `JAVA_HOME` or `JDK_HOME` as system environment variables.
 5. JDKs discovered on the system path.
 
 If no JDK is found, the terminal opens without a `JAVA_HOME` prefix and uses whatever `java` is available on the system PATH.
 
 Note: The JDK used for the dev mode terminal is resolved independently from the JDK used to run the language servers. A project can run dev mode on Java 17 while the language servers run on Java 21.
+
+Note: The `liberty.terminal.useJavaHome` setting is deprecated and no longer has any effect. If you previously used it to point Liberty terminals at a specific JDK via `java.home`, you can now set `liberty.java.home` directly to the JDK path, or leave it unset to let Liberty Tools detect the JDK automatically from the sources listed above.
 
 ### Terminal shell support
 
