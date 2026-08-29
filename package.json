@@ -235,6 +235,12 @@
 						"default": "",
 						"description": "Path to the JDK used to run Liberty dev mode in the terminal. When set, this overrides any JDK detected from VS Code Java settings (java.configuration.runtimes, java.jdt.ls.java.home). Leave empty to use the JDK configured via VS Code Java settings, or the system PATH if none is set.",
 						"scope": "window"
+					},
+					"liberty.refresh.enabled": {
+						"type": "boolean",
+						"default": true,
+						"description": "If this value is false the extension will not try to refresh the liberty dashboard upon changes in the workspace.",
+						"scope": "window"
 					}
 				}
 			}
