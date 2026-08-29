@@ -133,6 +133,109 @@ export async function startDevMode(libProject?: LibertyProject | undefined): Pro
     }
 }
 
+export async function startDevModeWithDebugger(
+    libProject?: LibertyProject | undefined
+): Promise<void> {
+    if (libProject === undefined) {
+        if (ProjectProvider.getInstance()) {
+            showProjects("liberty.dev.start.debug", startDevModeWithDebugger);
+        } else {
+            vscode.window.showInformationMessage(
+                localize("cannot.start.liberty.dev.debug.undefined")
+            );
+        }
+        return;
+    }
+
+    // 1. Start dev mode with the debug flag
+    let terminal = libProject.getTerminal();
+    if (terminal === undefined) {
+        terminal = createTerminalforLiberty(libProject, terminal);
+    }
+    if (terminal === undefined) { return; }
+
+    terminal.show();
+    libProject.setTerminal(terminal);
+
+    const isMaven =
+        libProject.getContextValue() === LIBERTY_MAVEN_PROJECT ||
+        libProject.getContextValue() === LIBERTY_MAVEN_PROJECT_CONTAINER;
+    const isGradle =
+        libProject.getContextValue() === LIBERTY_GRADLE_PROJECT ||
+        libProject.getContextValue() === LIBERTY_GRADLE_PROJECT_CONTAINER;
+
+    if (isMaven) {
+        const cmd = await getCommandForMaven(
+            libProject.getPath(),
+            "io.openliberty.tools:liberty-maven-plugin:dev",
+            libProject.getTerminalType(),
+            "-DlibertyDebugPort=7777"    // enable debug
+        );
+        terminal.sendText(cmd);
+    } else if (isGradle) {
+        const cmd = await getCommandForGradle(
+            libProject.getPath(),
+            "libertyDev",
+            libProject.getTerminalType(),
+            "--libertyDebugPort=7777"    // enable debug
+        );
+        terminal.sendText(cmd);
+    } else {
+        return;
+    }
+
+    // 2. Watch for server.env to change
+    const pathPrefix = isMaven ? "target" : "build";
+    const pattern = new vscode.RelativePattern(
+        Path.dirname(libProject.getPath()),
+        pathPrefix + "/**/server.env"
+    );
+
+    const watcher = vscode.workspace.createFileSystemWatcher(pattern);
+    const TIMEOUT_MS = 3 * 60 * 1000; // 3-minute safety timeout
+
+    const tryAttach = async (uri: vscode.Uri) => {
+        const lines = (await fse.readFile(uri.fsPath, "utf8")).split("\n");
+        let port = "";
+        for (const line of lines) {
+            const match = LIBERTY_SERVER_ENV_PORT_REGEX.exec(line);
+            if (match) { port = match[1]; break; }
+        }
+        if (port === "") { return; }          // port not written yet, wait for next change
+
+        // delete server.env watcher
+        watcher.dispose();
+        clearTimeout(timer);
+
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(
+            vscode.Uri.file(libProject.getPath())
+        );
+        vscode.debug.startDebugging(workspaceFolder, {
+            type: "java",
+            name: localize("liberty.dev.debug.label", Path.dirname(libProject.getPath())),
+            request: "attach",
+            hostName: "localhost",
+            port,
+            cwd: Path.dirname(libProject.getPath()),
+            projectName: libProject.getLabel(),
+        }).then(() => {}, err => {
+            vscode.window.showErrorMessage(
+                localize("liberty.dev.attach.debugger.failed.with.error", err.message)
+            );
+        });
+    };
+
+    watcher.onDidCreate(tryAttach);
+    watcher.onDidChange(tryAttach);
+
+    const timer = setTimeout(() => {
+        watcher.dispose();
+        vscode.window.showWarningMessage(
+            localize("liberty.dev.debug.attach.timeout", libProject.getLabel())
+        );
+    }, TIMEOUT_MS);
+}
+
 
 export async function removeProject(): Promise<void> {
     const projectProvider: ProjectProvider = ProjectProvider.getInstance();

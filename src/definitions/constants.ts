@@ -18,6 +18,7 @@ export const LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION = "3.1.0";
 export const LIBERTY_SERVER_ENV_PORT_REGEX = /^WLP_DEBUG_ADDRESS=([\d]+)$/;
 export const COMMAND_AND_PROJECT_TYPE_MAP: { [command: string]: string[] } = {
     "liberty.dev.start": [LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
+    "liberty.dev.start.debug": [LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
     "liberty.dev.stop":[LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
     "liberty.dev.custom":[LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
     "liberty.dev.start.container":[ LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
@@ -33,6 +34,7 @@ export const UNTITLED_WORKSPACE="Untitled (Workspace)";
 COMMAND_TITLES.set(localize("hotkey.commands.title.refresh"), "liberty.explorer.refresh");
 
 COMMAND_TITLES.set(localize("hotkey.commands.title.start"), "liberty.dev.start");
+COMMAND_TITLES.set(localize("hotkey.commands.title.start.debug"), "liberty.dev.start.debug");
 COMMAND_TITLES.set(localize("hotkey.commands.title.start.custom"), "liberty.dev.custom");
 COMMAND_TITLES.set(localize("hotkey.commands.title.start.in.container"), "liberty.dev.start.container");
 
