@@ -15,6 +15,7 @@ import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "
 import { JavaSelector } from "./util/javaSelector";
 import { prepareExecutable } from "./util/javaServerStarter";
 import * as helperUtil from "./util/helperUtil";
+import { createLsOutputChannel } from "./util/lsOutputChannel";
 import path = require('path');
 import * as fs from "fs";
 
@@ -267,8 +268,10 @@ function startLangServer(context: ExtensionContext, requirements: RequirementsDa
     const clientId = isLiberty ? LIBERTY_CLIENT_ID : JAKARTA_CLIENT_ID;
     const localName = isLiberty ? localize("liberty.ls.output.dropdown") : localize("jakarta.ls.output.dropdown");
 
+    const outputChannel = createLsOutputChannel(localName, context);
+
     // Options to control the language client
-    const clientOptions: LanguageClientOptions = prepareClientOptions(isLiberty);
+    const clientOptions: LanguageClientOptions = { ...prepareClientOptions(isLiberty), outputChannel };
     const serverOptions = prepareExecutable(lsJar, requirements)
 
     console.log("Creating new language client for " + lsName);
