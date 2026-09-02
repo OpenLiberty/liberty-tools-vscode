@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
-import { EditorView, VSBrowser } from 'vscode-extension-tester';
+import { VSBrowser } from 'vscode-extension-tester';
 import { runDevModeTestSuite } from "./shared/devModeTestSuite";
 import * as utils from './utils/testUtils';
 import * as constants from './definitions/constants';

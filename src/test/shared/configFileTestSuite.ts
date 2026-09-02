@@ -5,7 +5,7 @@
 
 import * as path from 'path';
 import { logger } from '../utils/testLogger';
-import { EditorView, VSBrowser } from 'vscode-extension-tester';
+import { VSBrowser } from 'vscode-extension-tester';
 import { EditorPage } from '../pages/EditorPage';
 import * as utils from '../utils/testUtils';
 import { expect } from 'chai';
@@ -106,7 +106,7 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
                 logger.error(`Failed to reset ${config.tabTitle}`, error);
             }
             try {
-                await new EditorView().closeAllEditors();
+                await editorUtils.closeAllEditors();
                 logger.info('Closed all editors after test suite');
             } catch (error) {
                 logger.error('Failed to close editors in after hook', error);

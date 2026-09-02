@@ -3,14 +3,13 @@
  * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
-import { EditorView, VSBrowser } from 'vscode-extension-tester';
+import { VSBrowser } from 'vscode-extension-tester';
 import { runDevModeTestSuite } from "./shared/devModeTestSuite";
 import * as utils from './utils/testUtils';
 import { logger } from './utils/testLogger';
 import * as constants from './definitions/constants';
 import * as path from 'path';
 import { DashboardPage } from './pages/DashboardPage';
-
 // Run shared dev mode tests
 runDevModeTestSuite({
     buildTool: 'maven',
@@ -160,11 +159,6 @@ describe('Maven-specific devmode action tests', () => {
 
             expect(reportFound, "Unit test report not found").to.equal(true);
             logger.stepSuccess(3, 'Unit test report tab is open');
-
-            logger.step(4, 'Closing unit test report tab');
-            const editorView = new EditorView();
-            await editorView.closeEditor(constants.SUREFIRE_REPORT_TITLE);
-            logger.stepSuccess(4, 'Unit test report tab closed');
 
             logger.testComplete('View unit test report for Maven project');
         } catch (error) {

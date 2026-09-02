@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2026
  */
 
-import { TextEditor, VSBrowser, Workbench } from 'vscode-extension-tester';
+import { EditorView, TextEditor, VSBrowser, Workbench } from 'vscode-extension-tester';
 import * as utils from './testUtils';
 
 /**
@@ -56,3 +56,16 @@ export async function hoverOver(
     await new Workbench().executeCommand('editor.action.showHover');
     return utils.waitForHoverWidget(VSBrowser.instance.driver, elementDescription, timeoutMs);
 }
+
+/**
+ * Close all open editors across all groups, but only if any are open.
+ * Swallows the "no editors" case so callers only see genuine failures.
+ */
+export async function closeAllEditors(): Promise<void> {
+    const editorView = new EditorView();
+    const openTabs = (await editorView.getOpenEditorTitles().catch(() => [])) as string[];
+    if (openTabs.length > 0) {
+        await editorView.closeAllEditors();
+    }
+}
+
