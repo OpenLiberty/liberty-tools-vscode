@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
-import { EditorView, TextEditor, VSBrowser, Workbench, WebDriver } from 'vscode-extension-tester';
+import { TextEditor, VSBrowser, Workbench, WebDriver } from 'vscode-extension-tester';
 import * as utils from '../utils/testUtils';
 import { logger } from '../utils/testLogger';
 import * as path from 'path';
@@ -59,15 +59,14 @@ export function runHoverTestSuite(config: HoverConfig){
         });
 
         after(async function() {
-            this.timeout(10000); // Increase timeout for cleanup operations
-            // Close editor after all tests complete
+            this.timeout(10000);
             try {
-                await new EditorView().closeAllEditors();
+                await editorUtils.closeAllEditors();
                 logger.info('Closed all editors after test suite');
             } catch (error) {
                 logger.error('Failed to close editors in after hook', error);
             }
-            
+
             utils.copyScreenshotsToProjectFolder(config.buildTool);
         });
 

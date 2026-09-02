@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
-import { EditorView, TextEditor, VSBrowser, Workbench, WebDriver, BottomBarPanel, MarkerType, Key, By } from 'vscode-extension-tester';
+import { TextEditor, VSBrowser, Workbench, WebDriver, BottomBarPanel, MarkerType, Key, By } from 'vscode-extension-tester';
 import * as utils from '../utils/testUtils';
 import { logger } from '../utils/testLogger';
 import * as path from 'path';
@@ -21,7 +21,7 @@ export interface RestSnippetConfig {
 
 // Shared test suite that works for both Maven and Gradle
 export function runRestSnippetSuite(config: RestSnippetConfig) {
-    describe(`Rest Class Snippet Test for ${config.buildTool === 'maven' ? 'Maven' : 'Gradle'} Project`, () => {
+    describe(`Jakarta Rest Class Snippet Test for ${config.buildTool === 'maven' ? 'Maven' : 'Gradle'} Project`, () => {
         let editorPage: EditorPage; 
         let wait: any;
         let driver: WebDriver;
@@ -35,7 +35,7 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
 
         before(async function() {
             this.timeout(60000);
-            logger.info('Setting up rest_class snippet test');
+            logger.info('Setting up jakarta_rest_class snippet test');
 
             driver = VSBrowser.instance.driver;
             wait = utils.getWaitHelper(); 
@@ -78,7 +78,7 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
             }
             
             try {
-                await new EditorView().closeAllEditors();
+                await editorUtils.closeAllEditors();
                 await wait.sleep(500);
                 logger.info('Closed all editors after test suite');
             } catch (error) {
@@ -105,11 +105,11 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
                 }
             });    
 
-            it('rest_class snippet populates correct REST class', async function ()  {
+            it('jakarta_rest_class snippet populates correct REST class', async function ()  {
                 this.timeout(275000);
-                logger.testStart('rest_class snippet inserts correct REST class');
+                logger.testStart('jakarta_rest_class snippet inserts correct REST class');
 
-                // at the top of the rest_class snippet test, before positioning the cursor
+                // at the top of the jakarta_rest_class snippet test, before positioning the cursor
                 await editorUtils.clearEditor(editorPage.getEditor());
                 await wait.sleep(1500);   // let any auto-stub settle, then confirm
                 const check = await editorPage.getEditor().getText();
@@ -123,7 +123,7 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
                     // Type rest and trigger snippet insertion
                     logger.step(2, 'Opening content assist');
                     const codeAssist = new CodeAssistPage();
-                    await codeAssist.insertSnippet(editorPage, 'rest', 'rest_class');
+                    await codeAssist.insertSnippet(editorPage, 'rest', 'jakarta_rest_class');
                     logger.stepSuccess(2, 'Snippet inserted');
                     await wait.sleep(1000); // Give time for snippet to fully expand
                     
@@ -131,15 +131,15 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
                     const codeInsertion = await editorPage.getEditor().getText();
                     expect(codeInsertion).to.include('@GET')
                     expect(codeInsertion).to.include('methodname');
-                    logger.stepSuccess(3, 'Snippet rest_class was inserted correctly');
+                    logger.stepSuccess(3, 'Snippet jakarta_rest_class was inserted correctly');
                     
                     // Save the file so the content persists for the next test
                     await editorPage.getEditor().save();
                     await wait.sleep(500);
                     
-                    logger.testComplete('rest_class snippet inserts correct REST class');
+                    logger.testComplete('jakarta_rest_class snippet inserts correct REST class');
                 } catch (error) {
-                    logger.testFailed('rest_class snippet inserts correct REST class', error);
+                    logger.testFailed('jakarta_rest_class snippet inserts correct REST class', error);
                     throw error;
                 }
             });

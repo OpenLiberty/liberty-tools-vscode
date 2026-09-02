@@ -34,14 +34,19 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
 
         afterEach(async function() {
         this.timeout(30000);
-        // Close any open editors after each test
+        // Take screenshot on failure
         if (this.currentTest?.state === 'failed') {
             await VSBrowser.instance.driver.takeScreenshot();
             logger.error(`Test failed: ${this.currentTest.title}`);
         }
-        
+
+        // Only close editors if any are open
         try {
-            await new EditorView().closeAllEditors();
+            const editorView = new EditorView();
+            const openTabs = await editorView.getOpenEditorTitles();
+            if (openTabs.length > 0) {
+                await editorView.closeAllEditors();
+            }
         } catch (error) {
             logger.error('Failed to close editors in afterEach', error);
         }
