@@ -311,6 +311,6 @@
 		"gradle-to-js": "2.0.0",
 		"jsonpath-plus": "10.3.0",
 		"vscode-languageclient": "10.1.0",
-		"jdk-utils": "^0.4.4"
+		"jdk-utils": "0.4.6"
 	}
 }
