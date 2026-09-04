@@ -1,9 +1,10 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2020, 2025
+ * Copyright IBM Corp. 2020, 2026
  */
 import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
+import { starterProject } from './liberty/starterProject';
 import * as lsp4jakartaLS from "./definitions/lsp4jakartaLSRequestNames";
 
 import { LibertyProject } from "./liberty/libertyProject";
@@ -14,6 +15,7 @@ import { LanguageClient } from "vscode-languageclient/node";
 import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor } from "vscode";
 import { localize } from "./util/i18nUtil";
 import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "./util/requirements";
+import { JavaSelector } from "./util/javaSelector";
 import { prepareExecutable } from "./util/javaServerStarter";
 import * as helperUtil from "./util/helperUtil";
 import {
@@ -23,6 +25,7 @@ import {
     CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
     CMD_SORT_WORKSPACE, CMD_SORT_WORKSPACE_ACTIVE, CMD_SORT_ALPHABETICAL, CMD_SORT_ALPHABETICAL_ACTIVE,
 } from "./definitions/constants";
+import { createLsOutputChannel } from "./util/lsOutputChannel";
 import path = require('path');
 import * as fs from "fs";
 
@@ -30,8 +33,8 @@ const JAVA_EXTENSION_ID = "redhat.java";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
-export const LIBERTY_LS_JAR = "liberty-langserver-2.4.1-jar-with-dependencies.jar";
-export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.2.6-SNAPSHOT-jar-with-dependencies.jar";
+export const LIBERTY_LS_JAR = "liberty-langserver-2.4.2-jar-with-dependencies.jar";
+export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.2.7-jar-with-dependencies.jar";
 
 let libertyClient: LanguageClient;
 let jakartaClient: LanguageClient;
@@ -70,6 +73,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         // language features (LCLS, Jakarta) unavailable.
         console.warn("Java extension unavailable, language servers will not start:", error.message);
         return;
+    }
+
+    // Invalidate the JavaSelector cache whenever the user changes a Java-related
+    // VS Code setting so the next findFirstValid() call picks up the new value.
+    context.subscriptions.push(JavaSelector.getInstance().watchConfigChanges());
+
+    // Warn users who still have the deprecated liberty.terminal.useJavaHome setting enabled.
+    const useJavaHome = workspace.getConfiguration("liberty").get<boolean>("terminal.useJavaHome");
+    if (useJavaHome) {
+        window.showWarningMessage(
+            "The 'liberty.terminal.useJavaHome' setting is deprecated and no longer has any effect. " +
+            "Set 'liberty.java.home' to the JDK path you want Liberty dev mode to use, or remove the setting to use automatic JDK detection."
+        );
     }
 
     // Waits for the java language server to launch in standard mode
@@ -145,7 +161,7 @@ function registerCommands(context: ExtensionContext) {
         );
     }
 
-    handleWorkspaceSaveInProgress(context);
+    handleWorkspaceSaveInProgress(context).catch(err => console.error('[handleWorkspaceSaveInProgress] uncaught error:', err));
 
     // Command table — [id, handler] pairs registered in one pass.
     const commandTable: [string, (...args: any[]) => any][] = [
@@ -184,6 +200,9 @@ function registerCommands(context: ExtensionContext) {
         ...commandTable.map(([id, handler]) => vscode.commands.registerCommand(id, handler)),
         vscode.window.onDidCloseTerminal((t: vscode.Terminal) => devCommands.deleteTerminal(t)),
         vscode.workspace.onDidChangeWorkspaceFolders(() => projectProvider.refresh()),
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('liberty.starterProject', () => starterProject(context))
     );
 }
 
@@ -266,8 +285,10 @@ function startLangServer(context: ExtensionContext, requirements: RequirementsDa
     const clientId = isLiberty ? LIBERTY_CLIENT_ID : JAKARTA_CLIENT_ID;
     const localName = isLiberty ? localize("liberty.ls.output.dropdown") : localize("jakarta.ls.output.dropdown");
 
+    const outputChannel = createLsOutputChannel(localName, context);
+
     // Options to control the language client
-    const clientOptions: LanguageClientOptions = prepareClientOptions(isLiberty);
+    const clientOptions: LanguageClientOptions = { ...prepareClientOptions(isLiberty), outputChannel };
     const serverOptions = prepareExecutable(lsJar, requirements)
 
     console.log("Creating new language client for " + lsName);
@@ -326,14 +347,18 @@ async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
     return Promise.resolve(api);
 }
 
-function handleWorkspaceSaveInProgress(context: vscode.ExtensionContext) {
-    const projectProvider = getProjectProvider(context);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function handleWorkspaceSaveInProgress(_context: vscode.ExtensionContext): Promise<boolean> {
     const registry = ProjectRegistry.getInstance();
-    if (registry.getContext().globalState.get('workspaceSaveInProgress') &&
-        registry.getContext().globalState.get('selectedProject') !== undefined) {
-        devCommands.addProjectsToTheDashBoard(projectProvider, registry.getContext().globalState.get('selectedProject') as string);
+    if (!registry) { return false; }
+    const wip = registry.getContext().globalState.get('workspaceSaveInProgress');
+    const sel = registry.getContext().globalState.get('selectedProject');
+    if (wip && sel !== undefined) {
+        await registry.addUserSelectedPath(sel as string);
         helperUtil.clearDataSavedInGlobalState(registry.getContext());
+        return true;
     }
+    return false;
 }
 
 function getProjectProvider(context: vscode.ExtensionContext): ProjectTreeProvider {

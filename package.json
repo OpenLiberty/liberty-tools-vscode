@@ -2,7 +2,7 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Liberty Tools",
 	"description": "Liberty Tools for Visual Studio Code",
-	"version": "26.0.4-SNAPSHOT",
+	"version": "26.0.9-SNAPSHOT",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
@@ -31,6 +31,7 @@
 	"activationEvents": [
 		"workspaceContains:**/pom.xml",
 		"workspaceContains:**/build.gradle",
+		"onCommand:liberty.starterProject",
 		"onCommand:liberty.dev.start",
 		"onCommand:liberty.dev.stop",
 		"onCommand:liberty.dev.custom",
@@ -54,10 +55,10 @@
 	],
 	"contributes": {
 		"javaExtensions": [
-			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.2.6-SNAPSHOT.jar"
+			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.2.7.jar"
 		],
 		"xml.javaExtensions": [
-			"./jars/liberty-langserver-lemminx-2.4.1-jar-with-dependencies.jar"
+			"./jars/liberty-langserver-lemminx-2.4.2-jar-with-dependencies.jar"
 		],
 		"views": {
 			"explorer": [
@@ -185,6 +186,11 @@
 				"command": "liberty.explorer.sort.alphabetical.active",
 				"category": "Liberty",
 				"title": "✓ Sort: Alphabetical"
+			},
+			{
+				"command": "liberty.starterProject",
+				"category": "Liberty",
+				"title": "%commands.title.starter.project%"
 			}
 		],
 		"menus": {
@@ -331,6 +337,13 @@
 						"type": "boolean",
 						"default": false,
 						"description": "If this value is true, and if the setting java.home has a value, then the environment variable JAVA_HOME will be set to the value of java.home when a new terminal window is created.",
+						"scope": "window",
+						"deprecationMessage": "This setting is deprecated. Use 'liberty.java.home' to manually set the JDK for Liberty terminals."
+					},
+					"liberty.java.home": {
+						"type": "string",
+						"default": "",
+						"description": "Path to the JDK used to run Liberty dev mode in the terminal. When set, this overrides any JDK detected from VS Code Java settings (java.configuration.runtimes, java.jdt.ls.java.home). Leave empty to use the JDK configured via VS Code Java settings, or the system PATH if none is set.",
 						"scope": "window"
 					}
 				}
@@ -358,33 +371,37 @@
 		"buildJakarta": "gulp buildJakartaJdt buildJakartaLs",
 		"test": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/*.js' --code_settings src/test/resources/settings.json",
 		"test-maven": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/M*.js' --code_settings src/test/resources/settings.json",
-		"test-gradle": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js' --code_settings src/test/resources/settings.json"
+		"test-gradle": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js' --code_settings src/test/resources/settings.json",
+		"test-unit": "node node_modules/.bin/mocha --config .mocharc.unit.yml"
 	},
 	"devDependencies": {
 		"@types/chai": "4.3.4",
 		"@types/mocha": "10.0.0",
 		"@types/node": "20.0.0",
 		"@types/selenium-webdriver": "4.1.22",
-		"@types/vscode": "^1.93.0",
-		"@typescript-eslint/eslint-plugin": "8.0.0",
-		"@typescript-eslint/parser": "8.0.0",
-		"axios": "1.15.2",
+		"@types/sinon": "^21.0.1",
+		"@types/unzip-stream": "^0.3.4",
+		"@types/vscode": "1.93.0",
+		"@typescript-eslint/eslint-plugin": "8.67.0",
+		"@typescript-eslint/parser": "8.67.0",
+		"@vscode/test-electron": "2.4.0",
 		"chai": "4.3.7",
 		"clipboardy": "2.3.0",
-		"eslint": "9.0.0",
+		"eslint": "10.8.1",
 		"fast-xml-parser": "5.8.0",
 		"glob": "13.0.0",
 		"gulp": "5.0.1",
 		"gulp-download2": "1.1.0",
 		"gulp-xml": "1.0.5",
-		"mocha": "11.7.6",
+		"minimatch": "9.0.7",
+		"mocha": "12.0.0",
+		"sinon": "^22.0.0",
 		"ts-loader": "9.5.7",
+		"ts-node": "^10.9.2",
 		"typescript": "6.0.3",
-		"vscode-extension-tester": "8.21.0",
-		"@vscode/test-electron": "2.4.0",
+		"vscode-extension-tester": "8.24.0",
 		"webpack": "5.107.0",
 		"webpack-cli": "5.0.0",
-		"minimatch": "9.0.7",
 		"xml2js": "0.5.0"
 	},
 	"overrides": {
@@ -398,12 +415,15 @@
 		"@types/fs-extra": "8.1.0",
 		"@types/semver": "7.3.2",
 		"@types/xml2js": "0.4.5",
-		"brace-expansion": "5.0.6",
+		"axios": "1.18.0",
+		"brace-expansion": "5.0.9",
 		"expand-home-dir": "0.0.3",
 		"find-java-home": "2.0.0",
 		"fs-extra": "9.0.0",
 		"gradle-to-js": "2.0.0",
+		"jdk-utils": "0.4.6",
 		"jsonpath-plus": "10.3.0",
-		"vscode-languageclient": "9.0.1"
+		"unzip-stream": "0.3.4",
+		"vscode-languageclient": "10.1.0"
 	}
 }

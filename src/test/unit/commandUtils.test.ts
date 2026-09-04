@@ -6,6 +6,11 @@
  *   2. Standalone project: no artifactId → -pl absent
  *   3. -pl :<artifactId> -am appears before -f "<pomPath>" (Maven requires this order)
  */
+
+// This test runs in plain Node — install the vscode fake before any extension imports.
+import { installFakeVscode } from "./fakeVscode";
+installFakeVscode();
+
 import { strict as assert } from "assert";
 import { getCommandForMaven } from "../../util/commandUtils";
 
