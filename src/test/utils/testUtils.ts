@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar, SideBarView } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
 import { MapContextMenuforMac } from './macUtils';
@@ -86,8 +86,8 @@ export async function waitForLanguageServerInit(
             return false;
         }
     }, {
-        timeout: timeout * 1000,
-        pollInterval: 2000,
+        timeout: seconds(timeout),
+        pollInterval: seconds(2),
         message: `The ${channelName} output channel did not initialize within ${timeout} seconds`
     });
 }
@@ -177,6 +177,13 @@ export async function waitForSuccess(func: () => Promise<any>, timeout: number =
     }, timeout);
 }
 
+/**
+ * Convert seconds to milliseconds for use in timeout parameters.
+ */
+export function seconds(s: number): number {
+    return s * 1000;
+}
+
 export function getMvnProjectPath(): string {
     const mvnProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "maven", "liberty-maven-test-wrapper-app");
     logger.info("Path is : " + mvnProjectPath);
@@ -189,22 +196,42 @@ export function getGradleProjectPath(): string {
     return gradleProjectPath;
 }
 
+export function getGradle9ProjectPath(): string {
+    const gradle9ProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "gradle", "liberty-gradle-9-test-wrapper-app");
+    logger.info("Path is : " + gradle9ProjectPath);
+    return gradle9ProjectPath;
+}
+
+
 export async function getDashboardSection(sidebar: any): Promise<any> {
     logger.info("Getting Liberty Tools section");
-    return await waitForCondition(async () => {
-        // Get fresh content on each iteration to avoid stale references
-        const contentPart = sidebar.getContent();
-        const sections = await contentPart.getSections();
-        
-        // Find the Liberty Tools section
-        for (const sec of sections) {
-            const title = await sec.getTitle();
-            if (title === 'Liberty Tools') {
-                return sec;
+    const wait = getWaitHelper();
+    return await wait.forCondition(async () => {
+        try {
+            // Re-create SideBarView on every iteration — the captured sidebar
+            // reference goes stale on workspace transitions and getSections()
+            // throws on every call, bypassing the retry loop.
+            const freshSidebar = new SideBarView();
+            const sections = await freshSidebar.getContent().getSections();
+            for (const sec of sections) {
+                const title = await sec.getTitle();
+                if (title === 'Liberty Tools') {
+                    return sec;
+                }
             }
+        } catch (error: any) {
+            if (error.name === 'StaleElementReferenceError' ||
+                error.name === 'ElementNotInteractableError') {
+                return;
+            }
+            throw error;
         }
         return;
-    }, 30);
+    }, {
+        timeout: seconds(30),
+        pollInterval: seconds(3),
+        message: 'Liberty Tools section was not found in sidebar within 30 seconds'
+    });
 }
 
 export async function getDashboardItem(section: any, projectName: string): Promise<DefaultTreeItem> {
@@ -232,7 +259,7 @@ export async function getDashboardItem(section: any, projectName: string): Promi
             }
             throw error;
         }
-    }, { timeout: 10000, message: 'Dashboard items did not appear after expansion' });
+    }, { timeout: seconds(10), message: 'Dashboard items did not appear after expansion' });
     
     // Find the item
     return await waitForCondition(async () => {
@@ -260,16 +287,15 @@ export async function launchDashboardAction(item: DefaultTreeItem, action: strin
 export async function setCustomParameter(customParam: string) {
 
     logger.info("Setting custom Parameter");
-    
+
+    const wait = getWaitHelper();
+    // Wait for the QuickPick widget to fully take focus before interacting.
+    // createQuickPick renders asynchronously and needs a moment before clicks land.
+    await wait.sleep(2000);
+
     await waitForSuccess(async () => {
         const input = new InputBox();
-        await input.click();
         await input.setText(customParam);
-        
-        // Wait for input to be fully ready before confirming
-        const wait = getWaitHelper();
-        await wait.sleep(2000);
-        
         await input.confirm();
     });
 
@@ -278,22 +304,23 @@ export async function setCustomParameter(customParam: string) {
 export async function chooseCmdFromHistory(command: string): Promise<boolean> {
 
     logger.info("Choosing command from history");
-    
+
+    const wait = getWaitHelper();
+    // Wait for the QuickPick widget to fully take focus before interacting.
+    await wait.sleep(2000);
+
     try {
-        await waitForSuccess(async () => {
-            const input = new InputBox();
-            const pick = await input.findQuickPick(command);
-            if (!pick) {
-                throw new Error("Quick pick not found");
-            }
-            await pick.select();
-            
-            // Wait for selection to be processed before confirming
-            const wait = getWaitHelper();
-            await wait.sleep(2000);
-            
-            await input.confirm();
-        });
+        const input = new InputBox();
+        const pick = await input.findQuickPick(command);
+        if (!pick) {
+            logger.error(`Quick pick item not found: ${command}`);
+            return false;
+        }
+        // Selecting a history item resolves the promise immediately in onDidAccept.
+        await pick.select();
+        // Give the extension time to create the terminal and send the dev mode
+        // command before the caller starts polling for server output.
+        await wait.sleep(5000);
         return true;
     } catch (error) {
         logger.error("Failed to choose command from history", error);
@@ -365,8 +392,8 @@ export async function checkTerminalforServerState(serverStatusCode: string): Pro
                 return;
             }
         }, {
-            timeout: 300000, // 300 seconds (5 minutes) max wait - increased for custom params
-            pollInterval: 10000, // check every 10 seconds
+            timeout: seconds(5 * 60),
+            pollInterval: seconds(10),
             message: `Server state '${serverStatusCode}' not found in terminal`
         });
         
@@ -393,8 +420,8 @@ export async function checkTestStatus(testStatus: string): Promise<boolean> {
             }
             return;
         }, {
-            timeout: 120000, // 120 seconds (2 minutes) max wait for tests to complete
-            pollInterval: 5000, // check every 5 seconds
+            timeout: seconds(2 * 60),
+            pollInterval: seconds(5),
             message: `Test status '${testStatus}' not found in terminal`
         });
         
@@ -435,7 +462,7 @@ export async function clearCommandPalette() {
         } catch {
             return;
         }
-    }, { timeout: 5000, message: 'Clear command history dialog did not appear' });
+    }, { timeout: seconds(5), message: 'Clear command history dialog did not appear' });
     
     await waitForSuccess(async () => {
         const dialog = new ModalDialog();
@@ -482,8 +509,8 @@ export async function waitForDashboardToLoad(section: any): Promise<void> {
         }
         return;
     }, {
-        timeout: 120000, // 2 minutes max
-        pollInterval: 5000, // check every 5 seconds
+        timeout: seconds(3 * 60),
+        pollInterval: seconds(5),
         message: 'Dashboard items did not load'
     });
 }
@@ -534,8 +561,8 @@ export async function waitForTestReport(reportPath: string, alternatePath?: stri
             }
             return;
         }, {
-            timeout: 50000, // 50 seconds max (for slow systems)
-            pollInterval: 1000, // check every 1 second (faster detection)
+            timeout: seconds(50),
+            pollInterval: seconds(1),
             message: alternatePath
                 ? `Test report not found at either ${reportPath} or ${alternatePath}`
                 : `Test report not found at ${reportPath}`
@@ -556,7 +583,7 @@ export async function waitForDebuggerAttach(): Promise<boolean> {
     
     try {
         // Wait for the debug toolbar to appear, which indicates debugger is attached
-        const findDebugBarTimeout = 30000;
+        const findDebugBarTimeout = seconds(30);
         await DebugToolbar.create(findDebugBarTimeout);
         logger.info('DebugToolbar appeared - debugger attached successfully');
         return true;
@@ -619,5 +646,50 @@ function copyFolderContents(sourceFolder: string, destinationFolder: string): vo
         } else {
             fs.copyFileSync(sourcePath, destinationPath);
         }
+    }
+}
+
+/**
+ * Close the current workspace to prepare for the next test file.
+ * This ensures each test file starts with a clean workspace when running multiple test files.
+ * Essential when test files open different projects (e.g., Gradle 9 vs regular Gradle vs Maven).
+ */
+export async function closeWorkspace(): Promise<void> {
+    try {
+        logger.info('Closing current workspace for next test file...');
+        const workbench = new Workbench();
+        
+        // Close all open editors first
+        try {
+            const EditorView = require('vscode-extension-tester').EditorView;
+            await new EditorView().closeAllEditors();
+            logger.info('Closed all editors');
+        } catch (error) {
+            logger.info('Failed to close editors, continuing...');
+        }
+        
+        // Close the workspace/folder
+        await workbench.executeCommand('workbench.action.closeFolder');
+        await getWaitHelper().sleep(2000); // Wait for workspace to close
+
+        // Sometimes a modal pops up asking you to save workspace so bypass
+        try {
+            await getWaitHelper().forCondition(async () => {
+                try {
+                    await new ModalDialog().pushButton("Don't Save");
+                    return true;
+                }
+                catch {
+                    return;
+                }
+            }, { timeout: seconds(5) });
+        } catch {
+            // Bypass -> do nothing
+        }
+        
+        logger.info('Workspace closed successfully');
+    } catch (error) {
+        logger.error('Error closing workspace', error);
+        // Don't throw - allow tests to continue even if close fails
     }
 }

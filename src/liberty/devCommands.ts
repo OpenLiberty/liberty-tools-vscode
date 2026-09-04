@@ -9,6 +9,10 @@ import * as vscode from "vscode";
 import * as helperUtil from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
 import { QuickPickItem } from "vscode";
+
+import axios from "axios";
+import * as unzip from "unzip-stream";
+import * as starterProject from "./starterProject";
 import { LibertyProject, DevModeState } from "./libertyProject";
 import { ProjectRegistry } from "./projectRegistry";
 import { ProjectTreeProvider } from "./projectTreeProvider";
@@ -23,7 +27,9 @@ import {
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
-import { getCommandForMaven, getCommandForGradle, defaultWindowsShell } from "../util/commandUtils";
+import { getCommandForMaven, getCommandForGradle, defaultWindowsShell, isWin } from "../util/commandUtils";
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
 
 export const terminals: { [libProjectId: number]: LibertyProject } = {};
 
@@ -66,6 +72,8 @@ class LibertyProjectQuickPickItem implements QuickPickItem {
     label: string;
     description?: string;
     detail: string;
+    alwaysShow?: boolean;
+    buttons?: vscode.QuickInputButton[];
 
     constructor(itemLabel: string, itemDetail: string, itemProject?: LibertyProject, itemDescription?: string) {
         this.label = itemLabel;
@@ -131,24 +139,29 @@ export async function listAllCommands(): Promise<void> {
     });
 }
 
-
 /**
  * Ensures a terminal exists for the project, creates one if needed, shows it,
- * and registers it. Returns the terminal, or undefined if creation failed.
+ * and registers it. Returns { terminal, javaHome } or undefined if creation failed.
  */
-function ensureTerminal(project: LibertyProject): vscode.Terminal | undefined {
-    let terminal = project.getTerminal();
-    if (terminal === undefined) {
-        const terminalPath = project.parent
-            ? Path.dirname(project.parent.getPath())
-            : Path.dirname(project.getPath());
-        terminal = createTerminalforLiberty(project, terminal, terminalPath);
+async function ensureTerminal(project: LibertyProject): Promise<{ terminal: vscode.Terminal; javaHome: string } | undefined> {
+    let existing = project.getTerminal();
+    if (existing !== undefined && !vscode.window.terminals.includes(existing)) {
+        project.deleteTerminal();
+        existing = undefined;
     }
-    if (terminal !== undefined) {
-        terminal.show();
-        project.setTerminal(terminal);
+    if (existing !== undefined) {
+        existing.show();
+        return { terminal: existing, javaHome: "" };
     }
-    return terminal;
+    const terminalPath = project.parent
+        ? Path.dirname(project.parent.getPath())
+        : Path.dirname(project.getPath());
+    const result = await createTerminalforLiberty(project, undefined, terminalPath);
+    if (result !== undefined) {
+        result.terminal.show();
+        project.setTerminal(result.terminal);
+    }
+    return result;
 }
 
 async function sendDevModeCommand(
@@ -156,7 +169,8 @@ async function sendDevModeCommand(
     project: LibertyProject,
     mavenGoal: string,
     gradleTask: string,
-    customCommand?: string
+    customCommand?: string,
+    javaHome?: string
 ): Promise<boolean> {
     let cmd: string | undefined;
     if (isMaven(project.getContextValue())) {
@@ -167,6 +181,7 @@ async function sendDevModeCommand(
         cmd = await getCommandForGradle(project.getPath(), gradleTask, project.getTerminalType(), customCommand);
     }
     if (cmd === undefined) { return false; }
+    if (javaHome) { cmd = prependJavaHome(cmd, javaHome); }
     const si = terminal.shellIntegration ?? await waitForShellIntegration(terminal);
     if (si) {
         console.log(`[sendDevModeCommand] using shellIntegration.executeCommand for ${project.label}`);
@@ -195,9 +210,9 @@ export async function startDevMode(libProject?: LibertyProject | undefined, tree
 
     await Promise.all(targetProjects.map(async targetProject => {
         console.log(localize("starting.liberty.dev.on", targetProject.getLabel()));
-        const terminal = ensureTerminal(targetProject);
-        if (terminal !== undefined) {
-            const tracked = await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV);
+        const result = await ensureTerminal(targetProject);
+        if (result !== undefined) {
+            const tracked = await sendDevModeCommand(result.terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, undefined, result.javaHome);
             targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
             projectProvider.notifyDevModeChanged(targetProject);
         }
@@ -277,6 +292,7 @@ export async function addProject(): Promise<void> {
         await addProjectsToTheDashBoard(projectProvider, selection.detail);
     });
 }
+
 export async function stopDevMode(libProject?: LibertyProject | undefined): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
@@ -295,8 +311,7 @@ export async function stopDevMode(libProject?: LibertyProject | undefined): Prom
         const terminal = targetProject.getTerminal();
         if (terminal !== undefined) {
             terminal.show();
-            terminal.sendText("exit");
-            terminal.dispose();
+            terminal.sendText("exit"); // stop dev mode on current project
             targetProject.setState(DevModeState.Stopping);
             projectProvider.notifyDevModeChanged(targetProject);
         } else {
@@ -336,7 +351,7 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
         if (paths.length === 1) {
             console.log(localize("attach.debugger.liverty.dev.in", targetProject.getLabel()));
             const file = Path.resolve(paths[0]);
-            const lines = await fse.readFileSync(file, "utf8").split("\n");
+            const lines = fse.readFileSync(file, "utf8").split("\n");
             let port = "";
             for (let i = 0; i < lines.length && port === ""; i++) {
                 const line = lines[i];
@@ -371,8 +386,6 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
     }
 }
 
-
-
 export async function customDevModeWithHistory(libProject?: LibertyProject | undefined, treeView?: vscode.TreeView<LibertyProject>): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
@@ -390,40 +403,11 @@ export async function customDevModeWithHistory(libProject?: LibertyProject | und
     for (const targetProject of targetProjects) {
         const dashboardData: DashboardData = helperUtil.getStorageData(ProjectRegistry.getInstance().getContext());
         const history = dashboardData.lastUsedStartParams.filter(element => element.path === targetProject.getPath());
-        if (history.length === 0) {
-            await customDevMode(targetProject);
-        } else {
-            const items: LibertyProjectQuickPickItem[] = [];
-            items.push(new LibertyProjectQuickPickItem(" ", history[0].path, targetProject));
-            for (const item of history) {
-                items.push(new LibertyProjectQuickPickItem(item.param, item.path, targetProject));
-            }
-            vscode.window.showQuickPick(items).then(selection => {
-                if (!selection) {
-                    return;
-                }
-                customDevMode(selection.project, selection.label);
-            });
-        }
-    }
-}
 
-// custom start dev mode command
-// Note: libProject here is already resolved by customDevModeWithHistory — it is always a leaf.
-export async function customDevMode(libProject?: LibertyProject | undefined, params?: string | undefined): Promise<void> {
-    const _customParameters = (params === undefined) ? "" : params.trim();
-    if (libProject === undefined) {
-        const message = localize("cannot.custom.start.liberty.dev");
-        console.error(message);
-        vscode.window.showInformationMessage(message);
-        return;
-    }
-    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
-    const registry = ProjectRegistry.getInstance();
-    const targetProject = libProject;
-
-    const terminal = ensureTerminal(targetProject);
-    if (terminal !== undefined) {
+        const deleteButton: vscode.QuickInputButton = {
+            iconPath: new vscode.ThemeIcon("close"),
+            tooltip: localize("delete.custom.params.from.history"),
+        };
 
         let placeHolderStr = "";
         let promptString = localize("specify.custom.params.maven");
@@ -434,38 +418,97 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
             promptString = localize("specify.custom.params.gradle");
         }
 
-        // set focus on the Inputbox
-        await vscode.commands.executeCommand('workbench.action.focusNextGroup');
-
-        // prompt for custom command
-        let customCommand: string | undefined = await vscode.window.showInputBox(Object.assign({
-            validateInput: (value: string) => {
-                if (value && value.trim().length > 0 && !value.trim().startsWith("-")) {
-                    return localize("params.must.start.with.dash");
-                }
-                return null;
-            },
-        },
-            {
-                placeHolder: placeHolderStr,
-                prompt: promptString,
-                ignoreFocusOut: true,
-                value: _customParameters
-            },
-        ));
-        if (customCommand !== undefined) {
-            customCommand = customCommand.trim();
-            if (customCommand.length > 0) {
-                const projectStartCmdParam: ProjectStartCmdParam = new ProjectStartCmdParam(targetProject.getPath(), customCommand);
-                const dashboardData: DashboardData = helperUtil.getStorageData(registry.getContext());
-                dashboardData.addStartCmdParams(projectStartCmdParam);
-                await helperUtil.saveStorageData(registry.getContext(), dashboardData);
-            }
-
-            const tracked = await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, customCommand);
-            targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
-            projectProvider.notifyDevModeChanged(targetProject);
+        const items: LibertyProjectQuickPickItem[] = [];
+        for (const item of history) {
+            const qpItem = new LibertyProjectQuickPickItem(item.param, item.path, targetProject);
+            qpItem.buttons = [deleteButton];
+            items.push(qpItem);
         }
+
+        const qp = vscode.window.createQuickPick<LibertyProjectQuickPickItem>();
+        const disposables: vscode.Disposable[] = [];
+        try {
+            qp.title = promptString;
+            qp.placeholder = placeHolderStr;
+            qp.items = items;
+            qp.keepScrollPosition = true;
+            qp.show();
+            const params = await new Promise<string | void>(resolve => {
+                disposables.push(qp.onDidChangeValue(() => {
+                    if (qp.value.trimStart().startsWith("-")) {
+                        qp.items = [];
+                    } else {
+                        qp.items = items;
+                    }
+                }));
+                disposables.push(qp.onDidAccept(() => {
+                    if (qp.selectedItems.length > 0) {
+                        const selection = qp.selectedItems[0];
+                        if (selection.project) {
+                            qp.value = selection.label;
+                            qp.selectedItems = [];
+                            // Value is now a valid param — resolve immediately so the
+                            // user (or test) doesn't need to press Enter a second time.
+                            resolve(qp.value);
+                        } else {
+                            qp.selectedItems = [];
+                        }
+                    } else if (qp.value.trimStart().startsWith("-")) {
+                        resolve(qp.value);
+                    } else {
+                        qp.items = [{
+                            project: undefined,
+                            label: " ",
+                            detail: "",
+                            description: localize("params.must.start.with.dash"),
+                            alwaysShow: true,
+                        }];
+                        qp.activeItems = [];
+                    }
+                }));
+                disposables.push(qp.onDidTriggerItemButton(async ({ item }) => {
+                    dashboardData.removeStartCmdParam(new ProjectStartCmdParam(item.detail, item.label));
+                    await helperUtil.saveStorageData(ProjectRegistry.getInstance().getContext(), dashboardData);
+                    items.splice(items.indexOf(item), 1);
+                    qp.items = items;
+                }));
+                disposables.push(qp.onDidHide(() => resolve()));
+            });
+            if (params !== undefined) {
+                await customDevMode(targetProject, params);
+            }
+        } finally {
+            disposables.forEach(d => d.dispose());
+            qp.dispose();
+        }
+    }
+}
+
+// custom start dev mode command
+// Note: libProject here is already resolved by customDevModeWithHistory — it is always a leaf.
+export async function customDevMode(libProject?: LibertyProject | undefined, params?: string | undefined): Promise<void> {
+    const customParameters = (params === undefined) ? "" : params.trim();
+    if (libProject === undefined) {
+        const message = localize("cannot.custom.start.liberty.dev");
+        console.error(message);
+        vscode.window.showInformationMessage(message);
+        return;
+    }
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
+    const registry = ProjectRegistry.getInstance();
+
+    const result = await ensureTerminal(libProject);
+    if (result !== undefined) {
+        if (customParameters.length > 0) {
+            const projectStartCmdParam: ProjectStartCmdParam = new ProjectStartCmdParam(libProject.getPath(), customParameters);
+            const dashboardData: DashboardData = helperUtil.getStorageData(registry.getContext());
+            dashboardData.addStartCmdParams(projectStartCmdParam);
+            await helperUtil.saveStorageData(registry.getContext(), dashboardData);
+        }
+
+        const tracked = await sendDevModeCommand(result.terminal, libProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, customParameters, result.javaHome);
+        libProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
+        projectProvider.notifyDevModeChanged(libProject);
     }
 }
 
@@ -484,13 +527,64 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
     if (libProject === undefined && treeView) { await revealProjectsInTree(targetProjects, treeView); }
 
     await Promise.all(targetProjects.map(async targetProject => {
-        const terminal = ensureTerminal(targetProject);
-        if (terminal !== undefined) {
-            const tracked = await sendDevModeCommand(terminal, targetProject, MAVEN_GOAL_DEVC, GRADLE_TASK_DEVC);
+        const result = await ensureTerminal(targetProject);
+        if (result !== undefined) {
+            const tracked = await sendDevModeCommand(result.terminal, targetProject, MAVEN_GOAL_DEVC, GRADLE_TASK_DEVC, undefined, result.javaHome);
             targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
             projectProvider.notifyDevModeChanged(targetProject);
         }
     }));
+}
+
+/**
+ * Downloads a starter project from https://start.openliberty.io/
+ * @param state see {@link starterProject.State}
+ */
+export async function buildStarterProject(state: starterProject.State): Promise<void> {
+    const apiURL = "https://start.openliberty.io/api/start";
+    const { a, b, e, g, j, m, dir: targetDir } = state;
+
+    await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Window,
+        cancellable: false,
+        title: localize("starter.label.generating", state.a),
+    }, async (progress) => {
+        progress.report({ increment: 0 });
+        let lastPercentage = 0.0;
+        const response = await axios.get<Readable>(apiURL, {
+            params: { a, b, e, g, j, m },
+            responseType: "stream",
+            onDownloadProgress(event) {
+                const diff = (event.progress ?? lastPercentage + 0.05) - lastPercentage;
+                progress.report({ increment: diff * 100 });
+            },
+        });
+        await pipeline(response.data, unzip.Extract({ path: targetDir }));
+        for (const filename of ["mvnw", "gradlew"]) {
+            try {
+                fs.chmodSync(Path.join(targetDir, filename), 0o755);
+            } catch {
+                // ignore if missing
+            }
+        }
+        progress.report({ increment: 100 });
+    });
+
+    vscode.commands.executeCommand("workbench.files.action.refreshFilesExplorer");
+
+    let newWin = false;
+    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath !== targetDir) {
+        const currentWindow = localize("starter.button.current");
+        const newWindow = localize("starter.button.new");
+        const selection = await vscode.window.showInformationMessage(localize("starter.message.open.project"), currentWindow, newWindow);
+        if (!selection) {
+            return;
+        }
+        if (selection === newWindow) {
+            newWin = true;
+        }
+    }
+    vscode.commands.executeCommand("vscode.openFolder", vscode.Uri.file(targetDir), newWin);
 }
 
 export async function runTests(libProject?: LibertyProject | undefined): Promise<void> {
@@ -568,26 +662,37 @@ export async function deleteTerminal(terminal: vscode.Terminal): Promise<void> {
         console.error(localize("unable.to.delete.terminal", terminal.name));
     }
 }
+
 /**
- * function to create new terminal of default type
- * @param libProject The Liberty project
- * @param terminal The existing terminal (if any)
- * @param terminalPath Optional path to create terminal in (defaults to project directory)
+ * Prepends JAVA_HOME to a shell command so it takes effect regardless
+ * of what the shell's startup scripts set. No-op when javaHome is empty.
+ * Uses cmd.exe syntax on Windows and POSIX inline-variable syntax on macOS/Linux.
  */
-function createTerminalforLiberty(libProject: LibertyProject, terminal: vscode.Terminal | undefined, terminalPath?: string) {
+function prependJavaHome(cmd: string, javaHome: string): string {
+    if (!javaHome) {
+        return cmd;
+    }
+    if (isWin()) {
+        return `set "JAVA_HOME=${javaHome}" && ${cmd}`;
+    }
+    return `JAVA_HOME="${javaHome}" ${cmd}`;
+}
+
+/**
+ * Creates a new terminal for the given Liberty project, resolving JAVA_HOME
+ * via JavaSelector. Returns { terminal, javaHome } or undefined if a terminal
+ * already exists for this project.
+ */
+async function createTerminalforLiberty(libProject: LibertyProject, _terminal: vscode.Terminal | undefined, terminalPath?: string): Promise<{ terminal: vscode.Terminal; javaHome: string } | undefined> {
     const path = terminalPath || Path.dirname(libProject.getPath());
-    //fetch the default terminal details and store it in LibertyProject object
     const terminalType = defaultWindowsShell();
     libProject.setTerminalType(terminalType);
-    terminal = libProject.createTerminal(path);
-    if (terminal !== undefined) {
-        terminal.processId.then(pid => {
-            if (pid !== undefined) {
-                terminals[pid] = libProject;
-            }
-        });
+    const result = await libProject.createTerminal(path);
+    if (result !== undefined) {
+        const pid = await result.terminal.processId;
+        terminals[Number(pid)] = libProject;
     }
-    return terminal;
+    return result;
 }
 
 /*

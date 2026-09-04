@@ -23,6 +23,9 @@ VSCODE_VERSION_TO_RUN=$2
 #Build tool to test (maven or gradle)
 BUILD_TOOL=${3:-gradle}
 
+# Pinned version of redhat.java that is compatible with Liberty Tools (lsp4jakarta)
+REDHAT_JAVA_VERSION="1.54.0"
+
 # Current time.
 currentTime=(date +"%Y/%m/%d-%H:%M:%S:%3N")
 
@@ -51,6 +54,7 @@ main() {
 
         #Initialisation step
         npm run test-compile
+        installPinnedRedhatJava
         
         # Initialize Maven project if needed
         if [ "$BUILD_TOOL" = "maven" ]; then
@@ -116,6 +120,16 @@ main() {
     fi
 }
 
+# Download and install a pinned version of redhat.java from Open VSX to avoid
+# pulling 1.55.0+ which is incompatible with lsp4jakarta used by Liberty Tools.
+installPinnedRedhatJava() {
+    local vsix_url="https://open-vsx.org/api/redhat/java/${REDHAT_JAVA_VERSION}/file/redhat.java-${REDHAT_JAVA_VERSION}.vsix"
+    local vsix_file="/tmp/redhat.java-${REDHAT_JAVA_VERSION}.vsix"
+    echo "> $(${currentTime[@]}): Installing pinned redhat.java v${REDHAT_JAVA_VERSION} from Open VSX"
+    curl -fL "$vsix_url" -o "$vsix_file"
+    npx extest install-vsix "$vsix_file"
+}
+
 #start docker and display
 startDisplayAndDocker() {
     # Tell the terminal session to use display port 88.
@@ -138,28 +152,29 @@ startDisplayAndDocker() {
 
 #find current vscode version
 setVscodeVersionToTest() {
-        latest_version=$(curl -s https://code.visualstudio.com/updates)
-        current_version=$(echo $latest_version | cut -d"v" -f2 | sed 's/_/./g')
-
-        if echo "$current_version" | grep -qE '^[1-9]+\.[0-9]+$'; then
-                echo "The string is a version string."
-                previous_version=$(awk -F. '{print $1"."$2-1}' <<<$current_version)
-                previousMinusOne=$(awk -F. '{print $1"."$2-2}' <<<$current_version)
-                echo $current_version $previous_version $previousMinusOne
-        else
-                echo "The string is not a version string."
-                current_version='latest'
-                previous_version='latest'
-                previousMinusOne='latest'
+        if [[ $VSCODE_VERSION_TO_RUN == 'latest' ]]; then
+                return
         fi
 
-        if [[ $VSCODE_VERSION_TO_RUN = 'latest' ]]; then
-                VSCODE_VERSION_TO_RUN='latest'
-        elif [[ $VSCODE_VERSION_TO_RUN = 'previous' ]]; then
-                VSCODE_VERSION_TO_RUN="$previous_version.0"
-        else
-                VSCODE_VERSION_TO_RUN="$previousMinusOne.0"
+        local versions_json
+        versions_json=$(curl -sf "https://update.code.visualstudio.com/api/releases/stable")
+
+        if [[ -z "$versions_json" ]]; then
+                echo "ERROR: Failed to fetch VS Code release list."
+                exit 1
         fi
+
+        local all_versions latest_minor previous_version
+        all_versions=$(echo "$versions_json" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+        latest_minor=$(echo "$all_versions" | head -1 | grep -oE '^[0-9]+\.[0-9]+')
+        previous_version=$(echo "$all_versions" | grep -v "^${latest_minor}\." | head -1)
+
+        if [[ -z "$previous_version" ]]; then
+                echo "ERROR: Could not extract previous VS Code version from release list."
+                exit 1
+        fi
+
+        VSCODE_VERSION_TO_RUN="$previous_version"
 }
 
 # Finding the exit status of a command and updating failure boolean.

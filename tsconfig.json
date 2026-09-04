@@ -7,6 +7,7 @@
 		"lib": [
 			"es6"
 		],
+		"types": ["mocha", "node"],
 		"sourceMap": true,
 		"rootDir": "src",
 		"strict": true   /* enable all strict type-checking options */
@@ -19,6 +20,7 @@
 		"node_modules",
 		".vscode-test",
 		"test-resources",
-		"test-resource-old"
+		"test-resource-old",
+		"out"
 	]
 }

@@ -13,7 +13,7 @@ jobs:
       matrix:
         runtime: [ linux, mac ]
      # Removing windows as a standard run flavor   runtime: [ linux, mac, windows ]
-        targetVSCode: [previous, latest ]
+        targetVSCode: [latest]
         buildTool: [maven, gradle]
       # As Vscode 1.79 and 1.78 are  the only support version for current release, running test with only latest,previous
       #Enable it in future for multiple releases as applicable  targetVSCode: [ previousMinusOne, previous, latest ]

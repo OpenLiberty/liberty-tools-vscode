@@ -1,0 +1,4 @@
+require: ts-node/register
+spec: src/test/unit/**/*.test.ts
+timeout: 5000
+experimental-require-module: false
