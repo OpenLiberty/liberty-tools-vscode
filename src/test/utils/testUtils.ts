@@ -6,6 +6,9 @@ import path = require('path');
 import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar, SideBarView } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
+import * as constants from '../definitions/constants';
+import * as fse from 'fs-extra';
+import { TextEditor } from 'vscode-extension-tester';
 import { MapContextMenuforMac } from './macUtils';
 import { logger } from './testLogger';
 import clipboard = require('clipboardy');
@@ -693,3 +696,74 @@ export async function closeWorkspace(): Promise<void> {
         // Don't throw - allow tests to continue even if close fails
     }
 }
+
+/**
+ * Remove specific directory with contents.
+ */
+export async function removeDirectoryByPath(dirPath: string): Promise<void> {
+  try {
+    fs.accessSync(dirPath);
+    const dirContent = fs.readdirSync(dirPath);
+    await Promise.all(
+      dirContent.map(async (dirFiles) => {
+        const projectContentPath = path.join(dirPath, dirFiles);
+        const stats = fs.lstatSync(projectContentPath);
+        if (stats.isDirectory()) {
+          await removeDirectoryByPath(projectContentPath);
+        } else {
+          fs.unlinkSync(projectContentPath);
+        }
+      })
+    );
+    fs.rmdirSync(dirPath);
+  } catch (error) {
+    console.error(`Error removing directory: ${error}`);
+  }
+}
+
+/**
+ * Copy a specific directory and its contents to a new path.
+ */
+export async function copyDirectoryByPath(existingDirPath: string, copyDirPath: string): Promise<void> {
+  fse.copy(existingDirPath, copyDirPath)
+    .then(() => console.log('Folder content copied: ' + copyDirPath))
+    .catch(err => console.log('Error occurred while copying content: ' + err));
+}
+
+/**
+ * Open specific file from parent directory in the Maven project.
+ */
+export async function openMvnFileByPath(parentDir: string, fileName: string) {
+  await VSBrowser.instance.openResources(path.join(getMvnProjectPath(), 'src', 'main', 'liberty', parentDir, fileName));
+}
+
+/**
+ * Close the currently open file tab, discarding any unsaved changes.
+ */
+export async function closeFileTab(fileType: string) {
+  const workbench = new Workbench();
+  await workbench.openCommandPrompt();
+  await delay(3000);
+  await workbench.executeCommand(constants.CLOSE_EDITOR);
+  await delay(3000);
+  const dialog = new ModalDialog();
+  const message = await dialog.getMessage();
+
+  if (fileType in constants.CONFIRM_MESSAGES) {
+    expect(message).contains(constants.CONFIRM_MESSAGES[fileType as keyof typeof constants.CONFIRM_MESSAGES]);
+  }
+  const buttons = await dialog.getButtons();
+  expect(buttons.length).equals(3);
+  await dialog.pushButton('Don\'t Save');
+}
+
+/**
+ * Toggle content assist and select a value from the suggestion list.
+ */
+export async function callAssitantAction(editor: TextEditor, selectValue: string) {
+  let assist = await editor.toggleContentAssist(true);
+  if (assist) {
+    await assist.select(selectValue);
+  }
+}
+
