@@ -171,7 +171,7 @@ async function sendDevModeCommand(
     gradleTask: string,
     customCommand?: string,
     javaHome?: string
-): Promise<boolean> {
+): Promise<void> {
     let cmd: string | undefined;
     if (isMaven(project.getContextValue())) {
         const pomPath = project.parent ? project.parent.getPath() : project.getPath();
@@ -182,18 +182,33 @@ async function sendDevModeCommand(
         const projectName = project.parent ? project.artifactId : undefined;
         cmd = await getCommandForGradle(buildGradlePath, gradleTask, project.getTerminalType(), customCommand, projectName);
     }
-    if (cmd === undefined) { return false; }
+    if (cmd === undefined) { return; }
     if (javaHome) { cmd = prependJavaHome(cmd, javaHome); }
-    const si = terminal.shellIntegration ?? await waitForShellIntegration(terminal);
-    if (si) {
-        console.log(`[sendDevModeCommand] using shellIntegration.executeCommand for ${project.label}`);
-        si.executeCommand(cmd);
-        return true;
-    } else {
-        console.log(`[sendDevModeCommand] shellIntegration not ready after timeout, falling back to sendText for ${project.label}`);
-        terminal.sendText(cmd);
-        return false;
+
+    // If shell integration is already available (e.g. reused terminal) use it immediately.
+    if (terminal.shellIntegration) {
+        console.log(`[sendDevModeCommand] shellIntegration already available, using executeCommand for ${project.label}`);
+        terminal.shellIntegration.executeCommand(cmd);
+        return;
     }
+
+    // Shell integration is not yet ready (fresh terminal — shell rc scripts still loading).
+    // Send the command immediately via sendText so there is no visible delay, then wait
+    // for shell integration in the background. The onDidStartTerminalShellExecution listener
+    // in ProjectRegistry will attach the output monitor once the shell is ready.
+    console.log(`[sendDevModeCommand] shell integration not ready, sending immediately via sendText for ${project.label}`);
+    terminal.sendText(cmd);
+
+    // Background: wait for shell integration so the next command on this terminal
+    // (e.g. run tests) can use executeCommand. Log only — no await, no blocking.
+    waitForShellIntegration(terminal).then(si => {
+        if (si) {
+            console.log(`[sendDevModeCommand] shell integration arrived for ${project.label}`);
+        } else {
+            console.warn(`[sendDevModeCommand] shell integration never arrived for ${project.label}`);
+        }
+    });
+
 }
 
 export async function startDevMode(libProject?: LibertyProject | undefined, treeView?: vscode.TreeView<LibertyProject>): Promise<void> {
@@ -214,8 +229,8 @@ export async function startDevMode(libProject?: LibertyProject | undefined, tree
         console.log(localize("starting.liberty.dev.on", targetProject.getLabel()));
         const result = await ensureTerminal(targetProject);
         if (result !== undefined) {
-            const tracked = await sendDevModeCommand(result.terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, undefined, result.javaHome);
-            targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
+            await sendDevModeCommand(result.terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, undefined, result.javaHome);
+            targetProject.setState(DevModeState.Starting);
             projectProvider.notifyDevModeChanged(targetProject);
         }
     }));
@@ -508,8 +523,8 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
             await helperUtil.saveStorageData(registry.getContext(), dashboardData);
         }
 
-        const tracked = await sendDevModeCommand(result.terminal, libProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, customParameters, result.javaHome);
-        libProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
+        await sendDevModeCommand(result.terminal, libProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, customParameters, result.javaHome);
+        libProject.setState(DevModeState.Starting);
         projectProvider.notifyDevModeChanged(libProject);
     }
 }
@@ -531,8 +546,8 @@ export async function startContainerDevMode(libProject?: LibertyProject | undefi
     await Promise.all(targetProjects.map(async targetProject => {
         const result = await ensureTerminal(targetProject);
         if (result !== undefined) {
-            const tracked = await sendDevModeCommand(result.terminal, targetProject, MAVEN_GOAL_DEVC, GRADLE_TASK_DEVC, undefined, result.javaHome);
-            targetProject.setState(tracked ? DevModeState.Starting : DevModeState.Running);
+            await sendDevModeCommand(result.terminal, targetProject, MAVEN_GOAL_DEVC, GRADLE_TASK_DEVC, undefined, result.javaHome);
+            targetProject.setState(DevModeState.Starting);
             projectProvider.notifyDevModeChanged(targetProject);
         }
     }));

@@ -22,6 +22,15 @@ describe("computeContextValue — state 'started'", () => {
     });
 });
 
+describe("computeContextValue — state 'server-started'", () => {
+    it("appends :server-started when server is up but app not yet deployed", () => {
+        assert.equal(computeContextValue("libertyProject:maven", DevModeState.ServerStarted), "libertyProject:maven:server-started");
+    });
+    it("does not append :server-started to an aggregator", () => {
+        assert.equal(computeContextValue("libertyProject:maven:aggregator", DevModeState.ServerStarted), "libertyProject:maven:aggregator");
+    });
+});
+
 describe("computeContextValue — state 'starting' or 'stopping'", () => {
     it("does not append :running when starting", () => {
         assert.equal(computeContextValue("libertyProject:maven", DevModeState.Starting), "libertyProject:maven");
@@ -41,8 +50,10 @@ describe("computeContextValue — aggregator", () => {
 // when-clause regexes (mirror of package.json patterns)
 // ---------------------------------------------------------------------------
 
-const LEAF_NOT_RUNNING = /^libertyProject(?!.*:running)(?!.*:aggregator)/;
+// Start / Custom: excluded when :running, :server-started, or :aggregator
+const LEAF_NOT_RUNNING = /^libertyProject(?!.*:running)(?!.*:server-started)(?!.*:aggregator)/;
 const LEAF_RUNNING     = /^libertyProject.*:running/;
+const LEAF_SERVER_STARTED = /^libertyProject.*:server-started/;
 const AGGREGATOR       = /^libertyProject.*:aggregator/;
 
 describe("when-clause regex — leaf not running (start/custom/start.container)", () => {
@@ -58,23 +69,44 @@ describe("when-clause regex — leaf not running (start/custom/start.container)"
     it("does not match a running leaf", () => {
         assert.ok(!LEAF_NOT_RUNNING.test("libertyProject:maven:running"));
     });
+    it("does not match a server-started leaf", () => {
+        assert.ok(!LEAF_NOT_RUNNING.test("libertyProject:maven:server-started"));
+    });
     it("does not match an aggregator", () => {
         assert.ok(!LEAF_NOT_RUNNING.test("libertyProject:maven:aggregator"));
     });
 });
 
-describe("when-clause regex — leaf running (stop/run.tests/debug)", () => {
+describe("when-clause regex — leaf running (run.tests/debug)", () => {
     it("matches a running maven leaf", () => {
         assert.ok(LEAF_RUNNING.test("libertyProject:maven:running"));
     });
     it("matches a running gradle leaf", () => {
         assert.ok(LEAF_RUNNING.test("libertyProject:gradle:running"));
     });
+    it("does not match a server-started leaf", () => {
+        assert.ok(!LEAF_RUNNING.test("libertyProject:maven:server-started"));
+    });
     it("does not match a stopped leaf", () => {
         assert.ok(!LEAF_RUNNING.test("libertyProject:maven"));
     });
     it("does not match an aggregator", () => {
         assert.ok(!LEAF_RUNNING.test("libertyProject:maven:aggregator"));
+    });
+});
+
+describe("when-clause regex — leaf server-started (stop only)", () => {
+    it("matches a server-started maven leaf", () => {
+        assert.ok(LEAF_SERVER_STARTED.test("libertyProject:maven:server-started"));
+    });
+    it("matches a server-started gradle leaf", () => {
+        assert.ok(LEAF_SERVER_STARTED.test("libertyProject:gradle:server-started"));
+    });
+    it("does not match a fully running leaf", () => {
+        assert.ok(!LEAF_SERVER_STARTED.test("libertyProject:maven:running"));
+    });
+    it("does not match a stopped leaf", () => {
+        assert.ok(!LEAF_SERVER_STARTED.test("libertyProject:maven"));
     });
 });
 

@@ -53,8 +53,12 @@ export function devModeRequirement(command: string): boolean | undefined {
 }
 
 export function computeContextValue(base: string, state: DevModeState | undefined): string {
-	if (state === DevModeState.Running && !base.includes(":aggregator")) {
+	if (base.includes(":aggregator")) { return base; }
+	if (state === DevModeState.Running) {
 		return `${base}:running`;
+	}
+	if (state === DevModeState.ServerStarted) {
+		return `${base}:server-started`;
 	}
 	return base;
 }
@@ -80,9 +84,10 @@ export function filterProjects(projects: LibertyProject[], command: string): Lib
 			case CMD_START_CONTAINER:
 				return isContainer(cv) && project.state === undefined;
 			case CMD_STOP:
+				return !isAggregator(cv) && project.state !== undefined;
 			case CMD_RUN_TESTS:
 			case CMD_DEBUG:
-				return !isAggregator(cv) && project.state !== undefined;
+				return !isAggregator(cv) && project.state === DevModeState.Running;
 			case "failsafe":
 			case "surefire":
 				return isMaven(cv) && !isAggregator(cv);

@@ -38,6 +38,12 @@ describe("LibertyProject.state", () => {
         assert.equal(project.state, DevModeState.Starting);
     });
 
+    it("setState('server-started') sets state to server-started", () => {
+        const project = makeProject("libertyProject:maven");
+        project.setState(DevModeState.ServerStarted);
+        assert.equal(project.state, DevModeState.ServerStarted);
+    });
+
     it("setState('started') sets state to started", () => {
         const project = makeProject("libertyProject:maven");
         project.setState(DevModeState.Running);
@@ -69,6 +75,12 @@ describe("filterProjects - liberty.dev.stop", () => {
         assert.equal(filterProjects([project], "liberty.dev.stop").length, 1);
     });
 
+    it("includes projects where state is 'server-started'", () => {
+        const project = makeProject("libertyProject:maven");
+        project.setState(DevModeState.ServerStarted);
+        assert.equal(filterProjects([project], "liberty.dev.stop").length, 1);
+    });
+
     it("includes projects where state is 'starting'", () => {
         const project = makeProject("libertyProject:maven");
         project.setState(DevModeState.Starting);
@@ -92,6 +104,12 @@ describe("filterProjects - liberty.dev.run.tests", () => {
         assert.equal(filterProjects([project], "liberty.dev.run.tests").length, 1);
     });
 
+    it("excludes projects where state is 'server-started' (app not yet deployed)", () => {
+        const project = makeProject("libertyProject:maven");
+        project.setState(DevModeState.ServerStarted);
+        assert.equal(filterProjects([project], "liberty.dev.run.tests").length, 0);
+    });
+
     it("excludes projects where state is undefined", () => {
         const project = makeProject("libertyProject:maven");
         assert.equal(filterProjects([project], "liberty.dev.run.tests").length, 0);
@@ -107,6 +125,12 @@ describe("filterProjects - liberty.dev.debug", () => {
         const project = makeProject("libertyProject:maven");
         project.setState(DevModeState.Running);
         assert.equal(filterProjects([project], "liberty.dev.debug").length, 1);
+    });
+
+    it("excludes projects where state is 'server-started' (app not yet deployed)", () => {
+        const project = makeProject("libertyProject:maven");
+        project.setState(DevModeState.ServerStarted);
+        assert.equal(filterProjects([project], "liberty.dev.debug").length, 0);
     });
 
     it("excludes projects where state is undefined", () => {

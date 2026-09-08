@@ -32,6 +32,11 @@ export class LibertyDevDecorationProvider {
 					color: new vscode.ThemeColor("debugIcon.startForeground"),
 					tooltip: "Dev mode is running",
 				};
+			case "server-started":
+				return {
+					color: new vscode.ThemeColor("charts.yellow"),
+					tooltip: "Server started, waiting for application...",
+				};
 			case "starting":
 				return {
 					color: new vscode.ThemeColor("charts.yellow"),
@@ -132,6 +137,10 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 				project.description = localize("liberty.view.starting");
 				project.resourceUri = vscode.Uri.parse(`${LIBERTY_DEV_SCHEME}://starting/${encoded}`);
 				break;
+			case DevModeState.ServerStarted:
+				project.description = localize("liberty.view.server.started");
+				project.resourceUri = vscode.Uri.parse(`${LIBERTY_DEV_SCHEME}://server-started/${encoded}`);
+				break;
 			case DevModeState.Running:
 				project.description = localize("liberty.view.running");
 				project.resourceUri = vscode.Uri.parse(`${LIBERTY_DEV_SCHEME}://running/${encoded}`);
@@ -158,7 +167,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 	private _updateAggregatorDescription(aggregator: LibertyProject): void {
 		const descendants = this._registry.findLibertyDescendants(aggregator);
 		const total = descendants.length;
-		const running = descendants.filter(d => d.state === DevModeState.Running).length;
+		const running = descendants.filter(d => d.state === DevModeState.Running || d.state === DevModeState.ServerStarted).length;
 		aggregator.description = running > 0 ? `${running}/${total} Running...` : undefined;
 		this._onDidChangeTreeData.fire(aggregator);
 		if (aggregator.parent) {

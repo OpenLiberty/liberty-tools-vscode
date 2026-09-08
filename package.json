@@ -274,7 +274,7 @@
 			"view/item/context": [
 				{
 					"command": "liberty.dev.start",
-					"when": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/",
+					"when": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:server-started)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/",
 					"group": "libertyCore@1"
 				},
 				{
@@ -284,12 +284,12 @@
 				},
 				{
 					"command": "liberty.dev.stop",
-					"when": "viewItem =~ /^libertyProject.*:running/ || viewItem =~ /^libertyProject.*:aggregator/",
+					"when": "viewItem =~ /^libertyProject.*:running/ || viewItem =~ /^libertyProject.*:server-started/ || viewItem =~ /^libertyProject.*:aggregator/",
 					"group": "libertyCore@3"
 				},
 				{
 					"command": "liberty.dev.custom",
-					"when": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/",
+					"when": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:server-started)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/",
 					"group": "libertyCore@2"
 				},
 				{

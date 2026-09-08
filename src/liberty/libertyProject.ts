@@ -16,16 +16,22 @@ const OL_LOGO_ICON = "ol_logo.png";
 
 export enum DevModeState {
 	Starting = "starting",
+	ServerStarted = "server-started",
 	Running = "running",
 	Stopping = "stopping",
 }
 
 /**
- * CWWKF0011I = server ready (starting → started)
- * CWWKE0036I = server stopped (stopping → cleared)
+ * CWWKF0011I = Liberty server ready      (Starting → ServerStarted)
+ * CWWKZ0001I = application deployed      (ServerStarted → Running)
+ * CWWKE0036I = server stopped            (any → undefined)
  */
-export const LIBERTY_MSG_STARTED = "CWWKF0011I";
-export const LIBERTY_MSG_STOPPED = "CWWKE0036I";
+export const LIBERTY_MSG_SERVER_STARTED = "CWWKF0011I";
+export const LIBERTY_MSG_APP_STARTED    = "CWWKZ0001I";
+export const LIBERTY_MSG_STOPPED        = "CWWKE0036I";
+
+/** @deprecated Use LIBERTY_MSG_SERVER_STARTED */
+export const LIBERTY_MSG_STARTED = LIBERTY_MSG_SERVER_STARTED;
 
 export class LibertyProject extends vscode.TreeItem {
 	public parent?: LibertyProject;
@@ -156,7 +162,15 @@ export class LibertyProject extends vscode.TreeItem {
 		(async () => {
 			for await (const chunk of stream) {
 				if (disposed) { break; }
-				if (chunk.includes(LIBERTY_MSG_STARTED) && this.state === DevModeState.Starting) {
+				const serverUp = chunk.includes(LIBERTY_MSG_SERVER_STARTED);
+				const appUp    = chunk.includes(LIBERTY_MSG_APP_STARTED);
+				if ((serverUp || appUp) && this.state === DevModeState.Starting) {
+					// First signal — move to ServerStarted unless app is already confirmed
+					this.setState(appUp ? DevModeState.Running : DevModeState.ServerStarted);
+					onStateChange(this);
+					if (appUp) { vscode.window.showInformationMessage(`Liberty server started: ${this.label}`); }
+				} else if (appUp && this.state === DevModeState.ServerStarted) {
+					// Server was up, app now confirmed
 					this.setState(DevModeState.Running);
 					onStateChange(this);
 					vscode.window.showInformationMessage(`Liberty server started: ${this.label}`);
