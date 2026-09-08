@@ -57,19 +57,26 @@ export async function getCommandForMaven(pomPath: string, command: string, termi
 
 /**
  * Return the gradle command based on the OS and Terminal for start, start in container, start..
+ * @param buildGradlePath Path to the build.gradle file. For child modules pass the parent's build.gradle.
+ * @param command         Gradle task name (e.g. "libertyDev")
+ * @param terminalType    Type of terminal
+ * @param customCommand   Custom parameters
+ * @param projectName     Optional Gradle sub-project name. When provided the task is prefixed as
+ *                        :<projectName>:<command> so the build runs from the root project directory.
  */
-export async function getCommandForGradle(buildGradlePath: string, command: string, terminalType?: String, customCommand?: string): Promise<string> {
+export async function getCommandForGradle(buildGradlePath: string, command: string, terminalType?: String, customCommand?: string, projectName?: string): Promise<string> {
     let gradleCmdStart = await gradleCmd(buildGradlePath);
     const projectDir = Path.dirname(buildGradlePath);
+    const task = projectName ? `:${projectName}:${command}` : command;
 
     if (gradleCmdStart === "gradle") {
-        return formGradleCommand(projectDir, "gradle", command, customCommand);
+        return formGradleCommand(projectDir, "gradle", task, customCommand);
     }
     //checking the OS type for command customization
     if (isWin()) {
-        return getGradleCommandForWin(gradleCmdStart, projectDir, command, terminalType, customCommand);
+        return getGradleCommandForWin(gradleCmdStart, projectDir, task, terminalType, customCommand);
     } else {
-        return formGradleCommand(projectDir, gradleCmdStart, command, customCommand);
+        return formGradleCommand(projectDir, gradleCmdStart, task, customCommand);
     }
 }
 

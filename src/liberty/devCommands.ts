@@ -178,7 +178,9 @@ async function sendDevModeCommand(
         const artifactId = project.parent ? project.artifactId : undefined;
         cmd = await getCommandForMaven(pomPath, mavenGoal, project.getTerminalType(), customCommand, artifactId);
     } else if (isGradle(project.getContextValue())) {
-        cmd = await getCommandForGradle(project.getPath(), gradleTask, project.getTerminalType(), customCommand);
+        const buildGradlePath = project.parent ? project.parent.getPath() : project.getPath();
+        const projectName = project.parent ? project.artifactId : undefined;
+        cmd = await getCommandForGradle(buildGradlePath, gradleTask, project.getTerminalType(), customCommand, projectName);
     }
     if (cmd === undefined) { return false; }
     if (javaHome) { cmd = prependJavaHome(cmd, javaHome); }
