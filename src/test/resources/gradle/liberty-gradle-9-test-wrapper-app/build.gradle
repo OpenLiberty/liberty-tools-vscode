@@ -33,8 +33,14 @@ dependencies {
      providedCompile 'org.eclipse.microprofile:microprofile:5.0'
      
      // test dependencies
-     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1' 
+     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.8.1'
      testImplementation 'org.apache.httpcomponents.client5:httpclient5:5.6.1'
+}
+
+test {
+    useJUnitPlatform()
+    exclude '**/it/**'
 }
 
 liberty {
