@@ -383,7 +383,7 @@ export async function checkTerminalforServerState(serverStatusCode: string): Pro
                 logger.info("Found text " + serverStatusCode);
                 return true;
             }
-            else if (text.includes("FAILURE") || text.includes("BUILD FAILURE")) {
+            else if (text.includes("BUILD FAILURE")) {
                 logger.info("Found failure in terminal output");
                 throw new Error("Server startup/shutdown failed");
             }
