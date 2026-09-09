@@ -7,7 +7,9 @@ import * as devCommands from "./liberty/devCommands";
 import { starterProject } from './liberty/starterProject';
 import * as lsp4jakartaLS from "./definitions/lsp4jakartaLSRequestNames";
 
-import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
+import { LibertyProject } from "./liberty/libertyProject";
+import { ProjectRegistry } from "./liberty/projectRegistry";
+import { ProjectTreeProvider } from "./liberty/projectTreeProvider";
 import { LanguageClientOptions } from "vscode-languageclient";
 import { LanguageClient } from "vscode-languageclient/node";
 import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor } from "vscode";
@@ -16,6 +18,13 @@ import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "
 import { JavaSelector } from "./util/javaSelector";
 import { prepareExecutable } from "./util/javaServerStarter";
 import * as helperUtil from "./util/helperUtil";
+import {
+    CMD_EXPLORER_REFRESH, CMD_EXPLORER_EXPAND_ALL, CMD_SHOW_COMMANDS, CMD_OPEN_BUILD_FILE,
+    CMD_START, CMD_DEBUG, CMD_STOP, CMD_CUSTOM, CMD_START_CONTAINER,
+    CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
+    CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
+    CMD_SORT_WORKSPACE, CMD_SORT_WORKSPACE_ACTIVE, CMD_SORT_ALPHABETICAL, CMD_SORT_ALPHABETICAL_ACTIVE,
+} from "./definitions/constants";
 import { createLsOutputChannel } from "./util/lsOutputChannel";
 import path = require('path');
 import * as fs from "fs";
@@ -35,22 +44,36 @@ export type JavaExtensionAPI = any;
 const SUPPORTED_LANGUAGE_IDS = ["java-properties", "properties", "plaintext"];
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 
-    /**
-     * Waits for the java language server to launch in standard mode
-     * Before activating Tools for MicroProfile.
-     * If java ls was started in lightweight mode, It will prompt user to switch
-     */
-    const api: JavaExtensionAPI = await getJavaExtensionAPI();
+    // Track 1: Register tree view, file watcher, and all dev commands immediately.
+    // These have no dependency on the Java API or either language server — they only
+    // need the VS Code workspace API and the filesystem, both available at activate() time.
+    //
+    // NOTE: handleWorkspaceSaveInProgress() is called here (inside registerCommands) rather
+    // than after the Liberty LS starts. It only touches ProjectProvider and DashboardData —
+    // no LS dependency — so this is safe. If that ever changes, move it back into the
+    // Liberty LS .then() callback below.
+    registerCommands(context);
 
+    // Track 2: Language servers — boot in background but still awaited by activate() so
+    // VS Code's extension host tracks the LS lifecycle correctly. The tree view above is
+    // already registered and visible while this runs.
+    //
+    // IMPORTANT: activate() must return a promise that resolves only after languageClient.start()
+    // completes. If we fire-and-forget here (drop the await / return), VS Code loses track of
+    // the LS process lifecycle and surfaces "server connection failed" errors.
     const item = window.createStatusBarItem(StatusBarAlignment.Right, Number.MIN_VALUE);
-    // item.name = "Liberty Language Server";
     item.text = localize("liberty.ls");
     item.tooltip = localize("liberty.ls.starting");
     toggleItem(window.activeTextEditor, item);
 
-    // Run after getJavaExtensionAPI so VS Code APIs (findFiles etc.) are ready,
-    // but before startLangServer so we don't wait for LS startup.
-    handleWorkspaceSaveInProgress(context).catch(err => console.error('[handleWorkspaceSaveInProgress] uncaught error:', err));
+    let api: JavaExtensionAPI;
+    try {
+        api = await getJavaExtensionAPI();
+    } catch (error: any) {
+        // language features (LCLS, Jakarta) unavailable.
+        console.warn("Java extension unavailable, language servers will not start:", error.message);
+        return;
+    }
 
     // Invalidate the JavaSelector cache whenever the user changes a Java-related
     // VS Code setting so the next findFirstValid() call picks up the new value.
@@ -65,52 +88,53 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         );
     }
 
+    // Waits for the java language server to launch in standard mode
     resolveLclsRequirements(api).then().catch((error => {
         window.showErrorMessage(error.message, error.label).then((selection) => {
             if (error.label && error.label === selection && error.openUrl) {
                 commands.executeCommand('vscode.open', error.openUrl);
             }
         });
-    }))
+    }));
 
-    resolveRequirements(api).then(requirements => {
-        startLangServer(context, requirements, true).then(() => {
-            console.log("Liberty client ready, registering commands");
-    
-            item.text = localize("liberty.ls.thumbs.up");
-            item.tooltip = localize("liberty.ls.started");
-            toggleItem(window.activeTextEditor, item);
-            registerCommands(context);
-        }, (error: any) => {
-            console.log("Liberty client was not ready. Did not initialize");
-            console.log(error);
-    
-            item.text = localize("liberty.ls.thumbs.down");
-            item.tooltip = localize("liberty.ls.failedstart");
-        });
-
-        startLangServer(context, requirements, false).then(() => {
-            console.log("LSP4Jakarta is ready, binding requests...");
-    
-            // Delegate requests from Jakarta LS to the Jakarta JDT core
-            bindRequest(lsp4jakartaLS.FILEINFO_REQUEST);
-            bindRequest(lsp4jakartaLS.JAVA_COMPLETION_REQUEST);
-            bindRequest(lsp4jakartaLS.JAVA_CODEACTION_REQUEST);
-	    bindRequest(lsp4jakartaLS.JAVA_CODEACTION_RESOLVE_REQUEST);
-            bindRequest(lsp4jakartaLS.JAVA_DIAGNOSTICS_REQUEST);
-	    bindRequest(lsp4jakartaLS.JAVA_PROJECT_LABELS_REQUEST);
-    
-            item.text = localize("jakarta.ls.thumbs.up");
-            item.tooltip = localize("jakarta.ls.started");
-            toggleItem(window.activeTextEditor, item);
-        });
-    }).catch((error) => {
+    let requirements: RequirementsData;
+    try {
+        requirements = await resolveRequirements(api);
+    } catch (error: any) {
         window.showErrorMessage(error.message, error.label).then((selection) => {
             if (error.label && error.label === selection && error.openUrl) {
                 commands.executeCommand('vscode.open', error.openUrl);
             }
         });
-    })
+        return;
+    }
+
+    await Promise.all([
+        startLangServer(context, requirements, true).then(() => {
+            console.log("Liberty client ready");
+            item.text = localize("liberty.ls.thumbs.up");
+            item.tooltip = localize("liberty.ls.started");
+            toggleItem(window.activeTextEditor, item);
+        }, (error: any) => {
+            console.log("Liberty client was not ready. Did not initialize");
+            console.log(error);
+            item.text = localize("liberty.ls.thumbs.down");
+            item.tooltip = localize("liberty.ls.failedstart");
+        }),
+
+        startLangServer(context, requirements, false).then(() => {
+            console.log("LSP4Jakarta is ready, binding requests...");
+            bindRequest(lsp4jakartaLS.FILEINFO_REQUEST);
+            bindRequest(lsp4jakartaLS.JAVA_COMPLETION_REQUEST);
+            bindRequest(lsp4jakartaLS.JAVA_CODEACTION_REQUEST);
+            bindRequest(lsp4jakartaLS.JAVA_CODEACTION_RESOLVE_REQUEST);
+            bindRequest(lsp4jakartaLS.JAVA_DIAGNOSTICS_REQUEST);
+            bindRequest(lsp4jakartaLS.JAVA_PROJECT_LABELS_REQUEST);
+            item.text = localize("jakarta.ls.thumbs.up");
+            item.tooltip = localize("jakarta.ls.started");
+            toggleItem(window.activeTextEditor, item);
+        }),
+    ]);
 }
 
 function bindRequest(request: string) {
@@ -123,75 +147,65 @@ function bindRequest(request: string) {
 function registerCommands(context: ExtensionContext) {
     let projectProvider = getProjectProvider(context);
 
+    let treeView: vscode.TreeView<LibertyProject> | undefined;
     if (vscode.workspace.workspaceFolders !== undefined) {
         registerFileWatcher(projectProvider);
-        vscode.window.registerTreeDataProvider("liberty-dev", projectProvider);
-        // Re-run refresh so that any project written to workspaceState by
-        // handleWorkspaceSaveInProgress (which ran before the tree was registered)
-        // is picked up and displayed immediately.
-        projectProvider.refresh();
+        treeView = vscode.window.createTreeView("liberty-dev", {
+            treeDataProvider: projectProvider,
+            showCollapseAll: false,
+        });
+
+        context.subscriptions.push(treeView);
+        context.subscriptions.push(
+            (vscode.window as any).registerFileDecorationProvider(projectProvider.decorationProvider)
+        );
     }
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.explorer.refresh", (async () => {
-            projectProvider.refresh();
-        }))
-    );
+    handleWorkspaceSaveInProgress(context).catch(err => console.error('[handleWorkspaceSaveInProgress] uncaught error:', err));
 
+    // Command table — [id, handler] pairs registered in one pass.
+    const commandTable: [string, (...args: any[]) => any][] = [
+        [CMD_EXPLORER_REFRESH, () => projectProvider.manualRefresh()],
+        [CMD_EXPLORER_EXPAND_ALL, async () => {
+            if (!treeView) { return; }
+            const registry = ProjectRegistry.getInstance();
+            const depth = registry.getMaxAggregatorDepth();
+            if (depth === 0) { return; }
+            for (const root of registry.getRootProjects()) {
+                if (root.isAggregator) {
+                    await treeView.reveal(root, { expand: depth, select: false, focus: false });
+                }
+            }
+        }],
+        ["extension.open.project", (pomPath: any) => devCommands.openProject(pomPath)],
+        [CMD_OPEN_BUILD_FILE, (p?: LibertyProject) => devCommands.openBuildFile(p)],
+        [CMD_SHOW_COMMANDS, () => devCommands.listAllCommands()],
+        [CMD_START, (p?: LibertyProject) => devCommands.startDevMode(p, treeView)],
+        [CMD_DEBUG, (p?: LibertyProject) => devCommands.attachDebugger(p)],
+        [CMD_STOP, (p?: LibertyProject) => devCommands.stopDevMode(p)],
+        [CMD_CUSTOM, (p?: LibertyProject) => devCommands.customDevModeWithHistory(p, treeView)],
+        [CMD_START_CONTAINER, (p?: LibertyProject) => devCommands.startContainerDevMode(p, treeView)],
+        [CMD_RUN_TESTS, (p?: LibertyProject) => devCommands.runTests(p)],
+        [CMD_OPEN_FAILSAFE_REPORT, (p?: LibertyProject) => devCommands.openReport("failsafe", p)],
+        [CMD_OPEN_SUREFIRE_REPORT, (p?: LibertyProject) => devCommands.openReport("surefire", p)],
+        [CMD_OPEN_GRADLE_TEST_REPORT, (p?: LibertyProject) => devCommands.openReport("gradle", p)],
+        [CMD_ADD_PROJECT, () => devCommands.addProject()],
+        [CMD_REMOVE_PROJECT, () => devCommands.removeProject()],
+        [CMD_SORT_WORKSPACE, () => projectProvider.setSortOrder("workspace")],
+        [CMD_SORT_WORKSPACE_ACTIVE, () => projectProvider.setSortOrder("workspace")],
+        [CMD_SORT_ALPHABETICAL, () => projectProvider.setSortOrder("alphabetical")],
+        [CMD_SORT_ALPHABETICAL_ACTIVE, () => projectProvider.setSortOrder("alphabetical")],
+    ];
     context.subscriptions.push(
-        vscode.commands.registerCommand("extension.open.project", (pomPath) => devCommands.openProject(pomPath)),
+        ...commandTable.map(([id, handler]) => vscode.commands.registerCommand(id, handler)),
+        vscode.window.onDidCloseTerminal((t: vscode.Terminal) => devCommands.deleteTerminal(t)),
+        vscode.workspace.onDidChangeWorkspaceFolders(() => projectProvider.refresh()),
     );
-    context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.show.commands", () => devCommands.listAllCommands()),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.start", (libProject?: LibertyProject) => devCommands.startDevMode(libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.debug", (libProject?: LibertyProject) => devCommands.attachDebugger(libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.stop", (libProject?: LibertyProject) => devCommands.stopDevMode(libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.custom", (libProject?: LibertyProject) => devCommands.customDevModeWithHistory(libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.start.container", (libProject?: LibertyProject) => devCommands.startContainerDevMode(libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.run.tests", (libProject?: LibertyProject) => devCommands.runTests(libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.open.failsafe.report", (libProject?: LibertyProject) => devCommands.openReport("failsafe", libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.open.surefire.report", (libProject?: LibertyProject) => devCommands.openReport("surefire", libProject)),
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand("liberty.dev.open.gradle.test.report", (libProject?: LibertyProject) => devCommands.openReport("gradle", libProject)),
-    );
-    context.subscriptions.push(
-		vscode.commands.registerCommand("liberty.dev.add.project", (uri: vscode.Uri) => devCommands.addProject(uri)),
-	);
-	context.subscriptions.push(
-		vscode.commands.registerCommand("liberty.dev.remove.project", () => devCommands.removeProject()),
-	);
     context.subscriptions.push(
         vscode.commands.registerCommand('liberty.starterProject', () => starterProject(context))
     );
-    context.subscriptions.push(
-        vscode.window.onDidCloseTerminal((closedTerminal: vscode.Terminal) => {
-            devCommands.deleteTerminal(closedTerminal);
-        })
-    );
-     // Listens for any new folders are added to the workspace
-     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
-        projectProvider.refresh();
-    }));
 }
 
-// this method is called when your extension is deactivated
 // vscode-languageclient requires implementation of the deactivate() method to return the stop promise from each language client
 // this method is based on the deactivate() method from RedHat's Language support for Java for Visual Studio Code project (https://github.com/redhat-developer/vscode-java)
 export function deactivate(): Promise<void[]> {
@@ -205,8 +219,8 @@ export function deactivate(): Promise<void[]> {
  * File Watcher to prompt the dev explorer to refresh on file changes
  * @param projectProvider Liberty Dev projects
  */
-export function registerFileWatcher(projectProvider: ProjectProvider): void {
-	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
+export function registerFileWatcher(projectProvider: ProjectTreeProvider): void {
+    const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
     // Async handler for the file system events (create, change, delete)
     const handleUri = async (uri: vscode.Uri) => {
         if (uri.fsPath.endsWith("server.xml")) {
@@ -283,12 +297,14 @@ function startLangServer(context: ExtensionContext, requirements: RequirementsDa
     return languageClient.start();
 }
 
-function prepareClientOptions(Liberty_LS :boolean) {
+function prepareClientOptions(Liberty_LS: boolean) {
     if (Liberty_LS) {
         return {
             // Filter to `*.properties` and `*.env` files, let LCLS handle filtering for default/custom configs
-            documentSelector: [{ scheme: "file", 
-                                pattern: "**/{*.properties,*.env}" }],
+            documentSelector: [{
+                scheme: "file",
+                pattern: "**/{*.properties,*.env}"
+            }],
             synchronize: {
                 configurationSection: SUPPORTED_LANGUAGE_IDS,
                 fileEvents: [
@@ -312,9 +328,9 @@ function prepareClientOptions(Liberty_LS :boolean) {
 }
 
 function toggleItem(editor: TextEditor | undefined, item: vscode.StatusBarItem) {
-    if(editor && editor.document && SUPPORTED_LANGUAGE_IDS.includes(editor.document.languageId)){
+    if (editor && editor.document && SUPPORTED_LANGUAGE_IDS.includes(editor.document.languageId)) {
         item.show();
-    } else{
+    } else {
         item.hide();
     }
 }
@@ -331,28 +347,27 @@ async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
     return Promise.resolve(api);
 }
 
-async function handleWorkspaceSaveInProgress(context: vscode.ExtensionContext): Promise<boolean> {
-    const projectProvider = getProjectProvider(context);
-    const wip = projectProvider.getContext().globalState.get('workspaceSaveInProgress');
-    const sel = projectProvider.getContext().globalState.get('selectedProject');
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function handleWorkspaceSaveInProgress(_context: vscode.ExtensionContext): Promise<boolean> {
+    const registry = ProjectRegistry.getInstance();
+    if (!registry) { return false; }
+    const wip = registry.getContext().globalState.get('workspaceSaveInProgress');
+    const sel = registry.getContext().globalState.get('selectedProject');
     if (wip && sel !== undefined) {
-        // Wait for the initial refresh() to finish so the project map is fully populated.
-        await projectProvider.initialRefresh;
-        // Write the project into workspaceState. Do NOT call fireChangeEvent here —
-        // the tree data provider may not be registered yet. registerCommands() will
-        // call refresh() after registering the tree, which will display it.
-        await projectProvider.addUserSelectedPath(sel as string, projectProvider.getProjects());
-        helperUtil.clearDataSavedInGlobalState(projectProvider.getContext());
+        await registry.addUserSelectedPath(sel as string);
+        helperUtil.clearDataSavedInGlobalState(registry.getContext());
         return true;
     }
     return false;
 }
 
-function getProjectProvider(context: vscode.ExtensionContext): ProjectProvider {
-    let projectProvider = ProjectProvider.getInstance();
+function getProjectProvider(context: vscode.ExtensionContext): ProjectTreeProvider {
+    let projectProvider = ProjectTreeProvider.getInstance();
     if (!projectProvider) {
-        projectProvider = new ProjectProvider(context);
-        ProjectProvider.setInstance(projectProvider);
+        const registry = new ProjectRegistry(context);
+        ProjectRegistry.setInstance(registry);
+        projectProvider = new ProjectTreeProvider(registry);
+        ProjectTreeProvider.setInstance(projectProvider);
     }
     return projectProvider;
 }

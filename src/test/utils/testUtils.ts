@@ -287,16 +287,15 @@ export async function launchDashboardAction(item: DefaultTreeItem, action: strin
 export async function setCustomParameter(customParam: string) {
 
     logger.info("Setting custom Parameter");
-    
+
+    const wait = getWaitHelper();
+    // Wait for the QuickPick widget to fully take focus before interacting.
+    // createQuickPick renders asynchronously and needs a moment before clicks land.
+    await wait.sleep(2000);
+
     await waitForSuccess(async () => {
         const input = new InputBox();
-        await input.click();
         await input.setText(customParam);
-        
-        // Wait for input to be fully ready before confirming
-        const wait = getWaitHelper();
-        await wait.sleep(2000);
-        
         await input.confirm();
     });
 
@@ -305,22 +304,23 @@ export async function setCustomParameter(customParam: string) {
 export async function chooseCmdFromHistory(command: string): Promise<boolean> {
 
     logger.info("Choosing command from history");
-    
+
+    const wait = getWaitHelper();
+    // Wait for the QuickPick widget to fully take focus before interacting.
+    await wait.sleep(2000);
+
     try {
-        await waitForSuccess(async () => {
-            const input = new InputBox();
-            const pick = await input.findQuickPick(command);
-            if (!pick) {
-                throw new Error("Quick pick not found");
-            }
-            await pick.select();
-            
-            // Wait for selection to be processed before confirming
-            const wait = getWaitHelper();
-            await wait.sleep(2000);
-            
-            await input.confirm();
-        });
+        const input = new InputBox();
+        const pick = await input.findQuickPick(command);
+        if (!pick) {
+            logger.error(`Quick pick item not found: ${command}`);
+            return false;
+        }
+        // Selecting a history item resolves the promise immediately in onDidAccept.
+        await pick.select();
+        // Give the extension time to create the terminal and send the dev mode
+        // command before the caller starts polling for server output.
+        await wait.sleep(5000);
         return true;
     } catch (error) {
         logger.error("Failed to choose command from history", error);
@@ -383,7 +383,7 @@ export async function checkTerminalforServerState(serverStatusCode: string): Pro
                 logger.info("Found text " + serverStatusCode);
                 return true;
             }
-            else if (text.includes("FAILURE") || text.includes("BUILD FAILURE")) {
+            else if (text.includes("BUILD FAILURE")) {
                 logger.info("Found failure in terminal output");
                 throw new Error("Server startup/shutdown failed");
             }

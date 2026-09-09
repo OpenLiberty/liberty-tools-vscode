@@ -11,10 +11,11 @@ import * as sinon from "sinon";
 installFakeVscode();
 
 import * as assert from "assert";
-import { ProjectProvider } from "../../liberty/libertyProject";
+import { ProjectRegistry } from "../../liberty/projectRegistry";
 import { DashboardData } from "../../liberty/dashboard";
+import * as projectDiscovery from "../../liberty/projectDiscovery";
 
-// Fake ExtensionContext for ProjectProvider.
+// Fake ExtensionContext for ProjectRegistry.
 // addUserSelectedPath() reads saved dashboard data from workspaceState and saves updates back.
 const fakeContext: any = {
     workspaceState: {
@@ -29,10 +30,10 @@ const fakeContext: any = {
 
 describe("addUserSelectedPath", () => {
 
-    let provider: ProjectProvider;
+    let provider: ProjectRegistry;
 
     before(() => {
-        provider = new ProjectProvider(fakeContext);
+        provider = new ProjectRegistry(fakeContext);
     });
 
     afterEach(() => {
@@ -42,18 +43,22 @@ describe("addUserSelectedPath", () => {
     // ─── Test 1 ───────────────────────────────────────────────────────────────
     // Scenario: the user manually picks a Maven project not already in the dashboard.
     it("returns 0 and adds project to map when valid pom.xml exists", async () => {
-        (provider as any).createLibertyProject = async () => ({
+        const fakeProject = {
             getPath: () => "/my/project/pom.xml",
             getLabel: () => "my-app",
             getContextValue: () => "libertyMavenProject"
-        });
+        } as any;
+        sinon.stub(projectDiscovery, "createLibertyProjectFromPath").resolves(fakeProject);
 
-        const existingProjects = new Map();
-        const result = await provider.addUserSelectedPath("/my/project", existingProjects);
+        const result = await provider.addUserSelectedPath("/my/project");
 
         assert.equal(result, 0);
-        assert.equal(existingProjects.has("/my/project/pom.xml"), true);
+        assert.equal(provider.getAddedProjects().some(p => p.getPath() === "/my/project/pom.xml"), true);
         assert.equal(fakeContext.workspaceState.update.called, true);
+
+        // Clean up so next tests start empty.
+        (provider as any)._addedProjects.clear();
+        fakeContext.workspaceState.update.resetHistory();
     });
 
     // ─── Test 2 ───────────────────────────────────────────────────────────────
@@ -61,30 +66,27 @@ describe("addUserSelectedPath", () => {
     it("returns 1 and adds nothing when project already exists", async () => {
         fakeContext.workspaceState.update.resetHistory();
 
-        const dashboardProjects = provider.getProjects();
-        dashboardProjects.set("/my/project/pom.xml", {} as any);
+        // Simulate a project already registered.
+        (provider as any)._projects.set("/my/project/pom.xml", {} as any);
 
-        const existingProjects = new Map();
-        const result = await provider.addUserSelectedPath("/my/project", existingProjects);
+        const result = await provider.addUserSelectedPath("/my/project");
 
         assert.equal(result, 1);
-        assert.equal(existingProjects.size, 0);
         assert.equal(fakeContext.workspaceState.update.called, false);
 
-        dashboardProjects.clear();
+        (provider as any)._projects.clear();
     });
 
     // ─── Test 3 ───────────────────────────────────────────────────────────────
     // Scenario: the user picks a folder with no pom.xml or build.gradle.
     it("returns 2 and adds nothing when no build file exists", async () => {
         fakeContext.workspaceState.update.resetHistory();
-        (provider as any).createLibertyProject = async () => undefined;
+        sinon.stub(projectDiscovery, "createLibertyProjectFromPath").resolves(undefined);
 
-        const existingProjects = new Map();
-        const result = await provider.addUserSelectedPath("/my/project", existingProjects);
+        const result = await provider.addUserSelectedPath("/my/project");
 
         assert.equal(result, 2);
-        assert.equal(existingProjects.size, 0);
+        assert.equal(provider.getAddedProjects().length, 0);
         assert.equal(fakeContext.workspaceState.update.called, false);
     });
 

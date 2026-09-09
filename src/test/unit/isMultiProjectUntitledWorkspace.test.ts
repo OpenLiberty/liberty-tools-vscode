@@ -11,9 +11,9 @@ import { installFakeVscode, FakeVscode } from "./fakeVscode";
 const fakeVscode: FakeVscode = installFakeVscode({}, true);
 
 import * as assert from "assert";
-import { ProjectProvider } from "../../liberty/libertyProject";
+import { ProjectTreeProvider as ProjectProvider } from "../../liberty/projectTreeProvider";
 
-// Minimal fake ExtensionContext — ProjectProvider needs one to construct.
+// Minimal fake ExtensionContext.
 const fakeContext: any = {
     workspaceState: {
         get: () => undefined,
@@ -23,6 +23,15 @@ const fakeContext: any = {
         get: () => undefined,
         update: () => Promise.resolve()
     }
+};
+
+// Minimal fake ProjectRegistry — ProjectTreeProvider constructor calls
+// getSortOrder() → registry.getContext().workspaceState.get(), and also
+// calls manualRefresh() which calls setStatusBarMessage (already faked).
+const fakeRegistry: any = {
+    getContext: () => fakeContext,
+    getRootProjects: () => [],
+    setRootProjects: () => {},
 };
 
 // Helper: build a fake workspaceFolders array with n entries.
@@ -35,7 +44,7 @@ describe("isMultiProjectUntitledWorkspace", () => {
     let provider: ProjectProvider;
 
     before(() => {
-        provider = new ProjectProvider(fakeContext);
+        provider = new ProjectProvider(fakeRegistry);
     });
 
     // resets fake back to clean slate so test behavior is not affected by last test
@@ -46,23 +55,20 @@ describe("isMultiProjectUntitledWorkspace", () => {
     });
 
     // ─── Test 1 ───────────────────────────────────────────────────────────────
-    // Plain single-folder window (the video scenario) where workspace.name is the
-    // folder name (like gradleappadd) and no workspaceFile is saved. workspaceState
-    // is lost when user does "Save Workspace As..." so isMultiProjectUntitledWorkspace()
-    // must return true to trigger the globalState update and prevent the project from being lost.
-    it("returns true for a plain single-folder window (no .code-workspace file)", () => {
+    // Plain single-folder window with no .code-workspace file.
+    // The method only triggers for multi-folder "Untitled (Workspace)" — a plain
+    // single-folder window does not match that condition.
+    it("returns false for a plain single-folder window (no .code-workspace file)", () => {
         fakeVscode.workspace.workspaceFolders = makeFolders(1);
         fakeVscode.workspace.name = "gradleappadd";
         fakeVscode.workspace.workspaceFile = undefined;
 
-        assert.strictEqual(provider.isMultiProjectUntitledWorkspace(), true,
-            "A plain single-folder window loses workspaceState on Save Workspace As " +
-            "so the safe-path must trigger.");
+        assert.strictEqual(provider.isMultiProjectUntitledWorkspace(), false);
     });
 
     // ─── Test 2 ───────────────────────────────────────────────────────────────
     // VS Code auto-created "Untitled (Workspace)" (multiple folders not yet saved):
-    // workspaceFile is undefined here too, so must return true.
+    // name === "Untitled (Workspace)" with multiple folders → returns true.
     it("returns true for an auto-created untitled workspace (multiple folders)", () => {
         fakeVscode.workspace.workspaceFolders = makeFolders(2);
         fakeVscode.workspace.name = "Untitled (Workspace)";

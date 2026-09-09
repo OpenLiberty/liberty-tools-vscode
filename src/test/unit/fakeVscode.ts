@@ -24,6 +24,11 @@ export interface FakeVscode {
     TreeItemCollapsibleState: { None: number };
     TreeItem: any;
     Uri: { file: (p: string) => { fsPath: string } };
+    RelativePattern: any;
+    ThemeColor: any;
+    commands: {
+        executeCommand: (...args: any[]) => any;
+    };
     window: {
         showInformationMessage: (...args: any[]) => any;
         setStatusBarMessage: () => { dispose(): void };
@@ -32,6 +37,8 @@ export interface FakeVscode {
         workspaceFolders: any;
         name: any;
         workspaceFile: any;
+        getConfiguration: (section?: string) => { get: (key: string) => any };
+        findFiles: (...args: any[]) => Promise<any[]>;
     };
 }
 
@@ -42,11 +49,15 @@ const EXTENSION_CACHE_KEYS = [
     "liberty/libertyProject",
     "liberty/dashboard",
     "liberty/baseLibertyProject",
+    "liberty/projectRegistry",
+    "liberty/projectTreeProvider",
+    "liberty/projectDiscovery",
     "util/helperUtil",
     "util/gradleUtil",
     "util/mavenUtil",
     "util/buildFile",
     "util/i18nUtil",
+    "util/commandUtils",
     "definitions/constants",
 ];
 
@@ -77,6 +88,11 @@ export function installFakeVscode(windowOverrides: Partial<FakeVscode["window"]>
             }
         },
         Uri: { file: (p: string) => ({ fsPath: p }) },
+        RelativePattern: class { constructor(public base: any, public pattern: string) {} },
+        ThemeColor: class { constructor(public id: string) {} },
+        commands: {
+            executeCommand: () => Promise.resolve(),
+        },
         window: {
             showInformationMessage: () => {},
             setStatusBarMessage: () => ({ dispose() {} }),
@@ -85,7 +101,9 @@ export function installFakeVscode(windowOverrides: Partial<FakeVscode["window"]>
         workspace: {
             workspaceFolders: undefined,
             name: undefined,
-            workspaceFile: undefined
+            workspaceFile: undefined,
+            getConfiguration: () => ({ get: () => undefined }),
+            findFiles: () => Promise.resolve([]),
         }
     };
 

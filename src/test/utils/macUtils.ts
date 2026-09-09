@@ -7,7 +7,7 @@
 
 import {
     DefaultTreeItem, Workbench,
-    InputBox,
+    InputBox, VSBrowser, WaitHelper,
 } from "vscode-extension-tester";
 
 // NOTE: For MAC OS, Open issue with vscode-extension-tester for ContextMenu Click -> https://github.com/redhat-developer/vscode-extension-tester/issues/444
@@ -21,9 +21,6 @@ export async function setInputBox(MapActionString: string): Promise<boolean> {
     const input = await InputBox.create();
     if (typeof MapActionString === "string") {
         await input.setText(MapActionString);
-        // Confirm input text (hitting enter)
-        await input.confirm();
-        // Confirm second time instead of clicking to select the test project
         await input.confirm();
         return true;
     } else {

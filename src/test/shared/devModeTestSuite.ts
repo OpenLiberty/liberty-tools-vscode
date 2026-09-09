@@ -244,8 +244,9 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
                     logger.step(1, 'Launching dashboard start action with custom parameters');
                     await dashboard.runAction(config.projectConstant, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
         
-                    logger.step(2, 'Setting custom debug parameter: -DdebugPort=7777');
-                    await utils.setCustomParameter("-DdebugPort=7777");
+                    const debugPortParam = config.buildTool === 'maven' ? '-DdebugPort=7777' : '--libertyDebugPort=7777';
+                    logger.step(2, `Setting custom debug parameter: ${debugPortParam}`);
+                    await utils.setCustomParameter(debugPortParam);
         
                     logger.step(3, 'Waiting for server to start in debug mode');
                     isServerRunning = await utils.waitForServerStart(constants.SERVER_START_STRING);
@@ -269,7 +270,7 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
                         }
         
                         logger.step(6, 'Stopping Liberty server');
-                        await utils.stopLibertyserver(config.projectConstant);
+                        await dashboard.runAction(config.projectConstant, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
         
                         logger.step(7, 'Waiting for server to stop');
                         isServerRunning = !await utils.waitForServerStop(constants.SERVER_STOP_STRING);
@@ -287,7 +288,7 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
                     logger.info(`Finally block - Server running status: ${isServerRunning}`);
                     if (isServerRunning) {
                         logger.info('Attempting to stop server in finally block');
-                        await utils.stopLibertyserver(config.projectConstant);
+                        await dashboard.runAction(config.projectConstant, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
                     } else {
                         logger.info('Server already stopped, test cleanup complete');
                     }

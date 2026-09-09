@@ -22,7 +22,7 @@ import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 public class EndpointIT {
-    private String URL = "http://localhost:9080/liberty-gradle-test-wrapper-app/servlet";
+    private String URL = "http://localhost:9080/liberty-gradle-9-test-wrapper-app/servlet";
 
     @Test
     public void testServlet() throws Exception {
