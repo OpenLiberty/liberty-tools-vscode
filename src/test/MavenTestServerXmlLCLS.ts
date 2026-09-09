@@ -373,7 +373,13 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
 
         afterEach(async function () {
             this.timeout(30000);
+            if (this.currentTest?.state === 'failed') {
+                await driver.takeScreenshot();
+                logger.error(`Test failed: ${this.currentTest?.title}`);
+            }
             if (platformOriginalContent) {
+                // Re-open the editor in case the bottom bar or a panel displaced it
+                platformEditorPage = await new EditorPage().openFile(config2XmlPath, constants.SERVER_XML);
                 await platformEditorPage.getEditor().setText(platformOriginalContent);
                 await platformEditorPage.getEditor().save();
             }
