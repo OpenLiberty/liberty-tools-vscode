@@ -13,23 +13,29 @@ export class QuickFixPage {
         return VSBrowser.instance.driver;
     }
     
-    async applyFix(editorPage: EditorPage, token: string, fixLabel: string){
-        await this.openQuickFix(editorPage, token)
+    async applyFix(editorPage: EditorPage, token: string, fixLabel: string, timeoutMs = 30000){
+        const wait = utils.getWaitHelper();
+        const applied = await wait.forCondition(async () => {
+            try {
+                await this.openQuickFix(editorPage, token);
 
-        const options = await this.driver.findElements(By.css('.action-widget .action-list-item, .action-widget .monaco-list-row'));
-        let clicked = false;
-        for (const opt of options) {
-            const text = await opt.getText();
-            if (text.toLowerCase().includes(fixLabel.toLowerCase())) {
-                await this.driver.executeScript('arguments[0].click();', opt);
-                clicked = true;
-                break;
+                const options = await this.driver.findElements(By.css('.action-widget .action-list-item, .action-widget .monaco-list-row'));
+                for (const opt of options) {
+                    const text = await opt.getText();
+                    if (text.toLowerCase().includes(fixLabel.toLowerCase())) {
+                        await this.driver.executeScript('arguments[0].click();', opt);
+                        return true;
+                    }
+                }
+                // Dismiss so the next iteration can reopen cleanly
+                await this.driver.actions().sendKeys(Key.ESCAPE).perform();
+                return undefined;
+            } catch {
+                return undefined;
             }
-        }
-        if (!clicked) {
-            await this.driver.actions().sendKeys(Key.ESCAPE).perform();  // close menu cleanly
-            throw new Error(`No quick fix matching "${fixLabel}" was offered`);
-        }
+        }, { timeout: timeoutMs, pollInterval: 3000, message: `No quick fix matching "${fixLabel}" was offered` });
+
+        return applied;
     }
 
     async openQuickFix(editorPage: EditorPage, token:string){

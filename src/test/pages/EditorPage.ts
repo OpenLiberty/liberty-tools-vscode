@@ -24,6 +24,12 @@ export class EditorPage {
         return this;
     }
 
+    static from(editor: TextEditor): EditorPage {
+        const page = new EditorPage();
+        page.editor = editor;
+        return page;
+    }
+
     getEditor(): TextEditor {
         return this.editor;
     }

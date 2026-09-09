@@ -352,54 +352,41 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
     });
 
     describe('Platform and versionless feature support', () => {
-        let platformEditorPage: EditorPage;
-        let platformOriginalContent: string;
 
-        const config2XmlPath = path.resolve(
-            utils.getMvnProjectPath(),
-            'src', 'main', 'liberty', constants.CONFIG_TWO, constants.SERVER_XML
-        );
+        // These tests use the same server.xml and editor that the outer suite manages.
+        // The outer afterEach restores originalContent after every test.
+        // However, server.xml contains <platform>jakartaee-9.1</platform> and
+        // <feature>mpHealth-4.0</feature> for the hover tests — LCLS suppresses
+        // quick fixes and completions when duplicate elements are present.
+        // Each test that needs clean state sets a minimal featureManager first.
+        const minimalContent = `<?xml version="1.0" encoding="UTF-8"?>
+<server description="Sample Servlet server">
+    <featureManager>
+        <feature>jsp-2.3</feature>
+    </featureManager>
 
-        before(async function () {
-            this.timeout(30000);
-            await utils.copyDirectoryByPath(
-                path.join(utils.getMvnProjectPath(), 'src', 'main', 'liberty', constants.CONFIG),
-                path.join(utils.getMvnProjectPath(), 'src', 'main', 'liberty', constants.CONFIG_TWO)
-            );
-            await utils.getWaitHelper().sleep(2000);
-            platformEditorPage = await new EditorPage().openFile(config2XmlPath, constants.SERVER_XML);
-            platformOriginalContent = await platformEditorPage.getEditor().getText();
-        });
+    <httpEndpoint  host="*" httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint" />
 
-        afterEach(async function () {
-            this.timeout(30000);
-            if (this.currentTest?.state === 'failed') {
-                await driver.takeScreenshot();
-                logger.error(`Test failed: ${this.currentTest?.title}`);
-            }
-            if (platformOriginalContent) {
-                // Re-open the editor in case the bottom bar or a panel displaced it
-                platformEditorPage = await new EditorPage().openFile(config2XmlPath, constants.SERVER_XML);
-                await platformEditorPage.getEditor().setText(platformOriginalContent);
-                await platformEditorPage.getEditor().save();
-            }
-            await editorUtils.closeAllEditors();
-        });
+    <webApplication id="liberty-maven-test-wrapper-app" location="liberty-maven-test-wrapper-app.war" name="liberty-maven-test-wrapper-app"/>
+</server>`;
 
-        after(async function () {
-            utils.removeDirectoryByPath(
-                path.join(utils.getMvnProjectPath(), 'src', 'main', 'liberty', constants.CONFIG_TWO)
-            );
-            logger.info('Removed config2 folder');
-        });
+        async function setMinimalContent() {
+            editor = await editorView.openEditor('server.xml') as TextEditor;
+            await editor.setText(minimalContent);
+            await editor.save();
+            // Give LCLS time to re-process the file before the test types into it
+            await wait.sleep(5000);
+            editor = await editorView.openEditor('server.xml') as TextEditor;
+        }
 
         it('Should show diagnostic for invalid platform value in server.xml', async function () {
             this.timeout(45000);
             logger.testStart('Diagnostic for invalid platform value');
 
-            const fmEndLine = await platformEditorPage.getEditor().getLineOfText('</featureManager>');
-            await platformEditorPage.getEditor().typeTextAt(fmEndLine, 1, '        ' + constants.PLATFORM_JAKARTA + '\n');
-            await platformEditorPage.getEditor().save();
+            await setMinimalContent();
+            const fmEndLine = await editor.getLineOfText('</featureManager>');
+            await editor.typeTextAt(fmEndLine, 1, '        ' + constants.PLATFORM_JAKARTA + '\n');
+            await editor.save();
 
             const found = await new ProblemsPage().hasDiagnostic(constants.PLATFORM_JAKARTA_ERROR);
             expect(found, `Expected diagnostic "${constants.PLATFORM_JAKARTA_ERROR}" was not found in Problems view`).to.be.true;
@@ -408,18 +395,27 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
         });
 
         it('Should apply quick fix for invalid platform value in server.xml', async function () {
-            this.timeout(45000);
+            this.timeout(60000);
             logger.testStart('Quick fix for invalid platform value');
 
-            const fmEndLine = await platformEditorPage.getEditor().getLineOfText('</featureManager>');
-            await platformEditorPage.getEditor().typeTextAt(fmEndLine, 1, '        ' + constants.PLATFORM_JAKARTA + '\n');
-            await platformEditorPage.getEditor().save();
-            await utils.getWaitHelper().sleep(7000);
+            await setMinimalContent();
+            const fmEndLine = await editor.getLineOfText('</featureManager>');
+            await editor.typeTextAt(fmEndLine, 1, '        ' + constants.PLATFORM_JAKARTA + '\n');
+            await editor.save();
 
-            await new QuickFixPage().applyFix(platformEditorPage, 'jakarta', 'Replace platform with jakartaee-11.0');
+            // Wait for LCLS to raise the diagnostic, then re-focus the editor
+            await new ProblemsPage().hasDiagnostic(constants.PLATFORM_JAKARTA_ERROR);
+            await new BottomBarPanel().toggle(false);
+            editor = await editorView.openEditor('server.xml') as TextEditor;
+            await utils.waitForCondition(async () => {
+                const text = await editor.getText();
+                return text.includes('jakarta') ? true : undefined;
+            }, 15);
 
-            await utils.getWaitHelper().sleep(3000);
-            const updatedContent = await platformEditorPage.getEditor().getText();
+            await new QuickFixPage().applyFix(EditorPage.from(editor), 'jakarta', 'Replace platform with jakartaee-11.0');
+
+            await wait.sleep(3000);
+            const updatedContent = await editor.getText();
             expect(updatedContent).to.include(constants.PLATFORM_JAKARTA_VALUE,
                 `Quick fix was not applied correctly for invalid platform. Got: ${updatedContent}`);
 
@@ -427,26 +423,35 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
         });
 
         it('Should show completion support for Liberty Server platform in server.xml', async function () {
-            this.timeout(45000);
+            this.timeout(60000);
             logger.testStart('Completion support for Liberty Server platform');
 
-            const fmEndLine = await platformEditorPage.getEditor().getLineOfText('</featureManager>');
-            await platformEditorPage.getEditor().typeTextAt(fmEndLine, 1, '        <p');
-            await utils.getWaitHelper().sleep(5000);
-            await utils.callAssitantAction(platformEditorPage.getEditor(), constants.PLATFORM);
+            await setMinimalContent();
+            // Insert empty platform tag then position cursor inside the value slot
+            const fmEndLine = await editor.getLineOfText('</featureManager>');
+            await editor.typeTextAt(fmEndLine, 1, '        <platform></platform>');
+            await editor.setCursor(fmEndLine, 19);
 
-            await platformEditorPage.getEditor().toggleContentAssist(false);
-            await utils.getWaitHelper().sleep(1000);
+            // Type partial value with cursor inside the tag to trigger LCLS completion
+            await editor.typeTextAt(fmEndLine, 19, 'jakar');
+            await editor.setCursor(fmEndLine, 24);
 
-            const platformLine = await platformEditorPage.getEditor().getLineOfText('<platform></platform>');
-            await platformEditorPage.getEditor().typeTextAt(platformLine, 19, 'jakar');
-            await utils.getWaitHelper().sleep(5000);
+            const assist = await utils.waitForCondition(async () => {
+                return await editor.toggleContentAssist(true) ?? undefined;
+            }, 30);
+            await utils.waitForCondition(async () => {
+                try {
+                    const item = await assist.getItem(constants.JAKARTA_ELEVEN);
+                    return item ? true : undefined;
+                } catch {
+                    return undefined;
+                }
+            }, 30);
+            await assist.select(constants.JAKARTA_ELEVEN);
+            await editor.toggleContentAssist(false);
 
-            await utils.callAssitantAction(platformEditorPage.getEditor(), constants.JAKARTA_ELEVEN);
-            await platformEditorPage.getEditor().toggleContentAssist(false);
-
-            await utils.getWaitHelper().sleep(3000);
-            const updatedContent = await platformEditorPage.getEditor().getText();
+            await wait.sleep(3000);
+            const updatedContent = await editor.getText();
             expect(updatedContent).to.include(constants.PLATFORM_JAKARTA_VALUE,
                 `Completion support did not insert expected platform value. Got: ${updatedContent}`);
 
@@ -454,24 +459,35 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
         });
 
         it('Should show completion support for Liberty Server feature in server.xml', async function () {
-            this.timeout(45000);
+            this.timeout(60000);
             logger.testStart('Completion support for Liberty Server feature');
 
-            const fmEndLine = await platformEditorPage.getEditor().getLineOfText('</featureManager>');
-            await platformEditorPage.getEditor().typeTextAt(fmEndLine, 1, '        <f');
-            await utils.getWaitHelper().sleep(5000);
-            await utils.callAssitantAction(platformEditorPage.getEditor(), constants.FEATURE_TAG);
+            await setMinimalContent();
+            // Insert empty feature tag then position cursor inside the value slot
+            const fmEndLine = await editor.getLineOfText('</featureManager>');
+            await editor.typeTextAt(fmEndLine, 1, '        <feature></feature>');
+            await editor.setCursor(fmEndLine, 18);
 
-            await utils.getWaitHelper().sleep(1000);
-            const featureLine = await platformEditorPage.getEditor().getLineOfText('<feature></feature>');
-            await platformEditorPage.getEditor().typeTextAt(featureLine, 18, 'el-3');
-            await utils.getWaitHelper().sleep(5000);
+            // Type partial value with cursor inside the tag to trigger LCLS completion
+            await editor.typeTextAt(fmEndLine, 18, 'el-3');
+            await editor.setCursor(fmEndLine, 22);
 
-            await utils.callAssitantAction(platformEditorPage.getEditor(), constants.EL_VALUE);
-            await platformEditorPage.getEditor().toggleContentAssist(false);
+            const assist = await utils.waitForCondition(async () => {
+                return await editor.toggleContentAssist(true) ?? undefined;
+            }, 30);
+            await utils.waitForCondition(async () => {
+                try {
+                    const item = await assist.getItem(constants.EL_VALUE);
+                    return item ? true : undefined;
+                } catch {
+                    return undefined;
+                }
+            }, 30);
+            await assist.select(constants.EL_VALUE);
+            await editor.toggleContentAssist(false);
 
-            await utils.getWaitHelper().sleep(3000);
-            const updatedContent = await platformEditorPage.getEditor().getText();
+            await wait.sleep(3000);
+            const updatedContent = await editor.getText();
             expect(updatedContent).to.include(constants.FEATURE_EL,
                 `Completion support did not work as expected for Liberty Server feature el-3.0. Got: ${updatedContent}`);
 
@@ -482,14 +498,15 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             this.timeout(45000);
             logger.testStart('Valid versionless feature entry with platform entry');
 
-            const fmEndLine = await platformEditorPage.getEditor().getLineOfText('</featureManager>');
-            await platformEditorPage.getEditor().typeTextAt(fmEndLine, 1,
+            await setMinimalContent();
+            const fmEndLine = await editor.getLineOfText('</featureManager>');
+            await editor.typeTextAt(fmEndLine, 1,
                 '        ' + constants.PLATFORM_JAKARTA_NINE + '\n' +
                 '        ' + constants.FEATURE_SERVLET + '\n'
             );
-            await utils.getWaitHelper().sleep(2000);
+            await wait.sleep(2000);
 
-            const updatedContent = await platformEditorPage.getEditor().getText();
+            const updatedContent = await editor.getText();
             expect(updatedContent).to.include(constants.FEATURE_SERVLET,
                 'Did not find expected servlet feature entry in server.xml.');
             expect(updatedContent).to.include(constants.PLATFORM_JAKARTA_NINE,
