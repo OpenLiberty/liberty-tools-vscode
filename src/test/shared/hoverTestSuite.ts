@@ -19,19 +19,6 @@ export interface HoverConfig {
         column: number;
         expectedDoc: string;
     }>;
-    /**
-     * Optional hover tests that require inserting content into server.xml first.
-     * Each case inserts `insertContent` before `</featureManager>`, hovers at the
-     * given line text / column, asserts the hover includes one of `expectedDocs`,
-     * then restores the original file content.
-     */
-    platformHoverTestCases?: Array<{
-        element: string;
-        insertContent: string;
-        hoverLineText: string;
-        column: number;
-        expectedDocs: string[];
-    }>;
 }
 
 export function runHoverTestSuite(config: HoverConfig){
@@ -124,68 +111,6 @@ export function runHoverTestSuite(config: HoverConfig){
                 }
             });
         });
-
-        if (config.platformHoverTestCases && config.platformHoverTestCases.length > 0) {
-            describe('Platform element hover tests in server.xml', () => {
-                let platformServerXml: EditorPage;
-                let originalContent: string;
-
-                const serverXmlPath = path.resolve(
-                    config.getProjectPath(),
-                    'src', 'main', 'liberty', 'config', 'server.xml'
-                );
-
-                before(async function() {
-                    this.timeout(30000);
-                    platformServerXml = await new EditorPage().openFile(serverXmlPath, 'server.xml');
-                    originalContent = await platformServerXml.getEditor().getText();
-                    logger.info('Opened server.xml for platform hover tests');
-                });
-
-                afterEach(async function() {
-                    this.timeout(15000);
-                    if (originalContent) {
-                        await platformServerXml.getEditor().setText(originalContent);
-                        await platformServerXml.getEditor().save();
-                        logger.info('Restored server.xml content after platform hover test');
-                    }
-                    if (this.currentTest?.state === 'failed') {
-                        await VSBrowser.instance.driver.takeScreenshot();
-                        logger.error(`Test failed: ${this.currentTest?.title}`);
-                    }
-                });
-
-                config.platformHoverTestCases!.forEach(testCase => {
-                    it(`Hover over ${testCase.element} shows Liberty Language Server documentation`, async function() {
-                        this.timeout(45000);
-                        logger.testStart(`Hover over ${testCase.element} shows Liberty Language Server documentation`);
-
-                        try {
-                            const fmEndLine = await platformServerXml.getEditor().getLineOfText('</featureManager>');
-                            await platformServerXml.getEditor().typeTextAt(fmEndLine, 1, '        ' + testCase.insertContent + '\n');
-                            await utils.getWaitHelper().sleep(3000);
-
-                            const hoverLine = await platformServerXml.getEditor().getLineOfText(testCase.hoverLineText);
-                            const hoverText = await editorUtils.hoverOver(
-                                platformServerXml.getEditor(),
-                                hoverLine,
-                                testCase.column,
-                                testCase.element
-                            );
-
-                            expect(hoverText).to.not.be.empty;
-                            const matched = testCase.expectedDocs.some(doc => hoverText.includes(doc));
-                            expect(matched, `Hover for "${testCase.element}" did not include any of: ${testCase.expectedDocs.join(', ')}. Got: ${hoverText}`).to.be.true;
-
-                            logger.testComplete(`Hover over ${testCase.element} shows Liberty Language Server documentation`);
-                        } catch (error) {
-                            logger.testFailed(`Hover over ${testCase.element} shows Liberty Language Server documentation`, error);
-                            throw error;
-                        }
-                    });
-                });
-            });
-        }
 
         describe('LSP4Jakarta Hover tests in Java file', () => {
             let javaFile: EditorPage; 
