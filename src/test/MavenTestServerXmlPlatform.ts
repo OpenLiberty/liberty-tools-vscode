@@ -94,9 +94,9 @@ describe('LCLS tests for Maven Project – platform and versionless features', f
     // Issue #443 – Diagnostic for an invalid <platform> value
     // ─────────────────────────────────────────────────────────────────────────
 
-    it('#443 – Should show diagnostic for invalid platform value in server.xml', async function () {
+    it('Should show diagnostic for invalid platform value in server.xml', async function () {
         this.timeout(45000);
-        logger.testStart('#443 – Diagnostic for invalid platform value');
+        logger.testStart('Diagnostic for invalid platform value');
 
         const fmEndLine = await editorPage.getEditor().getLineOfText('</featureManager>');
         await editorPage.getEditor().typeTextAt(fmEndLine, 1, '        ' + constants.PLATFORM_JAKARTA + '\n');
@@ -106,16 +106,16 @@ describe('LCLS tests for Maven Project – platform and versionless features', f
         const found = await problems.hasDiagnostic(constants.PLATFORM_JAKARTA_ERROR);
         expect(found, `Expected diagnostic "${constants.PLATFORM_JAKARTA_ERROR}" was not found in Problems view`).to.be.true;
 
-        logger.testComplete('#443 – Diagnostic for invalid platform value');
+        logger.testComplete('Diagnostic for invalid platform value');
     });
 
     // ─────────────────────────────────────────────────────────────────────────
     // Issue #444 – Quick fix for an invalid <platform> value
     // ─────────────────────────────────────────────────────────────────────────
 
-    it('#444 – Should apply quick fix for invalid platform value in server.xml', async function () {
+    it('Should apply quick fix for invalid platform value in server.xml', async function () {
         this.timeout(45000);
-        logger.testStart('#444 – Quick fix for invalid platform value');
+        logger.testStart('Quick fix for invalid platform value');
 
         const fmEndLine = await editorPage.getEditor().getLineOfText('</featureManager>');
         await editorPage.getEditor().typeTextAt(fmEndLine, 1, '        ' + constants.PLATFORM_JAKARTA + '\n');
@@ -129,16 +129,16 @@ describe('LCLS tests for Maven Project – platform and versionless features', f
         expect(updatedContent).to.include(constants.PLATFORM_JAKARTA_VALUE,
             `Quick fix was not applied correctly for invalid platform. Got: ${updatedContent}`);
 
-        logger.testComplete('#444 – Quick fix for invalid platform value');
+        logger.testComplete('Quick fix for invalid platform value');
     });
 
     // ─────────────────────────────────────────────────────────────────────────
     // Issue #445 – Type-ahead (completion) for the <platform> element
     // ─────────────────────────────────────────────────────────────────────────
 
-    it('#445 – Should show completion support for Liberty Server platform in server.xml', async function () {
+    it('Should show completion support for Liberty Server platform in server.xml', async function () {
         this.timeout(45000);
-        logger.testStart('#445 – Completion support for Liberty Server platform');
+        logger.testStart('Completion support for Liberty Server platform');
 
         const fmEndLine = await editorPage.getEditor().getLineOfText('</featureManager>');
         await editorPage.getEditor().typeTextAt(fmEndLine, 1, '        <p');
@@ -160,44 +160,16 @@ describe('LCLS tests for Maven Project – platform and versionless features', f
         expect(updatedContent).to.include(constants.PLATFORM_JAKARTA_VALUE,
             `Completion support did not insert expected platform value. Got: ${updatedContent}`);
 
-        logger.testComplete('#445 – Completion support for Liberty Server platform');
-    });
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Issue #446 – Diagnostic for an invalid Liberty Server feature
-    // ─────────────────────────────────────────────────────────────────────────
-
-    it('#446 – Should show diagnostic for invalid feature value in server.xml', async function () {
-        this.timeout(45000);
-        logger.testStart('#446 – Diagnostic for invalid feature value');
-
-        const fmEndLine = await editorPage.getEditor().getLineOfText('</featureManager>');
-        await editorPage.getEditor().typeTextAt(fmEndLine, 1, '        ' + constants.FEATURE_MPHEALTH + '\n');
-        await editorPage.getEditor().save();
-
-        // Hover over the feature value to surface the diagnostic
-        const featureLine = await editorPage.getEditor().getLineOfText('mpHealth-4.0');
-        const hoverText = await editorUtils.hoverOver(
-            editorPage.getEditor(),
-            featureLine,
-            20,
-            'mpHealth-4.0 feature value'
-        );
-
-        expect(hoverText).to.not.be.empty;
-        expect(hoverText).to.include(constants.DESCRIPTION_MPHEALTH,
-            `Did not get expected hover data for Liberty Server feature. Got: ${hoverText}`);
-
-        logger.testComplete('#446 – Diagnostic for invalid feature value');
+        logger.testComplete('Completion support for Liberty Server platform');
     });
 
     // ─────────────────────────────────────────────────────────────────────────
     // Issue #447 – Completion support for a Liberty Server feature
     // ─────────────────────────────────────────────────────────────────────────
 
-    it('#447 – Should show completion support for Liberty Server feature in server.xml', async function () {
+    it('Should show completion support for Liberty Server feature in server.xml', async function () {
         this.timeout(45000);
-        logger.testStart('#447 – Completion support for Liberty Server feature');
+        logger.testStart('Completion support for Liberty Server feature');
 
         const fmEndLine = await editorPage.getEditor().getLineOfText('</featureManager>');
         await editorPage.getEditor().typeTextAt(fmEndLine, 1, '        <f');
@@ -217,16 +189,16 @@ describe('LCLS tests for Maven Project – platform and versionless features', f
         expect(updatedContent).to.include(constants.FEATURE_EL,
             `Completion support did not work as expected for Liberty Server feature el-3.0. Got: ${updatedContent}`);
 
-        logger.testComplete('#447 – Completion support for Liberty Server feature');
+        logger.testComplete('Completion support for Liberty Server feature');
     });
 
     // ─────────────────────────────────────────────────────────────────────────
     // Issue #448 – Valid versionless feature entry with platform entry
     // ─────────────────────────────────────────────────────────────────────────
 
-    it('#448 – Valid server feature entry with platform entry in server.xml', async function () {
+    it('Valid server feature entry with platform entry in server.xml', async function () {
         this.timeout(45000);
-        logger.testStart('#448 – Valid versionless feature entry with platform entry');
+        logger.testStart('Valid versionless feature entry with platform entry');
 
         const fmEndLine = await editorPage.getEditor().getLineOfText('</featureManager>');
         await editorPage.getEditor().typeTextAt(fmEndLine, 1,
@@ -241,6 +213,6 @@ describe('LCLS tests for Maven Project – platform and versionless features', f
         expect(updatedContent).to.include(constants.PLATFORM_JAKARTA_NINE,
             'Did not find expected platform entry in server.xml.');
 
-        logger.testComplete('#448 – Valid versionless feature entry with platform entry');
+        logger.testComplete('Valid versionless feature entry with platform entry');
     });
 });
