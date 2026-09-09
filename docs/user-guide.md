@@ -9,7 +9,7 @@ For information regarding known issues and limitations, refer to our [Common Iss
   - [Configure your Java runtime for language servers](#configure-your-java-runtime-for-language-servers)
   - [External extension settings](#external-extension-settings)
   - [Terminal shell support](#terminal-shell-support)
-- [Open Liberty Tools](#open-liberty-tools)
+- [Liberty Tools](#liberty-tools)
 - [Run your application on Liberty using dev mode](#run-your-application-on-liberty-using-dev-mode)
   - [Use Liberty Tools](#use-liberty-tools)
   - [Use the Visual Studio Code Command Palette](#use-the-visual-studio-code-command-palette)
@@ -20,8 +20,10 @@ For information regarding known issues and limitations, refer to our [Common Iss
 - [View your application test reports](#view-your-application-test-reports)
 - [Stop your application](#stop-your-application)
 - [Debug your application](#debug-your-application)
+- [Create a Liberty project](#create-a-liberty-project)
 - [Manually add your Liberty project to Liberty Tools](#manually-add-your-liberty-project-to-liberty-tools)
   - [Manually remove project](#manually-remove-project)
+- [Multi-module projects](#multi-module-projects)
 - [Configure a Liberty server](#configure-a-liberty-server)
 - [Develop with Jakarta EE and MicroProfile APIs](#develop-with-jakarta-ee-and-microprofile-apis)
 
@@ -107,7 +109,7 @@ Liberty Tools supports the default shell types for each OS in the Visual Studio 
 
 It may be possible to use other shell types, but support is not guaranteed. Please feel free to open an enhancement issue if your preferred shell type is not supported: https://github.com/OpenLiberty/liberty-tools-vscode/issues.
 
-## Open Liberty Tools
+## Liberty Tools
 
 By default, Liberty Tools appears in the Project Explorer side bar. Optionally, you can drag Liberty Tools into the Activity Bar.
 
@@ -221,6 +223,25 @@ When the debugger is attached, the Visual Studio Code [debug options](https://co
 
 ![Debug Mode](/docs/user-guide-screenshots/debugger_mode.png)
 
+## Create a Liberty project
+
+You can generate a starter project configured for Open Liberty directly within Visual Studio Code using the Liberty Starter.
+
+To create a new project:
+
+1. Open the Command Palette and run **Liberty: Create a Liberty project**, or click **Create Project** in the Liberty Tools welcome view if no projects are open.
+2. Follow the wizard prompts:
+   - **Base Package**: Enter the group ID (e.g., `com.example`).
+   - **App Name**: Enter the artifact ID and folder name (e.g., `my-liberty-app`).
+   - **Build System**: Select `Maven` or `Gradle`.
+   - **Java SE Version**: Select your Java version (e.g., `21`, `17`, `11`, `8`).
+   - **Java EE / Jakarta EE Version**: Select the Jakarta EE version or choose `None`.
+   - **MicroProfile Version**: Select a compatible MicroProfile version or choose `None`.
+   - **Destination**: Select the directory where the project folder should be created.
+3. Choose whether to open the generated project in the current window or in a new window.
+
+Once opened, the project is ready for dev mode.
+
 ## Manually add your Liberty project to Liberty Tools
 
 If your Liberty project is not automatically detected by Liberty Tools, you can manually add your Liberty project to Liberty Tools in one of four ways:<br>
@@ -245,6 +266,19 @@ To remove manually added Liberty projects from Liberty Tools, you have a similar
 * Use the Command Palette to select the  **Liberty: Remove project from Liberty Tools** command.
 
 Similar to adding the project, you are prompted in the Command Palette to select a project from a list of projects in Liberty Tools that can be removed.
+
+## Multi-module projects
+
+Liberty Tools supports Maven and Gradle multi-module projects and displays them in a hierarchy in the Liberty dashboard.
+
+- **Maven**: Detected when a parent `pom.xml` contains a `<modules>` section.
+- **Gradle**: Detected when `settings.gradle` contains `include` directives for subprojects.
+
+In the Liberty dashboard:
+- Parent or root projects appear as parent nodes containing their child submodules.
+- If a parent project configures the Liberty plugin, dev mode commands can be run directly on the parent.
+- If individual submodules configure the Liberty plugin, you can run dev mode commands directly on each submodule independently.
+- Adding or removing a parent project also adds or removes its child submodules.
 
 ## Configure a Liberty server
 

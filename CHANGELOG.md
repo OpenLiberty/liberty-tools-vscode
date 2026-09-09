@@ -2,6 +2,18 @@
 
 All notable changes to the Liberty Tools extension will be documented below.
 
+## 26.0.9
+
+Version 26.0.9 of Liberty Tools for Visual Studio Code contains new features, enhancements, and fixes. Version 26.0.9 requires Visual Studio Code version 1.93+ and requires Java 21 or later.
+
+Notable changes:
+- Added Open Liberty Starter support. Create new Open Liberty projects directly from VS Code using the `Liberty: Create a Liberty project` command.
+- Added support for Maven and Gradle multi-module projects in the Liberty dashboard. Parent projects and submodules are now displayed and managed in a project hierarchy.
+- Improved dev mode custom parameters input with history management and deletion support.
+- Improved terminal handling and status tracking for running Liberty instances.
+
+See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/26.0.8...26.0.9) for the full set of changes since the previous release.
+
 ## 26.0.8
 
 Version 26.0.8 of Liberty Tools for Visual Studio Code contains minor enhancements and fixes. Version 26.0.8 requires Visual Studio Code version 1.78+ and requires Java 21 or later.
