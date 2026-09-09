@@ -5,7 +5,12 @@
 import { expect } from 'chai';
 import { By, EditorView, TextEditor, VSBrowser, WebDriver, Workbench, BottomBarPanel, MarkerType, Key } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
+import * as editorUtils from './utils/editorUtils';
+import * as constants from './definitions/constants';
 import { logger } from './utils/testLogger';
+import { EditorPage } from './pages/EditorPage';
+import { ProblemsPage } from './pages/ProblemsPage';
+import { QuickFixPage } from './pages/QuickFixPage';
 import * as path from 'path';
 
 describe('Liberty Config Language Server Tests for Maven Project', () => {
@@ -343,6 +348,148 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             logger.stepSuccess(5, 'Application stanza autocomplete worked');
 
             logger.testComplete('Application stanza autocomplete worked');
+        });
+    });
+
+    describe('Platform and versionless feature support', () => {
+        let platformEditorPage: EditorPage;
+        let platformOriginalContent: string;
+
+        const config2XmlPath = path.resolve(
+            utils.getMvnProjectPath(),
+            'src', 'main', 'liberty', constants.CONFIG_TWO, constants.SERVER_XML
+        );
+
+        before(async function () {
+            this.timeout(30000);
+            await utils.copyDirectoryByPath(
+                path.join(utils.getMvnProjectPath(), 'src', 'main', 'liberty', constants.CONFIG),
+                path.join(utils.getMvnProjectPath(), 'src', 'main', 'liberty', constants.CONFIG_TWO)
+            );
+            await utils.getWaitHelper().sleep(2000);
+            platformEditorPage = await new EditorPage().openFile(config2XmlPath, constants.SERVER_XML);
+            platformOriginalContent = await platformEditorPage.getEditor().getText();
+        });
+
+        afterEach(async function () {
+            this.timeout(30000);
+            if (platformOriginalContent) {
+                await platformEditorPage.getEditor().setText(platformOriginalContent);
+                await platformEditorPage.getEditor().save();
+            }
+            await editorUtils.closeAllEditors();
+        });
+
+        after(async function () {
+            utils.removeDirectoryByPath(
+                path.join(utils.getMvnProjectPath(), 'src', 'main', 'liberty', constants.CONFIG_TWO)
+            );
+            logger.info('Removed config2 folder');
+        });
+
+        it('Should show diagnostic for invalid platform value in server.xml', async function () {
+            this.timeout(45000);
+            logger.testStart('Diagnostic for invalid platform value');
+
+            const fmEndLine = await platformEditorPage.getEditor().getLineOfText('</featureManager>');
+            await platformEditorPage.getEditor().typeTextAt(fmEndLine, 1, '        ' + constants.PLATFORM_JAKARTA + '\n');
+            await platformEditorPage.getEditor().save();
+
+            const found = await new ProblemsPage().hasDiagnostic(constants.PLATFORM_JAKARTA_ERROR);
+            expect(found, `Expected diagnostic "${constants.PLATFORM_JAKARTA_ERROR}" was not found in Problems view`).to.be.true;
+
+            logger.testComplete('Diagnostic for invalid platform value');
+        });
+
+        it('Should apply quick fix for invalid platform value in server.xml', async function () {
+            this.timeout(45000);
+            logger.testStart('Quick fix for invalid platform value');
+
+            const fmEndLine = await platformEditorPage.getEditor().getLineOfText('</featureManager>');
+            await platformEditorPage.getEditor().typeTextAt(fmEndLine, 1, '        ' + constants.PLATFORM_JAKARTA + '\n');
+            await platformEditorPage.getEditor().save();
+            await utils.getWaitHelper().sleep(7000);
+
+            await new QuickFixPage().applyFix(platformEditorPage, 'jakarta', 'Replace platform with jakartaee-11.0');
+
+            await utils.getWaitHelper().sleep(3000);
+            const updatedContent = await platformEditorPage.getEditor().getText();
+            expect(updatedContent).to.include(constants.PLATFORM_JAKARTA_VALUE,
+                `Quick fix was not applied correctly for invalid platform. Got: ${updatedContent}`);
+
+            logger.testComplete('Quick fix for invalid platform value');
+        });
+
+        it('Should show completion support for Liberty Server platform in server.xml', async function () {
+            this.timeout(45000);
+            logger.testStart('Completion support for Liberty Server platform');
+
+            const fmEndLine = await platformEditorPage.getEditor().getLineOfText('</featureManager>');
+            await platformEditorPage.getEditor().typeTextAt(fmEndLine, 1, '        <p');
+            await utils.getWaitHelper().sleep(5000);
+            await utils.callAssitantAction(platformEditorPage.getEditor(), constants.PLATFORM);
+
+            await platformEditorPage.getEditor().toggleContentAssist(false);
+            await utils.getWaitHelper().sleep(1000);
+
+            const platformLine = await platformEditorPage.getEditor().getLineOfText('<platform></platform>');
+            await platformEditorPage.getEditor().typeTextAt(platformLine, 19, 'jakar');
+            await utils.getWaitHelper().sleep(5000);
+
+            await utils.callAssitantAction(platformEditorPage.getEditor(), constants.JAKARTA_ELEVEN);
+            await platformEditorPage.getEditor().toggleContentAssist(false);
+
+            await utils.getWaitHelper().sleep(3000);
+            const updatedContent = await platformEditorPage.getEditor().getText();
+            expect(updatedContent).to.include(constants.PLATFORM_JAKARTA_VALUE,
+                `Completion support did not insert expected platform value. Got: ${updatedContent}`);
+
+            logger.testComplete('Completion support for Liberty Server platform');
+        });
+
+        it('Should show completion support for Liberty Server feature in server.xml', async function () {
+            this.timeout(45000);
+            logger.testStart('Completion support for Liberty Server feature');
+
+            const fmEndLine = await platformEditorPage.getEditor().getLineOfText('</featureManager>');
+            await platformEditorPage.getEditor().typeTextAt(fmEndLine, 1, '        <f');
+            await utils.getWaitHelper().sleep(5000);
+            await utils.callAssitantAction(platformEditorPage.getEditor(), constants.FEATURE_TAG);
+
+            await utils.getWaitHelper().sleep(1000);
+            const featureLine = await platformEditorPage.getEditor().getLineOfText('<feature></feature>');
+            await platformEditorPage.getEditor().typeTextAt(featureLine, 18, 'el-3');
+            await utils.getWaitHelper().sleep(5000);
+
+            await utils.callAssitantAction(platformEditorPage.getEditor(), constants.EL_VALUE);
+            await platformEditorPage.getEditor().toggleContentAssist(false);
+
+            await utils.getWaitHelper().sleep(3000);
+            const updatedContent = await platformEditorPage.getEditor().getText();
+            expect(updatedContent).to.include(constants.FEATURE_EL,
+                `Completion support did not work as expected for Liberty Server feature el-3.0. Got: ${updatedContent}`);
+
+            logger.testComplete('Completion support for Liberty Server feature');
+        });
+
+        it('Valid server feature entry with platform entry in server.xml', async function () {
+            this.timeout(45000);
+            logger.testStart('Valid versionless feature entry with platform entry');
+
+            const fmEndLine = await platformEditorPage.getEditor().getLineOfText('</featureManager>');
+            await platformEditorPage.getEditor().typeTextAt(fmEndLine, 1,
+                '        ' + constants.PLATFORM_JAKARTA_NINE + '\n' +
+                '        ' + constants.FEATURE_SERVLET + '\n'
+            );
+            await utils.getWaitHelper().sleep(2000);
+
+            const updatedContent = await platformEditorPage.getEditor().getText();
+            expect(updatedContent).to.include(constants.FEATURE_SERVLET,
+                'Did not find expected servlet feature entry in server.xml.');
+            expect(updatedContent).to.include(constants.PLATFORM_JAKARTA_NINE,
+                'Did not find expected platform entry in server.xml.');
+
+            logger.testComplete('Valid versionless feature entry with platform entry');
         });
     });
 });
