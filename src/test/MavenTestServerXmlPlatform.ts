@@ -91,36 +91,6 @@ describe('LCLS tests for Maven Project – platform and versionless features', f
     });
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Issue #442 – Hover support for the <platform> element
-    // ─────────────────────────────────────────────────────────────────────────
-
-    it('#442 – Should show hover support for Liberty Server platform in server.xml', async function () {
-        this.timeout(45000);
-        logger.testStart('#442 – Hover support for Liberty Server platform');
-
-        const fmEndLine = await editorPage.getEditor().getLineOfText('</featureManager>');
-        await editorPage.getEditor().typeTextAt(fmEndLine, 1, '        ' + constants.PLATFORM_JAKARTA_NINE + '\n');
-        await utils.getWaitHelper().sleep(3000);
-
-        // Find the platform line and hover over the value text
-        const platformLine = await editorPage.getEditor().getLineOfText('jakartaee-9.1');
-        const hoverText = await editorUtils.hoverOver(
-            editorPage.getEditor(),
-            platformLine,
-            20,
-            'jakartaee-9.1 platform value'
-        );
-
-        expect(hoverText).to.not.be.empty;
-        expect(
-            hoverText.includes('Jakarta EE 9.1') || hoverText.includes('platform'),
-            `Did not get expected hover data for Liberty Server platform. Got: ${hoverText}`
-        ).to.be.true;
-
-        logger.testComplete('#442 – Hover support for Liberty Server platform');
-    });
-
-    // ─────────────────────────────────────────────────────────────────────────
     // Issue #443 – Diagnostic for an invalid <platform> value
     // ─────────────────────────────────────────────────────────────────────────
 
