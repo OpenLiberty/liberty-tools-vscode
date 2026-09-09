@@ -13,16 +13,18 @@ export class ProblemsPage {
     async hasDiagnostic(message: string, markerType: MarkerType = MarkerType.Any) : Promise<boolean> {
         const bottomBar = new BottomBarPanel();
         await bottomBar.toggle(true);
-        let problemsView = await bottomBar.openProblemsView();
-        let markers = await problemsView.getAllVisibleMarkers(markerType);
-                for (const marker of markers) {
-                    const text = await marker.getText();
-                    // Check if text contains your diagnostic message
-                    if(text.includes(message)){
-                        return true;
-                    }
-                }
-                return false; 
+        const problemsView = await bottomBar.openProblemsView();
+        const markers = await problemsView.getAllVisibleMarkers(markerType);
+        let found = false;
+        for (const marker of markers) {
+            const text = await marker.getText();
+            if (text.includes(message)) {
+                found = true;
+                break;
+            }
+        }
+        await bottomBar.toggle(false);
+        return found;
     }
     
 
