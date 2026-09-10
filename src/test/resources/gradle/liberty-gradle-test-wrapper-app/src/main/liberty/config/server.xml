@@ -13,6 +13,8 @@
 <server description="Sample Servlet server">
     <featureManager>
         <feature>jsp-2.3</feature>
+        <feature>mpHealth-4.0</feature>
+        <platform>jakartaee-9.1</platform>
     </featureManager>
     
     <httpEndpoint  host="*" httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint" />
