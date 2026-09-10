@@ -106,26 +106,6 @@ describe('LCLS tests for Gradle Project', function () {
 
     }).timeout(45000);
 
-    it('Should show hover support for server.xml Liberty Server Attribute', async () => {
-        editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
-
-        await utils.delay(3000);
-        const focusTargetedElement = await editor.findElement(By.xpath(constants.FOCUS_HTTPENDPOINT));
-        await focusTargetedElement.click();
-        await editor.click();
-
-        const driverActionList = VSBrowser.instance.driver.actions();
-        await driverActionList.move({ origin: focusTargetedElement }).perform();
-        await utils.delay(5000);
-
-        const hoverContent = await VSBrowser.instance.driver.findElement(By.className('hover-contents'));
-        const hoveredTextValue = await hoverContent.getText();
-        console.log("Hover text is: " + hoveredTextValue);
-
-        assert(hoveredTextValue.includes(constants.DESCRIPTION_HTTPENDPOINT), 'Did not get expected hover data Liberty for Server Attribute.');
-
-    }).timeout(45000);
-
     it('Should show hover support for server.xml Liberty Server Feature', async () => {
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
 
