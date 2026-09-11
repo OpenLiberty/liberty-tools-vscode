@@ -9,6 +9,7 @@ import * as editorUtils from './utils/editorUtils';
 import * as constants from './definitions/constants';
 import { logger } from './utils/testLogger';
 import { EditorPage } from './pages/EditorPage';
+import { CodeAssistPage } from './pages/CodeAssistPage';
 import { ProblemsPage } from './pages/ProblemsPage';
 import { QuickFixPage } from './pages/QuickFixPage';
 import * as path from 'path';
@@ -358,24 +359,23 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
         // However, server.xml contains <platform>jakartaee-9.1</platform> and
         // <feature>mpHealth-4.0</feature> for the hover tests — LCLS suppresses
         // quick fixes and completions when duplicate elements are present.
-        // Each test that needs clean state sets a minimal featureManager first.
-        const minimalContent = `<?xml version="1.0" encoding="UTF-8"?>
-<server description="Sample Servlet server">
-    <featureManager>
-        <feature>jsp-2.3</feature>
-    </featureManager>
-
-    <httpEndpoint  host="*" httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint" />
-
-    <webApplication id="liberty-maven-test-wrapper-app" location="liberty-maven-test-wrapper-app.war" name="liberty-maven-test-wrapper-app"/>
-</server>`;
-
+        // Each test that needs clean state sets a minimal featureManager first,
+        // loaded from server_platform.xml to keep the content in one place.
         async function setMinimalContent() {
+            const platformXmlPath = path.resolve(
+                utils.getMvnProjectPath(),
+                'src', 'main', 'liberty', 'config', 'server_platform.xml'
+            );
+            const minimalContent = await import('fs').then(fs => fs.readFileSync(platformXmlPath, 'utf8'));
+            const editorPage = new EditorPage();
             editor = await editorView.openEditor('server.xml') as TextEditor;
             await editor.setText(minimalContent);
             await editor.save();
-            // Give LCLS time to re-process the file before the test types into it
-            await wait.sleep(5000);
+            // Wait for LCLS to re-process the file rather than sleeping blindly
+            await utils.waitForCondition(async () => {
+                const text = await editor.getText();
+                return text.includes('<server') ? true : undefined;
+            }, 15);
             editor = await editorView.openEditor('server.xml') as TextEditor;
         }
 
@@ -414,8 +414,10 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
 
             await new QuickFixPage().applyFix(EditorPage.from(editor), 'jakarta', 'Replace platform with jakartaee-11.0');
 
-            await wait.sleep(3000);
-            const updatedContent = await editor.getText();
+            const updatedContent = await utils.waitForCondition(async () => {
+                const text = await editor.getText();
+                return text.includes(constants.PLATFORM_JAKARTA_VALUE) ? text : undefined;
+            }, 15);
             expect(updatedContent).to.include(constants.PLATFORM_JAKARTA_VALUE,
                 `Quick fix was not applied correctly for invalid platform. Got: ${updatedContent}`);
 
@@ -427,6 +429,9 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             logger.testStart('Completion support for Liberty Server platform');
 
             await setMinimalContent();
+            const editorPage = EditorPage.from(editor);
+            const codeAssist = new CodeAssistPage();
+
             // Insert empty platform tag then position cursor inside the value slot
             const fmEndLine = await editor.getLineOfText('</featureManager>');
             await editor.typeTextAt(fmEndLine, 1, '        <platform></platform>');
@@ -450,8 +455,10 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             await assist.select(constants.JAKARTA_ELEVEN);
             await editor.toggleContentAssist(false);
 
-            await wait.sleep(3000);
-            const updatedContent = await editor.getText();
+            const updatedContent = await utils.waitForCondition(async () => {
+                const text = await editor.getText();
+                return text.includes(constants.PLATFORM_JAKARTA_VALUE) ? text : undefined;
+            }, 15);
             expect(updatedContent).to.include(constants.PLATFORM_JAKARTA_VALUE,
                 `Completion support did not insert expected platform value. Got: ${updatedContent}`);
 
@@ -463,6 +470,9 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             logger.testStart('Completion support for Liberty Server feature');
 
             await setMinimalContent();
+            const editorPage = EditorPage.from(editor);
+            const codeAssist = new CodeAssistPage();
+
             // Insert empty feature tag then position cursor inside the value slot
             const fmEndLine = await editor.getLineOfText('</featureManager>');
             await editor.typeTextAt(fmEndLine, 1, '        <feature></feature>');
@@ -486,8 +496,10 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             await assist.select(constants.EL_VALUE);
             await editor.toggleContentAssist(false);
 
-            await wait.sleep(3000);
-            const updatedContent = await editor.getText();
+            const updatedContent = await utils.waitForCondition(async () => {
+                const text = await editor.getText();
+                return text.includes(constants.FEATURE_EL) ? text : undefined;
+            }, 15);
             expect(updatedContent).to.include(constants.FEATURE_EL,
                 `Completion support did not work as expected for Liberty Server feature el-3.0. Got: ${updatedContent}`);
 
@@ -504,9 +516,11 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
                 '        ' + constants.PLATFORM_JAKARTA_NINE + '\n' +
                 '        ' + constants.FEATURE_SERVLET + '\n'
             );
-            await wait.sleep(2000);
 
-            const updatedContent = await editor.getText();
+            const updatedContent = await utils.waitForCondition(async () => {
+                const text = await editor.getText();
+                return text.includes(constants.FEATURE_SERVLET) ? text : undefined;
+            }, 15);
             expect(updatedContent).to.include(constants.FEATURE_SERVLET,
                 'Did not find expected servlet feature entry in server.xml.');
             expect(updatedContent).to.include(constants.PLATFORM_JAKARTA_NINE,

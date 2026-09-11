@@ -1,41 +1,20 @@
-/**
- * Copyright (c) 2025 IBM Corporation.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2026
  */
 import { By, EditorView, TextEditor, VSBrowser } from "vscode-extension-tester";
 import * as utils from './utils/testUtils';
+import * as editorUtils from './utils/editorUtils';
 import * as constants from './definitions/constants';
+import { logger } from './utils/testLogger';
+import { EditorPage } from './pages/EditorPage';
+import { CodeAssistPage } from './pages/CodeAssistPage';
 import { ProblemsPage } from './pages/ProblemsPage';
+import { QuickFixPage } from './pages/QuickFixPage';
 
 const path = require('path');
 const assert = require('assert');
-
-const MINIMAL_CONTENT = `<!--
- Copyright (c) 2022 IBM Corporation and others.
-
- This program and the accompanying materials are made available under the
- terms of the Eclipse Public License v. 2.0 which is available at
- http://www.eclipse.org/legal/epl-2.0.
-
- SPDX-License-Identifier: EPL-2.0
-
- Contributors:
-     IBM Corporation - initial implementation
--->
-<server description="Sample Servlet server">
-    <featureManager>
-        <feature>jsp-2.3</feature>
-    </featureManager>
-    
-    <httpEndpoint  host="*" httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint" />
-    
-    <webApplication id="liberty-gradle-test-wrapper-app" location="liberty-gradle-test-wrapper-app-1.0.war" name="liberty-gradle-test-wrapper-app"/>
-</server>`;
+const fs = require('fs');
 
 describe('LCLS tests for Gradle Project', function () {
     let editorView: EditorView;
@@ -50,13 +29,18 @@ describe('LCLS tests for Gradle Project', function () {
             path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2')
         );
 
-        await utils.openGradleFileByPath(constants.CONFIG_TWO, constants.SERVER_XML);
-        editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
+        const serverXmlPath = path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', constants.CONFIG_TWO, constants.SERVER_XML);
+        const editorPage = await new EditorPage().openFile(serverXmlPath, constants.SERVER_XML);
+        editor = editorPage.getEditor();
         actualServerXMLContent = await editor.getText();
     });
 
     afterEach(async function () {
         this.timeout(30000);
+        if (this.currentTest?.state === 'failed') {
+            await VSBrowser.instance.driver.takeScreenshot();
+            logger.error(`Test failed: ${this.currentTest?.title}`);
+        }
         try {
             editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
             await editor.setText(actualServerXMLContent);
@@ -66,78 +50,77 @@ describe('LCLS tests for Gradle Project', function () {
     });
 
     it('Should copy content of server.xml', async () => {
+        logger.testStart('Should copy content of server.xml');
         assert(actualServerXMLContent.length !== 0, 'Content of server.xml is not in copied.');
+        logger.testComplete('Should copy content of server.xml');
 
     }).timeout(30000);
 
     it('Should show diagnostic for server.xml invalid value', async () => {
+        logger.testStart('Should show diagnostic for server.xml invalid value');
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
 
         await editor.typeTextAt(19, 5, constants.TARGETED_VALUE_LOGGING);
-        await utils.delay(3000);
-        const focusTargetedElement = await editor.findElement(By.xpath(constants.FOCUS_WRONG));
-        await focusTargetedElement.click();
-        await editor.click();
 
-        const driverActionList = VSBrowser.instance.driver.actions();
-        await driverActionList.move({ origin: focusTargetedElement }).perform();
-        await utils.delay(5000);
+        // Wait for LCLS to underline the invalid value before attempting to hover
+        await utils.waitForCondition(async () => {
+            try {
+                await editor.findElement(By.xpath(constants.FOCUS_WRONG));
+                return true;
+            } catch {
+                return undefined;
+            }
+        }, 20);
 
-        const hoverContents = await VSBrowser.instance.driver.findElement(By.className('hover-contents'));
-        const hoverFoundOutcome = await hoverContents.getText();
-        console.log("Hover text is:" + hoverFoundOutcome);
+        // "wrong" is at column 30: line 19 col 5 + '<logging appsWriteJson = "'.length
+        const hoverText = await editorUtils.hoverOver(editor, 19, 30, 'wrong value');
+        logger.info("Hover text is:" + hoverText);
 
-        assert(hoverFoundOutcome.includes(constants.EXPECTED_OUTCOME_WRONG), 'Did not get expected diagnostic in server.xml');
+        assert(hoverText.includes(constants.EXPECTED_OUTCOME_WRONG), 'Did not get expected diagnostic in server.xml');
+        logger.testComplete('Should show diagnostic for server.xml invalid value');
 
     }).timeout(38000);
 
     it('Should apply quick fix for invalid value in server.xml', async () => {
+        logger.testStart('Should apply quick fix for invalid value in server.xml');
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
 
         await editor.typeTextAt(19, 5, constants.TARGETED_VALUE_LOGGING);
-        await utils.delay(2000);
-        const hoverTargetValue = await editor.findElement(By.xpath(constants.FOCUS_WRONG));
-        await utils.delay(7000);
 
-        const driverActionList = VSBrowser.instance.driver.actions();
-        await driverActionList.move({ origin: hoverTargetValue }).perform();
-        await utils.delay(3000);
+        // Wait for LCLS to underline 'wrong' before opening the quick fix
+        await utils.waitForCondition(async () => {
+            try {
+                await editor.findElement(By.xpath(constants.FOCUS_WRONG));
+                return true;
+            } catch {
+                return undefined;
+            }
+        }, 20);
 
-        const driver = VSBrowser.instance.driver;
-        const hoverRowStatusBar = await editor.findElement(By.className('hover-row status-bar'));
-        await utils.delay(2000);
+        await new QuickFixPage().applyFix(EditorPage.from(editor), 'wrong', "Replace with 'true'");
 
-        const quickFixPopupLink = await hoverRowStatusBar.findElement(By.xpath(constants.FOCUS_QUICKFIX));
-        await quickFixPopupLink.click();
-
-        const hoverWindowTaskBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
-        await hoverWindowTaskBar.findElement(By.className('actionList'));
-        await utils.delay(2000);
-
-        // Setting pointer block element display value as none to choose option from Quickfix menu
-        const pointerBlockedElements = await driver.findElements(By.css('.context-view-pointerBlock'));
-        if (pointerBlockedElements.length > 0) {
-            await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockedElements[0]);
-        }
-        const quickfixOptionValues = await editor.findElement(By.xpath(constants.LOGGING_TRUE));
-        await quickfixOptionValues.click();
-
-        const updatedSeverXMLContent = await editor.getText();
-        await utils.delay(3000);
-        console.log("Content after Quick fix is: ", updatedSeverXMLContent);
+        const updatedSeverXMLContent = await utils.waitForCondition(async () => {
+            const text = await editor.getText();
+            return text.includes(constants.SNIPPET_LOGGING) ? text : undefined;
+        }, 15);
+        logger.info("Content after Quick fix is: " + updatedSeverXMLContent);
         assert(updatedSeverXMLContent.includes(constants.SNIPPET_LOGGING), 'Quick fix is not applied correctly for the invalid value in server.xml.');
+        logger.testComplete('Should apply quick fix for invalid value in server.xml');
 
     }).timeout(45000);
 
     it('Should show completion support in server.xml Liberty Server Feature', async () => {
+        logger.testStart('Should show completion support in server.xml Liberty Server Feature');
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
 
-        const featureTag = "<f";
+        const editorPage = EditorPage.from(editor);
+        const codeAssist = new CodeAssistPage();
+
         await editor.typeTextAt(16, 39, constants.NEWLINE);
-        await editor.typeTextAt(17, 9, featureTag);
+        await editor.typeTextAt(17, 9, '<f');
         await utils.delay(5000);
-        //open the assistant
-        await utils.callAssitantAction(editor, constants.FEATURE_TAG)
+
+        await utils.callAssitantAction(editor, constants.FEATURE_TAG);
 
         const stanzaSnippet = "el-3";
         await editor.typeTextAt(17, 18, stanzaSnippet);
@@ -148,52 +131,60 @@ describe('LCLS tests for Gradle Project', function () {
 
         const updatedServerxmlContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after completion support : ", updatedServerxmlContent);
+        logger.info("Content after completion support : " + updatedServerxmlContent);
         assert(updatedServerxmlContent.includes(constants.FEATURE_EL), 'Completion support is not worked as expected in server.xml for Liberty Server Feature - el-3.0.');
+        logger.testComplete('Should show completion support in server.xml Liberty Server Feature');
 
     }).timeout(45000);
 
     it('Should show completion support in server.xml Liberty Server Configuration Stanza', async () => {
+        logger.testStart('Should show completion support in server.xml Liberty Server Configuration Stanza');
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
-        const stanzaSnippet = "log";
 
-        await editor.typeTextAt(19, 5, stanzaSnippet);
-        await utils.delay(5000);
-        //open the assistant
-        await utils.callAssitantAction(editor, constants.LOGGING)
+        // Position cursor at the insertion point before typing the trigger
+        await editor.typeTextAt(19, 5, 'log');
+        await editor.setCursor(19, 8);
 
-        // close the assistant
+        // Now let CodeAssistPage wait for the item and select it
+        const assist = await utils.waitForCondition(async () => {
+            return await editor.toggleContentAssist(true) ?? undefined;
+        }, 15);
+        await utils.waitForCondition(async () => {
+            try {
+                const item = await assist.getItem(constants.LOGGING);
+                return item ? true : undefined;
+            } catch {
+                return undefined;
+            }
+        }, 15);
+        await assist.select(constants.LOGGING);
         await editor.toggleContentAssist(false);
 
         const updatedServerxmlContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Updated content in Sever.xml : ", updatedServerxmlContent);
+        logger.info("Updated content in Sever.xml : " + updatedServerxmlContent);
         assert(updatedServerxmlContent.includes(constants.LOGGING_TAG), 'Completion support is not worked as expected in server.xml for Liberty Server Configuration Stanza');
+        logger.testComplete('Should show completion support in server.xml Liberty Server Configuration Stanza');
 
     }).timeout(45000);
 
     it('Should show diagnostic for invalid value in server.xml for server platform', async () => {
+        logger.testStart('Should show diagnostic for invalid value in server.xml for server platform');
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
 
         await editor.setTextAtLine(17, '        ' + constants.PLATFORM_JAKARTA);
         await utils.delay(5000);
-        const focusTargetedElement = await editor.findElement(By.xpath(constants.FOCUS_JAKARTA));
-        await focusTargetedElement.click();
-        await editor.click();
 
-        const driverActionList = VSBrowser.instance.driver.actions();
-        await driverActionList.move({ origin: focusTargetedElement }).perform();
-        await utils.delay(5000);
+        const hoverText = await editorUtils.hoverOver(editor, 17, 20, 'invalid platform value');
+        logger.info("Hover text is:" + hoverText);
 
-        const hoverContents = await VSBrowser.instance.driver.findElement(By.className('hover-contents'));
-        const hoverValue = await hoverContents.getText();
-        console.log("Hover text is:" + hoverValue);
-
-        assert(hoverValue.includes(constants.PLATFORM_JAKARTA_ERROR), 'Did not get expected diagnostic in server.xml for server platform');
+        assert(hoverText.includes(constants.PLATFORM_JAKARTA_ERROR), 'Did not get expected diagnostic in server.xml for server platform');
+        logger.testComplete('Should show diagnostic for invalid value in server.xml for server platform');
 
     }).timeout(45000);
 
     it('Should apply quick fix for invalid value in server.xml for server platform', async () => {
+        logger.testStart('Should apply quick fix for invalid value in server.xml for server platform');
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
 
         await editor.setTextAtLine(17, '        ' + constants.PLATFORM_JAKARTA);
@@ -226,12 +217,14 @@ describe('LCLS tests for Gradle Project', function () {
 
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after Quick fix : ", updatedSeverXMLContent);
+        logger.info("Content after Quick fix : " + updatedSeverXMLContent);
         assert(updatedSeverXMLContent.includes(constants.PLATFORM_JAKARTA_VALUE), 'Quick fix not applied correctly for the invalid value in server.xml for server platform.');
+        logger.testComplete('Should apply quick fix for invalid value in server.xml for server platform');
 
     }).timeout(45000);
 
     it('Should show diagnostic for invalid value in server.xml for server feature', async () => {
+        logger.testStart('Should show diagnostic for invalid value in server.xml for server feature');
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
 
         const fmEndLine = await editor.getLineOfText('</featureManager>');
@@ -245,10 +238,12 @@ describe('LCLS tests for Gradle Project', function () {
             return result ? true : undefined;
         }, 30);
         assert(found, 'Did not get expected diagnostic in server.xml for server feature');
+        logger.testComplete('Should show diagnostic for invalid value in server.xml for server feature');
 
     }).timeout(60000);
 
     it('Should apply quick fix for invalid value in server.xml for server feature', async () => {
+        logger.testStart('Should apply quick fix for invalid value in server.xml for server feature');
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
 
         const fmEndLine = await editor.getLineOfText('</featureManager>');
@@ -284,15 +279,21 @@ describe('LCLS tests for Gradle Project', function () {
 
         const updatedSeverXMLContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after Quick fix is: ", updatedSeverXMLContent);
+        logger.info("Content after Quick fix is: " + updatedSeverXMLContent);
         assert(updatedSeverXMLContent.includes(constants.SERVLET_VALUE), 'Quick fix is not applied correctly for the invalid value in server.xml for server feature.');
+        logger.testComplete('Should apply quick fix for invalid value in server.xml for server feature');
 
     }).timeout(60000);
 
     it('Should show completion support in server.xml Liberty Server platform', async () => {
+        logger.testStart('Should show completion support in server.xml Liberty Server platform');
         // Use minimal content so no duplicate platform exists to confuse LCLS
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
-        await editor.setText(MINIMAL_CONTENT);
+        const platformXmlPath = path.join(
+            utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config', 'server_platform.xml'
+        );
+        const minimalContent = fs.readFileSync(platformXmlPath, 'utf8');
+        await editor.setText(minimalContent);
         await utils.delay(5000);
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
 
@@ -319,45 +320,40 @@ describe('LCLS tests for Gradle Project', function () {
 
         const updatedServerxmlContent = await editor.getText();
         await utils.delay(3000);
-        console.log("Content after completion support is: ", updatedServerxmlContent);
+        logger.info("Content after completion support is: " + updatedServerxmlContent);
         assert(updatedServerxmlContent.includes(constants.PLATFORM_JAKARTA_VALUE), 'Completion support is not worked as expected in server.xml for Liberty Server platform');
+        logger.testComplete('Should show completion support in server.xml Liberty Server platform');
 
     }).timeout(60000);
 
     it('Valid server feature entry with platform entry in server.xml', async () => {
+        logger.testStart('Valid server feature entry with platform entry in server.xml');
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
 
         // Insert servlet after mpHealth (line 16); existing jakartaee-9.1 platform resolves it
         await editor.typeTextAt(16, 39, constants.NEWLINE);
         await editor.typeTextAt(17, 9, constants.FEATURE_SERVLET);
         await utils.delay(5000);
-        const focusTargetedElement = await editor.findElement(By.xpath(constants.FOCUS_SERVLET));
-        await focusTargetedElement.click();
-        await editor.click();
 
-        const driverActionList = VSBrowser.instance.driver.actions();
-        await driverActionList.move({ origin: focusTargetedElement }).perform();
-        await utils.delay(5000);
-
-        const holverContents = await VSBrowser.instance.driver.findElement(By.className('hover-contents'));
-        const hoverValue = await holverContents.getText();
-        console.log("Hover text is:" + hoverValue);
-        if (hoverValue.includes(constants.SERVLET_ERROR)) {
+        const hoverText = await editorUtils.hoverOver(editor, 17, 20, 'servlet feature');
+        logger.info("Hover text is:" + hoverText);
+        if (hoverText.includes(constants.SERVLET_ERROR)) {
             await editor.typeTextAt(17, 35, constants.NEWLINE);
             await editor.typeTextAt(18, 9, constants.PLATFORM_JAKARTA_NINE);
             await utils.delay(2000);
         }
         const updatedServerxmlContent = await editor.getText();
-        console.log("Updated server.xml content is:" + updatedServerxmlContent);
+        logger.info("Updated server.xml content is:" + updatedServerxmlContent);
 
         assert(updatedServerxmlContent.includes(constants.FEATURE_SERVLET) && updatedServerxmlContent.includes(constants.PLATFORM_JAKARTA_NINE), 'Did not get expected entries in server.xml for versionless combination for server feature and platform');
+        logger.testComplete('Valid server feature entry with platform entry in server.xml');
 
     }).timeout(45000);
 
     after(async function () {
         this.timeout(30000);
         await utils.removeDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
-        console.log("Removed new config folder:");
+        logger.info("Removed new config folder:");
     });
 
 });
