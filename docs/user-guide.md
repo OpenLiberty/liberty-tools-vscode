@@ -274,11 +274,13 @@ Liberty Tools supports Maven and Gradle multi-module projects and displays them 
 - **Maven**: Detected when a parent `pom.xml` contains a `<modules>` section.
 - **Gradle**: Detected when `settings.gradle` contains `include` directives for subprojects.
 
-In the Liberty dashboard:
+In the Liberty Tools dashboard:
 - Parent or root projects appear as parent nodes containing their child submodules.
 - If a parent project configures the Liberty plugin, dev mode commands can be run directly on the parent.
 - If individual submodules configure the Liberty plugin, you can run dev mode commands directly on each submodule independently.
 - Adding or removing a parent project also adds or removes its child submodules.
+
+![Run start a multi-module project](/docs/user-guide-screenshots/multi-mod-start.png)
 
 ## Configure a Liberty server
 
