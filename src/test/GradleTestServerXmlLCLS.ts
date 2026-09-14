@@ -8,7 +8,6 @@ import * as editorUtils from './utils/editorUtils';
 import * as constants from './definitions/constants';
 import { logger } from './utils/testLogger';
 import { EditorPage } from './pages/EditorPage';
-import { CodeAssistPage } from './pages/CodeAssistPage';
 import { ProblemsPage } from './pages/ProblemsPage';
 import { QuickFixPage } from './pages/QuickFixPage';
 
@@ -113,9 +112,6 @@ describe('LCLS tests for Gradle Project', function () {
         logger.testStart('Should show completion support in server.xml Liberty Server Feature');
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
 
-        const editorPage = EditorPage.from(editor);
-        const codeAssist = new CodeAssistPage();
-
         await editor.typeTextAt(16, 39, constants.NEWLINE);
         await editor.typeTextAt(17, 9, '<f');
         await utils.delay(5000);
@@ -188,35 +184,23 @@ describe('LCLS tests for Gradle Project', function () {
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
 
         await editor.setTextAtLine(17, '        ' + constants.PLATFORM_JAKARTA);
-        await utils.delay(2000);
-        const flaggedString = await editor.findElement(By.xpath(constants.FOCUS_JAKARTA));
-        await utils.delay(7000);
 
-        const driverActionList = VSBrowser.instance.driver.actions();
-        await driverActionList.move({ origin: flaggedString }).perform();
-        await utils.delay(3000);
+        // Wait for LCLS to underline 'jakarta' before opening the quick fix
+        await utils.waitForCondition(async () => {
+            try {
+                await editor.findElement(By.xpath(constants.FOCUS_JAKARTA));
+                return true;
+            } catch {
+                return undefined;
+            }
+        }, 20);
 
-        const driver = VSBrowser.instance.driver;
-        const hoverRowStatusBar = await editor.findElement(By.className('hover-row status-bar'));
-        await utils.delay(2000);
+        await new QuickFixPage().applyFix(EditorPage.from(editor), 'jakarta', 'Replace platform with jakartaee-11.0');
 
-        const quickFixPopupLink = await hoverRowStatusBar.findElement(By.xpath(constants.FOCUS_QUICKFIX));
-        await quickFixPopupLink.click();
-
-        const hoverTaskBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
-        await hoverTaskBar.findElement(By.className('actionList'));
-        await utils.delay(2000);
-
-        // Setting pointer block element display value as none to choose option from Quickfix menu
-        const pointerBlockedElements = await driver.findElements(By.css('.context-view-pointerBlock'));
-        if (pointerBlockedElements.length > 0) {
-            await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockedElements[0]);
-        }
-        const quickfixOption = await editor.findElement(By.xpath(constants.FOCUS_JAKARTA_ELEVEN));
-        await quickfixOption.click();
-
-        const updatedSeverXMLContent = await editor.getText();
-        await utils.delay(3000);
+        const updatedSeverXMLContent = await utils.waitForCondition(async () => {
+            const text = await editor.getText();
+            return text.includes(constants.PLATFORM_JAKARTA_VALUE) ? text : undefined;
+        }, 15);
         logger.info("Content after Quick fix : " + updatedSeverXMLContent);
         assert(updatedSeverXMLContent.includes(constants.PLATFORM_JAKARTA_VALUE), 'Quick fix not applied correctly for the invalid value in server.xml for server platform.');
         logger.testComplete('Should apply quick fix for invalid value in server.xml for server platform');
@@ -250,35 +234,24 @@ describe('LCLS tests for Gradle Project', function () {
         await editor.typeTextAt(fmEndLine, 1,
             '        ' + constants.FEATURE_SERVLET_INVALID + '\n'
         );
-        await utils.delay(2000);
-        const flaggedString = await editor.findElement(By.xpath(constants.FOCUS_SERVLET_INVALID));
-        await utils.delay(7000);
+        await editor.save();
 
-        const driverActionList = VSBrowser.instance.driver.actions();
-        await driverActionList.move({ origin: flaggedString }).perform();
-        await utils.delay(3000);
+        // Wait for LCLS to underline the invalid feature before opening the quick fix
+        await utils.waitForCondition(async () => {
+            try {
+                await editor.findElement(By.xpath(constants.FOCUS_SERVLET_INVALID));
+                return true;
+            } catch {
+                return undefined;
+            }
+        }, 20);
 
-        const driver = VSBrowser.instance.driver;
-        const hoverRowStatusBar = await editor.findElement(By.className('hover-row status-bar'));
-        await utils.delay(2000);
+        await new QuickFixPage().applyFix(EditorPage.from(editor), 'servlet-99.0', 'Replace feature with servlet-3.1');
 
-        const quickFixPopupLink = await hoverRowStatusBar.findElement(By.xpath(constants.FOCUS_QUICKFIX));
-        await quickFixPopupLink.click();
-
-        const hoverTaskBar = await editor.findElement(By.className('context-view monaco-component bottom left fixed'));
-        await hoverTaskBar.findElement(By.className('actionList'));
-        await utils.delay(2000);
-
-        // Setting pointer block element display value as none to choose option from Quickfix menu
-        const pointerBlockedElements = await driver.findElements(By.css('.context-view-pointerBlock'));
-        if (pointerBlockedElements.length > 0) {
-            await driver.executeScript("arguments[0].style.display = 'none';", pointerBlockedElements[0]);
-        }
-        const quickfixOption = await editor.findElement(By.xpath(constants.FOCUS_SERVLET_VALUE));
-        await quickfixOption.click();
-
-        const updatedSeverXMLContent = await editor.getText();
-        await utils.delay(3000);
+        const updatedSeverXMLContent = await utils.waitForCondition(async () => {
+            const text = await editor.getText();
+            return text.includes(constants.SERVLET_VALUE) ? text : undefined;
+        }, 15);
         logger.info("Content after Quick fix is: " + updatedSeverXMLContent);
         assert(updatedSeverXMLContent.includes(constants.SERVLET_VALUE), 'Quick fix is not applied correctly for the invalid value in server.xml for server feature.');
         logger.testComplete('Should apply quick fix for invalid value in server.xml for server feature');
@@ -294,7 +267,11 @@ describe('LCLS tests for Gradle Project', function () {
         );
         const minimalContent = fs.readFileSync(platformXmlPath, 'utf8');
         await editor.setText(minimalContent);
-        await utils.delay(5000);
+        // Wait for LCLS to re-process the file rather than sleeping blindly
+        await utils.waitForCondition(async () => {
+            const text = await editor.getText();
+            return text.includes('<server') ? true : undefined;
+        }, 20);
         editor = await editorView.openEditor(constants.SERVER_XML) as TextEditor;
 
         const fmEndLine = await editor.getLineOfText('</featureManager>');
