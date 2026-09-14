@@ -331,6 +331,7 @@ describe('LCLS tests for Gradle Project', function () {
         this.timeout(30000);
         await utils.removeDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         logger.info("Removed new config folder:");
+        utils.copyScreenshotsToProjectFolder('gradle');
     });
 
 });
