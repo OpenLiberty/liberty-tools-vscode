@@ -17,11 +17,12 @@ export class EditorPage {
      *
      * @param filePath  Absolute path to the file.
      * @param tabTitle  The editor tab title (usually the file name).
-     * @param timeoutS  Maximum seconds to wait for the tab to appear (default 30).
+     * @param timeoutS  Maximum seconds to wait for the tab to appear (default 60).
      */
-    async openFile(filePath: string, tabTitle: string, timeoutS = 30): Promise<this> {
+    async openFile(filePath: string, tabTitle: string, timeoutS = 60): Promise<this> {
         await VSBrowser.instance.openResources(filePath);
-        this.editor = await utils.waitForCondition(async () => {
+        // Poll until the tab is registered in the editor view.
+        const ed = await utils.waitForCondition(async () => {
             try {
                 const titles = await this.editorView.getOpenEditorTitles();
                 if (!(titles as string[]).includes(tabTitle)) { return undefined; }
@@ -30,6 +31,10 @@ export class EditorPage {
                 return undefined;
             }
         }, timeoutS);
+        // Brief pause to let the editor content area become interactable after the tab appears.
+        // getText() cannot be used here because it hangs indefinitely on empty files.
+        await utils.getWaitHelper().sleep(1500);
+        this.editor = ed;
         return this;
     }
 

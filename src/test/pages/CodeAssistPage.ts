@@ -14,7 +14,9 @@ export class CodeAssistPage {
      * content-assist list to contain `fullSnippet`, then select it.
      */
     async insertSnippet(editor: EditorPage, snippetTrigger: string, fullSnippet: string): Promise<void> {
-        await editor.getEditor().typeText(snippetTrigger);
+        if (snippetTrigger) {
+            await editor.getEditor().typeText(snippetTrigger);
+        }
 
         // Wait for the assist list to open and contain the target item before selecting.
         // toggleContentAssist(true) can return before the LS has populated the list.

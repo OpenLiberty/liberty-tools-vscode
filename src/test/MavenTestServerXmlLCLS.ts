@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2026
  */
 import { expect } from 'chai';
-import { By, EditorView, TextEditor, VSBrowser, WebDriver, Workbench, BottomBarPanel, MarkerType, Key } from 'vscode-extension-tester';
+import { By, EditorView, TextEditor, VSBrowser, WebDriver, Workbench, BottomBarPanel, Key } from 'vscode-extension-tester';
 import * as utils from './utils/testUtils';
 import * as editorUtils from './utils/editorUtils';
 import * as constants from './definitions/constants';
@@ -31,17 +31,13 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
         await VSBrowser.instance.waitForWorkbench();
         editorView = new EditorView();
 
-        // Open the real server.xml
+        // Open the real server.xml via EditorPage so the tab is confirmed visible
         const serverXmlPath = path.resolve(
             utils.getMvnProjectPath(),
             'src', 'main', 'liberty', 'config', 'server.xml'
         );
-
-        await VSBrowser.instance.openResources(serverXmlPath, async () => {
-            await wait.sleep(3000);
-        });
-
-        editor = await editorView.openEditor('server.xml') as TextEditor;
+        const editorPage = await new EditorPage().openFile(serverXmlPath, 'server.xml');
+        editor = editorPage.getEditor();
         originalContent = await editor.getText();
         logger.info('Server.xml file opened and original content saved');
     });
@@ -113,30 +109,9 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
         logger.stepSuccess(1, 'Changed to invalid feature jsp-100.0');
 
         logger.step(2, 'Waiting for diagnostic to appear');
-        // LCLS produces: ERROR: The feature "jsp-100.0" does not exist. liberty-lemminx(incorrect_feature)
-        await wait.forCondition(async () => {
-            try {
-                const bottomBar = new BottomBarPanel();
-                await bottomBar.toggle(true);
-                const problemsView = await bottomBar.openProblemsView();
-                const markers = await problemsView.getAllVisibleMarkers(MarkerType.Error);
-                for (const marker of markers) {
-                    const text = await marker.getText();
-                    if (text.includes('does not exist')) {
-                        logger.stepSuccess(2, `Diagnostic found: ${text}`);
-                        return true;
-                    }
-                }
-                return undefined;
-            } catch {
-                return undefined;
-            }
-        }, {
-            timeout: 45000,
-            pollInterval: 2000,
-            message: 'Diagnostic did not appear for invalid feature'
-        });
-
+        const found = await new ProblemsPage().hasDiagnostic('does not exist');
+        expect(found, 'Diagnostic did not appear for invalid feature').to.be.true;
+        logger.stepSuccess(2, 'Diagnostic found in Problems view');
 
         await new BottomBarPanel().toggle(false);
         editor = await editorView.openEditor('server.xml') as TextEditor;
@@ -145,48 +120,12 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             return text.includes('<server') ? true : undefined;
         }, 15);
 
-        logger.step(3, 'Selecting invalid feature text');
-        await editor.selectText('jsp-100.0');
-        logger.stepSuccess(3, 'Selected invalid feature');
+        logger.step(3, 'Applying quick fix for invalid feature');
+        // LCLS offers "Replace feature with jsp-2.2" or "Replace feature with jsp-2.3" — match either
+        await new QuickFixPage().applyFix(EditorPage.from(editor), 'jsp-100.0', 'Replace feature with jsp-');
+        logger.stepSuccess(3, 'Quick fix applied');
 
-        logger.step(4, 'Opening quick fix menu and applying fix');
-        const modKey = process.platform === 'darwin' ? Key.COMMAND : Key.CONTROL;
-
-        // The quick-fix widget closes between polling iterations, so re-open it each time
-        const quickFixApplied = await wait.forCondition(async () => {
-            try {
-                await editor.selectText('jsp-100.0');
-                await driver.actions().keyDown(modKey).sendKeys('.').keyUp(modKey).perform();
-                await wait.sleep(1500);
-
-                const options = await driver.findElements(
-                    By.css('.action-widget .action-list-item, .action-widget .monaco-list-row')
-                );
-                for (const opt of options) {
-                    const text = await opt.getText();
-                    logger.info(`Quick fix option: ${text}`);
-                    // LCLS offers "Replace feature with jsp-2.2" and "Replace feature with jsp-2.3", accept either
-                    if (text.includes('Replace feature with jsp-')) {
-                        await driver.executeScript('arguments[0].click();', opt);
-                        logger.stepSuccess(4, `Applied quick fix: ${text}`);
-                        return true;
-                    }
-                }
-                // Dismiss the menu so re-opening next iteration is clean
-                await driver.actions().sendKeys(Key.ESCAPE).perform();
-                return undefined;
-            } catch {
-                return undefined;
-            }
-        }, {
-            timeout: 30000,
-            pollInterval: 3000,
-            message: 'Quick fix option did not appear'
-        });
-
-        expect(quickFixApplied).to.be.true;
-
-        logger.step(5, 'Verifying fix was applied');
+        logger.step(4, 'Verifying fix was applied');
         const updatedContent = await utils.waitForCondition(async () => {
             const text = await editor.getText();
             return !text.includes('jsp-100.0') ? text : undefined;
@@ -194,7 +133,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
         // Either jsp-2.2 or jsp-2.3 is a valid replacement — verify the bad value is gone
         expect(updatedContent).to.match(/<feature>jsp-2\.\d<\/feature>/);
         expect(updatedContent).to.not.include('jsp-100.0');
-        logger.stepSuccess(5, 'Quick fix successfully replaced invalid feature');
+        logger.stepSuccess(4, 'Quick fix successfully replaced invalid feature');
 
         logger.testComplete('Diagnostic detected and quick fix applied successfully');
     });
@@ -366,17 +305,19 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
                 utils.getMvnProjectPath(),
                 'src', 'main', 'liberty', 'config', 'server_platform.xml'
             );
-            const minimalContent = await import('fs').then(fs => fs.readFileSync(platformXmlPath, 'utf8'));
-            const editorPage = new EditorPage();
-            editor = await editorView.openEditor('server.xml') as TextEditor;
-            await editor.setText(minimalContent);
-            await editor.save();
+            const { readFileSync } = await import('fs');
+            const minimalContent = readFileSync(platformXmlPath, 'utf8');
+            const editorPage = EditorPage.from(
+                await editorView.openEditor('server.xml') as TextEditor
+            );
+            await editorPage.getEditor().setText(minimalContent);
+            await editorPage.getEditor().save();
             // Wait for LCLS to re-process the file rather than sleeping blindly
             await utils.waitForCondition(async () => {
-                const text = await editor.getText();
+                const text = await editorPage.getEditor().getText();
                 return text.includes('<server') ? true : undefined;
             }, 15);
-            editor = await editorView.openEditor('server.xml') as TextEditor;
+            editor = editorPage.getEditor();
         }
 
         it('Should show diagnostic for invalid platform value in server.xml', async function () {
@@ -437,23 +378,10 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             await editor.typeTextAt(fmEndLine, 1, '        <platform></platform>');
             await editor.setCursor(fmEndLine, 19);
 
-            // Type partial value with cursor inside the tag to trigger LCLS completion
+            // Type 'jakar' inside the tag and let CodeAssistPage handle the rest
             await editor.typeTextAt(fmEndLine, 19, 'jakar');
             await editor.setCursor(fmEndLine, 24);
-
-            const assist = await utils.waitForCondition(async () => {
-                return await editor.toggleContentAssist(true) ?? undefined;
-            }, 30);
-            await utils.waitForCondition(async () => {
-                try {
-                    const item = await assist.getItem(constants.JAKARTA_ELEVEN);
-                    return item ? true : undefined;
-                } catch {
-                    return undefined;
-                }
-            }, 30);
-            await assist.select(constants.JAKARTA_ELEVEN);
-            await editor.toggleContentAssist(false);
+            await codeAssist.insertSnippet(editorPage, '', constants.JAKARTA_ELEVEN);
 
             const updatedContent = await utils.waitForCondition(async () => {
                 const text = await editor.getText();
@@ -478,23 +406,10 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             await editor.typeTextAt(fmEndLine, 1, '        <feature></feature>');
             await editor.setCursor(fmEndLine, 18);
 
-            // Type partial value with cursor inside the tag to trigger LCLS completion
+            // Type 'el-3' inside the tag and let CodeAssistPage handle the rest
             await editor.typeTextAt(fmEndLine, 18, 'el-3');
             await editor.setCursor(fmEndLine, 22);
-
-            const assist = await utils.waitForCondition(async () => {
-                return await editor.toggleContentAssist(true) ?? undefined;
-            }, 30);
-            await utils.waitForCondition(async () => {
-                try {
-                    const item = await assist.getItem(constants.EL_VALUE);
-                    return item ? true : undefined;
-                } catch {
-                    return undefined;
-                }
-            }, 30);
-            await assist.select(constants.EL_VALUE);
-            await editor.toggleContentAssist(false);
+            await codeAssist.insertSnippet(editorPage, '', constants.EL_VALUE);
 
             const updatedContent = await utils.waitForCondition(async () => {
                 const text = await editor.getText();

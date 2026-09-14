@@ -5,7 +5,7 @@
 
 import * as path from 'path';
 import { logger } from '../utils/testLogger';
-import { VSBrowser } from 'vscode-extension-tester';
+import { VSBrowser, ModalDialog } from 'vscode-extension-tester';
 import { EditorPage } from '../pages/EditorPage';
 import * as utils from '../utils/testUtils';
 import { expect } from 'chai';
@@ -66,13 +66,19 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
         let wait: any;
 
         before(async function () {
-            this.timeout(60000);
+            this.timeout(90000);
             logger.info(`Setting up Maven ${config.tabTitle} tests`);
 
             await VSBrowser.instance.openResources(config.getProjectPath());
             await VSBrowser.instance.waitForWorkbench();
 
             wait = utils.getWaitHelper();
+
+            // Dismiss any "Do you want to save?" dialog left open by a previous suite
+            // before attempting to interact with the editor.
+            try {
+                await new ModalDialog().pushButton("Don't Save");
+            } catch { /* no dialog present — continue */ }
 
             const filePath = path.resolve(config.getProjectPath(), ...config.filePathSegments);
             logger.info(`${config.tabTitle} path: ${filePath}`);
@@ -89,7 +95,7 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
         });
 
         after(async function () {
-            this.timeout(10000);
+            this.timeout(30000);
             try {
                 if (editor) {
                     const currentText = await editor.getEditor().getText();
@@ -134,6 +140,8 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
             it(`Hover over ${testCase.element} shows Liberty Language Server documentation`, async function () {
                 this.timeout(30000);
                 logger.testStart(`Hover over ${testCase.element} shows Liberty Language Server documentation`);
+                // Click the editor to ensure it has focus before writing content.
+                await editor.getEditor().click();
                 await editor.getEditor().setText(config.hoverInitialContent);
                 await editor.getEditor().save();
                 await wait.sleep(1000);
@@ -161,6 +169,7 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
 
             try {
                 logger.step(1, 'Positioning cursor at end of file');
+                await editor.getEditor().click();
                 await editor.getEditor().setCursor(3, 1);
 
                 logger.step(2, 'Opening content assist');
@@ -189,6 +198,7 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
             this.timeout(90000);
             logger.testStart('Show that INVALID text displays diagnostic and quick fix removes it');
             try {
+                await editor.getEditor().click();
                 await editorUtils.replaceTextWithinLineContaining(
                     editor.getEditor(),
                     config.diagnostic.lineToken,
