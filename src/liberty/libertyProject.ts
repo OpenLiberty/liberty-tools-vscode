@@ -14,6 +14,9 @@ const MAVEN_ICON = "maven-tag.png";
 const GRADLE_ICON = "gradle-tag-1.png";
 const OL_LOGO_ICON = "ol_logo.png";
 
+const STATUS_ICON_BASE_LIGHT = vscodePath.join("server-status-icons", "Light theme", "PNG", "16 px");
+const STATUS_ICON_BASE_DARK  = vscodePath.join("server-status-icons", "Dark theme",  "PNG", "16 px");
+
 export enum DevModeState {
 	Starting = "starting",
 	ServerStarted = "server-started",
@@ -65,12 +68,10 @@ export class LibertyProject extends vscode.TreeItem {
 		this.contextValue = computeContextValue(contextValue, undefined);
 	}
 
-	private EXPLORER_ICON = this.setExplorerIcon();
-
-	iconPath = {
-		light: vscodePath.join(this._context.extensionPath, "images", this.EXPLORER_ICON),
-		dark: vscodePath.join(this._context.extensionPath, "images", this.EXPLORER_ICON)
-	};
+	// Initialised as a leaf (status) icon. updateExplorerIcon() is called by
+	// projectDiscovery after isAggregator is stamped to switch aggregators to
+	// their Maven/Gradle icon.
+	iconPath = this.getStatusIconPath(this.state);
 
 	public getLabel(): string {
 		return `${this.label}`;
@@ -87,6 +88,9 @@ export class LibertyProject extends vscode.TreeItem {
 	public setState(state: DevModeState | undefined): void {
 		this.state = state;
 		this.contextValue = computeContextValue(this.baseContextValue, state);
+		if (!this.isAggregator) {
+			this.iconPath = this.getStatusIconPath(state);
+		}
 	}
 
 	public getPath(): string {
@@ -195,10 +199,50 @@ export class LibertyProject extends vscode.TreeItem {
 		}
 	}
 
-	public setExplorerIcon() {
+	/** Returns the Maven/Gradle/OL icon filename for aggregator nodes, or undefined for leaf nodes. */
+	public setExplorerIcon(): string | undefined {
+		if (!this.isAggregator) { return undefined; }
 		if (isMaven(this.contextValue)) { return MAVEN_ICON; }
 		if (isGradle(this.contextValue)) { return GRADLE_ICON; }
 		return OL_LOGO_ICON;
+	}
+
+	/**
+	 * Recomputes iconPath based on the current isAggregator flag and state.
+	 * Must be called by projectDiscovery after isAggregator is stamped.
+	 */
+	public updateExplorerIcon(): void {
+		if (this.isAggregator) {
+			const icon = this.setExplorerIcon()!;
+			const abs = vscodePath.join(this._context.extensionPath, "images", icon);
+			this.iconPath = { light: abs, dark: abs };
+		} else {
+			this.iconPath = this.getStatusIconPath(this.state);
+		}
+	}
+
+	private getStatusIconPath(state: DevModeState | undefined): { light: string; dark: string } {
+		let filename: string;
+		switch (state) {
+			case DevModeState.ServerStarted:
+			case DevModeState.Running:
+				filename = "Active.png";
+				break;
+			case DevModeState.Stopping:
+				filename = "Stopping.png";
+				break;
+			case DevModeState.Starting:
+				filename = "Incomplete.png";
+				break;
+			default:
+				filename = "Stopped.png";
+				break;
+		}
+		const base = this._context.extensionPath;
+		return {
+			light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, filename),
+			dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  filename),
+		};
 	}
 }
 
