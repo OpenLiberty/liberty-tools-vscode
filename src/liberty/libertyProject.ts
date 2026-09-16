@@ -14,8 +14,8 @@ const MAVEN_ICON = "maven-tag.png";
 const GRADLE_ICON = "gradle-tag-1.png";
 const OL_LOGO_ICON = "ol_logo.png";
 
-const STATUS_ICON_BASE_LIGHT = vscodePath.join("server-status-icons", "Light theme", "PNG", "16 px");
-const STATUS_ICON_BASE_DARK  = vscodePath.join("server-status-icons", "Dark theme",  "PNG", "16 px");
+const STATUS_ICON_BASE_LIGHT = vscodePath.join("server-status-icons", "light-theme");
+const STATUS_ICON_BASE_DARK  = vscodePath.join("server-status-icons", "dark-theme");
 
 export enum DevModeState {
 	Starting = "starting",
@@ -226,16 +226,16 @@ export class LibertyProject extends vscode.TreeItem {
 		switch (state) {
 			case DevModeState.ServerStarted:
 			case DevModeState.Running:
-				filename = "Active.png";
+				filename = "active.svg";
 				break;
 			case DevModeState.Stopping:
-				filename = "Stopping.png";
+				filename = "stopping.svg";
 				break;
 			case DevModeState.Starting:
-				filename = "Incomplete.png";
+				filename = "incomplete.svg";
 				break;
 			default:
-				filename = "Stopped.png";
+				filename = "stopped.svg";
 				break;
 		}
 		const base = this._context.extensionPath;
