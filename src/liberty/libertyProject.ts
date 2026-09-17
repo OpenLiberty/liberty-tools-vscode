@@ -40,6 +40,7 @@ export class LibertyProject extends vscode.TreeItem {
 	public isLibertyEnabled: boolean = false;
 	public artifactId: string = "";
 	public parentArtifactId?: string;
+	public installDirectory?: string;
 	public baseContextValue: string;
 
 	// disposable for the project shell execution listener. disposes on terminal close.

@@ -354,16 +354,31 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
     for (const targetProject of targetProjects) {
 
         const EXCLUDED_DIR_PATTERN = "**/{bin,classes}/**";
-        let pathPrefix = "";
-        if (isMaven(targetProject.getContextValue())) {
-            pathPrefix = "target";
-        } else if (isGradle(targetProject.getContextValue())) {
-            pathPrefix = "build";
-        }
         let paths: string[] = [];
-        if (pathPrefix !== "") {
-            const serverEnvPattern = new vscode.RelativePattern(Path.dirname(targetProject.getPath()), pathPrefix + "/**/server.env");
-            paths = (await vscode.workspace.findFiles(serverEnvPattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
+
+        // If installDirectory is configured, search there first — that is where LMP/LGP
+        // writes the runtime server.env (containing WLP_DEBUG_ADDRESS) when using an
+        // external Liberty installation. Relative paths are resolved from the project root.
+        if (targetProject.installDirectory) {
+            const projectDir = Path.dirname(targetProject.getPath());
+            const resolvedInstallDir = Path.resolve(projectDir, targetProject.installDirectory);
+            const installDirPattern = new vscode.RelativePattern(resolvedInstallDir, "usr/servers/**/server.env");
+            paths = (await vscode.workspace.findFiles(installDirPattern)).map(uri => uri.fsPath);
+        }
+
+        // Fall back to the default build-output location when installDirectory is not set
+        // or when no server.env was found under the install directory.
+        if (paths.length === 0) {
+            let pathPrefix = "";
+            if (isMaven(targetProject.getContextValue())) {
+                pathPrefix = "target";
+            } else if (isGradle(targetProject.getContextValue())) {
+                pathPrefix = "build";
+            }
+            if (pathPrefix !== "") {
+                const serverEnvPattern = new vscode.RelativePattern(Path.dirname(targetProject.getPath()), pathPrefix + "/**/server.env");
+                paths = (await vscode.workspace.findFiles(serverEnvPattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
+            }
         }
         if (paths.length === 1) {
             console.log(localize("attach.debugger.liverty.dev.in", targetProject.getLabel()));
