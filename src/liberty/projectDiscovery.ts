@@ -233,7 +233,7 @@ async function discoverProjects(
 		}),
 
 		...gradleEntries.map(async (entry) => {
-			if (!entry.parsedBuild && !entry.regexBuildFile && !gradleParentPaths.has(entry.path)) { return; }
+			if (!entry.parsedBuild && !entry.regexBuildFile && !gradleParentPaths.has(entry.path) && !hasServerXML(entry.path)) { return; }
 			let buildFile: BuildFileImpl;
 
 			if (gradleParentPaths.has(entry.path)) {
@@ -242,15 +242,21 @@ async function discoverProjects(
 			} else if (gradleChildBuildPaths.has(entry.path)) {
 				const gf = entry.regexBuildFile
 					? entry.regexBuildFile
-					: gradleUtil.validGradleBuild(entry.parsedBuild!, entry.path);
-				const shouldInclude = await gradleUtil.validateGradleChildModule(gf, entry.parsedBuild ?? {}, entry.path, visitedPaths);
+					: gradleUtil.validGradleBuild(entry.parsedBuild ?? {}, entry.path);
+				const shouldInclude = await gradleUtil.validateGradleChildModule(gf, entry.parsedBuild ?? {}, entry.path, visitedPaths)
+					|| hasServerXML(entry.path);
 				if (!shouldInclude) { return; }
 				buildFile = gf;
 			} else {
 				buildFile = entry.regexBuildFile
 					? entry.regexBuildFile
-					: gradleUtil.validGradleBuild(entry.parsedBuild!, entry.path);
-				if (!buildFile.hasLibertyPlugin()) { return; }
+					: gradleUtil.validGradleBuild(entry.parsedBuild ?? {}, entry.path);
+				if (!buildFile.hasLibertyPlugin() && !hasServerXML(entry.path)) { return; }
+			}
+			// When server.xml is the only signal, validGradleBuild returns GradleBuildFile(false, "").
+			// Normalise to a valid project type so contextValue is never empty.
+			if (!buildFile.getProjectType()) {
+				buildFile = new GradleBuildFile(true, LIBERTY_PROJECT_GRADLE);
 			}
 			buildFile.setBuildFilePath(entry.path);
 
@@ -301,20 +307,22 @@ async function stampProjects(
 		try {
 			if (entry.type === "maven" && entry.xmlString) {
 				const metadata = await mavenUtil.extractMavenMetadata(entry.path, entry.xmlString);
-				console.log(`[stamp] maven ${entry.path}: artifactId=${metadata.artifactId}, parentArtifactId=${metadata.parentArtifactId}, isAggregator=${metadata.isAggregator}, isLibertyEnabled=${metadata.isLibertyEnabled}`);
 				project.artifactId = metadata.artifactId;
 				project.parentArtifactId = metadata.parentArtifactId;
 				project.isAggregator = metadata.isAggregator;
-				project.isLibertyEnabled = metadata.isLibertyEnabled;
+				project.isLibertyEnabled = metadata.isLibertyEnabled
+					|| hasServerXML(entry.path);
+				console.log(`[stamp] maven ${entry.path}: artifactId=${metadata.artifactId}, parentArtifactId=${metadata.parentArtifactId}, isAggregator=${metadata.isAggregator}, isLibertyEnabled=${project.isLibertyEnabled}`);
 				project.updateExplorerIcon();
 				mavenMetadataMap.set(entry.path, metadata);
 			} else if (entry.type === "gradle" && (entry.parsedBuild || entry.regexBuildFile || entry.parsedSettings)) {
 				const metadata = await gradleUtil.extractGradleMetadata(entry.path, entry.parsedBuild ?? null, entry.parsedSettings);
-				console.log(`[stamp] gradle ${entry.path}: projectName=${metadata.projectName}, parentProjectName=${metadata.parentProjectName}, isAggregator=${metadata.isAggregator}, isLibertyEnabled=${metadata.isLibertyEnabled}`);
 				project.artifactId = metadata.projectName;
 				project.parentArtifactId = metadata.parentProjectName;
 				project.isAggregator = metadata.isAggregator;
-				project.isLibertyEnabled = metadata.isLibertyEnabled;
+				project.isLibertyEnabled = metadata.isLibertyEnabled
+					|| hasServerXML(entry.path);
+				console.log(`[stamp] gradle ${entry.path}: projectName=${metadata.projectName}, parentProjectName=${metadata.parentProjectName}, isAggregator=${metadata.isAggregator}, isLibertyEnabled=${project.isLibertyEnabled}`);
 				project.updateExplorerIcon();
 				gradleMetadataMap.set(entry.path, metadata);
 			}
@@ -501,6 +509,17 @@ function projectRootPathExists(path: string, keys: Iterable<string>): boolean {
 		}
 	}
 	return false;
+}
+
+/**
+ * Returns true when a Liberty server.xml exists at the standard path
+ * (src/main/liberty/config/server.xml) relative to the build file's directory.
+ * A server.xml alone is a sufficient Liberty signal even when no plugin is declared.
+ */
+export function hasServerXML(buildFilePath: string): boolean {
+	const projectDir = vscodePath.dirname(buildFilePath);
+	const serverXMLPath = vscodePath.join(projectDir, "src", "main", "liberty", "config", "server.xml");
+	return fse.existsSync(serverXMLPath);
 }
 
 /**
