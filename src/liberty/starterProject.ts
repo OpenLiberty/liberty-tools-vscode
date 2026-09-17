@@ -156,7 +156,7 @@ export async function starterProject(context: ExtensionContext) {
     }
 
     async function validArtifactName(name: string) {
-        const regexp = new RegExp("^([a-z]+-)*[a-z]+$", "i");
+        const regexp = new RegExp("^([a-z]+-)*[a-z]+$");
         if (! regexp.test(name) ) {
             return localize("starter.invalid.artifact");
         } else {
@@ -165,7 +165,7 @@ export async function starterProject(context: ExtensionContext) {
     }
 
     async function validGroupName(name: string) {
-        const regexp = new RegExp("^([a-z]+\\.)*[a-z]+$", "i");
+        const regexp = new RegExp("^([a-z]+\\.)*[a-z]+$");
         if (! regexp.test(name) ) {
             return localize("starter.invalid.group");
         } else {

@@ -412,6 +412,13 @@ async function linkProjects(
 		}
 	}
 
+
+	// Now that both isAggregator and parent are fully resolved, recompute icons.
+	for (const project of projectsMap.values()) {
+		project.updateExplorerIcon();
+	}
+
+
 	const hasLibertyDescendants = (project: LibertyProject): boolean => {
 		if (project.isLibertyEnabled) { return true; }
 		return project.children.some(child => hasLibertyDescendants(child));
