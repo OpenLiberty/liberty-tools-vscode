@@ -88,9 +88,7 @@ export class LibertyProject extends vscode.TreeItem {
 	public setState(state: DevModeState | undefined): void {
 		this.state = state;
 		this.contextValue = computeContextValue(this.baseContextValue, state);
-		if (!this.isAggregator) {
-			this.iconPath = this.getStatusIconPath(state);
-		}
+		this.iconPath = this.getStatusIconPath(state);
 	}
 
 	public getPath(): string {
@@ -199,29 +197,35 @@ export class LibertyProject extends vscode.TreeItem {
 		}
 	}
 
-	/** Returns the Maven/Gradle/OL icon filename for aggregator nodes, or undefined for leaf nodes. */
-	public setExplorerIcon(): string | undefined {
-		if (!this.isAggregator) { return undefined; }
+	/** Returns the Maven/Gradle/OL icon filename for the project's build tool. */
+	public setExplorerIcon(): string {
 		if (isMaven(this.contextValue)) { return MAVEN_ICON; }
 		if (isGradle(this.contextValue)) { return GRADLE_ICON; }
 		return OL_LOGO_ICON;
 	}
 
 	/**
-	 * Recomputes iconPath based on the current isAggregator flag and state.
-	 * Must be called by projectDiscovery after isAggregator is stamped.
+	 * Recomputes iconPath based on the current isAggregator flag, parent, and state.
+	 * Must be called by projectDiscovery after both isAggregator and parent are fully resolved.
 	 */
 	public updateExplorerIcon(): void {
-		if (this.isAggregator) {
-			const icon = this.setExplorerIcon()!;
-			const abs = vscodePath.join(this._context.extensionPath, "images", icon);
-			this.iconPath = { light: abs, dark: abs };
-		} else {
-			this.iconPath = this.getStatusIconPath(this.state);
-		}
+		this.iconPath = this.getStatusIconPath(this.state);
+	}
+
+	private getBuildToolIconPath(): { light: string; dark: string } {
+		const abs = vscodePath.join(this._context.extensionPath, "images", this.setExplorerIcon());
+		return { light: abs, dark: abs };
 	}
 
 	private getStatusIconPath(state: DevModeState | undefined): { light: string; dark: string } {
+		// Aggregators always show their build-tool icon.
+		if (this.isAggregator) {
+			return this.getBuildToolIconPath();
+		}
+		// Standalone leaf (no parent, not an aggregator) shows build-tool icon when stopped.
+		if (state === undefined && this.parent === undefined) {
+			return this.getBuildToolIconPath();
+		}
 		let filename: string;
 		switch (state) {
 			case DevModeState.ServerStarted:
