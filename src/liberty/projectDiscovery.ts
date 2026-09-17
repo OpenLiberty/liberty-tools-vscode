@@ -306,6 +306,7 @@ async function stampProjects(
 				project.parentArtifactId = metadata.parentArtifactId;
 				project.isAggregator = metadata.isAggregator;
 				project.isLibertyEnabled = metadata.isLibertyEnabled;
+				project.updateExplorerIcon();
 				mavenMetadataMap.set(entry.path, metadata);
 			} else if (entry.type === "gradle" && (entry.parsedBuild || entry.regexBuildFile || entry.parsedSettings)) {
 				const metadata = await gradleUtil.extractGradleMetadata(entry.path, entry.parsedBuild ?? null, entry.parsedSettings);
@@ -314,6 +315,7 @@ async function stampProjects(
 				project.parentArtifactId = metadata.parentProjectName;
 				project.isAggregator = metadata.isAggregator;
 				project.isLibertyEnabled = metadata.isLibertyEnabled;
+				project.updateExplorerIcon();
 				gradleMetadataMap.set(entry.path, metadata);
 			}
 		} catch (error) {
@@ -409,6 +411,13 @@ async function linkProjects(
 			);
 		}
 	}
+
+
+	// Now that both isAggregator and parent are fully resolved, recompute icons.
+	for (const project of projectsMap.values()) {
+		project.updateExplorerIcon();
+	}
+
 
 	const hasLibertyDescendants = (project: LibertyProject): boolean => {
 		if (project.isLibertyEnabled) { return true; }

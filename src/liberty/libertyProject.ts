@@ -14,6 +14,9 @@ const MAVEN_ICON = "maven-tag.png";
 const GRADLE_ICON = "gradle-tag-1.png";
 const OL_LOGO_ICON = "ol_logo.png";
 
+const STATUS_ICON_BASE_LIGHT = vscodePath.join("server-status-icons", "light-theme");
+const STATUS_ICON_BASE_DARK  = vscodePath.join("server-status-icons", "dark-theme");
+
 export enum DevModeState {
 	Starting = "starting",
 	ServerStarted = "server-started",
@@ -65,12 +68,10 @@ export class LibertyProject extends vscode.TreeItem {
 		this.contextValue = computeContextValue(contextValue, undefined);
 	}
 
-	private EXPLORER_ICON = this.setExplorerIcon();
-
-	iconPath = {
-		light: vscodePath.join(this._context.extensionPath, "images", this.EXPLORER_ICON),
-		dark: vscodePath.join(this._context.extensionPath, "images", this.EXPLORER_ICON)
-	};
+	// Initialised as a leaf (status) icon. updateExplorerIcon() is called by
+	// projectDiscovery after isAggregator is stamped to switch aggregators to
+	// their Maven/Gradle icon.
+	iconPath = this.getStatusIconPath(this.state);
 
 	public getLabel(): string {
 		return `${this.label}`;
@@ -87,6 +88,7 @@ export class LibertyProject extends vscode.TreeItem {
 	public setState(state: DevModeState | undefined): void {
 		this.state = state;
 		this.contextValue = computeContextValue(this.baseContextValue, state);
+		this.iconPath = this.getStatusIconPath(state);
 	}
 
 	public getPath(): string {
@@ -195,10 +197,56 @@ export class LibertyProject extends vscode.TreeItem {
 		}
 	}
 
-	public setExplorerIcon() {
+	/** Returns the Maven/Gradle/OL icon filename for the project's build tool. */
+	public setExplorerIcon(): string {
 		if (isMaven(this.contextValue)) { return MAVEN_ICON; }
 		if (isGradle(this.contextValue)) { return GRADLE_ICON; }
 		return OL_LOGO_ICON;
+	}
+
+	/**
+	 * Recomputes iconPath based on the current isAggregator flag, parent, and state.
+	 * Must be called by projectDiscovery after both isAggregator and parent are fully resolved.
+	 */
+	public updateExplorerIcon(): void {
+		this.iconPath = this.getStatusIconPath(this.state);
+	}
+
+	private getBuildToolIconPath(): { light: string; dark: string } {
+		const abs = vscodePath.join(this._context.extensionPath, "images", this.setExplorerIcon());
+		return { light: abs, dark: abs };
+	}
+
+	private getStatusIconPath(state: DevModeState | undefined): { light: string; dark: string } {
+		// Aggregators always show their build-tool icon.
+		if (this.isAggregator) {
+			return this.getBuildToolIconPath();
+		}
+		// Standalone leaf (no parent, not an aggregator) shows build-tool icon when stopped.
+		if (state === undefined && this.parent === undefined) {
+			return this.getBuildToolIconPath();
+		}
+		let filename: string;
+		switch (state) {
+			case DevModeState.ServerStarted:
+			case DevModeState.Running:
+				filename = "active.svg";
+				break;
+			case DevModeState.Stopping:
+				filename = "stopping.svg";
+				break;
+			case DevModeState.Starting:
+				filename = "incomplete.svg";
+				break;
+			default:
+				filename = "stopped.svg";
+				break;
+		}
+		const base = this._context.extensionPath;
+		return {
+			light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, filename),
+			dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  filename),
+		};
 	}
 }
 
