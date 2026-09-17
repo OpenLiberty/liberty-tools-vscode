@@ -11,13 +11,15 @@
  *   RL = Root has Liberty plugin in build.gradle
  *   CL = Child has Liberty plugin in build.gradle
  *   SI = settings.gradle includes the child
+ *   SX = Child has src/main/liberty/config/server.xml
  *
- *  Group | RL | CL | SI | Expected
- * -------|----|----|----|-----------------------------------------
- *   1    |  N |  Y |  Y | Root display-only aggregator, child actionable
- *   2    |  Y |  Y |  Y | Root aggregator, child actionable
- *   3    |  N |  N |  Y | Both excluded (no Liberty anywhere)
- *   4    |  N |  Y |  N | Child standalone, root excluded
+ *  Group | RL | CL | SI | SX | Expected
+ * -------|----|----|----|----|----------------------------------------------
+ *   1    |  N |  Y |  Y |  - | Root display-only aggregator, child actionable
+ *   2    |  Y |  Y |  Y |  - | Root aggregator, child actionable
+ *   3    |  N |  N |  Y |  - | Both excluded (no Liberty anywhere)
+ *   4    |  N |  Y |  N |  - | Child standalone, root excluded
+ *   5    |  N |  N |  Y |  Y | Root aggregator, child Liberty via server.xml
  *
  * Reference test project: src/test/resources/gradle/liberty-gradle-aggregator-app
  *   - Root build.gradle has no Liberty plugin

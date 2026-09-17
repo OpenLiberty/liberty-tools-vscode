@@ -7,15 +7,17 @@
  *   CL = Child is Liberty enabled
  *   PM = Parent -> Child: Parent lists child in <modules>
  *   CP = Parent <- Child: Child declares <parent>
+ *   SX = Child has src/main/liberty/config/server.xml
  *
- *  Group | PL | CL | PM | CP | Expected
- * -------|----|----|----|----|-----------------------------------------
- *    1   |  Y |  Y |  Y |  Y | Parent aggregator, child actionable
- *    2   |  Y |  N |  Y |  Y | Parent aggregator, child inherits Liberty
- *    3   |  N |  Y |  Y |  Y | Parent display-only aggregator, child actionable
- *    4   |  N |  N |  Y |  Y | Both excluded (no Liberty anywhere)
- *    5   |  Y |  N |  Y |  N | No link. Parent standalone, child excluded
- *    6   |  N |  Y |  N |  Y | No link. Child standalone, parent excluded
+ *  Group | PL | CL | PM | CP | SX | Expected
+ * -------|----|----|----|----|----|-----------------------------------------
+ *    1   |  Y |  Y |  Y |  Y |  - | Parent aggregator, child actionable
+ *    2   |  Y |  N |  Y |  Y |  - | Parent aggregator, child inherits Liberty
+ *    3   |  N |  Y |  Y |  Y |  - | Parent display-only aggregator, child actionable
+ *    4   |  N |  N |  Y |  Y |  - | Both excluded (no Liberty anywhere)
+ *    5   |  Y |  N |  Y |  N |  - | No link. Parent standalone, child excluded
+ *    6   |  N |  Y |  N |  Y |  - | No link. Child standalone, parent excluded
+ *    7   |  N |  N |  Y |  Y |  Y | Parent aggregator, child Liberty via server.xml
  *
  */
 import { strict as assert } from "assert";
