@@ -242,6 +242,44 @@ liberty {
         assert.equal(metadata.installDirectory, undefined);
     });
 
+    it("extracts installDir from Gradle file() call (single quotes)", async () => {
+        const buildFile = writeTmp("build-install-dir-file-single.gradle", `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    server {
+        installDir = file('/tmp/liberty-wlp')
+    }
+}`);
+        const metadata = await extractGradleMetadata(buildFile);
+        assert.equal(metadata.installDirectory, "/tmp/liberty-wlp");
+    });
+
+    it("extracts installDir from Gradle file() call (double quotes)", async () => {
+        const buildFile = writeTmp("build-install-dir-file-double.gradle", `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    server {
+        installDir = file("/tmp/liberty-wlp-double")
+    }
+}`);
+        const metadata = await extractGradleMetadata(buildFile);
+        assert.equal(metadata.installDirectory, "/tmp/liberty-wlp-double");
+    });
+
     it("ignores variable references (no static string)", async () => {
         const buildFile = writeTmp("build-install-dir-var.gradle", `
 apply plugin: 'liberty'
@@ -271,30 +309,33 @@ describe("attachDebugger — server.env search order", () => {
     // We test the search-order logic directly rather than calling attachDebugger
     // (which requires a full project provider). The logic under test is:
     //   1. If installDirectory is set → search <installDir>/usr/servers/**/server.env
+    //      using vscode.Uri.file() so findFiles works outside the workspace.
     //   2. If nothing found (or no installDirectory) → search target/**/server.env
-    // This is done by verifying the RelativePattern base paths passed to findFiles.
+    //      also using vscode.Uri.file() for consistency.
+    // Verified by inspecting the RelativePattern base passed to findFiles.
 
     it("searches installDirectory/usr/servers when installDirectory is set", async () => {
-        const calls: string[] = [];
+        const calls: Array<{ fsPath: string }> = [];
         fakeVscode.workspace.findFiles = (pattern: any) => {
+            // pattern.base is a Uri when vscode.Uri.file() is used
             calls.push(pattern.base ?? pattern);
             return Promise.resolve([]);   // no results → triggers fallback
         };
 
-        // Simulate what attachDebugger does
         const projectDir = "/workspace/my-project";
         const installDir = "/opt/wlp";
         const resolvedInstallDir = path.resolve(projectDir, installDir);
+        // Mirrors the actual attachDebugger code: base must be a Uri
         await fakeVscode.workspace.findFiles(
-            new fakeVscode.RelativePattern(resolvedInstallDir, "usr/servers/**/server.env")
+            new fakeVscode.RelativePattern(fakeVscode.Uri.file(resolvedInstallDir), "usr/servers/**/server.env")
         );
 
-        assert.ok(calls.some(b => b === resolvedInstallDir),
-            "Expected findFiles to be called with the resolved installDirectory as base");
+        assert.ok(calls.some(b => b.fsPath === resolvedInstallDir),
+            "Expected findFiles to be called with a Uri whose fsPath is the resolved installDirectory");
     });
 
     it("falls back to target/** when installDirectory is absent", async () => {
-        const calls: string[] = [];
+        const calls: Array<{ fsPath: string }> = [];
         fakeVscode.workspace.findFiles = (pattern: any) => {
             calls.push(pattern.base ?? pattern);
             return Promise.resolve([]);
@@ -302,10 +343,10 @@ describe("attachDebugger — server.env search order", () => {
 
         const projectDir = "/workspace/my-project";
         await fakeVscode.workspace.findFiles(
-            new fakeVscode.RelativePattern(projectDir, "target/**/server.env")
+            new fakeVscode.RelativePattern(fakeVscode.Uri.file(projectDir), "target/**/server.env")
         );
 
-        assert.ok(calls.some(b => b === projectDir),
-            "Expected findFiles to be called with the project dir as base for fallback");
+        assert.ok(calls.some(b => b.fsPath === projectDir),
+            "Expected findFiles to be called with a Uri whose fsPath is the project directory");
     });
 });

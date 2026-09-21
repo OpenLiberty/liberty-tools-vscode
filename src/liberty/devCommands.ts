@@ -359,15 +359,17 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
         // If installDirectory is configured, search there first — that is where LMP/LGP
         // writes the runtime server.env (containing WLP_DEBUG_ADDRESS) when using an
         // external Liberty installation. Relative paths are resolved from the project root.
+        // vscode.Uri.file() is required so findFiles works for paths outside the workspace.
         if (targetProject.installDirectory) {
             const projectDir = Path.dirname(targetProject.getPath());
             const resolvedInstallDir = Path.resolve(projectDir, targetProject.installDirectory);
-            const installDirPattern = new vscode.RelativePattern(resolvedInstallDir, "usr/servers/**/server.env");
+            const installDirPattern = new vscode.RelativePattern(vscode.Uri.file(resolvedInstallDir), "usr/servers/**/server.env");
             paths = (await vscode.workspace.findFiles(installDirPattern)).map(uri => uri.fsPath);
         }
 
         // Fall back to the default build-output location when installDirectory is not set
         // or when no server.env was found under the install directory.
+        // vscode.Uri.file() ensures findFiles works correctly regardless of workspace scope.
         if (paths.length === 0) {
             let pathPrefix = "";
             if (isMaven(targetProject.getContextValue())) {
@@ -376,7 +378,7 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
                 pathPrefix = "build";
             }
             if (pathPrefix !== "") {
-                const serverEnvPattern = new vscode.RelativePattern(Path.dirname(targetProject.getPath()), pathPrefix + "/**/server.env");
+                const serverEnvPattern = new vscode.RelativePattern(vscode.Uri.file(Path.dirname(targetProject.getPath())), pathPrefix + "/**/server.env");
                 paths = (await vscode.workspace.findFiles(serverEnvPattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
             }
         }
