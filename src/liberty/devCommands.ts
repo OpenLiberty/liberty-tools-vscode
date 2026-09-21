@@ -183,7 +183,7 @@ async function sendDevModeCommand(
         cmd = await getCommandForGradle(buildGradlePath, gradleTask, project.getTerminalType(), customCommand, projectName);
     }
     if (cmd === undefined) { return; }
-    if (javaHome) { cmd = prependJavaHome(cmd, javaHome); }
+    if (javaHome) { cmd = prependJavaHome(cmd, javaHome, project.getTerminalType()); }
 
     // If shell integration is already available (e.g. reused terminal) use it immediately.
     if (terminal.shellIntegration) {
@@ -683,13 +683,20 @@ export async function deleteTerminal(terminal: vscode.Terminal): Promise<void> {
 /**
  * Prepends JAVA_HOME to a shell command so it takes effect regardless
  * of what the shell's startup scripts set. No-op when javaHome is empty.
- * Uses cmd.exe syntax on Windows and POSIX inline-variable syntax on macOS/Linux.
+ *
+ * Syntax varies by shell:
+ *   PowerShell  ->  $env:JAVA_HOME = "..."; <cmd>
+ *   CMD/OTHERS  ->  set "JAVA_HOME=..." && <cmd>
+ *   macOS/Linux ->  JAVA_HOME="..." <cmd>  (inline assignment)
  */
-function prependJavaHome(cmd: string, javaHome: string): string {
+function prependJavaHome(cmd: string, javaHome: string, terminalType?: string): string {
     if (!javaHome) {
         return cmd;
     }
     if (isWin()) {
+        if (terminalType === "PowerShell") {
+            return `$env:JAVA_HOME = "${javaHome}"; ${cmd}`;
+        }
         return `set "JAVA_HOME=${javaHome}" && ${cmd}`;
     }
     return `JAVA_HOME="${javaHome}" ${cmd}`;
