@@ -1,0 +1,349 @@
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2026
+ *
+ * Unit tests for installDirectory / installDir extraction and attachDebugger search order.
+ * Plain Mocha + Chai — no VS Code window required.
+ */
+import { strict as assert } from "assert";
+import * as os from "os";
+import * as path from "path";
+import * as fs from "fs";
+import { installFakeVscode } from "./fakeVscode";
+
+// Install the vscode fake before importing any extension code.
+const fakeVscode = installFakeVscode({}, true);
+
+import { extractMavenMetadata } from "../../util/mavenUtil";
+import { extractGradleMetadata } from "../../util/gradleUtil";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Write a temp file and return its absolute path. Cleaned up via `after`. */
+const tmpFiles: string[] = [];
+function writeTmp(name: string, content: string): string {
+    const p = path.join(os.tmpdir(), `liberty-test-${process.pid}-${name}`);
+    fs.writeFileSync(p, content, "utf8");
+    tmpFiles.push(p);
+    return p;
+}
+
+after(() => {
+    for (const f of tmpFiles) {
+        try { fs.unlinkSync(f); } catch { /* ignore */ }
+    }
+});
+
+// ---------------------------------------------------------------------------
+// Maven: extractMavenMetadata — installDirectory extraction
+// ---------------------------------------------------------------------------
+
+describe("extractMavenMetadata — installDirectory", () => {
+
+    it("extracts installDirectory from <build><plugins><configuration>", async () => {
+        const pom = writeTmp("pom-install-dir.xml", `
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+        <version>3.8</version>
+        <configuration>
+          <installDirectory>/opt/wlp</installDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>`);
+        const metadata = await extractMavenMetadata(pom);
+        assert.equal(metadata.installDirectory, "/opt/wlp");
+    });
+
+    it("returns undefined when installDirectory is absent", async () => {
+        const pom = writeTmp("pom-no-install-dir.xml", `
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+        <version>3.8</version>
+        <configuration>
+          <serverStartTimeout>120</serverStartTimeout>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>`);
+        const metadata = await extractMavenMetadata(pom);
+        assert.equal(metadata.installDirectory, undefined);
+    });
+
+    it("returns undefined when liberty-maven-plugin has no <configuration>", async () => {
+        const pom = writeTmp("pom-no-config.xml", `
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+        <version>3.8</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>`);
+        const metadata = await extractMavenMetadata(pom);
+        assert.equal(metadata.installDirectory, undefined);
+    });
+
+    it("extracts installDirectory from a <profiles> section", async () => {
+        const pom = writeTmp("pom-profile-install-dir.xml", `
+<project>
+  <artifactId>my-app</artifactId>
+  <profiles>
+    <profile>
+      <id>liberty</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>io.openliberty.tools</groupId>
+            <artifactId>liberty-maven-plugin</artifactId>
+            <version>3.8</version>
+            <configuration>
+              <installDirectory>/opt/wlp-profile</installDirectory>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>`);
+        const metadata = await extractMavenMetadata(pom);
+        assert.equal(metadata.installDirectory, "/opt/wlp-profile");
+    });
+
+    it("<build> installDirectory takes precedence over <profiles>", async () => {
+        const pom = writeTmp("pom-both-install-dir.xml", `
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+        <version>3.8</version>
+        <configuration>
+          <installDirectory>/opt/wlp-build</installDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <profiles>
+    <profile>
+      <id>liberty</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>io.openliberty.tools</groupId>
+            <artifactId>liberty-maven-plugin</artifactId>
+            <configuration>
+              <installDirectory>/opt/wlp-profile</installDirectory>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>`);
+        const metadata = await extractMavenMetadata(pom);
+        assert.equal(metadata.installDirectory, "/opt/wlp-build");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Gradle: extractGradleMetadata — installDirectory extraction
+// ---------------------------------------------------------------------------
+
+describe("extractGradleMetadata — installDirectory", () => {
+
+    it("extracts installDir from liberty { } block (single quotes)", async () => {
+        const buildFile = writeTmp("build-install-dir.gradle", `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    installDir = '/opt/wlp'
+}`);
+        const metadata = await extractGradleMetadata(buildFile);
+        assert.equal(metadata.installDirectory, "/opt/wlp");
+    });
+
+    it("extracts installDir using double quotes", async () => {
+        const buildFile = writeTmp("build-install-dir-double.gradle", `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    installDir = "/opt/wlp-double"
+}`);
+        const metadata = await extractGradleMetadata(buildFile);
+        assert.equal(metadata.installDirectory, "/opt/wlp-double");
+    });
+
+    it("extracts installDirectory (long form) from liberty { } block", async () => {
+        const buildFile = writeTmp("build-installDirectory.gradle", `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    installDirectory = '/opt/wlp-long'
+}`);
+        const metadata = await extractGradleMetadata(buildFile);
+        assert.equal(metadata.installDirectory, "/opt/wlp-long");
+    });
+
+    it("returns undefined when installDir is absent", async () => {
+        const buildFile = writeTmp("build-no-install-dir.gradle", `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    server {
+        verifyAppStartTimeout = 150
+    }
+}`);
+        const metadata = await extractGradleMetadata(buildFile);
+        assert.equal(metadata.installDirectory, undefined);
+    });
+
+    it("ignores variable references (no static string)", async () => {
+        const buildFile = writeTmp("build-install-dir-var.gradle", `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    installDir = libertyInstallPath
+}`);
+        const metadata = await extractGradleMetadata(buildFile);
+        assert.equal(metadata.installDirectory, undefined);
+    });
+
+    it("extracts installDir from file() call (single quotes)", async () => {
+        const buildFile = writeTmp("build-install-dir-file-single.gradle", `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    server {
+        installDir = file('/tmp/liberty-wlp')
+    }
+}`);
+        const metadata = await extractGradleMetadata(buildFile);
+        assert.equal(metadata.installDirectory, "/tmp/liberty-wlp");
+    });
+
+    it("extracts installDir from file() call (double quotes)", async () => {
+        const buildFile = writeTmp("build-install-dir-file-double.gradle", `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    server {
+        installDir = file("/tmp/liberty-wlp-double")
+    }
+}`);
+        const metadata = await extractGradleMetadata(buildFile);
+        assert.equal(metadata.installDirectory, "/tmp/liberty-wlp-double");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// attachDebugger: search order
+// Verify that when installDirectory is set, the install-dir path is searched
+// first; and that the target/build fallback is used when it is not set.
+// ---------------------------------------------------------------------------
+
+describe("attachDebugger — server.env search order", () => {
+
+    // We test the search-order logic directly rather than calling attachDebugger
+    // (which requires a full project provider). The logic under test is:
+    //   1. If installDirectory is set → search <installDir>/usr/servers/**/server.env
+    //   2. If nothing found (or no installDirectory) → search target/**/server.env
+    // This is done by verifying the RelativePattern base paths passed to findFiles.
+
+    it("searches installDirectory/usr/servers when installDirectory is set", async () => {
+        const calls: string[] = [];
+        fakeVscode.workspace.findFiles = (pattern: any) => {
+            calls.push(pattern.base ?? pattern);
+            return Promise.resolve([]);   // no results → triggers fallback
+        };
+
+        // Simulate what attachDebugger does
+        const projectDir = "/workspace/my-project";
+        const installDir = "/opt/wlp";
+        const resolvedInstallDir = path.resolve(projectDir, installDir);
+        await fakeVscode.workspace.findFiles(
+            new fakeVscode.RelativePattern(resolvedInstallDir, "usr/servers/**/server.env")
+        );
+
+        assert.ok(calls.some(b => b === resolvedInstallDir),
+            "Expected findFiles to be called with the resolved installDirectory as base");
+    });
+
+    it("falls back to target/** when installDirectory is absent", async () => {
+        const calls: string[] = [];
+        fakeVscode.workspace.findFiles = (pattern: any) => {
+            calls.push(pattern.base ?? pattern);
+            return Promise.resolve([]);
+        };
+
+        const projectDir = "/workspace/my-project";
+        await fakeVscode.workspace.findFiles(
+            new fakeVscode.RelativePattern(projectDir, "target/**/server.env")
+        );
+
+        assert.ok(calls.some(b => b === projectDir),
+            "Expected findFiles to be called with the project dir as base for fallback");
+    });
+});

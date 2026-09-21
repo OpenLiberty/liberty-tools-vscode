@@ -15,6 +15,12 @@ import { GradleBuildFile } from "./buildFile";
 const LIBERTY_PLUGIN_ID_REGEX = /id\s*\(\s*["']io\.openliberty\.tools\.gradle\.Liberty["']\s*\)|id\s+['"]io\.openliberty\.tools\.gradle\.Liberty['"]/;
 const LIBERTY_PLUGIN_VERSION_REGEX = /id\s*\(\s*["']io\.openliberty\.tools\.gradle\.Liberty["']\s*\)\s+version\s+["']([^"']+)["']|id\s+['"]io\.openliberty\.tools\.gradle\.Liberty['"]\s+version\s+["']([^"']+)["']/;
 
+// Regex to extract installDir (or installDirectory) from the liberty { } extension block.
+// Matches:  installDir = '/some/path'  or  installDirectory = "/some/path"
+//           installDir = file('/some/path')  or  installDirectory = file("/some/path")
+// Group 1 captures the file() form; group 2 captures the bare-string form.
+const LIBERTY_INSTALL_DIR_REGEX = /\binstall(?:Dir(?:ectory)?|Directory)\s*[=:]\s*(?:file\s*\(\s*["']([^"']+)["']\s*\)|["']([^"']+)["'])/;
+
 // Regex to detect legacy buildscript classpath plugin syntax (requires g2js to parse fully)
 const LEGACY_BUILDSCRIPT_REGEX = /buildscript\s*\{/;
 
@@ -390,6 +396,7 @@ export interface GradleProjectMetadata {
     isLibertyEnabled: boolean;
     buildFilePath: string;
     contextValue: string;
+    installDirectory?: string;
 }
 
 /**
@@ -470,6 +477,22 @@ export async function extractGradleMetadata(
         contextValue = LIBERTY_PROJECT_GRADLE;
     }
 
+    // Extract installDir from the liberty { } block using a regex over the raw file text.
+    // Only static string literals are captured; variable references are ignored.
+    let installDirectory: string | undefined;
+    if (hasLibertyPlugin) {
+        try {
+            const rawContent = await fse.readFile(buildGradlePath, "utf8");
+            const match = LIBERTY_INSTALL_DIR_REGEX.exec(rawContent);
+            const captured = match?.[1] ?? match?.[2];
+            if (captured && captured.trim().length > 0) {
+                installDirectory = captured.trim();
+            }
+        } catch (err) {
+            console.error(`Failed to read ${buildGradlePath} for installDir extraction:`, err);
+        }
+    }
+
     return {
         projectName,
         parentProjectName,
@@ -478,7 +501,8 @@ export async function extractGradleMetadata(
         isAggregator,
         isLibertyEnabled: hasLibertyPlugin,
         buildFilePath: buildGradlePath,
-        contextValue
+        contextValue,
+        installDirectory
     };
 }
 

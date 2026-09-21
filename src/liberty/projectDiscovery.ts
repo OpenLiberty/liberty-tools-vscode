@@ -306,26 +306,28 @@ async function stampProjects(
 		}
 		try {
 			if (entry.type === "maven" && entry.xmlString) {
-				const metadata = await mavenUtil.extractMavenMetadata(entry.path, entry.xmlString);
-				project.artifactId = metadata.artifactId;
-				project.parentArtifactId = metadata.parentArtifactId;
-				project.isAggregator = metadata.isAggregator;
-				project.isLibertyEnabled = metadata.isLibertyEnabled
-					|| hasServerXML(entry.path);
-				console.log(`[stamp] maven ${entry.path}: artifactId=${metadata.artifactId}, parentArtifactId=${metadata.parentArtifactId}, isAggregator=${metadata.isAggregator}, isLibertyEnabled=${project.isLibertyEnabled}`);
-				project.updateExplorerIcon();
-				mavenMetadataMap.set(entry.path, metadata);
-			} else if (entry.type === "gradle" && (entry.parsedBuild || entry.regexBuildFile || entry.parsedSettings)) {
-				const metadata = await gradleUtil.extractGradleMetadata(entry.path, entry.parsedBuild ?? null, entry.parsedSettings);
-				project.artifactId = metadata.projectName;
-				project.parentArtifactId = metadata.parentProjectName;
-				project.isAggregator = metadata.isAggregator;
-				project.isLibertyEnabled = metadata.isLibertyEnabled
-					|| hasServerXML(entry.path);
-				console.log(`[stamp] gradle ${entry.path}: projectName=${metadata.projectName}, parentProjectName=${metadata.parentProjectName}, isAggregator=${metadata.isAggregator}, isLibertyEnabled=${project.isLibertyEnabled}`);
-				project.updateExplorerIcon();
-				gradleMetadataMap.set(entry.path, metadata);
-			}
+					const metadata = await mavenUtil.extractMavenMetadata(entry.path, entry.xmlString);
+					console.log(`[stamp] maven ${entry.path}: artifactId=${metadata.artifactId}, parentArtifactId=${metadata.parentArtifactId}, isAggregator=${metadata.isAggregator}, isLibertyEnabled=${metadata.isLibertyEnabled}`);
+					project.artifactId = metadata.artifactId;
+					project.parentArtifactId = metadata.parentArtifactId;
+					project.isAggregator = metadata.isAggregator;
+					project.isLibertyEnabled = metadata.isLibertyEnabled
+					  || hasServerXML(entry.path);
+					project.installDirectory = metadata.installDirectory;
+          project.updateExplorerIcon();
+					mavenMetadataMap.set(entry.path, metadata);
+				} else if (entry.type === "gradle" && (entry.parsedBuild || entry.regexBuildFile || entry.parsedSettings)) {
+					const metadata = await gradleUtil.extractGradleMetadata(entry.path, entry.parsedBuild ?? null, entry.parsedSettings);
+					console.log(`[stamp] gradle ${entry.path}: projectName=${metadata.projectName}, parentProjectName=${metadata.parentProjectName}, isAggregator=${metadata.isAggregator}, isLibertyEnabled=${metadata.isLibertyEnabled}`);
+					project.artifactId = metadata.projectName;
+					project.parentArtifactId = metadata.parentProjectName;
+					project.isAggregator = metadata.isAggregator;
+					project.isLibertyEnabled = metadata.isLibertyEnabled
+					  || hasServerXML(entry.path);
+					project.installDirectory = metadata.installDirectory;
+          project.updateExplorerIcon();
+					gradleMetadataMap.set(entry.path, metadata);
+				}
 		} catch (error) {
 			console.error(`Error stamping metadata for ${entry.path}:`, error);
 			project.isLibertyEnabled = true;

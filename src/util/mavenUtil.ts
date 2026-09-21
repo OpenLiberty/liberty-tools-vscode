@@ -239,6 +239,7 @@ export interface MavenProjectMetadata {
     buildFilePath: string;
     contextValue: string;
     xmlString?: string;
+    installDirectory?: string;
 }
 
 /**
@@ -314,6 +315,10 @@ function parsePomXml(xmlString: string): MavenProjectMetadata {
             if (buildFile.isValidBuildFile()) {
                 metadata.contextValue = buildFile.getProjectType();
             }
+            // Extract installDirectory from the liberty-maven-plugin <configuration> block.
+            // Check <build><plugins> first, then <profiles> as a fallback.
+            metadata.installDirectory = extractInstallDirectoryFromBuild(result.project.build)
+                ?? extractInstallDirectoryFromProfiles(result.project.profiles);
         }
     });
 
@@ -371,4 +376,54 @@ function checkForLibertyMavenPlugin(result: any): boolean {
     }
 
     return false;
+}
+
+/**
+ * Scan a <build><plugins> array for the liberty-maven-plugin and return the
+ * value of <configuration><installDirectory> if present, otherwise undefined.
+ *
+ * @param build The build array from a parsed pom.xml (result.project.build)
+ */
+function extractInstallDirectoryFromBuild(
+    build: Array<{ plugins: Array<{ plugin: any }> }> | undefined
+): string | undefined {
+    if (!build) { return undefined; }
+    for (const buildEntry of build) {
+        const plugins = buildEntry.plugins;
+        if (!plugins) { continue; }
+        for (const pluginGroup of plugins) {
+            const plugin = pluginGroup.plugin;
+            if (!plugin) { continue; }
+            for (const p of plugin) {
+                if (p.artifactId?.[0] === "liberty-maven-plugin" &&
+                    p.groupId?.[0] === "io.openliberty.tools") {
+                    const installDir: string | undefined =
+                        p.configuration?.[0]?.installDirectory?.[0];
+                    if (installDir && installDir.trim().length > 0) {
+                        return installDir.trim();
+                    }
+                }
+            }
+        }
+    }
+    return undefined;
+}
+
+/**
+ * Scan <profiles> for the liberty-maven-plugin and return <installDirectory>
+ * from the first profile that declares it, otherwise undefined.
+ *
+ * @param profiles The profiles array from a parsed pom.xml (result.project.profiles)
+ */
+function extractInstallDirectoryFromProfiles(profiles: any[] | undefined): string | undefined {
+    if (!profiles) { return undefined; }
+    for (const profilesEntry of profiles) {
+        const profile = profilesEntry.profile;
+        if (!profile) { continue; }
+        for (const p of profile) {
+            const found = extractInstallDirectoryFromBuild(p.build);
+            if (found) { return found; }
+        }
+    }
+    return undefined;
 }
