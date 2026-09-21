@@ -258,6 +258,44 @@ liberty {
         const metadata = await extractGradleMetadata(buildFile);
         assert.equal(metadata.installDirectory, undefined);
     });
+
+    it("extracts installDir from file() call (single quotes)", async () => {
+        const buildFile = writeTmp("build-install-dir-file-single.gradle", `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    server {
+        installDir = file('/tmp/liberty-wlp')
+    }
+}`);
+        const metadata = await extractGradleMetadata(buildFile);
+        assert.equal(metadata.installDirectory, "/tmp/liberty-wlp");
+    });
+
+    it("extracts installDir from file() call (double quotes)", async () => {
+        const buildFile = writeTmp("build-install-dir-file-double.gradle", `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    server {
+        installDir = file("/tmp/liberty-wlp-double")
+    }
+}`);
+        const metadata = await extractGradleMetadata(buildFile);
+        assert.equal(metadata.installDirectory, "/tmp/liberty-wlp-double");
+    });
 });
 
 // ---------------------------------------------------------------------------

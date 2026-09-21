@@ -17,7 +17,9 @@ const LIBERTY_PLUGIN_VERSION_REGEX = /id\s*\(\s*["']io\.openliberty\.tools\.grad
 
 // Regex to extract installDir (or installDirectory) from the liberty { } extension block.
 // Matches:  installDir = '/some/path'  or  installDirectory = "/some/path"
-const LIBERTY_INSTALL_DIR_REGEX = /\binstall(?:Dir(?:ectory)?|Directory)\s*[=:]\s*["']([^"']+)["']/;
+//           installDir = file('/some/path')  or  installDirectory = file("/some/path")
+// Group 1 captures the file() form; group 2 captures the bare-string form.
+const LIBERTY_INSTALL_DIR_REGEX = /\binstall(?:Dir(?:ectory)?|Directory)\s*[=:]\s*(?:file\s*\(\s*["']([^"']+)["']\s*\)|["']([^"']+)["'])/;
 
 // Regex to detect legacy buildscript classpath plugin syntax (requires g2js to parse fully)
 const LEGACY_BUILDSCRIPT_REGEX = /buildscript\s*\{/;
@@ -482,8 +484,9 @@ export async function extractGradleMetadata(
         try {
             const rawContent = await fse.readFile(buildGradlePath, "utf8");
             const match = LIBERTY_INSTALL_DIR_REGEX.exec(rawContent);
-            if (match && match[1].trim().length > 0) {
-                installDirectory = match[1].trim();
+            const captured = match?.[1] ?? match?.[2];
+            if (captured && captured.trim().length > 0) {
+                installDirectory = captured.trim();
             }
         } catch (err) {
             console.error(`Failed to read ${buildGradlePath} for installDir extraction:`, err);
