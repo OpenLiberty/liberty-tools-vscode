@@ -320,7 +320,10 @@ export async function validateGradleChildModule(
  * @param gradlePath build.gradle file
  * @param projectRootPath Path of current project
  */
-export async function getGradleTestReport(gradlePath: any, projectRootPath: string): Promise<string> {
+export async function getGradleTestReport(gradlePath: any, projectRootPath: string, customPath?: string): Promise<string> {
+    if (customPath) {
+        return customPath;
+    }
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const g2js = require("gradle-to-js/lib/parser");
     let testReport = await g2js.parseFile(gradlePath).then(async (buildFile: any) => {
