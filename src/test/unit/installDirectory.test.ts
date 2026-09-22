@@ -338,6 +338,129 @@ liberty {
 });
 
 // ---------------------------------------------------------------------------
+// Gradle: extractGradleMetadata — installDirectory from gradle.properties
+// ---------------------------------------------------------------------------
+
+describe("extractGradleMetadata — installDirectory from gradle.properties", () => {
+
+    // Shared helpers: write/restore a gradle.properties in os.tmpdir() (same dir as writeTmp files).
+    const tmpPropsPath = path.join(os.tmpdir(), "gradle.properties");
+
+    async function withGradleProps(content: string, fn: (buildFile: string) => Promise<void>): Promise<void> {
+        const buildFile = writeTmp(`build-props-${Date.now()}.gradle`, `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    server {
+        verifyAppStartTimeout = 150
+    }
+}`);
+        const bak = (() => { try { return fs.readFileSync(tmpPropsPath, "utf8"); } catch { return null; } })();
+        fs.writeFileSync(tmpPropsPath, content, "utf8");
+        try {
+            await fn(buildFile);
+        } finally {
+            if (bak !== null) { fs.writeFileSync(tmpPropsPath, bak, "utf8"); }
+            else { try { fs.unlinkSync(tmpPropsPath); } catch { /* ignore */ } }
+        }
+    }
+
+    it("reads liberty.installDir from gradle.properties when build.gradle has none", async () => {
+        await withGradleProps("liberty.installDir=/opt/wlp-from-props\n", async (buildFile) => {
+            const metadata = await extractGradleMetadata(buildFile);
+            assert.equal(metadata.installDirectory, "/opt/wlp-from-props");
+        });
+    });
+
+    it("strips double quotes from gradle.properties value", async () => {
+        await withGradleProps('liberty.installDir="/opt/wlp-from-props"\n', async (buildFile) => {
+            const metadata = await extractGradleMetadata(buildFile);
+            assert.equal(metadata.installDirectory, "/opt/wlp-from-props");
+        });
+    });
+
+    it("strips single quotes from gradle.properties value", async () => {
+        await withGradleProps("liberty.installDir='/opt/wlp-from-props'\n", async (buildFile) => {
+            const metadata = await extractGradleMetadata(buildFile);
+            assert.equal(metadata.installDirectory, "/opt/wlp-from-props");
+        });
+    });
+
+    it("build.gradle installDir takes precedence over gradle.properties", async () => {
+        const buildFile = writeTmp("build-install-dir-both.gradle", `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    installDir = '/opt/wlp-from-build'
+}`);
+        const buildDir = path.dirname(buildFile);
+        const realPropsPath = path.join(buildDir, "gradle.properties");
+        const realPropsBak = (() => {
+            try { return fs.readFileSync(realPropsPath, "utf8"); } catch { return null; }
+        })();
+        fs.writeFileSync(realPropsPath, "liberty.installDir=/opt/wlp-from-props\n", "utf8");
+
+        try {
+            const metadata = await extractGradleMetadata(buildFile);
+            assert.equal(metadata.installDirectory, "/opt/wlp-from-build");
+        } finally {
+            if (realPropsBak !== null) {
+                fs.writeFileSync(realPropsPath, realPropsBak, "utf8");
+            } else {
+                try { fs.unlinkSync(realPropsPath); } catch { /* ignore */ }
+            }
+        }
+    });
+
+    it("returns undefined when neither build.gradle nor gradle.properties has installDir", async () => {
+        const buildFile = writeTmp("build-no-install-dir-noprops.gradle", `
+apply plugin: 'liberty'
+
+buildscript {
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.10.0'
+    }
+}
+
+liberty {
+    server {
+        verifyAppStartTimeout = 150
+    }
+}`);
+        // Ensure no gradle.properties is present by not writing one.
+        // (os.tmpdir() may have one from a previous test run — guard against that)
+        const realPropsPath = path.join(path.dirname(buildFile), "gradle.properties");
+        const realPropsBak = (() => {
+            try { return fs.readFileSync(realPropsPath, "utf8"); } catch { return null; }
+        })();
+        if (realPropsBak !== null) {
+            // Temporarily remove so this test sees no gradle.properties
+            fs.unlinkSync(realPropsPath);
+        }
+        try {
+            const metadata = await extractGradleMetadata(buildFile);
+            assert.equal(metadata.installDirectory, undefined);
+        } finally {
+            if (realPropsBak !== null) {
+                fs.writeFileSync(realPropsPath, realPropsBak, "utf8");
+            }
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
 // attachDebugger: search order
 // Verify that when installDirectory is set, the install-dir path is searched
 // first; and that the target/build fallback is used when it is not set.
@@ -415,6 +538,14 @@ describe("extractInstallDirFromParams — Maven (-D flag)", () => {
     it("does not match Gradle -P flag for Maven project", () => {
         assert.equal(extractInstallDirFromParams("-PinstallDirectory=/opt/wlp", true), undefined);
     });
+
+    it("strips double quotes from -DinstallDirectory value", () => {
+        assert.equal(extractInstallDirFromParams('-DinstallDirectory="/opt/wlp"', true), "/opt/wlp");
+    });
+
+    it("strips single quotes from -DinstallDirectory value", () => {
+        assert.equal(extractInstallDirFromParams("-DinstallDirectory='/opt/wlp'", true), "/opt/wlp");
+    });
 });
 
 describe("extractInstallDirFromParams — Gradle (-Pliberty.installDir flag)", () => {
@@ -441,6 +572,14 @@ describe("extractInstallDirFromParams — Gradle (-Pliberty.installDir flag)", (
 
     it("does not match incorrect -PinstallDirectory (missing liberty. prefix)", () => {
         assert.equal(extractInstallDirFromParams("-PinstallDirectory=/opt/wlp", false), undefined);
+    });
+
+    it("strips double quotes from -Pliberty.installDir value", () => {
+        assert.equal(extractInstallDirFromParams('-Pliberty.installDir="/opt/wlp"', false), "/opt/wlp");
+    });
+
+    it("strips single quotes from -Pliberty.installDir value", () => {
+        assert.equal(extractInstallDirFromParams("-Pliberty.installDir='/opt/wlp'", false), "/opt/wlp");
     });
 });
 

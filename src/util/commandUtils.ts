@@ -317,14 +317,33 @@ export function defaultWindowsShell(): ShellType {
 }
 
 /**
+ * Strip a matching pair of surrounding single or double quotes from a string value.
+ * Used to normalise CLI flag values where a user may quote the path
+ * (e.g. -DinstallDirectory="/opt/wlp" or -Pliberty.installDir='/opt/wlp').
+ * An unmatched single quote character is returned unchanged.
+ */
+function stripQuotes(value: string): string {
+    if (value.length >= 2) {
+        const first = value[0];
+        const last = value[value.length - 1];
+        if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+            return value.slice(1, -1);
+        }
+    }
+    return value;
+}
+
+/**
  * Parses a custom Start… parameter string for a CLI-supplied installDirectory value.
  *
  * Maven projects: looks for  -DinstallDirectory=<value>
  * Gradle projects: looks for -Pliberty.installDir=<value>
  *   (the documented LGP project property per ci.gradle installLiberty docs)
  *
- * Returns the extracted path string (trimmed), or undefined if not present.
- * Only exact `-D`/`-P` flag forms are matched; variable references are not resolved.
+ * The captured value is stripped of surrounding single or double quotes so that
+ * -DinstallDirectory="/opt/wlp" and -DinstallDirectory=/opt/wlp both return /opt/wlp.
+ *
+ * Returns the extracted path string (trimmed, unquoted), or undefined if not present.
  *
  * @param params         The raw custom parameter string entered by the user.
  * @param isMavenProject True for Maven projects (uses -D), false for Gradle (uses -P).
@@ -340,7 +359,7 @@ export function extractInstallDirFromParams(params: string, isMavenProject: bool
         : /-Pliberty\.installDir=(\S+)/;
     const match = pattern.exec(params);
     if (match && match[1].trim().length > 0) {
-        return match[1].trim();
+        return stripQuotes(match[1].trim());
     }
     return undefined;
 }
