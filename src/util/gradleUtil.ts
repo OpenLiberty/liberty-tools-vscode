@@ -8,7 +8,7 @@ import * as semver from "semver";
 import { JSONPath } from "jsonpath-plus";
 import { localize } from "../util/i18nUtil";
 import { getAllPaths, getReport } from "./helperUtil";
-import { TEST_REPORT_STRING, LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION, LIBERTY_PROJECT_GRADLE_CONTAINER, LIBERTY_PROJECT_GRADLE } from "../definitions/constants";
+import { TEST_REPORT_STRING, LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION, LIBERTY_PROJECT_GRADLE_CONTAINER, LIBERTY_PROJECT_GRADLE, GRADLE_PROPERTIES_INSTALL_DIR_REGEX } from "../definitions/constants";
 import { GradleBuildFile } from "./buildFile";
 
 // Regex patterns for Liberty plugin detection in modern Gradle syntax
@@ -519,7 +519,7 @@ export async function extractGradleMetadata(
             const gradlePropertiesPath = path.join(path.dirname(buildGradlePath), "gradle.properties");
             try {
                 const propsContent = await fse.readFile(gradlePropertiesPath, "utf8");
-                const propMatch = /^\s*liberty\.installDir\s*=\s*(.+)$/m.exec(propsContent);
+                const propMatch = GRADLE_PROPERTIES_INSTALL_DIR_REGEX.exec(propsContent);
                 if (propMatch && propMatch[1].trim().length > 0) {
                     installDirectory = stripQuotes(propMatch[1].trim());
                 }

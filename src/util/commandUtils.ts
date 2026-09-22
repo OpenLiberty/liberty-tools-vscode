@@ -6,6 +6,7 @@
 import * as Path from "path";
 import * as vscode from "vscode";
 import { pathExists } from "fs-extra";
+import { MAVEN_INSTALL_DIR_PARAM_REGEX, GRADLE_INSTALL_DIR_PARAM_REGEX } from "../definitions/constants";
 
 /**
  * Reused from vscode-maven
@@ -353,10 +354,8 @@ export function extractInstallDirFromParams(params: string, isMavenProject: bool
         return undefined;
     }
     const pattern = isMavenProject
-        // Maven: -DinstallDirectory=<value>
-        ? /-DinstallDirectory=(\S+)/
-        // Gradle: -Pliberty.installDir=<value>
-        : /-Pliberty\.installDir=(\S+)/;
+        ? MAVEN_INSTALL_DIR_PARAM_REGEX
+        : GRADLE_INSTALL_DIR_PARAM_REGEX;
     const match = pattern.exec(params);
     if (match && match[1].trim().length > 0) {
         return stripQuotes(match[1].trim());

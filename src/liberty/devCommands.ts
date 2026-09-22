@@ -23,6 +23,7 @@ import {
     CMD_EXPLORER_REFRESH, CMD_OPEN_BUILD_FILE, CMD_START, CMD_STOP, CMD_DEBUG, CMD_CUSTOM,
     CMD_START_CONTAINER, CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
     CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
+    SERVER_ENV_INSTALL_DIR_PATTERN, SERVER_ENV_BUILD_OUTPUT_PATTERN,
 } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
@@ -363,7 +364,7 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
         if (targetProject.installDirectory) {
             const projectDir = Path.dirname(targetProject.getPath());
             const resolvedInstallDir = Path.resolve(projectDir, targetProject.installDirectory);
-            const installDirPattern = new vscode.RelativePattern(vscode.Uri.file(resolvedInstallDir), "usr/servers/**/server.env");
+            const installDirPattern = new vscode.RelativePattern(vscode.Uri.file(resolvedInstallDir), SERVER_ENV_INSTALL_DIR_PATTERN);
             paths = (await vscode.workspace.findFiles(installDirPattern)).map(uri => uri.fsPath);
         }
 
@@ -378,7 +379,7 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
                 pathPrefix = "build";
             }
             if (pathPrefix !== "") {
-                const serverEnvPattern = new vscode.RelativePattern(vscode.Uri.file(Path.dirname(targetProject.getPath())), pathPrefix + "/**/server.env");
+                const serverEnvPattern = new vscode.RelativePattern(vscode.Uri.file(Path.dirname(targetProject.getPath())), pathPrefix + "/" + SERVER_ENV_BUILD_OUTPUT_PATTERN);
                 paths = (await vscode.workspace.findFiles(serverEnvPattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
             }
         }
