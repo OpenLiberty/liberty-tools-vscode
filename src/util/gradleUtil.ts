@@ -483,7 +483,6 @@ export async function extractGradleMetadata(
         try {
             const rawContent = await fse.readFile(buildGradlePath, "utf8");
             const match = LIBERTY_INSTALL_DIR_REGEX.exec(rawContent);
-            // match[1] = file("...") form, match[2] = plain quoted string form
             const captured = match?.[1] ?? match?.[2];
             if (captured && captured.trim().length > 0) {
                 installDirectory = captured.trim();
