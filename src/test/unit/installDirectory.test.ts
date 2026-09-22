@@ -16,6 +16,7 @@ const fakeVscode = installFakeVscode({}, true);
 
 import { extractMavenMetadata } from "../../util/mavenUtil";
 import { extractGradleMetadata } from "../../util/gradleUtil";
+import { extractInstallDirFromParams } from "../../util/commandUtils";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -348,5 +349,120 @@ describe("attachDebugger — server.env search order", () => {
 
         assert.ok(calls.some(b => b.fsPath === projectDir),
             "Expected findFiles to be called with a Uri whose fsPath is the project directory");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// extractInstallDirFromParams — CLI flag parsing
+// ---------------------------------------------------------------------------
+
+describe("extractInstallDirFromParams — Maven (-D flag)", () => {
+
+    it("extracts -DinstallDirectory from a standalone flag", () => {
+        assert.equal(extractInstallDirFromParams("-DinstallDirectory=/opt/wlp", true), "/opt/wlp");
+    });
+
+    it("extracts -DinstallDirectory when combined with other flags", () => {
+        assert.equal(extractInstallDirFromParams("-DskipTests -DinstallDirectory=/opt/wlp -DhotTests=true", true), "/opt/wlp");
+    });
+
+    it("returns undefined when -DinstallDirectory is absent (Maven)", () => {
+        assert.equal(extractInstallDirFromParams("-DskipTests -DhotTests=true", true), undefined);
+    });
+
+    it("returns undefined for an empty string (Maven)", () => {
+        assert.equal(extractInstallDirFromParams("", true), undefined);
+    });
+
+    it("does not match Gradle -P flag for Maven project", () => {
+        assert.equal(extractInstallDirFromParams("-PinstallDirectory=/opt/wlp", true), undefined);
+    });
+});
+
+describe("extractInstallDirFromParams — Gradle (-Pliberty.installDir flag)", () => {
+
+    it("extracts -Pliberty.installDir from a standalone flag", () => {
+        assert.equal(extractInstallDirFromParams("-Pliberty.installDir=/opt/wlp", false), "/opt/wlp");
+    });
+
+    it("extracts -Pliberty.installDir when combined with other flags", () => {
+        assert.equal(extractInstallDirFromParams("--hotTests -Pliberty.installDir=/tmp/liberty-wlp", false), "/tmp/liberty-wlp");
+    });
+
+    it("returns undefined when -Pliberty.installDir is absent (Gradle)", () => {
+        assert.equal(extractInstallDirFromParams("--hotTests --skipTests", false), undefined);
+    });
+
+    it("returns undefined for an empty string (Gradle)", () => {
+        assert.equal(extractInstallDirFromParams("", false), undefined);
+    });
+
+    it("does not match Maven -DinstallDirectory flag for Gradle project", () => {
+        assert.equal(extractInstallDirFromParams("-DinstallDirectory=/opt/wlp", false), undefined);
+    });
+
+    it("does not match incorrect -PinstallDirectory (missing liberty. prefix)", () => {
+        assert.equal(extractInstallDirFromParams("-PinstallDirectory=/opt/wlp", false), undefined);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// applyCliInstallDirectory / deleteTerminal — override lifecycle
+// ---------------------------------------------------------------------------
+
+describe("LibertyProject — CLI installDirectory override lifecycle", () => {
+    // We test applyCliInstallDirectory and the restore-on-delete behaviour directly
+    // on a LibertyProject instance, without spinning up a full VS Code window.
+
+    // Minimal fake context required by LibertyProject constructor.
+    // extensionPath must be a string so getBuildToolIconPath's path.join does not throw.
+    const fakeContext = { extensionPath: "", subscriptions: [] } as any;
+
+    function makeProject(installDir?: string) {
+        // Import here so it picks up the already-installed fakeVscode.
+        const { LibertyProject } = require("../../liberty/libertyProject");
+        const p = new LibertyProject(fakeContext, "test-project", 0, "/workspace/pom.xml", undefined, "maven-liberty-project");
+        if (installDir !== undefined) {
+            p.installDirectory = installDir;
+        }
+        return p;
+    }
+
+    it("applyCliInstallDirectory sets installDirectory to the CLI value", () => {
+        const project = makeProject("/build-file/wlp");
+        project.applyCliInstallDirectory("/cli/override/wlp");
+        assert.equal(project.installDirectory, "/cli/override/wlp");
+    });
+
+    it("deleteTerminal restores installDirectory to the build-file value after CLI override", () => {
+        const project = makeProject("/build-file/wlp");
+        project.applyCliInstallDirectory("/cli/override/wlp");
+        assert.equal(project.installDirectory, "/cli/override/wlp");
+        project.deleteTerminal();
+        assert.equal(project.installDirectory, "/build-file/wlp");
+    });
+
+    it("deleteTerminal leaves installDirectory unchanged when no CLI override was applied", () => {
+        const project = makeProject("/build-file/wlp");
+        project.deleteTerminal();
+        assert.equal(project.installDirectory, "/build-file/wlp");
+    });
+
+    it("deleteTerminal leaves installDirectory as undefined when it was never set and no override applied", () => {
+        const project = makeProject();
+        project.deleteTerminal();
+        assert.equal(project.installDirectory, undefined);
+    });
+
+    it("CLI value takes precedence over build-file value while server is running", () => {
+        const project = makeProject("/build-file/wlp");
+        // Before Start…: build-file value
+        assert.equal(project.installDirectory, "/build-file/wlp");
+        // After Start… with CLI override:
+        project.applyCliInstallDirectory("/cli/override/wlp");
+        assert.equal(project.installDirectory, "/cli/override/wlp");
+        // After stop:
+        project.deleteTerminal();
+        assert.equal(project.installDirectory, "/build-file/wlp");
     });
 });

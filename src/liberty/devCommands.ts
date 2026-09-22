@@ -27,7 +27,7 @@ import {
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
-import { getCommandForMaven, getCommandForGradle, defaultWindowsShell, isWin } from "../util/commandUtils";
+import { getCommandForMaven, getCommandForGradle, defaultWindowsShell, isWin, extractInstallDirFromParams } from "../util/commandUtils";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 
@@ -538,6 +538,15 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
             const dashboardData: DashboardData = helperUtil.getStorageData(registry.getContext());
             dashboardData.addStartCmdParams(projectStartCmdParam);
             await helperUtil.saveStorageData(registry.getContext(), dashboardData);
+
+            // If the user passed a CLI installDirectory property (-DinstallDirectory for Maven,
+            // -PinstallDirectory/-PinstallDir for Gradle), override the build-file value on the
+            // live project instance for the duration of this server session. deleteTerminal()
+            // will restore the original build-file value when the server stops.
+            const cliInstallDir = extractInstallDirFromParams(customParameters, isMaven(libProject.getContextValue()));
+            if (cliInstallDir !== undefined) {
+                libProject.applyCliInstallDirectory(cliInstallDir);
+            }
         }
 
         await sendDevModeCommand(result.terminal, libProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, customParameters, result.javaHome);

@@ -316,4 +316,32 @@ export function defaultWindowsShell(): ShellType {
     }
 }
 
+/**
+ * Parses a custom Start… parameter string for a CLI-supplied installDirectory value.
+ *
+ * Maven projects: looks for  -DinstallDirectory=<value>
+ * Gradle projects: looks for -Pliberty.installDir=<value>
+ *   (the documented LGP project property per ci.gradle installLiberty docs)
+ *
+ * Returns the extracted path string (trimmed), or undefined if not present.
+ * Only exact `-D`/`-P` flag forms are matched; variable references are not resolved.
+ *
+ * @param params         The raw custom parameter string entered by the user.
+ * @param isMavenProject True for Maven projects (uses -D), false for Gradle (uses -P).
+ */
+export function extractInstallDirFromParams(params: string, isMavenProject: boolean): string | undefined {
+    if (!params || params.trim().length === 0) {
+        return undefined;
+    }
+    const pattern = isMavenProject
+        // Maven: -DinstallDirectory=<value>
+        ? /-DinstallDirectory=(\S+)/
+        // Gradle: -Pliberty.installDir=<value>
+        : /-Pliberty\.installDir=(\S+)/;
+    const match = pattern.exec(params);
+    if (match && match[1].trim().length > 0) {
+        return match[1].trim();
+    }
+    return undefined;
+}
 
