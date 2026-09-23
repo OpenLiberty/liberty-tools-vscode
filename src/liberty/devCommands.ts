@@ -20,7 +20,8 @@ import { getReport } from "../util/helperUtil";
 import {
     LIBERTY_SERVER_ENV_PORT_REGEX, isMaven, isGradle,
     MAVEN_GOAL_DEV, MAVEN_GOAL_DEVC, GRADLE_TASK_DEV, GRADLE_TASK_DEVC,
-    CMD_EXPLORER_REFRESH, CMD_OPEN_BUILD_FILE, CMD_START, CMD_STOP, CMD_DEBUG, CMD_CUSTOM,
+    MAVEN_DEVMODE_DEBUG_PORT_PARM, GRADLE_DEVMODE_DEBUG_PORT_PARM,
+    CMD_EXPLORER_REFRESH, CMD_OPEN_BUILD_FILE, CMD_START, CMD_START_DEBUG, CMD_STOP, CMD_DEBUG, CMD_CUSTOM,
     CMD_START_CONTAINER, CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
     CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
     SERVER_ENV_INSTALL_DIR_PATTERN, SERVER_ENV_BUILD_OUTPUT_PATTERN,
@@ -110,6 +111,7 @@ export async function openBuildFile(libProject?: LibertyProject): Promise<void> 
 const COMMAND_TITLES = new Map<string, string>([
     [localize("hotkey.commands.title.refresh"), CMD_EXPLORER_REFRESH],
     [localize("hotkey.commands.title.start"), CMD_START],
+    [localize("hotkey.commands.title.start.debug"), CMD_START_DEBUG],
     [localize("hotkey.commands.title.start.custom"), CMD_CUSTOM],
     [localize("hotkey.commands.title.start.in.container"), CMD_START_CONTAINER],
     [localize("hotkey.commands.title.debug"), CMD_DEBUG],
@@ -236,6 +238,117 @@ export async function startDevMode(libProject?: LibertyProject | undefined, tree
         }
     }));
 }
+
+export async function startDevModeWithDebugger(libProject?: LibertyProject | undefined, treeView?: vscode.TreeView<LibertyProject>): Promise<void> {
+    const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();
+    if (!projectProvider) {
+        const message = localize("cannot.start.liberty.dev.debug");
+        console.error(message);
+        vscode.window.showInformationMessage(message);
+        return;
+    }
+    const targetProjects = await projectProvider.pickProject(libProject, CMD_START_DEBUG);
+    if (targetProjects === undefined) {
+        return;
+    }
+    if (libProject === undefined && treeView) { await revealProjectsInTree(targetProjects, treeView); }
+
+    await Promise.all(targetProjects.map(async targetProject => {
+        console.log(localize("starting.liberty.dev.debug.on", targetProject.getLabel()));
+        const result = await ensureTerminal(targetProject);
+        if (result === undefined) {
+            return;
+        }
+
+        // Append the debug port flag as a custom parameter so the Liberty dev goal
+        // starts with the Java debug agent listening on port 7777.
+        const debugParam = isMaven(targetProject.getContextValue())
+            ? MAVEN_DEVMODE_DEBUG_PORT_PARM
+            : GRADLE_DEVMODE_DEBUG_PORT_PARM;
+
+        await sendDevModeCommand(result.terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, debugParam, result.javaHome);
+        targetProject.setState(DevModeState.Starting);
+        projectProvider.notifyDevModeChanged(targetProject);
+
+        // Build the glob pattern that Liberty writes the actual debug port into.
+        // Mirrors the path resolution logic used by attachDebugger().
+        const EXCLUDED_DIR_PATTERN = "**/{bin,classes}/**";
+        let watchPattern: vscode.RelativePattern | undefined;
+
+        if (targetProject.installDirectory) {
+            const projectDir = Path.dirname(targetProject.getPath());
+            const resolvedInstallDir = Path.resolve(projectDir, targetProject.installDirectory);
+            watchPattern = new vscode.RelativePattern(resolvedInstallDir, "usr/servers/**/server.env");
+        } else {
+            let pathPrefix = "";
+            if (isMaven(targetProject.getContextValue())) {
+                pathPrefix = "target";
+            } else if (isGradle(targetProject.getContextValue())) {
+                pathPrefix = "build";
+            }
+            if (pathPrefix !== "") {
+                watchPattern = new vscode.RelativePattern(Path.dirname(targetProject.getPath()), pathPrefix + "/**/server.env");
+            }
+        }
+
+        if (watchPattern === undefined) {
+            return;
+        }
+
+        const watcher = vscode.workspace.createFileSystemWatcher(watchPattern);
+
+        // Reads server.env and, when WLP_DEBUG_ADDRESS is present, attaches the debugger.
+        const tryAttach = async (uri: vscode.Uri) => {
+            // Skip files matching the excluded pattern (bin/classes directories).
+            if (EXCLUDED_DIR_PATTERN && uri.fsPath.includes("bin") || uri.fsPath.includes("classes")) {
+                return;
+            }
+            try {
+                const lines = fse.readFileSync(uri.fsPath, "utf8").split("\n");
+                let port = "";
+                for (let i = 0; i < lines.length && port === ""; i++) {
+                    const match = LIBERTY_SERVER_ENV_PORT_REGEX.exec(lines[i]);
+                    if (match !== null) {
+                        port = match[1];
+                    }
+                }
+                if (port === "") {
+                    return; // WLP_DEBUG_ADDRESS not written yet — wait for the next event.
+                }
+                clearTimeout(timeoutHandle);
+                watcher.dispose();
+
+                const cwd = Path.dirname(targetProject.getPath());
+                const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(targetProject.getPath()));
+                vscode.debug.startDebugging(workspaceFolder, {
+                    "type": "java",
+                    "name": localize("liberty.dev.debug.label", cwd),
+                    "request": "attach",
+                    "hostName": "localhost",
+                    "port": port,
+                    "cwd": cwd,
+                    "projectName": targetProject.getLabel()
+                }).then(() => {
+                }, err => {
+                    vscode.window.showErrorMessage(localize("liberty.dev.attach.debugger.failed.with.error", err.message));
+                });
+            } catch {
+                // File may not be readable yet — the next event will retry.
+            }
+        };
+
+        watcher.onDidCreate(tryAttach);
+        watcher.onDidChange(tryAttach);
+
+        // Safety timeout: give up after 3 minutes and prompt the user to attach manually.
+        const timeoutHandle = setTimeout(() => {
+            watcher.dispose();
+            vscode.window.showWarningMessage(localize("liberty.dev.debug.start.timeout"));
+        }, 180_000);
+    }));
+}
+
+
 
 export async function removeProject(): Promise<void> {
     const projectProvider: ProjectTreeProvider = ProjectTreeProvider.getInstance();

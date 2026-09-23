@@ -108,5 +108,10 @@
     "starter.label.generating": "Creating starter code for {0}",
     "starter.message.open.project": "Where do you want to open the project?",
     "starter.button.current": "Current Window",
-    "starter.button.new": "New Window"
+    "starter.button.new": "New Window",
+    "hotkey.commands.title.start.debug": "Liberty: Start in debug mode",
+    "command.start.debug.dev.mode": "start debug dev mode",
+    "starting.liberty.dev.debug.on": "Starting Liberty dev mode in debug on {0}.",
+    "cannot.start.liberty.dev.debug": "Cannot start Liberty dev mode in debug on an undefined project.",
+    "liberty.dev.debug.start.timeout": "Liberty server did not start within the expected time. Use the 'Attach debugger' command to attach the debugger manually."
 }
