@@ -89,3 +89,21 @@ export const LIBERTY_SERVER_ENV_PORT_REGEX        = /^WLP_DEBUG_ADDRESS=([\d]+)$
 export const LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY = "liberty.dashboard.data";
 export const TEST_REPORT_STRING                   = "Test Summary";
 export const UNTITLED_WORKSPACE                   = "Untitled (Workspace)";
+
+// ---------------------------------------------------------------------------
+// server.env search path patterns (used by attachDebugger)
+// ---------------------------------------------------------------------------
+/** Pattern relative to a resolved installDirectory: finds server.env under usr/servers. */
+export const SERVER_ENV_INSTALL_DIR_PATTERN = "usr/servers/**/server.env";
+/** Pattern relative to the project root: finds server.env under a build-output prefix (target or build). */
+export const SERVER_ENV_BUILD_OUTPUT_PATTERN = "**/server.env";
+
+// ---------------------------------------------------------------------------
+// CLI property regex patterns (used by extractInstallDirFromParams)
+// ---------------------------------------------------------------------------
+/** Matches -DinstallDirectory=<value> in Maven custom Start… parameters. */
+export const MAVEN_INSTALL_DIR_PARAM_REGEX  = /-DinstallDirectory=(\S+)/;
+/** Matches -Pliberty.installDir=<value> in Gradle custom Start… parameters. */
+export const GRADLE_INSTALL_DIR_PARAM_REGEX = /-Pliberty\.installDir=(\S+)/;
+/** Matches liberty.installDir=<value> in a gradle.properties file. */
+export const GRADLE_PROPERTIES_INSTALL_DIR_REGEX = /^\s*liberty\.installDir\s*=\s*(.+)$/m;
