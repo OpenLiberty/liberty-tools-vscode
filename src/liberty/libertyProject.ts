@@ -44,6 +44,10 @@ export class LibertyProject extends vscode.TreeItem {
 	public artifactId: string = "";
 	public parentArtifactId?: string;
 	public installDirectory?: string;
+	// Snapshot of installDirectory as parsed from the build file. Set by customDevMode
+	// when a CLI-supplied -DinstallDirectory/-PinstallDirectory overrides the build-file
+	// value for the duration of a server session. Restored by deleteTerminal on stop.
+	private _buildFileInstallDirectory?: string;
 	public baseContextValue: string;
 
 	// disposable for the project shell execution listener. disposes on terminal close.
@@ -149,10 +153,29 @@ export class LibertyProject extends vscode.TreeItem {
 		return undefined;
 	}
 
+	/**
+	 * Overrides installDirectory for the lifetime of a running server session.
+	 * Snapshots the current (build-file) value so deleteTerminal can restore it.
+	 * No-op if the extracted value is the same as what is already set.
+	 */
+	public applyCliInstallDirectory(cliValue: string): void {
+		this._buildFileInstallDirectory = this.installDirectory;
+		this.installDirectory = cliValue;
+	}
+
 	public deleteTerminal(): void {
 		delete this.terminal;
 		this.cleanupShellListener();
 		this.setState(undefined);
+		// Restore installDirectory to its build-file value so the next Start…
+		// cycle is not polluted by a previous CLI override.
+		if (this._buildFileInstallDirectory !== undefined) {
+			this.installDirectory = this._buildFileInstallDirectory;
+		} else {
+			// No snapshot means no CLI override was applied, or the build-file
+			// value was itself undefined — leave installDirectory unchanged.
+		}
+		this._buildFileInstallDirectory = undefined;
 	}
 
 	public enableShellListener(execution: vscode.TerminalShellExecution, onStateChange: (project: LibertyProject) => void): void {

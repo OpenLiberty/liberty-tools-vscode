@@ -8,7 +8,7 @@ import * as semver from "semver";
 import { JSONPath } from "jsonpath-plus";
 import { localize } from "../util/i18nUtil";
 import { getAllPaths, getReport } from "./helperUtil";
-import { TEST_REPORT_STRING, LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION, LIBERTY_PROJECT_GRADLE_CONTAINER, LIBERTY_PROJECT_GRADLE } from "../definitions/constants";
+import { TEST_REPORT_STRING, LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION, LIBERTY_PROJECT_GRADLE_CONTAINER, LIBERTY_PROJECT_GRADLE, GRADLE_PROPERTIES_INSTALL_DIR_REGEX } from "../definitions/constants";
 import { GradleBuildFile } from "./buildFile";
 
 // Regex patterns for Liberty plugin detection in modern Gradle syntax
@@ -16,13 +16,29 @@ const LIBERTY_PLUGIN_ID_REGEX = /id\s*\(\s*["']io\.openliberty\.tools\.gradle\.L
 const LIBERTY_PLUGIN_VERSION_REGEX = /id\s*\(\s*["']io\.openliberty\.tools\.gradle\.Liberty["']\s*\)\s+version\s+["']([^"']+)["']|id\s+['"]io\.openliberty\.tools\.gradle\.Liberty['"]\s+version\s+["']([^"']+)["']/;
 
 // Regex to extract installDir (or installDirectory) from the liberty { } extension block.
-// Matches:  installDir = '/some/path'  or  installDirectory = "/some/path"
-//           installDir = file('/some/path')  or  installDirectory = file("/some/path")
-// Group 1 captures the file() form; group 2 captures the bare-string form.
+// Matches quoted string literals:  installDir = '/some/path'  or  installDir = "/some/path"
+// Also matches Gradle file() calls:  installDir = file('/some/path')
 const LIBERTY_INSTALL_DIR_REGEX = /\binstall(?:Dir(?:ectory)?|Directory)\s*[=:]\s*(?:file\s*\(\s*["']([^"']+)["']\s*\)|["']([^"']+)["'])/;
 
 // Regex to detect legacy buildscript classpath plugin syntax (requires g2js to parse fully)
 const LEGACY_BUILDSCRIPT_REGEX = /buildscript\s*\{/;
+
+/**
+ * Strip a matching pair of surrounding single or double quotes from a string value,
+ * if present. Used to normalise values read from gradle.properties or CLI flags where
+ * users may optionally quote the path (e.g. liberty.installDir="/opt/wlp").
+ * A value with only one quote character (unmatched) is returned unchanged.
+ */
+function stripQuotes(value: string): string {
+    if (value.length >= 2) {
+        const first = value[0];
+        const last = value[value.length - 1];
+        if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+            return value.slice(1, -1);
+        }
+    }
+    return value;
+}
 
 /**
  * Detect Liberty plugin from raw build.gradle text content.
@@ -480,12 +496,18 @@ export async function extractGradleMetadata(
         contextValue = LIBERTY_PROJECT_GRADLE;
     }
 
-    // Extract installDir from the liberty { } block using a regex over the raw file text.
-    // Only static string literals are captured; variable references are ignored.
+    // Extract installDir / installDirectory from two sources (in precedence order):
+    //
+    // 1. build.gradle — liberty { installDir = '...' } or liberty { installDir = file('...') }
+    //    This is the primary, most explicit declaration.
+    //
+    // 2. gradle.properties — liberty.installDir=<path>  (fallback when not set in build.gradle)
+    //    LGP reads this file automatically as a Gradle project property override.
+    //
     // The hasLibertyPlugin guard is intentionally absent: build files using the legacy
-    // classpath string shorthand ('group:artifact:version') are not parsed by gradle-to-js
-    // into group/name fields, so hasLibertyPlugin would be false even when the plugin is
-    // present. installDirectory must be extracted regardless of how the plugin was declared.
+    // classpath string shorthand ('group:artifact:version') are not always parsed by
+    // gradle-to-js into group/name fields, so hasLibertyPlugin may be false even when
+    // the plugin is present. installDirectory must be extracted regardless.
     let installDirectory: string | undefined;
     try {
         const rawContent = await fse.readFile(buildGradlePath, "utf8");
@@ -498,23 +520,17 @@ export async function extractGradleMetadata(
         console.error(`Failed to read ${buildGradlePath} for installDir extraction:`, err);
     }
 
-    // Fall back to gradle.properties (liberty.installDir key) when the build file
-    // does not specify a static installDir string. build.gradle takes precedence.
+    // Fall back to gradle.properties (only when build.gradle had no value)
     if (installDirectory === undefined) {
-        const gradlePropsPath = path.join(path.dirname(buildGradlePath), "gradle.properties");
+        const gradlePropertiesPath = path.join(path.dirname(buildGradlePath), "gradle.properties");
         try {
-            if (fse.existsSync(gradlePropsPath)) {
-                const propsContent = fse.readFileSync(gradlePropsPath, "utf8");
-                for (const line of propsContent.split(/\r?\n/)) {
-                    const propMatch = line.match(/^\s*liberty\.installDir\s*=\s*(.+)\s*$/);
-                    if (propMatch) {
-                        installDirectory = propMatch[1].trim().replace(/^["']|["']$/g, "");
-                        break;
-                    }
-                }
+            const propsContent = await fse.readFile(gradlePropertiesPath, "utf8");
+            const propMatch = GRADLE_PROPERTIES_INSTALL_DIR_REGEX.exec(propsContent);
+            if (propMatch && propMatch[1].trim().length > 0) {
+                installDirectory = stripQuotes(propMatch[1].trim());
             }
-        } catch (err) {
-            console.error(`Failed to read ${gradlePropsPath} for installDir extraction:`, err);
+        } catch {
+            // gradle.properties is optional — absence is not an error
         }
     }
 

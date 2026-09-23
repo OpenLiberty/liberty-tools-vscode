@@ -23,11 +23,12 @@ import {
     CMD_EXPLORER_REFRESH, CMD_OPEN_BUILD_FILE, CMD_START, CMD_STOP, CMD_DEBUG, CMD_CUSTOM,
     CMD_START_CONTAINER, CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
     CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
+    SERVER_ENV_INSTALL_DIR_PATTERN, SERVER_ENV_BUILD_OUTPUT_PATTERN,
 } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
-import { getCommandForMaven, getCommandForGradle, defaultWindowsShell, isWin } from "../util/commandUtils";
+import { getCommandForMaven, getCommandForGradle, defaultWindowsShell, isWin, extractInstallDirFromParams } from "../util/commandUtils";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 
@@ -359,15 +360,17 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
         // If installDirectory is configured, search there first — that is where LMP/LGP
         // writes the runtime server.env (containing WLP_DEBUG_ADDRESS) when using an
         // external Liberty installation. Relative paths are resolved from the project root.
+        // vscode.Uri.file() is required so findFiles works for paths outside the workspace.
         if (targetProject.installDirectory) {
             const projectDir = Path.dirname(targetProject.getPath());
             const resolvedInstallDir = Path.resolve(projectDir, targetProject.installDirectory);
-            const installDirPattern = new vscode.RelativePattern(resolvedInstallDir, "usr/servers/**/server.env");
+            const installDirPattern = new vscode.RelativePattern(vscode.Uri.file(resolvedInstallDir), SERVER_ENV_INSTALL_DIR_PATTERN);
             paths = (await vscode.workspace.findFiles(installDirPattern)).map(uri => uri.fsPath);
         }
 
         // Fall back to the default build-output location when installDirectory is not set
         // or when no server.env was found under the install directory.
+        // vscode.Uri.file() ensures findFiles works correctly regardless of workspace scope.
         if (paths.length === 0) {
             let pathPrefix = "";
             if (isMaven(targetProject.getContextValue())) {
@@ -376,7 +379,7 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
                 pathPrefix = "build";
             }
             if (pathPrefix !== "") {
-                const serverEnvPattern = new vscode.RelativePattern(Path.dirname(targetProject.getPath()), pathPrefix + "/**/server.env");
+                const serverEnvPattern = new vscode.RelativePattern(vscode.Uri.file(Path.dirname(targetProject.getPath())), pathPrefix + "/" + SERVER_ENV_BUILD_OUTPUT_PATTERN);
                 paths = (await vscode.workspace.findFiles(serverEnvPattern, EXCLUDED_DIR_PATTERN)).map(uri => uri.fsPath);
             }
         }
@@ -536,6 +539,15 @@ export async function customDevMode(libProject?: LibertyProject | undefined, par
             const dashboardData: DashboardData = helperUtil.getStorageData(registry.getContext());
             dashboardData.addStartCmdParams(projectStartCmdParam);
             await helperUtil.saveStorageData(registry.getContext(), dashboardData);
+
+            // If the user passed a CLI installDirectory property (-DinstallDirectory for Maven,
+            // -PinstallDirectory/-PinstallDir for Gradle), override the build-file value on the
+            // live project instance for the duration of this server session. deleteTerminal()
+            // will restore the original build-file value when the server stops.
+            const cliInstallDir = extractInstallDirFromParams(customParameters, isMaven(libProject.getContextValue()));
+            if (cliInstallDir !== undefined) {
+                libProject.applyCliInstallDirectory(cliInstallDir);
+            }
         }
 
         await sendDevModeCommand(result.terminal, libProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, customParameters, result.javaHome);
