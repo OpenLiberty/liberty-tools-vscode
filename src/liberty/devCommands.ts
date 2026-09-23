@@ -247,7 +247,7 @@ export async function startDevModeWithDebugger(libProject?: LibertyProject | und
         vscode.window.showInformationMessage(message);
         return;
     }
-    const targetProjects = await projectProvider.pickProject(libProject, CMD_START_DEBUG);
+    const targetProjects = await projectProvider.pickProject(libProject, CMD_START_DEBUG, true);
     if (targetProjects === undefined) {
         return;
     }
@@ -272,7 +272,6 @@ export async function startDevModeWithDebugger(libProject?: LibertyProject | und
 
         // Build the glob pattern that Liberty writes the actual debug port into.
         // Mirrors the path resolution logic used by attachDebugger().
-        const EXCLUDED_DIR_PATTERN = "**/{bin,classes}/**";
         let watchPattern: vscode.RelativePattern | undefined;
 
         if (targetProject.installDirectory) {
@@ -297,10 +296,13 @@ export async function startDevModeWithDebugger(libProject?: LibertyProject | und
 
         const watcher = vscode.workspace.createFileSystemWatcher(watchPattern);
 
-        // Reads server.env and, when WLP_DEBUG_ADDRESS is present, attaches the debugger.
+        // Reads server.env and, when WLP_DEBUG_ADDRESS is present, waits for the Liberty
+        // server to reach ServerStarted/Running state before attaching the debugger.
+        // This prevents the "Failed to attach" IOException that occurs when the JVM debug
+        // agent socket is not yet open, even though server.env has already been written.
         const tryAttach = async (uri: vscode.Uri) => {
-            // Skip files matching the excluded pattern (bin/classes directories).
-            if (EXCLUDED_DIR_PATTERN && uri.fsPath.includes("bin") || uri.fsPath.includes("classes")) {
+            // Skip files in bin/classes directories.
+            if (uri.fsPath.includes("bin") || uri.fsPath.includes("classes")) {
                 return;
             }
             try {
@@ -315,8 +317,39 @@ export async function startDevModeWithDebugger(libProject?: LibertyProject | und
                 if (port === "") {
                     return; // WLP_DEBUG_ADDRESS not written yet — wait for the next event.
                 }
+
+                // Port found — stop watching the file.
                 clearTimeout(timeoutHandle);
                 watcher.dispose();
+
+                // Wait until Liberty logs CWWKF0011I ("server ready") before attaching.
+                // server.env is written before the JVM debug agent socket is open, so
+                // attaching immediately causes a connection-refused / handshake timeout.
+                // Poll every 500 ms up to 3 minutes.
+                const pollIntervalMs = 500;
+                const deadlineMs = Date.now() + 180_000;
+                await new Promise<void>((resolve) => {
+                    const check = () => {
+                        if (targetProject.state === DevModeState.ServerStarted ||
+                            targetProject.state === DevModeState.Running) {
+                            resolve();
+                            return;
+                        }
+                        if (Date.now() >= deadlineMs) {
+                            vscode.window.showWarningMessage(localize("liberty.dev.debug.start.timeout"));
+                            resolve();
+                            return;
+                        }
+                        setTimeout(check, pollIntervalMs);
+                    };
+                    check();
+                });
+
+                // Guard: if timeout fired the state is still Starting — don't attach.
+                if (targetProject.state !== DevModeState.ServerStarted &&
+                    targetProject.state !== DevModeState.Running) {
+                    return;
+                }
 
                 const cwd = Path.dirname(targetProject.getPath());
                 const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(targetProject.getPath()));
