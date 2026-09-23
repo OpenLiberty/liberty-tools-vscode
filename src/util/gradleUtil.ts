@@ -482,17 +482,39 @@ export async function extractGradleMetadata(
 
     // Extract installDir from the liberty { } block using a regex over the raw file text.
     // Only static string literals are captured; variable references are ignored.
+    // The hasLibertyPlugin guard is intentionally absent: build files using the legacy
+    // classpath string shorthand ('group:artifact:version') are not parsed by gradle-to-js
+    // into group/name fields, so hasLibertyPlugin would be false even when the plugin is
+    // present. installDirectory must be extracted regardless of how the plugin was declared.
     let installDirectory: string | undefined;
-    if (hasLibertyPlugin) {
+    try {
+        const rawContent = await fse.readFile(buildGradlePath, "utf8");
+        const match = LIBERTY_INSTALL_DIR_REGEX.exec(rawContent);
+        const captured = match?.[1] ?? match?.[2];
+        if (captured && captured.trim().length > 0) {
+            installDirectory = captured.trim();
+        }
+    } catch (err) {
+        console.error(`Failed to read ${buildGradlePath} for installDir extraction:`, err);
+    }
+
+    // Fall back to gradle.properties (liberty.installDir key) when the build file
+    // does not specify a static installDir string. build.gradle takes precedence.
+    if (installDirectory === undefined) {
+        const gradlePropsPath = path.join(path.dirname(buildGradlePath), "gradle.properties");
         try {
-            const rawContent = await fse.readFile(buildGradlePath, "utf8");
-            const match = LIBERTY_INSTALL_DIR_REGEX.exec(rawContent);
-            const captured = match?.[1] ?? match?.[2];
-            if (captured && captured.trim().length > 0) {
-                installDirectory = captured.trim();
+            if (fse.existsSync(gradlePropsPath)) {
+                const propsContent = fse.readFileSync(gradlePropsPath, "utf8");
+                for (const line of propsContent.split(/\r?\n/)) {
+                    const propMatch = line.match(/^\s*liberty\.installDir\s*=\s*(.+)\s*$/);
+                    if (propMatch) {
+                        installDirectory = propMatch[1].trim().replace(/^["']|["']$/g, "");
+                        break;
+                    }
+                }
             }
         } catch (err) {
-            console.error(`Failed to read ${buildGradlePath} for installDir extraction:`, err);
+            console.error(`Failed to read ${gradlePropsPath} for installDir extraction:`, err);
         }
     }
 
