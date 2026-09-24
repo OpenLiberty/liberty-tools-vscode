@@ -91,7 +91,7 @@
     "command.run.tests": "run tests",
     "command.attach.debugger": "attach debugger",
     "command.view.test.report": "view test report",
-    "starter.label.flow": "Create Open Liberty Starter Code",
+    "starter.label.flow": "Create a Liberty Project",
     "starter.prompt.group": "Base Package",
     "starter.prompt.artifact": "App Name",
     "starter.prompt.build.tool": "Build System",
@@ -105,7 +105,7 @@
     "starter.button.overwrite": "Overwrite",
     "starter.button.reselect": "Select another directory",
     "starter.message.resume": "Resume Liberty project generation?",
-    "starter.label.generating": "Creating starter code for {0}",
+    "starter.label.generating": "Creating Liberty project code for {0}",
     "starter.message.open.project": "Where do you want to open the project?",
     "starter.button.current": "Current Window",
     "starter.button.new": "New Window"
