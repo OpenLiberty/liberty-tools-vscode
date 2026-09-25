@@ -750,15 +750,15 @@ async function createTerminalforLiberty(libProject: LibertyProject, _terminal: v
 will return the path of the report, since there are diffrent folders to look into and the file names can be different 
 we need to get the paths to look for dynamically
 */
-function getReportFile(path: any, dir: string, filename: string): any {
+export function getReportFile(path: any, dir: string, filename: string): any {
     return Path.join(path, "target", dir, filename);
 }
 
 /*
-Function will check if the report is available within the given path and returns a boolean based on it and also 
+Function will check if the report is available within the given path and returns a boolean based on it and also
 the report will be displayed if it is available
 */
-function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel: string, libProject: LibertyProject, showErrorMessage: boolean): Promise<boolean> {
+export function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel: string, libProject: LibertyProject, showErrorMessage: boolean): Promise<boolean> {
     return new Promise((resolve) => {
         fs.exists(report, (exists) => {
             if (exists) {

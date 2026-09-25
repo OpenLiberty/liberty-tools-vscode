@@ -33,6 +33,7 @@ const window = {
     createTerminal: () => ({ show: () => {}, sendText: () => {}, dispose: () => {}, processId: Promise.resolve(1) }),
     onDidCloseTerminal: () => ({ dispose: () => {} }),
     createTreeView: () => ({ dispose: () => {} }),
+    createWebviewPanel: () => ({ webview: { html: "" } }),
 };
 
 const workspace = {
@@ -59,6 +60,8 @@ const Uri = {
     file: (p) => ({ fsPath: p }),
 };
 
+const ViewColumn = { One: 1, Two: 2, Three: 3, Active: -1, Beside: -2 };
+
 module.exports = {
     TreeItem,
     TreeItemCollapsibleState,
@@ -68,4 +71,5 @@ module.exports = {
     commands,
     RelativePattern,
     Uri,
+    ViewColumn,
 };
