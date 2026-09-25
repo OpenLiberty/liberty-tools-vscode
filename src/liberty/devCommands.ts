@@ -24,6 +24,7 @@ import {
     CMD_START_CONTAINER, CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
     CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
     SERVER_ENV_INSTALL_DIR_PATTERN, SERVER_ENV_BUILD_OUTPUT_PATTERN,
+    SETTING_SUREFIRE_REPORT_PATH, SETTING_FAILSAFE_REPORT_PATH, SETTING_GRADLE_REPORT_PATH,
 } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
@@ -680,7 +681,7 @@ export async function openReport(reportType: string, libProject?: LibertyProject
             }
             let showErrorMessage: boolean = true;
             if (isMaven(targetProject.getContextValue())) {
-                const settingKey = reportType === "surefire" ? "test.report.surefire.path" : "test.report.failsafe.path";
+                const settingKey = reportType === "surefire" ? SETTING_SUREFIRE_REPORT_PATH : SETTING_FAILSAFE_REPORT_PATH;
                 const customPath = helperUtil.getConfiguration<string>(settingKey, targetProject.getPath());
                 const resolvedCustom = resolveMavenReportPath(path, customPath);
                 if (resolvedCustom) {
@@ -696,7 +697,7 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                     }
                 }
             } else if (isGradle(targetProject.getContextValue())) {
-                const gradleCustomPath = helperUtil.getConfiguration<string>("test.report.gradle.path", targetProject.getPath());
+                const gradleCustomPath = helperUtil.getConfiguration<string>(SETTING_GRADLE_REPORT_PATH, targetProject.getPath());
                 report = await getGradleTestReport(targetProject.path, path, gradleCustomPath || undefined);
                 await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
             }
