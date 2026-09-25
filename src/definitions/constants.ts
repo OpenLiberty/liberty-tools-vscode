@@ -78,6 +78,13 @@ export const SORT_ORDER_KEY              = "liberty.sortOrder";
 export type SortOrder                    = "workspace" | "alphabetical";
 
 // ---------------------------------------------------------------------------
+// Test Report Setting Keys
+// ---------------------------------------------------------------------------
+export const SETTING_SUREFIRE_REPORT_PATH = "test.report.surefire.path";
+export const SETTING_FAILSAFE_REPORT_PATH = "test.report.failsafe.path";
+export const SETTING_GRADLE_REPORT_PATH   = "test.report.gradle.path";
+
+// ---------------------------------------------------------------------------
 // Project Discovery
 // ---------------------------------------------------------------------------
 export const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target,build}/**";
