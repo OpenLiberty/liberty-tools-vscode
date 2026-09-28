@@ -252,7 +252,6 @@ export class LibertyProject extends vscode.TreeItem {
 		}
 		let filename: string;
 		switch (state) {
-			case DevModeState.ServerStarted:
 			case DevModeState.Running:
 				filename = "active.svg";
 				break;
@@ -260,6 +259,7 @@ export class LibertyProject extends vscode.TreeItem {
 				filename = "stopping.svg";
 				break;
 			case DevModeState.Starting:
+			case DevModeState.ServerStarted:
 				filename = "incomplete.svg";
 				break;
 			default:
