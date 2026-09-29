@@ -1,6 +1,6 @@
 /*
  * IBM Confidential
- * Copyright IBM Corp. 2020, 2025
+ * Copyright IBM Corp. 2026
  *
  * Unit tests for custom test report path resolution.
  * Plain mocha + chai, no VS Code instance required.
