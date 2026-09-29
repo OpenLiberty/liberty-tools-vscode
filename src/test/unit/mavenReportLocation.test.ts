@@ -21,10 +21,15 @@
  * Reference: https://github.com/OpenLiberty/liberty-tools-intellij/issues/939
  */
 
+// Install the vscode fake before any extension imports.
+import { installFakeVscode } from "./fakeVscode";
+installFakeVscode({}, true);
+
 import { strict as assert } from "assert";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import { getReportFile, checkReportAndDisplay } from "../../liberty/devCommands";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -51,57 +56,8 @@ function createReportFile(filePath: string): string {
 
 // ── Test suite ────────────────────────────────────────────────────────────────
 
-// ── Per-suite helpers ─────────────────────────────────────────────────────────
-
-/**
- * Loads (or reloads) devCommands under the test-mocks/vscode.js stub so that
- * checkReportAndDisplay always gets a vscode object with a working window.
- *
- * Some test files (e.g. vscodeSettingsStrategy.test.ts) install their own
- * Module._load hook that returns a minimal vscode fake without window.  When
- * those files load devCommands first, our tests inherit their broken stub.
- * We fix this by evicting devCommands from the require cache and re-loading it
- * while temporarily forcing "vscode" to resolve to test-mocks/vscode.js.
- */
-function loadDevCommandsUnderTestMock(): { getReportFile: any; checkReportAndDisplay: any } {
-    const mockPath = require.resolve("../../../test-mocks/vscode.js");
-    const mockModule = require.cache[mockPath];
-
-    // Evict devCommands so the next require reloads it fresh.
-    Object.keys(require.cache).forEach(key => {
-        if (key.includes("devCommands") || key.includes("liberty/devCommands")) {
-            delete require.cache[key];
-        }
-    });
-
-    const Module = require("module");
-    const prevLoad = Module._load;
-    // Temporarily point "vscode" to the shared test mock (which has window + createWebviewPanel).
-    Module._load = function(request: string, ...args: any[]) {
-        if (request === "vscode") {
-            return mockModule ? mockModule.exports : prevLoad.call(this, request, ...args);
-        }
-        return prevLoad.call(this, request, ...args);
-    };
-
-    try {
-        const devCommands = require("../../liberty/devCommands");
-        return { getReportFile: devCommands.getReportFile, checkReportAndDisplay: devCommands.checkReportAndDisplay };
-    } finally {
-        Module._load = prevLoad;
-    }
-}
-
 describe("Maven surefire report — location fallback logic", () => {
     let tmpDir: string;
-    let getReportFile: (p: string, dir: string, filename: string) => string;
-    let checkReportAndDisplay: (report: string, reportType: string, reportTypeLabel: string, project: any, showErrorMessage: boolean) => Promise<boolean>;
-
-    before(() => {
-        const fns = loadDevCommandsUnderTestMock();
-        getReportFile = fns.getReportFile;
-        checkReportAndDisplay = fns.checkReportAndDisplay;
-    });
 
     beforeEach(() => {
         tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "liberty-surefire-test-"));
@@ -159,14 +115,6 @@ describe("Maven surefire report — location fallback logic", () => {
 
 describe("Maven failsafe report — location fallback logic", () => {
     let tmpDir: string;
-    let getReportFile: (p: string, dir: string, filename: string) => string;
-    let checkReportAndDisplay: (report: string, reportType: string, reportTypeLabel: string, project: any, showErrorMessage: boolean) => Promise<boolean>;
-
-    before(() => {
-        const fns = loadDevCommandsUnderTestMock();
-        getReportFile = fns.getReportFile;
-        checkReportAndDisplay = fns.checkReportAndDisplay;
-    });
 
     beforeEach(() => {
         tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "liberty-failsafe-test-"));

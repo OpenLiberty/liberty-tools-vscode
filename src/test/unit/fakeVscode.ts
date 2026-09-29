@@ -54,6 +54,7 @@ const EXTENSION_CACHE_KEYS = [
     "liberty/projectRegistry",
     "liberty/projectTreeProvider",
     "liberty/projectDiscovery",
+    "liberty/devCommands",
     "util/helperUtil",
     "util/gradleUtil",
     "util/mavenUtil",
