@@ -10,7 +10,6 @@ import * as constants from './definitions/constants';
 import { logger } from './utils/testLogger';
 import path = require('path');
 import { DashboardPage } from './pages/DashboardPage';
-
 // Run shared dev mode tests
 runDevModeTestSuite({
     buildTool: 'gradle',
@@ -31,7 +30,7 @@ describe('Gradle-specific devmode action tests', () => {
     it('Start Gradle with options from Liberty Tools', async () => {
         logger.testStart('Start Gradle with options from Liberty Tools');
         try {
-            const reportPath = path.join(utils.getGradleProjectPath(), "build", "reports", "tests", "test", "index.html");
+            const reportPath = path.join(utils.getGradleProjectPath(), "build", "custom-reports", "tests", "test", "index.html");
             logger.info(`Report path: ${reportPath}`);
 
             logger.step(1, 'Deleting existing test report');
@@ -84,7 +83,7 @@ describe('Gradle-specific devmode action tests', () => {
     it('Start Gradle with history from Liberty Tools', async () => {
         logger.testStart('Start Gradle with history from Liberty Tools');
         try {
-            const reportPath = path.join(utils.getGradleProjectPath(), "build", "reports", "tests", "test", "index.html");
+            const reportPath = path.join(utils.getGradleProjectPath(), "build", "custom-reports", "tests", "test", "index.html");
             logger.info(`Report path: ${reportPath}`);
 
             logger.step(1, 'Deleting existing test report');
@@ -184,6 +183,93 @@ describe('Gradle-specific devmode action tests', () => {
      */
     after(async function() {
         this.timeout(45000);
+        await utils.closeWorkspace();
+    });
+});
+
+// Gradle custom report path tests
+describe('Gradle custom report path tests', () => {
+    let dashboard: DashboardPage;
+
+    before(async function() {
+        this.timeout(60000);
+        utils.writeVscodeSettings(utils.getGradleProjectPath(), {
+            "liberty.test.report.gradle.path": "build/custom-reports/tests/test/index.html"
+        });
+        await VSBrowser.instance.openResources(utils.getGradleProjectPath());
+        await VSBrowser.instance.waitForWorkbench();
+        dashboard = new DashboardPage();
+    });
+
+    it('View test report for Gradle project with custom path setting', async () => {
+        logger.testStart('View test report for Gradle project with custom path setting');
+
+        if ((process.platform === 'darwin') || (process.platform === 'win32') || (process.platform === 'linux')) {
+            logger.skip(`Test skipped for platform: ${process.platform} (enable once https://github.com/OpenLiberty/liberty-tools-vscode/issues/266 is resolved)`);
+            return true;
+        }
+
+        try {
+            const reportPath = path.join(utils.getGradleProjectPath(), "build", "custom-reports", "tests", "test", "index.html");
+
+            logger.step(1, 'Deleting existing custom Gradle test report');
+            await utils.deleteReports(reportPath);
+
+            logger.step(2, 'Starting dev mode with --hotTests');
+            await dashboard.runAction(constants.GRADLE_PROJECT, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
+
+            logger.step(3, 'Setting custom parameter: --hotTests');
+            await utils.setCustomParameter("--hotTests");
+
+            logger.step(4, 'Waiting for server to start');
+            const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
+
+            if (!serverStartStatus) {
+                logger.error('Server started message not found in terminal');
+            } else {
+                logger.stepSuccess(4, 'Server started successfully');
+
+                logger.step(5, 'Waiting for custom Gradle test report');
+                const checkFile = await utils.waitForTestReport(reportPath);
+                expect(checkFile).to.be.true;
+                logger.stepSuccess(5, 'Custom Gradle test report found');
+
+                logger.step(6, 'Triggering view test report action');
+                await dashboard.runAction(constants.GRADLE_PROJECT, constants.GRADLE_TR_DASHABOARD_ACTION, constants.GRADLE_TR_DASHABOARD_MAC_ACTION);
+
+                logger.step(7, 'Waiting for test report tab to open');
+                const tabs = await utils.waitForEditorTab(constants.GRADLE_TEST_REPORT_TITLE);
+                logger.info(`Open editor tabs: ${tabs.join(', ')}`);
+
+                const reportFound = tabs.indexOf(constants.GRADLE_TEST_REPORT_TITLE) > -1;
+                logger.info(`Gradle test report tab found: ${reportFound}`);
+                expect(reportFound, "Gradle test report tab not found").to.equal(true);
+                logger.stepSuccess(7, 'Gradle test report tab is open');
+
+                logger.step(8, 'Stopping server');
+                await dashboard.runAction(constants.GRADLE_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+
+                logger.step(9, 'Waiting for server to stop');
+                const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
+                if (!serverStopStatus) {
+                    logger.error('Server stop message not found in terminal');
+                } else {
+                    logger.stepSuccess(9, 'Server stopped successfully');
+                }
+                expect(serverStopStatus).to.be.true;
+            }
+
+            expect(serverStartStatus).to.be.true;
+            logger.testComplete('View test report for Gradle project with custom path setting');
+        } catch (error) {
+            logger.testFailed('View test report for Gradle project with custom path setting', error);
+            throw error;
+        }
+    }).timeout(350000);
+
+    after(async function() {
+        this.timeout(45000);
+        utils.removeVscodeSettings(utils.getGradleProjectPath());
         await utils.closeWorkspace();
     });
 });
