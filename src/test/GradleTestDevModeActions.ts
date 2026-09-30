@@ -30,7 +30,7 @@ describe('Gradle-specific devmode action tests', () => {
     it('Start Gradle with options from Liberty Tools', async () => {
         logger.testStart('Start Gradle with options from Liberty Tools');
         try {
-            const reportPath = path.join(utils.getGradleProjectPath(), "build", "custom-reports", "tests", "test", "index.html");
+            const reportPath = path.join(utils.getGradleProjectPath(), "build", "reports", "tests", "test", "index.html");
             logger.info(`Report path: ${reportPath}`);
 
             logger.step(1, 'Deleting existing test report');
@@ -83,7 +83,7 @@ describe('Gradle-specific devmode action tests', () => {
     it('Start Gradle with history from Liberty Tools', async () => {
         logger.testStart('Start Gradle with history from Liberty Tools');
         try {
-            const reportPath = path.join(utils.getGradleProjectPath(), "build", "custom-reports", "tests", "test", "index.html");
+            const reportPath = path.join(utils.getGradleProjectPath(), "build", "reports", "tests", "test", "index.html");
             logger.info(`Report path: ${reportPath}`);
 
             logger.step(1, 'Deleting existing test report');
@@ -193,8 +193,10 @@ describe('Gradle custom report path tests', () => {
 
     before(async function() {
         this.timeout(60000);
+        // Point the setting at the actual path Gradle generates so the test can verify
+        // the extension uses the setting value instead of its own default lookup.
         utils.writeVscodeSettings(utils.getGradleProjectPath(), {
-            "liberty.test.report.gradle.path": "build/custom-reports/tests/test/index.html"
+            "liberty.test.report.gradle.path": "build/reports/tests/test/index.html"
         });
         await VSBrowser.instance.openResources(utils.getGradleProjectPath());
         await VSBrowser.instance.waitForWorkbench();
@@ -210,7 +212,7 @@ describe('Gradle custom report path tests', () => {
         }
 
         try {
-            const reportPath = path.join(utils.getGradleProjectPath(), "build", "custom-reports", "tests", "test", "index.html");
+            const reportPath = path.join(utils.getGradleProjectPath(), "build", "reports", "tests", "test", "index.html");
 
             logger.step(1, 'Deleting existing custom Gradle test report');
             await utils.deleteReports(reportPath);
