@@ -12,3 +12,7 @@ build/
 bin/
 **/screenshots
 **/test-tools
+
+# Test-generated workspace settings (written by integration tests; must not be committed)
+src/test/resources/maven/liberty-maven-test-wrapper-app/.vscode/settings.json
+src/test/resources/gradle/liberty-gradle-test-wrapper-app/.vscode/settings.json
