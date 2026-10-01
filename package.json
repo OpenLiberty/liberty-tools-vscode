@@ -45,6 +45,7 @@
 		"onStartupFinished",
 		"onCommand:liberty.dev.debug",
 		"onCommand:liberty.dev.start.container",
+		"onCommand:liberty.dev.start.debug",
 		"onCommand:liberty.dev.open.build.file"
 	],
 	"main": "./dist/extension",
@@ -140,6 +141,11 @@
 				"command": "liberty.dev.start.container",
 				"category": "Liberty",
 				"title": "%commands.title.start.in.container%"
+			},
+			{
+				"command": "liberty.dev.start.debug",
+				"category": "Liberty",
+				"title": "%commands.title.start.debug%"
 			},
 			{
 				"command": "liberty.dev.run.tests",
@@ -276,6 +282,11 @@
 					"command": "liberty.dev.start",
 					"when": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:server-started)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/",
 					"group": "libertyCore@1"
+				},
+				{
+					"command": "liberty.dev.start.debug",
+					"when": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:server-started)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/",
+					"group": "libertyCore@2"
 				},
 				{
 					"command": "liberty.dev.debug",

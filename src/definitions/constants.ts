@@ -48,6 +48,9 @@ export const MAVEN_GOAL_DEVC = "io.openliberty.tools:liberty-maven-plugin:devc";
 export const GRADLE_TASK_DEV  = "libertyDev";
 export const GRADLE_TASK_DEVC = "libertyDevc";
 
+export const MAVEN_DEVMODE_DEBUG_PORT_PARM  = "-DdebugPort=7777";
+export const GRADLE_DEVMODE_DEBUG_PORT_PARM = "--libertyDebugPort=7777";
+
 export const LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION  = "3.3.0";
 export const LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION = "3.1.0";
 
@@ -64,6 +67,7 @@ export const CMD_DEBUG                   = "liberty.dev.debug";
 export const CMD_STOP                    = "liberty.dev.stop";
 export const CMD_CUSTOM                  = "liberty.dev.custom";
 export const CMD_START_CONTAINER         = "liberty.dev.start.container";
+export const CMD_START_DEBUG             = "liberty.dev.start.debug";
 export const CMD_RUN_TESTS               = "liberty.dev.run.tests";
 export const CMD_OPEN_FAILSAFE_REPORT    = "liberty.dev.open.failsafe.report";
 export const CMD_OPEN_SUREFIRE_REPORT    = "liberty.dev.open.surefire.report";
