@@ -25,8 +25,13 @@ export class EditorPage {
         const ed = await utils.waitForCondition(async () => {
             try {
                 const titles = await this.editorView.getOpenEditorTitles();
-                if (!(titles as string[]).includes(tabTitle)) { return undefined; }
-                return await this.editorView.openEditor(tabTitle) as TextEditor;
+                if (titles && titles.length > 0) {
+                    const matchingTitle = (titles as string[]).find(t => t.includes(tabTitle) || tabTitle.includes(t));
+                    if (matchingTitle) {
+                        return await this.editorView.openEditor(matchingTitle) as TextEditor;
+                    }
+                }
+                return undefined;
             } catch {
                 return undefined;
             }
