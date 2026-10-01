@@ -156,6 +156,12 @@ setVscodeVersionToTest() {
                 return
         fi
 
+        # If the value is already a concrete semver (e.g. "1.138.0"), use it as-is.
+        if [[ $VSCODE_VERSION_TO_RUN =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo "Using pinned VS Code version: $VSCODE_VERSION_TO_RUN"
+                return
+        fi
+
         local versions_json
         versions_json=$(curl -sf "https://update.code.visualstudio.com/api/releases/stable")
 
