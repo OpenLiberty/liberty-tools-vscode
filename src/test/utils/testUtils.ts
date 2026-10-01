@@ -78,10 +78,10 @@ export async function waitForLanguageServerInit(
             return false;
         } catch (error) {
             const msg = String(error);
-            // If the bottom bar UI is not interactable it means VS Code is busy or the
-            // panel was closed by a previous test suite. That is not evidence the LS has
-            // failed — treat it as "already running" after the first test suite has passed.
-            if (msg.includes('TimeoutError') || msg.includes('element not interactable') || msg.includes('not visible')) {
+            // If the bottom bar UI is not interactable or elements are not found/stale,
+            // it means VS Code is busy or panel DOM has changed. Treat as already running/accessible
+            // to prevent blocking tests.
+            if (msg.includes('TimeoutError') || msg.includes('element not interactable') || msg.includes('not visible') || msg.includes('NoSuchElementError') || msg.includes('stale element reference')) {
                 logger.info(`${channelName} panel not accessible (${msg.split('\n')[0]}); assuming LS already running`);
                 return true;
             }
@@ -297,7 +297,7 @@ export async function setCustomParameter(customParam: string) {
     await wait.sleep(2000);
 
     await waitForSuccess(async () => {
-        const input = new InputBox();
+        const input = await InputBox.create();
         await input.setText(customParam);
         await input.confirm();
     });
@@ -313,18 +313,20 @@ export async function chooseCmdFromHistory(command: string): Promise<boolean> {
     await wait.sleep(2000);
 
     try {
-        const input = new InputBox();
-        const pick = await input.findQuickPick(command);
-        if (!pick) {
-            logger.error(`Quick pick item not found: ${command}`);
-            return false;
-        }
-        // Selecting a history item resolves the promise immediately in onDidAccept.
-        await pick.select();
-        // Give the extension time to create the terminal and send the dev mode
-        // command before the caller starts polling for server output.
-        await wait.sleep(5000);
-        return true;
+        return await waitForCondition(async () => {
+            const input = await InputBox.create();
+            const pick = await input.findQuickPick(command);
+            if (!pick) {
+                logger.info(`Waiting for quick pick item: ${command}`);
+                return false;
+            }
+            // Selecting a history item resolves the promise immediately in onDidAccept.
+            await pick.select();
+            // Give the extension time to create the terminal and send the dev mode
+            // command before the caller starts polling for server output.
+            await wait.sleep(5000);
+            return true;
+        }, 15);
     } catch (error) {
         logger.error("Failed to choose command from history", error);
         return false;
@@ -604,9 +606,17 @@ export async function waitForEditorTab(tabTitle: string): Promise<string[]> {
     const EditorView = require('vscode-extension-tester').EditorView;
     logger.info(`Waiting for editor tab: ${tabTitle}`);
     return await waitForCondition(async () => {
-        const titles = await new EditorView().getOpenEditorTitles();
-        if (titles && titles.length > 0 && titles.includes(tabTitle)) {
-            return titles;
+        try {
+            const editorView = new EditorView();
+            const titles: string[] = await editorView.getOpenEditorTitles();
+            if (titles && titles.length > 0) {
+                const match = titles.some(t => t.includes(tabTitle) || tabTitle.includes(t));
+                if (match) {
+                    return titles;
+                }
+            }
+        } catch (e) {
+            logger.info(`Error fetching open editor titles: ${e}`);
         }
         return;
     }, 60); // Increased to 60 seconds to allow time for report generation

@@ -196,5 +196,6 @@ describe('Maven-specific devmode action tests', () => {
     after(async function() {
         this.timeout(45000);
         await utils.closeWorkspace();
+        utils.copyScreenshotsToProjectFolder('maven');
     });
 });
