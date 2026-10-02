@@ -25,13 +25,8 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
         this.timeout(180000);
         driver = VSBrowser.instance.driver;
         wait = utils.getWaitHelper();
-
-        // Open workspace
-        await VSBrowser.instance.openResources(utils.getMvnProjectPath());
-        await VSBrowser.instance.waitForWorkbench();
         editorView = new EditorView();
 
-        // Open the real server.xml via EditorPage so the tab is confirmed visible
         const serverXmlPath = path.resolve(
             utils.getMvnProjectPath(),
             'src', 'main', 'liberty', 'config', 'server.xml'

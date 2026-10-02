@@ -11,36 +11,21 @@ export class EditorPage {
 
     /**
      * Open a file and bind this page object to its editor.
-     * Polls until the editor tab is visible rather than sleeping a fixed amount,
-     * so it works reliably even when VSCode is slow to register the new tab.
      *
-     * A fresh EditorView is constructed on every poll iteration so that workspace
-     * transitions (openResources navigating to a new project) never leave a stale
-     * reference that silently returns empty titles forever.
+     * openResources already handles: code -r (reuse window), waitForWorkbench,
+     * and tab verification (with quick-open retry if the CLI drops the request).
+     * The optional `settleMs` delay runs after the workbench is ready to allow
+     * language servers time to begin processing the newly opened file.
      *
      * @param filePath  Absolute path to the file.
      * @param tabTitle  The editor tab title (usually the file name).
-     * @param timeoutS  Maximum seconds to wait for the tab to appear (default 120).
+     * @param settleMs  Extra wait after workbench ready, for LS settle time (default 1500ms).
      */
-    async openFile(filePath: string, tabTitle: string, timeoutS = 120): Promise<this> {
-        await VSBrowser.instance.openResources(filePath);
-        // Poll until the tab is registered in the editor view.
-        // A new EditorView is created each iteration — the instance captured before
-        // openResources goes stale after VS Code switches workspace.
-        const ed = await utils.waitForCondition(async () => {
-            try {
-                const editorView = new EditorView();
-                const titles = await editorView.getOpenEditorTitles();
-                if (!(titles as string[]).includes(tabTitle)) { return undefined; }
-                return await editorView.openEditor(tabTitle) as TextEditor;
-            } catch {
-                return undefined;
-            }
-        }, timeoutS);
-        // Brief pause to let the editor content area become interactable after the tab appears.
-        // getText() cannot be used here because it hangs indefinitely on empty files.
-        await utils.getWaitHelper().sleep(1500);
-        this.editor = ed;
+    async openFile(filePath: string, tabTitle: string, settleMs = 1500): Promise<this> {
+        await VSBrowser.instance.openResources(filePath, async () => {
+            await utils.getWaitHelper().sleep(settleMs);
+        });
+        this.editor = await new EditorView().openEditor(tabTitle) as TextEditor;
         return this;
     }
 

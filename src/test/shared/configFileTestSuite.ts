@@ -6,7 +6,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { logger } from '../utils/testLogger';
-import { VSBrowser, ModalDialog } from 'vscode-extension-tester';
+import { VSBrowser } from 'vscode-extension-tester';
 import { EditorPage } from '../pages/EditorPage';
 import * as utils from '../utils/testUtils';
 import { expect } from 'chai';
@@ -70,20 +70,14 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
             this.timeout(180000);
             logger.info(`Setting up Maven ${config.tabTitle} tests`);
 
-            await VSBrowser.instance.openResources(config.getProjectPath());
-            await VSBrowser.instance.waitForWorkbench();
-
             wait = utils.getWaitHelper();
-
-            // Dismiss any "Do you want to save?" dialog left open by a previous suite
-            // before attempting to interact with the editor.
-            try {
-                await new ModalDialog().pushButton("Don't Save");
-            } catch { /* no dialog present — continue */ }
 
             const filePath = path.resolve(config.getProjectPath(), ...config.filePathSegments);
             logger.info(`${config.tabTitle} path: ${filePath}`);
 
+            // openFile calls openResources(filePath) which uses code -r to reuse the
+            // existing window, opens the folder implicitly, waits for the workbench,
+            // and verifies the tab — so no separate openResources(projectDir) is needed.
             editor = await new EditorPage().openFile(filePath, config.tabTitle);
             logger.info(`${config.tabTitle} file opened and editor obtained`);
         });

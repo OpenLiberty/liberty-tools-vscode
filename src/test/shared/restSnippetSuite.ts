@@ -38,14 +38,14 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
             logger.info('Setting up jakarta_rest_class snippet test');
 
             driver = VSBrowser.instance.driver;
-            wait = utils.getWaitHelper(); 
-            // Open folder, wait for workbench 
+            wait = utils.getWaitHelper();
+
+            // Open the project folder first so LSP4Jakarta activates as a
+            // workspace extension, then open the specific Java file.
             await VSBrowser.instance.openResources(config.getProjectPath());
             await VSBrowser.instance.waitForWorkbench();
 
-            // Open file and bind page object to editor
             editorPage = await new EditorPage().openFile(testRestPath, 'TestRest.java');
-
         });
 
         afterEach(async function() {
