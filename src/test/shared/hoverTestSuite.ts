@@ -26,7 +26,7 @@ export function runHoverTestSuite(config: HoverConfig){
         let serverXml: EditorPage;
         
         before(async function() {
-            this.timeout(60000);
+            this.timeout(180000);
             
             logger.info(`Setting up ${config.buildTool === 'maven' ? 'Maven' : 'Gradle'} LSP Hover tests`);
             

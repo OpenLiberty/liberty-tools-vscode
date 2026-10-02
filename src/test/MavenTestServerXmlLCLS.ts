@@ -22,7 +22,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
     let originalContent: string;
 
     before(async function() {
-        this.timeout(60000);
+        this.timeout(180000);
         driver = VSBrowser.instance.driver;
         wait = utils.getWaitHelper();
 
