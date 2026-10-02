@@ -8,12 +8,15 @@ import * as utils from '../utils/testUtils';
 
 export class EditorPage {
     private editor!: TextEditor;
-    private editorView = new EditorView();
 
     /**
      * Open a file and bind this page object to its editor.
      * Polls until the editor tab is visible rather than sleeping a fixed amount,
      * so it works reliably even when VSCode is slow to register the new tab.
+     *
+     * A fresh EditorView is constructed on every poll iteration so that workspace
+     * transitions (openResources navigating to a new project) never leave a stale
+     * reference that silently returns empty titles forever.
      *
      * @param filePath  Absolute path to the file.
      * @param tabTitle  The editor tab title (usually the file name).
@@ -22,11 +25,14 @@ export class EditorPage {
     async openFile(filePath: string, tabTitle: string, timeoutS = 120): Promise<this> {
         await VSBrowser.instance.openResources(filePath);
         // Poll until the tab is registered in the editor view.
+        // A new EditorView is created each iteration — the instance captured before
+        // openResources goes stale after VS Code switches workspace.
         const ed = await utils.waitForCondition(async () => {
             try {
-                const titles = await this.editorView.getOpenEditorTitles();
+                const editorView = new EditorView();
+                const titles = await editorView.getOpenEditorTitles();
                 if (!(titles as string[]).includes(tabTitle)) { return undefined; }
-                return await this.editorView.openEditor(tabTitle) as TextEditor;
+                return await editorView.openEditor(tabTitle) as TextEditor;
             } catch {
                 return undefined;
             }
