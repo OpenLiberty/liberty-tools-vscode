@@ -4,8 +4,9 @@
  */
 
 import * as path from 'path';
+import * as fs from 'fs';
 import { logger } from '../utils/testLogger';
-import { VSBrowser, ModalDialog } from 'vscode-extension-tester';
+import { VSBrowser } from 'vscode-extension-tester';
 import { EditorPage } from '../pages/EditorPage';
 import * as utils from '../utils/testUtils';
 import { expect } from 'chai';
@@ -66,23 +67,17 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
         let wait: any;
 
         before(async function () {
-            this.timeout(90000);
+            this.timeout(180000);
             logger.info(`Setting up Maven ${config.tabTitle} tests`);
 
-            await VSBrowser.instance.openResources(config.getProjectPath());
-            await VSBrowser.instance.waitForWorkbench();
-
             wait = utils.getWaitHelper();
-
-            // Dismiss any "Do you want to save?" dialog left open by a previous suite
-            // before attempting to interact with the editor.
-            try {
-                await new ModalDialog().pushButton("Don't Save");
-            } catch { /* no dialog present — continue */ }
 
             const filePath = path.resolve(config.getProjectPath(), ...config.filePathSegments);
             logger.info(`${config.tabTitle} path: ${filePath}`);
 
+            // openFile calls openResources(filePath) which uses code -r to reuse the
+            // existing window, opens the folder implicitly, waits for the workbench,
+            // and verifies the tab — so no separate openResources(projectDir) is needed.
             editor = await new EditorPage().openFile(filePath, config.tabTitle);
             logger.info(`${config.tabTitle} file opened and editor obtained`);
         });
@@ -96,20 +91,28 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
 
         after(async function () {
             this.timeout(30000);
+            // Always restore the file on disk directly — this is the authoritative
+            // reset and guards against editor UI failures or dialog interruptions.
+            const filePath = path.resolve(config.getProjectPath(), ...config.filePathSegments);
+            try {
+                fs.writeFileSync(filePath, '');
+                logger.info(`Reset ${config.tabTitle} to empty on disk after tests`);
+            } catch (error) {
+                logger.error(`Failed to reset ${config.tabTitle} on disk`, error);
+            }
             try {
                 if (editor) {
-                    const currentText = await editor.getEditor().getText();
                     try {
-                        await editor.getEditor().selectText(currentText);
+                        await editor.getEditor().selectText(await editor.getEditor().getText());
                         await wait.sleep(300);
                     } catch {
                         // selectText may fail but setText still works
                     }
                     await editorUtils.clearEditor(editor.getEditor());
-                    logger.info(`Reset ${config.tabTitle} to empty after tests`);
+                    logger.info(`Reset ${config.tabTitle} editor buffer after tests`);
                 }
             } catch (error) {
-                logger.error(`Failed to reset ${config.tabTitle}`, error);
+                logger.error(`Failed to reset ${config.tabTitle} editor buffer`, error);
             }
             try {
                 await editorUtils.closeAllEditors();

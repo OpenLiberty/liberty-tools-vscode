@@ -20,9 +20,11 @@ export class CodeAssistPage {
 
         // Wait for the assist list to open and contain the target item before selecting.
         // toggleContentAssist(true) can return before the LS has populated the list.
+        // Use 60s for both waits — on CI the LS may take longer to index the file
+        // after a workspace transition, causing the snippet to not appear within 15s.
         const assist = await utils.waitForCondition(async () => {
             return await editor.getEditor().toggleContentAssist(true) ?? undefined;
-        }, 15);
+        }, 60);
 
         await utils.waitForCondition(async () => {
             try {
@@ -31,7 +33,7 @@ export class CodeAssistPage {
             } catch {
                 return undefined;
             }
-        }, 15);
+        }, 60);
 
         await assist.select(fullSnippet);
         await editor.getEditor().toggleContentAssist(false);
