@@ -25,7 +25,22 @@ export class EditorPage {
         await VSBrowser.instance.openResources(filePath, async () => {
             await utils.getWaitHelper().sleep(settleMs);
         });
-        this.editor = await new EditorView().openEditor(tabTitle) as TextEditor;
+        // openEditor(title, groupIndex=0) only searches group 0. On CI, VS Code
+        // sometimes opens the file in a non-zero group (e.g. after a workspace
+        // transition). Search all groups and open from whichever one has the tab.
+        const editorView = new EditorView();
+        const groups = await editorView.getEditorGroups();
+        for (const group of groups) {
+            try {
+                const titles = await group.getOpenEditorTitles();
+                if ((titles as string[]).includes(tabTitle)) {
+                    this.editor = await group.openEditor(tabTitle) as TextEditor;
+                    return this;
+                }
+            } catch { /* group may be empty or stale — try next */ }
+        }
+        // Fall back to group 0 (will throw with a clear message if still not found)
+        this.editor = await editorView.openEditor(tabTitle) as TextEditor;
         return this;
     }
 
