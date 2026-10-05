@@ -225,7 +225,7 @@ When the debugger is attached, the Visual Studio Code [debug options](https://co
 
 ## Create a Liberty project
 
-You can generate a starter project configured for Open Liberty directly within Visual Studio Code using the Liberty Starter.
+You can generate a starter project configured for Liberty directly within Visual Studio Code using the Liberty Starter.
 
 To create a new project:
 
