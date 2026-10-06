@@ -180,11 +180,6 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		this._onDidChangeTreeData.fire(undefined);
 	}
 
-	/** Fire a targeted change for a single item — used by the spinner animation tick. */
-	public fireItemChanged(project: LibertyProject): void {
-		this._onDidChangeTreeData.fire(project);
-	}
-
 	private setLoading(loading: boolean): void {
 		vscode.commands.executeCommand('setContext', 'liberty:loading', loading);
 	}

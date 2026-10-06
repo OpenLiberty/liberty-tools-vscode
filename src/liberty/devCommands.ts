@@ -233,7 +233,6 @@ export async function startDevMode(libProject?: LibertyProject | undefined, tree
             await sendDevModeCommand(result.terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, undefined, result.javaHome);
             targetProject.setState(DevModeState.Starting);
             projectProvider.notifyDevModeChanged(targetProject);
-            targetProject.startSpinnerAnimation(() => projectProvider.fireItemChanged(targetProject));
         }
     }));
 }

@@ -53,10 +53,6 @@ export class LibertyProject extends vscode.TreeItem {
 	// disposable for the project shell execution listener. disposes on terminal close.
 	private _monitorDisposable?: vscode.Disposable;
 
-	// Spinner animation state — only active during Starting
-	private _spinnerTimer?: ReturnType<typeof setInterval>;
-	private _spinnerFrame: number = 0;
-
 	constructor(
 		private _context: vscode.ExtensionContext,
 		public label: string,
@@ -96,34 +92,9 @@ export class LibertyProject extends vscode.TreeItem {
 	}
 
 	public setState(state: DevModeState | undefined): void {
-		this.stopSpinner();
 		this.state = state;
 		this.contextValue = computeContextValue(this.baseContextValue, state);
 		this.iconPath = this.getStatusIconPath(state) as vscode.TreeItem["iconPath"];
-	}
-
-	/**
-	 * Start cycling through the custom SVG spinner frames at 10 FPS.
-	 * onTick is called each frame so the caller can fire the tree-data change event.
-	 * Must be called after setState(Starting) + notifyDevModeChanged.
-	 * The timer is automatically stopped by the next setState() call.
-	 */
-	public startSpinnerAnimation(onTick: () => void): void {
-		this.stopSpinner();
-		this._spinnerFrame = 0;
-		const frames = this._spinnerFramePaths;
-		this._spinnerTimer = setInterval(() => {
-			this._spinnerFrame = (this._spinnerFrame + 1) % frames.length;
-			this.iconPath = { ...frames[this._spinnerFrame] } as vscode.TreeItem["iconPath"];
-			onTick();
-		}, 200);
-	}
-
-	private stopSpinner(): void {
-		if (this._spinnerTimer !== undefined) {
-			clearInterval(this._spinnerTimer);
-			this._spinnerTimer = undefined;
-		}
 	}
 
 	public getPath(): string {
@@ -269,7 +240,7 @@ export class LibertyProject extends vscode.TreeItem {
 		return { light: abs, dark: abs };
 	}
 
-	private getStatusIconPath(state: DevModeState | undefined): vscode.ThemeIcon | { light: string; dark: string } {
+	private getStatusIconPath(state: DevModeState | undefined): vscode.ThemeIcon | { light: string; dark: string } | undefined {
 		const base = this._context.extensionPath;
 
 		// For aggregators and standalone leaf without state, show build-tool icon
@@ -279,8 +250,7 @@ export class LibertyProject extends vscode.TreeItem {
 
 		switch (state) {
 			case DevModeState.Starting:
-				// Frame 0 of the custom spinner — the timer advances it via startSpinnerAnimation()
-				return this._spinnerFramePaths[0];
+				return new vscode.ThemeIcon("loading~spin", new vscode.ThemeColor("charts.blue"));
 			case DevModeState.ServerStarted:
 				// Blue half-moon - server ready, app starting
 				return {
@@ -306,15 +276,6 @@ export class LibertyProject extends vscode.TreeItem {
 					dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  "stopped.svg"),
 				};
 		}
-	}
-
-	/** All 8 spinner frame paths for both themes, pre-computed. */
-	private get _spinnerFramePaths(): Array<{ light: string; dark: string }> {
-		const base = this._context.extensionPath;
-		return [1, 2, 3, 4, 5, 6, 7, 8].map(n => ({
-			light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, "spinner", `frame-${n}.svg`),
-			dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  "spinner", `frame-${n}.svg`),
-		}));
 	}
 }
 
