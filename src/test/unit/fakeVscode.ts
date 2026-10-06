@@ -27,6 +27,7 @@ export interface FakeVscode {
     RelativePattern: any;
     ThemeColor: any;
     ThemeIcon: any;
+    ViewColumn: { One: number; Two: number; Three: number; Active: number; Beside: number };
     commands: {
         executeCommand: (...args: any[]) => any;
     };
@@ -92,6 +93,7 @@ export function installFakeVscode(windowOverrides: Partial<FakeVscode["window"]>
         RelativePattern: class { constructor(public base: any, public pattern: string) {} },
         ThemeColor: class { constructor(public id: string) {} },
         ThemeIcon: class { constructor(public id: string, public color?: any) {} },
+        ViewColumn: { One: 1, Two: 2, Three: 3, Active: -1, Beside: -2 },
         commands: {
             executeCommand: () => Promise.resolve(),
         },
