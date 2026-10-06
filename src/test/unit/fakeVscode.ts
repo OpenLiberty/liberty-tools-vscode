@@ -34,6 +34,7 @@ export interface FakeVscode {
     window: {
         showInformationMessage: (...args: any[]) => any;
         setStatusBarMessage: () => { dispose(): void };
+        createWebviewPanel: (...args: any[]) => { webview: { html: string } };
     };
     workspace: {
         workspaceFolders: any;
@@ -54,6 +55,7 @@ const EXTENSION_CACHE_KEYS = [
     "liberty/projectRegistry",
     "liberty/projectTreeProvider",
     "liberty/projectDiscovery",
+    "liberty/devCommands",
     "util/helperUtil",
     "util/gradleUtil",
     "util/mavenUtil",
@@ -100,6 +102,7 @@ export function installFakeVscode(windowOverrides: Partial<FakeVscode["window"]>
         window: {
             showInformationMessage: () => {},
             setStatusBarMessage: () => ({ dispose() {} }),
+            createWebviewPanel: () => ({ webview: { html: "" } }),
             ...windowOverrides
         },
         workspace: {

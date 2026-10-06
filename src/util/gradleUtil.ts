@@ -336,7 +336,10 @@ export async function validateGradleChildModule(
  * @param gradlePath build.gradle file
  * @param projectRootPath Path of current project
  */
-export async function getGradleTestReport(gradlePath: any, projectRootPath: string): Promise<string> {
+export async function getGradleTestReport(gradlePath: any, projectRootPath: string, customPath?: string): Promise<string> {
+    if (customPath) {
+        return customPath;
+    }
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const g2js = require("gradle-to-js/lib/parser");
     let testReport = await g2js.parseFile(gradlePath).then(async (buildFile: any) => {
@@ -500,32 +503,34 @@ export async function extractGradleMetadata(
     //
     // 2. gradle.properties — liberty.installDir=<path>  (fallback when not set in build.gradle)
     //    LGP reads this file automatically as a Gradle project property override.
+    //
+    // The hasLibertyPlugin guard is intentionally absent: build files using the legacy
+    // classpath string shorthand ('group:artifact:version') are not always parsed by
+    // gradle-to-js into group/name fields, so hasLibertyPlugin may be false even when
+    // the plugin is present. installDirectory must be extracted regardless.
     let installDirectory: string | undefined;
-    if (hasLibertyPlugin) {
-        // Source 1: build.gradle
-        try {
-            const rawContent = await fse.readFile(buildGradlePath, "utf8");
-            const match = LIBERTY_INSTALL_DIR_REGEX.exec(rawContent);
-            const captured = match?.[1] ?? match?.[2];
-            if (captured && captured.trim().length > 0) {
-                installDirectory = captured.trim();
-            }
-        } catch (err) {
-            console.error(`Failed to read ${buildGradlePath} for installDir extraction:`, err);
+    try {
+        const rawContent = await fse.readFile(buildGradlePath, "utf8");
+        const match = LIBERTY_INSTALL_DIR_REGEX.exec(rawContent);
+        const captured = match?.[1] ?? match?.[2];
+        if (captured && captured.trim().length > 0) {
+            installDirectory = captured.trim();
         }
+    } catch (err) {
+        console.error(`Failed to read ${buildGradlePath} for installDir extraction:`, err);
+    }
 
-        // Source 2: gradle.properties (only checked when build.gradle had no value)
-        if (installDirectory === undefined) {
-            const gradlePropertiesPath = path.join(path.dirname(buildGradlePath), "gradle.properties");
-            try {
-                const propsContent = await fse.readFile(gradlePropertiesPath, "utf8");
-                const propMatch = GRADLE_PROPERTIES_INSTALL_DIR_REGEX.exec(propsContent);
-                if (propMatch && propMatch[1].trim().length > 0) {
-                    installDirectory = stripQuotes(propMatch[1].trim());
-                }
-            } catch {
-                // gradle.properties is optional — absence is not an error
+    // Fall back to gradle.properties (only when build.gradle had no value)
+    if (installDirectory === undefined) {
+        const gradlePropertiesPath = path.join(path.dirname(buildGradlePath), "gradle.properties");
+        try {
+            const propsContent = await fse.readFile(gradlePropertiesPath, "utf8");
+            const propMatch = GRADLE_PROPERTIES_INSTALL_DIR_REGEX.exec(propsContent);
+            if (propMatch && propMatch[1].trim().length > 0) {
+                installDirectory = stripQuotes(propMatch[1].trim());
             }
+        } catch {
+            // gradle.properties is optional — absence is not an error
         }
     }
 
