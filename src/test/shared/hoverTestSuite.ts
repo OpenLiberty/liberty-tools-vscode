@@ -26,23 +26,12 @@ export function runHoverTestSuite(config: HoverConfig){
         let serverXml: EditorPage;
         
         before(async function() {
-            this.timeout(60000);
-            
+            this.timeout(180000);
             logger.info(`Setting up ${config.buildTool === 'maven' ? 'Maven' : 'Gradle'} LSP Hover tests`);
             
-            // Wait for workbench to be ready
-            await VSBrowser.instance.openResources(config.getProjectPath());
-            await VSBrowser.instance.waitForWorkbench();
-            
-            // Open server.xml file once for all tests
-            logger.info('Opening server.xml file for all tests');
             const serverXmlPath = path.resolve(
                 config.getProjectPath(),
-                'src',
-                'main',
-                'liberty',
-                'config',
-                'server.xml'
+                'src', 'main', 'liberty', 'config', 'server.xml'
             );
             logger.info(`Server.xml path: ${serverXmlPath}`);
 
@@ -116,9 +105,14 @@ export function runHoverTestSuite(config: HoverConfig){
             let javaFile: EditorPage; 
 
             before(async function() {
-                this.timeout(60000);
+                this.timeout(180000);
                 logger.info('Opening HelloServlet.java file for LSP4Jakarta hover tests');
-                
+
+                // Open the project folder first so LSP4Jakarta activates as a
+                // workspace extension, then open the specific Java file.
+                await VSBrowser.instance.openResources(config.getProjectPath());
+                await VSBrowser.instance.waitForWorkbench();
+
                 const javaFilePath = path.resolve(
                     config.getProjectPath(),
                     'src',

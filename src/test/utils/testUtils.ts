@@ -583,10 +583,13 @@ export async function waitForTestReport(reportPath: string, alternatePath?: stri
  */
 export async function waitForDebuggerAttach(): Promise<boolean> {
     logger.info('Waiting for debugger to attach (checking for DebugToolbar)');
-    
+
     try {
-        // Wait for the debug toolbar to appear, which indicates debugger is attached
-        const findDebugBarTimeout = seconds(30);
+        // CI machines (Linux/Xvfb) are significantly slower to resolve the Java
+        // debugger extension, connect to the debug port, and render the toolbar.
+        // vscode.debug.startDebugging is also fire-and-forget (not awaited in the
+        // extension), so the toolbar can appear well after the action returns.
+        const findDebugBarTimeout = seconds(90);
         await DebugToolbar.create(findDebugBarTimeout);
         logger.info('DebugToolbar appeared - debugger attached successfully');
         return true;
