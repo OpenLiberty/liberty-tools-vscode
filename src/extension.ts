@@ -130,6 +130,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             bindRequest(lsp4jakartaLS.JAVA_CODEACTION_RESOLVE_REQUEST);
             bindRequest(lsp4jakartaLS.JAVA_DIAGNOSTICS_REQUEST);
             bindRequest(lsp4jakartaLS.JAVA_PROJECT_LABELS_REQUEST);
+
+            jakartaClient.onRequest(lsp4jakartaLS.JAKARTA_SELECT_VERSION_REQUEST,
+                async (params: { projectUri: string; versions: string[] }) => {
+                    const selected = await vscode.window.showQuickPick(params.versions, {
+                        title: localize("jakarta.version.select.title"),
+                        placeHolder: localize("jakarta.version.select.placeholder"),
+                        ignoreFocusOut: true,
+                    });
+                    return selected ?? null;
+                }
+            );
+
             item.text = localize("jakarta.ls.thumbs.up");
             item.tooltip = localize("jakarta.ls.started");
             toggleItem(window.activeTextEditor, item);
@@ -203,6 +215,16 @@ function registerCommands(context: ExtensionContext) {
     );
     context.subscriptions.push(
         vscode.commands.registerCommand('liberty.starterProject', () => starterProject(context))
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('jakarta.resetVersion', (projectUri: string) => {
+            if (jakartaClient) {
+                jakartaClient.sendRequest("workspace/executeCommand", {
+                    command: "jakarta.resetVersion",
+                    arguments: [projectUri]
+                });
+            }
+        })
     );
 }
 
@@ -322,6 +344,11 @@ function prepareClientOptions(Liberty_LS: boolean) {
                 fileEvents: [
                     workspace.createFileSystemWatcher("**/*.java")
                 ],
+            },
+            initializationOptions: {
+                extendedClientCapabilities: {
+                    jakartaVersionSelector: true
+                }
             }
         };
     }

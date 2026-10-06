@@ -11,3 +11,4 @@ export const JAVA_COMPLETION_REQUEST = "jakarta/java/completion";
 export const JAVA_CODEACTION_REQUEST = "jakarta/java/codeAction";
 export const JAVA_CODEACTION_RESOLVE_REQUEST = "jakarta/java/codeActionResolve";
 export const JAVA_PROJECT_LABELS_REQUEST = "jakarta/java/projectLabels";
+export const JAKARTA_SELECT_VERSION_REQUEST = "jakarta/selectVersion";

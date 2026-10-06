@@ -191,6 +191,11 @@
 				"command": "liberty.starterProject",
 				"category": "Liberty",
 				"title": "%commands.title.starter.project%"
+			},
+			{
+				"command": "jakarta.resetVersion",
+				"category": "Jakarta EE",
+				"title": "%commands.title.jakarta.reset.version%"
 			}
 		],
 		"menus": {
