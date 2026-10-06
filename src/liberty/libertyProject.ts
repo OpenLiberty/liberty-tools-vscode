@@ -53,6 +53,10 @@ export class LibertyProject extends vscode.TreeItem {
 	// disposable for the project shell execution listener. disposes on terminal close.
 	private _monitorDisposable?: vscode.Disposable;
 
+	// Spinner animation state — only active during Starting
+	private _spinnerTimer?: ReturnType<typeof setInterval>;
+	private _spinnerFrame: number = 0;
+
 	constructor(
 		private _context: vscode.ExtensionContext,
 		public label: string,
@@ -67,6 +71,7 @@ export class LibertyProject extends vscode.TreeItem {
 		public terminalType?: string,
 	) {
 		super(label, collapsibleState);
+		this.id = path;
 		this.tooltip = this.path;
 		this.children = [];
 		this.baseContextValue = contextValue;
@@ -76,7 +81,7 @@ export class LibertyProject extends vscode.TreeItem {
 	// Initialised as a leaf (status) icon. updateExplorerIcon() is called by
 	// projectDiscovery after isAggregator is stamped to switch aggregators to
 	// their Maven/Gradle icon.
-	iconPath = this.getStatusIconPath(this.state);
+	iconPath = this.getStatusIconPath(this.state) as vscode.TreeItem["iconPath"];
 
 	public getLabel(): string {
 		return `${this.label}`;
@@ -91,9 +96,34 @@ export class LibertyProject extends vscode.TreeItem {
 	}
 
 	public setState(state: DevModeState | undefined): void {
+		this.stopSpinner();
 		this.state = state;
 		this.contextValue = computeContextValue(this.baseContextValue, state);
-		this.iconPath = this.getStatusIconPath(state);
+		this.iconPath = this.getStatusIconPath(state) as vscode.TreeItem["iconPath"];
+	}
+
+	/**
+	 * Start cycling through the custom SVG spinner frames at 10 FPS.
+	 * onTick is called each frame so the caller can fire the tree-data change event.
+	 * Must be called after setState(Starting) + notifyDevModeChanged.
+	 * The timer is automatically stopped by the next setState() call.
+	 */
+	public startSpinnerAnimation(onTick: () => void): void {
+		this.stopSpinner();
+		this._spinnerFrame = 0;
+		const frames = this._spinnerFramePaths;
+		this._spinnerTimer = setInterval(() => {
+			this._spinnerFrame = (this._spinnerFrame + 1) % frames.length;
+			this.iconPath = { ...frames[this._spinnerFrame] } as vscode.TreeItem["iconPath"];
+			onTick();
+		}, 200);
+	}
+
+	private stopSpinner(): void {
+		if (this._spinnerTimer !== undefined) {
+			clearInterval(this._spinnerTimer);
+			this._spinnerTimer = undefined;
+		}
 	}
 
 	public getPath(): string {
@@ -179,7 +209,6 @@ export class LibertyProject extends vscode.TreeItem {
 	}
 
 	public enableShellListener(execution: vscode.TerminalShellExecution, onStateChange: (project: LibertyProject) => void): void {
-		console.log(`[startMonitoring] called for ${this.label}, state=${this.state}`);
 		this.cleanupShellListener();
 		const stream = execution.read();
 		let disposed = false;
@@ -207,9 +236,8 @@ export class LibertyProject extends vscode.TreeItem {
 				}
 			}
 			if (!disposed && this.state === DevModeState.Starting) {
-				console.log(`[startMonitoring] stream ended while Starting for ${this.label} — build likely failed, resetting state`);
-				this.setState(undefined);
-				onStateChange(this);
+					this.setState(undefined);
+					onStateChange(this);
 			}
 		})();
 	}
@@ -233,7 +261,7 @@ export class LibertyProject extends vscode.TreeItem {
 	 * Must be called by projectDiscovery after both isAggregator and parent are fully resolved.
 	 */
 	public updateExplorerIcon(): void {
-		this.iconPath = this.getStatusIconPath(this.state);
+		// iconPath is a getter, no need to set it
 	}
 
 	private getBuildToolIconPath(): { light: string; dark: string } {
@@ -241,36 +269,52 @@ export class LibertyProject extends vscode.TreeItem {
 		return { light: abs, dark: abs };
 	}
 
-	private getStatusIconPath(state: DevModeState | undefined): { light: string; dark: string } {
-		// Aggregators always show their build-tool icon.
-		if (this.isAggregator) {
-			return this.getBuildToolIconPath();
-		}
-		// Standalone leaf (no parent, not an aggregator) shows build-tool icon when stopped.
-		if (state === undefined && this.parent === undefined) {
-			return this.getBuildToolIconPath();
-		}
-		let filename: string;
-		switch (state) {
-			case DevModeState.Running:
-				filename = "active.svg";
-				break;
-			case DevModeState.Stopping:
-				filename = "stopping.svg";
-				break;
-			case DevModeState.Starting:
-			case DevModeState.ServerStarted:
-				filename = "incomplete.svg";
-				break;
-			default:
-				filename = "stopped.svg";
-				break;
-		}
+	private getStatusIconPath(state: DevModeState | undefined): vscode.ThemeIcon | { light: string; dark: string } {
 		const base = this._context.extensionPath;
-		return {
-			light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, filename),
-			dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  filename),
-		};
+
+		// For aggregators and standalone leaf without state, show build-tool icon
+		if (this.isAggregator || (state === undefined && this.parent === undefined)) {
+			return this.getBuildToolIconPath();
+		}
+
+		switch (state) {
+			case DevModeState.Starting:
+				// Frame 0 of the custom spinner — the timer advances it via startSpinnerAnimation()
+				return this._spinnerFramePaths[0];
+			case DevModeState.ServerStarted:
+				// Blue half-moon - server ready, app starting
+				return {
+					light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, "incomplete.svg"),
+					dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  "incomplete.svg"),
+				};
+			case DevModeState.Running:
+				// Green checkmark - fully running
+				return {
+					light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, "active.svg"),
+					dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  "active.svg"),
+				};
+			case DevModeState.Stopping:
+				// Yellow stopping icon
+				return {
+					light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, "stopping.svg"),
+					dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  "stopping.svg"),
+				};
+			default:
+				// Stopped state - gray circle
+				return {
+					light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, "stopped.svg"),
+					dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  "stopped.svg"),
+				};
+		}
+	}
+
+	/** All 8 spinner frame paths for both themes, pre-computed. */
+	private get _spinnerFramePaths(): Array<{ light: string; dark: string }> {
+		const base = this._context.extensionPath;
+		return [1, 2, 3, 4, 5, 6, 7, 8].map(n => ({
+			light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, "spinner", `frame-${n}.svg`),
+			dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  "spinner", `frame-${n}.svg`),
+		}));
 	}
 }
 
@@ -289,15 +333,29 @@ export async function getLabelFromBuildFile(buildFile: string, xmlString?: strin
 		// eslint-disable-next-line @typescript-eslint/no-var-requires
 		const parseString = require("xml2js").parseString;
 		parseString(xmlString, (err: any, result: any) => {
-			if (result.project.artifactId[0] !== undefined) {
-				label = result.project.artifactId[0];
-			} else {
+			try {
+				// Safely access artifactId - xml2js may return different structures
+				const artifactId = result?.project?.artifactId;
+				if (Array.isArray(artifactId) && artifactId[0] !== undefined) {
+					label = artifactId[0];
+				} else if (typeof artifactId === 'string') {
+					label = artifactId;
+				} else {
+					const dirName = vscodePath.dirname(buildFile);
+					label = vscodePath.basename(dirName);
+				}
+			} catch (e) {
+				console.error(`[getLabelFromBuildFile] Error parsing ${buildFile}:`, e);
 				const dirName = vscodePath.dirname(buildFile);
 				label = vscodePath.basename(dirName);
 			}
 		});
 	} else {
 		label = await gradleUtil.getGradleProjectName(buildFile);
+	}
+	if (!label) {
+		const dirName = vscodePath.dirname(buildFile);
+		label = vscodePath.basename(dirName);
 	}
 	return label;
 }

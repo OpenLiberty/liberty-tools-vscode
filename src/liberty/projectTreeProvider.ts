@@ -155,6 +155,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 				break;
 		}
 		project.contextValue = computeContextValue(project.baseContextValue, project.state);
+
 		this._onDidChangeTreeData.fire(project);
 		if (project.resourceUri) {
 			this.decorationProvider.notify(project.resourceUri);
@@ -179,7 +180,10 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		this._onDidChangeTreeData.fire(undefined);
 	}
 
-
+	/** Fire a targeted change for a single item — used by the spinner animation tick. */
+	public fireItemChanged(project: LibertyProject): void {
+		this._onDidChangeTreeData.fire(project);
+	}
 
 	private setLoading(loading: boolean): void {
 		vscode.commands.executeCommand('setContext', 'liberty:loading', loading);
@@ -222,10 +226,17 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 	}
 
 	public getTreeItem(element: LibertyProject): vscode.TreeItem {
-		element.collapsibleState = (element.isAggregator && element.children.length > 0)
+		const item = new vscode.TreeItem(element.label ?? "", element.isAggregator && element.children.length > 0
 			? vscode.TreeItemCollapsibleState.Expanded
-			: vscode.TreeItemCollapsibleState.None;
-		return element;
+			: vscode.TreeItemCollapsibleState.None);
+		item.id          = element.id;
+		item.description = element.description;
+		item.tooltip     = element.tooltip;
+		item.iconPath    = element.iconPath;
+		item.contextValue = element.contextValue;
+		item.resourceUri  = element.resourceUri;
+		item.command      = element.command;
+		return item;
 	}
 
 	private sortRoots(roots: LibertyProject[]): LibertyProject[] {

@@ -26,6 +26,7 @@ export interface FakeVscode {
     Uri: { file: (p: string) => { fsPath: string } };
     RelativePattern: any;
     ThemeColor: any;
+    ThemeIcon: any;
     commands: {
         executeCommand: (...args: any[]) => any;
     };
@@ -90,6 +91,7 @@ export function installFakeVscode(windowOverrides: Partial<FakeVscode["window"]>
         Uri: { file: (p: string) => ({ fsPath: p }) },
         RelativePattern: class { constructor(public base: any, public pattern: string) {} },
         ThemeColor: class { constructor(public id: string) {} },
+        ThemeIcon: class { constructor(public id: string, public color?: any) {} },
         commands: {
             executeCommand: () => Promise.resolve(),
         },
