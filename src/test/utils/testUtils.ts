@@ -773,3 +773,46 @@ export async function callAssitantAction(editor: TextEditor, selectValue: string
   }
 }
 
+/**
+ * Write (or overwrite) a .vscode/settings.json file in the given project directory.
+ * The directory is created if it does not already exist.
+ */
+export function writeVscodeSettings(projectPath: string, settings: Record<string, unknown>): void {
+    const vscodeDir = path.join(projectPath, '.vscode');
+    fs.mkdirSync(vscodeDir, { recursive: true });
+    const settingsPath = path.join(vscodeDir, 'settings.json');
+    let existing: Record<string, unknown> = {};
+    if (fs.existsSync(settingsPath)) {
+        try {
+            existing = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+        } catch {
+            // If parse fails, start fresh
+        }
+    }
+    const merged = { ...existing, ...settings };
+    fs.writeFileSync(settingsPath, JSON.stringify(merged, null, 4), 'utf-8');
+    logger.info(`Wrote .vscode/settings.json at ${settingsPath}`);
+}
+
+/**
+ * Delete the .vscode/settings.json file in the given project directory.
+ * Removes the .vscode directory as well if it becomes empty.
+ * Does not throw if the file does not exist.
+ */
+export function removeVscodeSettings(projectPath: string): void {
+    const vscodeDir = path.join(projectPath, '.vscode');
+    const settingsPath = path.join(vscodeDir, 'settings.json');
+    try {
+        if (fs.existsSync(settingsPath)) {
+            fs.unlinkSync(settingsPath);
+            logger.info(`Removed .vscode/settings.json at ${settingsPath}`);
+        }
+        if (fs.existsSync(vscodeDir) && fs.readdirSync(vscodeDir).length === 0) {
+            fs.rmdirSync(vscodeDir);
+            logger.info(`Removed empty .vscode directory at ${vscodeDir}`);
+        }
+    } catch (error) {
+        logger.info(`Could not remove .vscode/settings.json (may not exist): ${error}`);
+    }
+}
+
