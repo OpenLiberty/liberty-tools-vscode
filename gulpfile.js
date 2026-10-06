@@ -14,7 +14,7 @@ const finishedAsync = promisify(finished);
 const MC_BASE_URL = "https://repo1.maven.org/maven2";
 const MC_SNAPSHOT_BASE_URL = "https://central.sonatype.com/repository/maven-snapshots";
 const ECLIPSE_BASE_URL = "https://repo.eclipse.org/content/repositories";
-const ECLIPSE_SNAPSHOT_BASE_URL = "https://repo.eclipse.org/content/repositories";
+const ECLIPSE_SNAPSHOT_BASE_URL = "https://repo.eclipse.org/repository";
 
 const libertyGroupId = "io.openliberty.tools";
 const libertyLemminxArtifactId = "liberty-langserver-lemminx";
@@ -23,9 +23,9 @@ const libertyVersion = "2.4.2";
 const jakartaGroupId = "org.eclipse.lsp4jakarta";
 const jakartaJdtArtifactId = "org.eclipse.lsp4jakarta.jdt.core";
 const jakartaLSArtifactId = "org.eclipse.lsp4jakarta.ls";
-const jakartaVersion = "0.2.7";
+const jakartaVersion = "0.3.0-SNAPSHOT";
 var lclsReleaseLevel = "releases";  //snapshots or releases
-var jakartaReleaseLevel = "releases";
+var jakartaReleaseLevel = "snapshots";
 
 const libertyLemminxName = "liberty-langserver-lemminx-" + libertyVersion + "-jar-with-dependencies.jar";
 const libertyLemminxDir = "../liberty-language-server/lemminx-liberty";
