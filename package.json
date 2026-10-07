@@ -193,7 +193,7 @@
 				"title": "%commands.title.starter.project%"
 			},
 			{
-				"command": "jakarta.resetVersion",
+				"command": "jakarta.version.reset",
 				"category": "Jakarta EE",
 				"title": "%commands.title.jakarta.reset.version%"
 			}

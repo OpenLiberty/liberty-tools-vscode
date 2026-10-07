@@ -74,6 +74,7 @@ export const CMD_SORT_WORKSPACE          = "liberty.explorer.sort.workspace";
 export const CMD_SORT_WORKSPACE_ACTIVE   = "liberty.explorer.sort.workspace.active";
 export const CMD_SORT_ALPHABETICAL       = "liberty.explorer.sort.alphabetical";
 export const CMD_SORT_ALPHABETICAL_ACTIVE = "liberty.explorer.sort.alphabetical.active";
+export const CMD_JAKARTA_RESET_VERSION    = "jakarta.version.reset";
 export const SORT_ORDER_KEY              = "liberty.sortOrder";
 export type SortOrder                    = "workspace" | "alphabetical";
 

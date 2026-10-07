@@ -24,6 +24,7 @@ import {
     CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
     CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
     CMD_SORT_WORKSPACE, CMD_SORT_WORKSPACE_ACTIVE, CMD_SORT_ALPHABETICAL, CMD_SORT_ALPHABETICAL_ACTIVE,
+    CMD_JAKARTA_RESET_VERSION,
 } from "./definitions/constants";
 import { createLsOutputChannel } from "./util/lsOutputChannel";
 import path = require('path');
@@ -217,11 +218,38 @@ function registerCommands(context: ExtensionContext) {
         vscode.commands.registerCommand('liberty.starterProject', () => starterProject(context))
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand('jakarta.resetVersion', (projectUri: string) => {
+        vscode.commands.registerCommand(CMD_JAKARTA_RESET_VERSION, async () => {
+            const folders = vscode.workspace.workspaceFolders;
+            if (!folders || folders.length === 0) {
+                vscode.window.showInformationMessage(localize("jakarta.version.reset.no.workspace"));
+                return;
+            }
+
+            // If more than one workspace folder exists, ask the user which project to reset.
+            let target: vscode.WorkspaceFolder;
+            if (folders.length === 1) {
+                target = folders[0];
+            } else {
+                const picked = await vscode.window.showQuickPick(
+                    Array.from(folders).map(f => ({ label: f.name, description: f.uri.fsPath, folder: f })),
+                    {
+                        title: localize("jakarta.version.reset.pick.title"),
+                        placeHolder: localize("jakarta.version.reset.pick.placeholder"),
+                        ignoreFocusOut: true,
+                    }
+                );
+                if (!picked) {
+                    return; // user cancelled
+                }
+                target = picked.folder;
+            }
+
+            // Delegate the full reset to the language server — it clears its cache,
+            // deletes the .jakarta-version file, and re-triggers version selection.
             if (jakartaClient) {
                 jakartaClient.sendRequest("workspace/executeCommand", {
                     command: "jakarta.resetVersion",
-                    arguments: [projectUri]
+                    arguments: [target.uri.fsPath]
                 });
             }
         })
