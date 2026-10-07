@@ -206,8 +206,8 @@ export class LibertyProject extends vscode.TreeItem {
 				}
 			}
 			if (!disposed && this.state === DevModeState.Starting) {
-					this.setState(undefined);
-					onStateChange(this);
+				this.setState(undefined);
+				onStateChange(this);
 			}
 		})();
 	}
