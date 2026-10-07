@@ -325,9 +325,10 @@ export async function startDevModeWithDebugger(libProject?: LibertyProject | und
                 // Wait until Liberty logs CWWKF0011I ("server ready") before attaching.
                 // server.env is written before the JVM debug agent socket is open, so
                 // attaching immediately causes a connection-refused / handshake timeout.
-                // Poll every 500 ms up to 3 minutes.
+                // Poll every 500 ms up to the user-configurable timeout (default 3 minutes).
                 const pollIntervalMs = 500;
-                const deadlineMs = Date.now() + 180_000;
+                const debugStartTimeoutMs = vscode.workspace.getConfiguration("liberty").get<number>("dev.debugStartTimeout", 180) * 1000;
+                const deadlineMs = Date.now() + debugStartTimeoutMs;
                 await new Promise<void>((resolve) => {
                     const check = () => {
                         if (targetProject.state === DevModeState.ServerStarted ||
@@ -373,11 +374,11 @@ export async function startDevModeWithDebugger(libProject?: LibertyProject | und
         watcher.onDidCreate(tryAttach);
         watcher.onDidChange(tryAttach);
 
-        // Safety timeout: give up after 3 minutes and prompt the user to attach manually.
+        // Safety timeout: give up after the configured timeout and prompt the user to attach manually.
         const timeoutHandle = setTimeout(() => {
             watcher.dispose();
             vscode.window.showWarningMessage(localize("liberty.dev.debug.start.timeout"));
-        }, 180_000);
+        }, vscode.workspace.getConfiguration("liberty").get<number>("dev.debugStartTimeout", 180) * 1000);
     }));
 }
 

@@ -7,6 +7,7 @@ For information regarding known issues and limitations, refer to our [Common Iss
   - [Software requirements](#software-requirements)
   - [Application requirements](#application-requirements)
   - [Configure your Java runtime for language servers](#configure-your-java-runtime-for-language-servers)
+  - [Liberty Tools settings](#liberty-tools-settings)
   - [External extension settings](#external-extension-settings)
   - [Terminal shell support](#terminal-shell-support)
 - [Liberty Tools](#liberty-tools)
@@ -20,6 +21,8 @@ For information regarding known issues and limitations, refer to our [Common Iss
 - [View your application test reports](#view-your-application-test-reports)
 - [Stop your application](#stop-your-application)
 - [Debug your application](#debug-your-application)
+  - [Start in debug mode](#start-in-debug-mode)
+  - [Attach debugger manually](#attach-debugger-manually)
 - [Create a Liberty project](#create-a-liberty-project)
 - [Manually add your Liberty project to Liberty Tools](#manually-add-your-liberty-project-to-liberty-tools)
   - [Manually remove project](#manually-remove-project)
@@ -73,6 +76,15 @@ If a source provides a Java version older than 21, it is skipped and the next so
 By default, Liberty Tools installs the latest version of the Language Support for Java(TM) by Red Hat extension. The latest version contains an embedded JRE higher than Java 21 and therefore no additional configuration is required. However, if using an older version of the Language Support for Java(TM) by Red Hat extension or using the universal version without the embedded JRE causes an issue, then any of the settings listed above can be configured to point to Java 21 or later.
 
 ![settings.json example](/docs/screenshots/settings.json%20path%20example.png)
+
+### Liberty Tools settings
+
+The following settings are provided by Liberty Tools and can be configured in your VS Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file or through the Settings UI (`Cmd+,` / `Ctrl+,`) by searching for **Liberty**.
+
+| Setting | Description | Default |
+| --- | --- | --- |
+| `liberty.java.home` | Path to the JDK used to run Liberty dev mode in the terminal. When set, this overrides any JDK detected from VS Code Java settings (`java.configuration.runtimes`, `java.jdt.ls.java.home`). Leave empty to use the JDK configured via VS Code Java settings, or the system PATH if none is set. | `""` |
+| `liberty.dev.debugStartTimeout` | Maximum time in seconds to wait for the Liberty server to start before automatically attaching the debugger when using **Start in debug mode**. Increase this value if your server takes longer than the default to start. | `180` |
 
 ### External extension settings
 
@@ -214,6 +226,22 @@ To stop your application, select the **Stop** command for your application in Li
 ![Stop command](/docs/user-guide-screenshots/devModeStop.png)
 
 ## Debug your application
+
+### Start in debug mode
+
+To start your application in dev mode and have the debugger attach automatically, select the **Start in debug mode** command for your application in Liberty Tools or run **Liberty: Start in debug mode** from the command palette.
+
+Liberty Tools starts the server with the Java debug agent enabled and waits for the server to reach a ready state before attaching the VS Code Java debugger. If the server does not reach a ready state within the timeout period, a warning message is shown and you can attach the debugger manually using the **Attach debugger** command.
+
+The default timeout is **180 seconds (3 minutes)**. If your server consistently takes longer to start, you can increase the timeout by setting `liberty.dev.debugStartTimeout` (in seconds) in your VS Code settings:
+
+```json
+"liberty.dev.debugStartTimeout": 300
+```
+
+To configure this setting, open the Settings UI (`Cmd+,` / `Ctrl+,`) and search for **Liberty debug**.
+
+### Attach debugger manually
 
 To attach the debugger, you must have a [running server](#run-your-application-on-liberty-using-dev-mode). Once the server is running, click the **Attach debugger** command or select the **Liberty: Attach debugger** command in the command palette, followed by your application.
 
