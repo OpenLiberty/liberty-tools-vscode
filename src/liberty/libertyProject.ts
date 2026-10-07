@@ -232,7 +232,7 @@ export class LibertyProject extends vscode.TreeItem {
 	 * Must be called by projectDiscovery after both isAggregator and parent are fully resolved.
 	 */
 	public updateExplorerIcon(): void {
-		// iconPath is a getter, no need to set it
+		this.iconPath = this.getStatusIconPath(this.state) as vscode.TreeItem["iconPath"];
 	}
 
 	private getBuildToolIconPath(): { light: string; dark: string } {
