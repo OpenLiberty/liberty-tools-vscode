@@ -24,7 +24,6 @@ export function validParentPom(xmlString: string, childParentArtifactIds?: Set<s
     const parseString = require("xml2js").parseString;
     let parentPom: BuildFileImpl = new BuildFileImpl(false, "");
     parseString(xmlString, (err: any, result: any) => {
-        if (err || !result?.project) { return; }
 
         // (a) Liberty plugin declared directly — existing behaviour unchanged
         const validPom: BuildFileImpl = mavenPluginDetected(result.project.build);
@@ -44,6 +43,9 @@ export function validParentPom(xmlString: string, childParentArtifactIds?: Set<s
             }
         }
 
+        if (err) {
+            console.error(localize("error.parsing.pom", "Error parsing the pom " + err, err));
+        }
     });
     return parentPom;
 }
@@ -61,11 +63,10 @@ export function validPom(xmlString: string, childrenMap: Map<string, string[]>):
     const parseString = require("xml2js").parseString;
     let mavenPOM: BuildFileImpl = new BuildFileImpl(false, "");
     parseString(xmlString, (err: any, result: any) => {
-        if (err || !result?.project) { return; }
 
         // check if the artifactId matches one of the modules found in a parent pom
         if (result.project.artifactId !== undefined && result.project.artifactId[0] !== undefined
-            && result.project.parent !== undefined && result.project.parent[0]?.artifactId !== undefined) {
+            && result.project.parent !== undefined && result.project.parent[0].artifactId !== undefined) {
             if (childrenMap.has(result.project.parent[0].artifactId[0])) {
                 const modules = childrenMap.get(result.project.parent[0].artifactId[0]);
                 if (modules !== undefined) {
@@ -105,6 +106,10 @@ export function validPom(xmlString: string, childrenMap: Map<string, string[]>):
             return;
         }
 
+        if (err) {
+            console.error(localize("error.parsing.pom", "Error parsing the pom " + err, err));
+            return;
+        }
     });
     return mavenPOM;
 }
@@ -153,9 +158,8 @@ export function findChildMavenModules(xmlString: string): Map<string, string[]> 
     const childrenMap: Map<string, string[]> = new Map();
     const children: string[] = [];
     parseString(xmlString, (err: any, result: any) => {
-        if (err || !result?.project) { return; }
         let artifactId = "";
-        if (result.project.artifactId?.[0] !== undefined) {
+        if (result.project.artifactId[0] !== undefined) {
             artifactId = result.project.artifactId[0];
         }
         const modules = result.project.modules;
@@ -174,6 +178,9 @@ export function findChildMavenModules(xmlString: string): Map<string, string[]> 
             childrenMap.set(artifactId, children);
         }
 
+        if (err) {
+            console.error(localize("error.parsing.pom", err));
+        }
     });
     return childrenMap;
 }

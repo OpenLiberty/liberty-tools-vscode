@@ -179,6 +179,7 @@ export class LibertyProject extends vscode.TreeItem {
 	}
 
 	public enableShellListener(execution: vscode.TerminalShellExecution, onStateChange: (project: LibertyProject) => void): void {
+		console.log(`[startMonitoring] called for ${this.label}, state=${this.state}`);
 		this.cleanupShellListener();
 		const stream = execution.read();
 		let disposed = false;
@@ -206,6 +207,7 @@ export class LibertyProject extends vscode.TreeItem {
 				}
 			}
 			if (!disposed && this.state === DevModeState.Starting) {
+				console.log(`[startMonitoring] stream ended while Starting for ${this.label} — build likely failed, resetting state`);
 				this.setState(undefined);
 				onStateChange(this);
 			}
