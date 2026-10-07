@@ -67,7 +67,6 @@ export class LibertyProject extends vscode.TreeItem {
 		public terminalType?: string,
 	) {
 		super(label, collapsibleState);
-		this.id = path;
 		this.tooltip = this.path;
 		this.children = [];
 		this.baseContextValue = contextValue;

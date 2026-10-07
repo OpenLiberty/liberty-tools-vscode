@@ -224,7 +224,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		const item = new vscode.TreeItem(element.label ?? "", element.isAggregator && element.children.length > 0
 			? vscode.TreeItemCollapsibleState.Expanded
 			: vscode.TreeItemCollapsibleState.None);
-		item.id          = element.id;
+		item.id          = element.path;
 		item.description = element.description;
 		item.tooltip     = element.tooltip;
 		item.iconPath    = element.iconPath;
