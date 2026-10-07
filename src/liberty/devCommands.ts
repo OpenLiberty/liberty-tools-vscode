@@ -25,6 +25,7 @@ import {
     CMD_START_CONTAINER, CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
     CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
     SERVER_ENV_INSTALL_DIR_PATTERN, SERVER_ENV_BUILD_OUTPUT_PATTERN,
+    SETTING_SUREFIRE_REPORT_PATH, SETTING_FAILSAFE_REPORT_PATH, SETTING_GRADLE_REPORT_PATH,
 } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
@@ -827,15 +828,24 @@ export async function openReport(reportType: string, libProject?: LibertyProject
             }
             let showErrorMessage: boolean = true;
             if (isMaven(targetProject.getContextValue())) {
-                report = getReportFile(path, "reports", reportType + ".html");
-                showErrorMessage = false;
-                if (!await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage)) {
-                    report = getReportFile(path, "site", reportType + "-report.html");
-                    showErrorMessage = true;
+                const settingKey = reportType === "surefire" ? SETTING_SUREFIRE_REPORT_PATH : SETTING_FAILSAFE_REPORT_PATH;
+                const customPath = helperUtil.getConfiguration<string>(settingKey, targetProject.getPath());
+                const resolvedCustom = resolveMavenReportPath(path, customPath);
+                if (resolvedCustom) {
+                    report = resolvedCustom;
                     await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
+                } else {
+                    report = getReportFile(path, "reports", reportType + ".html");
+                    showErrorMessage = false;
+                    if (!await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage)) {
+                        report = getReportFile(path, "site", reportType + "-report.html");
+                        showErrorMessage = true;
+                        await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
+                    }
                 }
             } else if (isGradle(targetProject.getContextValue())) {
-                report = await getGradleTestReport(targetProject.path, path);
+                const gradleCustomPath = helperUtil.getConfiguration<string>(SETTING_GRADLE_REPORT_PATH, targetProject.getPath());
+                report = await getGradleTestReport(targetProject.path, path, gradleCustomPath || undefined);
                 await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
             }
         }
@@ -897,15 +907,30 @@ async function createTerminalforLiberty(libProject: LibertyProject, _terminal: v
 will return the path of the report, since there are diffrent folders to look into and the file names can be different 
 we need to get the paths to look for dynamically
 */
-function getReportFile(path: any, dir: string, filename: string): any {
+/**
+ * Resolves the path to a Maven test report when a custom path setting is configured.
+ *
+ * @param projectRoot - absolute path to the directory containing pom.xml
+ * @param customPath - value from the VS Code setting (may be absolute, relative, or empty/undefined)
+ * @returns the resolved absolute path when customPath is non-empty; empty string otherwise
+ *          (an empty return signals the caller to fall back to the default two-step logic)
+ */
+export function resolveMavenReportPath(projectRoot: string, customPath?: string): string {
+    if (!customPath) {
+        return "";
+    }
+    return Path.isAbsolute(customPath) ? customPath : Path.resolve(projectRoot, customPath);
+}
+
+export function getReportFile(path: any, dir: string, filename: string): any {
     return Path.join(path, "target", dir, filename);
 }
 
 /*
-Function will check if the report is available within the given path and returns a boolean based on it and also 
+Function will check if the report is available within the given path and returns a boolean based on it and also
 the report will be displayed if it is available
 */
-function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel: string, libProject: LibertyProject, showErrorMessage: boolean): Promise<boolean> {
+export function checkReportAndDisplay(report: any, reportType: string, reportTypeLabel: string, libProject: LibertyProject, showErrorMessage: boolean): Promise<boolean> {
     return new Promise((resolve) => {
         fs.exists(report, (exists) => {
             if (exists) {

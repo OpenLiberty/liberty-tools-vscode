@@ -19,6 +19,7 @@ For information regarding known issues and limitations, refer to our [Common Iss
   - [Start your application in dev mode with configuration](#start-your-application-in-dev-mode-with-configuration)
 - [Run your application tests](#run-your-application-tests)
 - [View your application test reports](#view-your-application-test-reports)
+  - [Customize test report locations](#customize-test-report-locations)
 - [Stop your application](#stop-your-application)
 - [Debug your application](#debug-your-application)
   - [Start in debug mode](#start-in-debug-mode)
@@ -219,6 +220,18 @@ To view the test report for Gradle-built applications, select the **View test re
 
 This command looks for the test report at the `build/reports/tests/test/index.html` default location.
 
+### Customize test report locations
+
+By default, Liberty Tools looks for test reports at the locations described above. If your build produces reports at a different path, you can override these locations with the following settings in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file:
+
+| Setting | Description |
+| --- | --- |
+| `liberty.test.report.surefire.path` | Custom path to the Maven Surefire HTML test report. Accepts an absolute path or a path relative to the project root (the directory containing `pom.xml`). When set, this overrides the default locations (`target/reports/surefire.html` and `target/site/surefire-report.html`). Leave empty to use the default locations. |
+| `liberty.test.report.failsafe.path` | Custom path to the Maven Failsafe HTML integration-test report. Accepts an absolute path or a path relative to the project root (the directory containing `pom.xml`). When set, this overrides the default locations (`target/reports/failsafe.html` and `target/site/failsafe-report.html`). Leave empty to use the default locations. |
+| `liberty.test.report.gradle.path` | Custom path to the Gradle HTML test report (`index.html`). Accepts an absolute path. When set, this overrides both the value parsed from `build.gradle` and the default location (`build/reports/tests/test/index.html`). Leave empty to use the value from `build.gradle` or the default location. |
+
+These settings have `resource` scope, so they can be configured per project in a multi-root workspace.
+
 ## Stop your application
 
 To stop your application, select the **Stop** command for your application in Liberty Tools.
@@ -253,7 +266,7 @@ When the debugger is attached, the Visual Studio Code [debug options](https://co
 
 ## Create a Liberty project
 
-You can generate a starter project configured for Open Liberty directly within Visual Studio Code using the Liberty Starter.
+You can generate a starter project configured for Liberty directly within Visual Studio Code using the Liberty Starter.
 
 To create a new project:
 

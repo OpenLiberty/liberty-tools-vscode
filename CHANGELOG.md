@@ -7,8 +7,11 @@ All notable changes to the Liberty Tools extension will be documented below.
 Version 26.0.9 of Liberty Tools for Visual Studio Code contains new features, enhancements, and fixes. Version 26.0.9 requires Visual Studio Code version 1.93+ and requires Java 21 or later.
 
 Notable changes:
-- Added Open Liberty Starter support. Create new Open Liberty projects directly from VS Code using the `Liberty: Create a Liberty project` command.
-- Added support for Maven and Gradle multi-module projects in the Liberty dashboard. Parent projects and submodules are now displayed and managed in a project hierarchy.
+- Added Liberty Starter support. Create new Open Liberty projects directly from VS Code using the `Liberty: Create a Liberty project` command. See the [user guide](docs/user-guide.md#create-a-liberty-project) for more information.
+- Added support for Maven and Gradle multi-module projects in the Liberty Tools view. Parent projects and submodules are now displayed and managed in a project hierarchy. See the [user guide](docs/user-guide.md#multi-module-projects) for more information.
+- Added server status icons to the Liberty Tools view. Each project now shows a visual indicator reflecting the current server state (running, stopped, stopping, or started but waiting).
+- Liberty Tools now reads the Liberty install directory from `build.gradle`, `gradle.properties`, and Maven plugin configuration to locate an existing Liberty runtime when one is configured.
+- Context menu actions in the Liberty Tools view are now excluded depending on the server state.
 - Improved dev mode custom parameters input with history management and deletion support.
 - Improved terminal handling and status tracking for running Liberty instances.
 
@@ -20,7 +23,7 @@ Version 26.0.8 of Liberty Tools for Visual Studio Code contains minor enhancemen
 
 Notable changes:
 - Java 21 is required for language server functionality. See the [user guide](docs/user-guide.md) for more info.
-- The extenxion's side bar item `Liberty Dashboard` was renamed to `Liberty Tools`.
+- The extension's side bar item `Liberty Dashboard` was renamed to `Liberty Tools`.
 - Improved Java runtime detection for language server startup. Liberty Tools now checks all available Java sources (VS Code settings, extensions, system path) and skips sources that provide a Java version older than 21. Properties pointing to unsupported Java versions will no longer prevent the extension from loading if Java 21, or higher, is available elsewhere on the machine.
 - Added per-project Java support. When starting a Liberty project in dev mode, Liberty Tools now resolves `JAVA_HOME` for each project by reading the project's VS Code settings. Each project in a multi-root workspace independently resolves its own JDK. Use `liberty.java.home` to override all other JVM location properties when running dev mode. For more information check the [user guide](https://github.com/OpenLiberty/liberty-tools-vscode/blob/main/docs/user-guide.md#configure-your-java-runtime-for-language-servers).
 - Updated [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta) version to 0.2.6:

@@ -2,7 +2,7 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Liberty Tools",
 	"description": "Liberty Tools for Visual Studio Code",
-	"version": "26.0.9-SNAPSHOT",
+	"version": "26.0.9",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
@@ -362,6 +362,24 @@
 						"default": 180,
 						"description": "%configuration.liberty.dev.debugStartTimeout.description%",
 						"scope": "window"
+					},
+					"liberty.test.report.surefire.path": {
+						"type": "string",
+						"default": "",
+						"description": "Custom path to the Maven Surefire HTML test report. Accepts an absolute path or a path relative to the project root (the directory containing pom.xml). When set, this overrides the default locations (target/reports/surefire.html and target/site/surefire-report.html). Leave empty to use the default locations.",
+						"scope": "resource"
+					},
+					"liberty.test.report.failsafe.path": {
+						"type": "string",
+						"default": "",
+						"description": "Custom path to the Maven Failsafe HTML integration-test report. Accepts an absolute path or a path relative to the project root (the directory containing pom.xml). When set, this overrides the default locations (target/reports/failsafe.html and target/site/failsafe-report.html). Leave empty to use the default locations.",
+						"scope": "resource"
+					},
+					"liberty.test.report.gradle.path": {
+						"type": "string",
+						"default": "",
+						"description": "Custom path to the Gradle HTML test report (index.html). Accepts an absolute path. When set, this overrides both the value parsed from build.gradle and the default location (build/reports/tests/test/index.html). Leave empty to use the value from build.gradle or the default location.",
+						"scope": "resource"
 					}
 				}
 			}
@@ -432,8 +450,8 @@
 		"@types/fs-extra": "8.1.0",
 		"@types/semver": "7.3.2",
 		"@types/xml2js": "0.4.5",
-		"axios": "1.18.0",
-		"brace-expansion": "5.0.9",
+		"axios": "1.20.0",
+		"brace-expansion": "5.0.12",
 		"expand-home-dir": "0.0.3",
 		"find-java-home": "2.0.0",
 		"fs-extra": "9.0.0",
