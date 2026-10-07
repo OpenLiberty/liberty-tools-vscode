@@ -91,6 +91,7 @@ async function discoverProjects(
 ): Promise<{ projectsMap: Map<string, LibertyProject>; allEntries: ParsedBuildEntry[] }> {
 	// eslint-disable-next-line @typescript-eslint/no-var-requires
 	const g2js = require("gradle-to-js/lib/parser");
+	const t0 = Date.now();
 
 	// ── Phase 1: read/parse all files in parallel ──────────────────────────
 	const allEntries: ParsedBuildEntry[] = await Promise.all([
@@ -140,6 +141,8 @@ async function discoverProjects(
 			};
 		}),
 	]);
+	console.log(`[perf] discoverProjects phase1 (read+parse): ${Date.now() - t0}ms`);
+
 	const mavenEntries = allEntries.filter(e => e.type === "maven");
 	const gradleEntries = allEntries.filter(e => e.type === "gradle");
 
@@ -152,8 +155,10 @@ async function discoverProjects(
 	for (const entry of mavenEntries) {
 		if (!entry.xmlString) { continue; }
 		const validParent = mavenUtil.validParentPom(entry.xmlString, childParentArtifactIds);
+		console.log(`[discovery] phase2 validParentPom(${entry.path}): isValid=${validParent.isValidBuildFile()} type=${validParent.getProjectType()}`);
 		if (validParent.isValidBuildFile()) {
 			const childModules = mavenUtil.findChildMavenModules(entry.xmlString);
+			console.log(`[discovery] phase2 findChildMavenModules(${entry.path}):`, JSON.stringify(Array.from(childModules.entries())));
 			mavenChildMap = new Map([
 				...Array.from(mavenChildMap.entries()),
 				...Array.from(childModules.entries()),
@@ -163,6 +168,7 @@ async function discoverProjects(
 				for (const modulePath of modulePaths) {
 					const resolvedPom = vscodePath.resolve(parentDir, modulePath, "pom.xml");
 					mavenChildPomPaths.add(resolvedPom);
+					console.log(`[discovery] phase2 resolved child pom: ${resolvedPom}`);
 				}
 			}
 			mavenParentPaths.add(entry.path);
@@ -184,10 +190,12 @@ async function discoverProjects(
 				const fsPath = includePath.replace(/:/g, "/");
 				const resolvedBuild = vscodePath.resolve(parentDir, fsPath, "build.gradle");
 				gradleChildBuildPaths.add(resolvedBuild);
+				console.log(`[discovery] phase2 resolved gradle child: ${resolvedBuild}`);
 			}
 			gradleParentPaths.add(entry.path);
 		}
 	}
+	console.log(`[perf] discoverProjects phase2 (classify): ${Date.now() - t0}ms`);
 
 	// ── Phase 3: validate + create LibertyProject objects (parallel) ────────
 	const visitedPaths = new Set<string>();
@@ -271,6 +279,7 @@ async function discoverProjects(
 			visitedPaths.add(entry.path);
 		}),
 	]);
+	console.log(`[perf] discoverProjects phase3 (create projects): ${Date.now() - t0}ms  (${projectsMap.size} valid)`);
 	return { projectsMap, allEntries };
 }
 
@@ -285,30 +294,38 @@ async function stampProjects(
 	mavenMetadataMap: Map<string, mavenUtil.MavenProjectMetadata>;
 	gradleMetadataMap: Map<string, gradleUtil.GradleProjectMetadata>;
 }> {
+	const t0 = Date.now();
 	const mavenMetadataMap = new Map<string, mavenUtil.MavenProjectMetadata>();
 	const gradleMetadataMap = new Map<string, gradleUtil.GradleProjectMetadata>();
 
 	for (const entry of allEntries) {
 		const project = projectsMap.get(entry.path);
-		if (!project) { continue; }
+		if (!project) {
+			console.log(`[stamp] no projectsMap entry for ${entry.path} — skipping`);
+			continue;
+		}
 		try {
 			if (entry.type === "maven" && entry.xmlString) {
 					const metadata = await mavenUtil.extractMavenMetadata(entry.path, entry.xmlString);
+					console.log(`[stamp] maven ${entry.path}: artifactId=${metadata.artifactId}, parentArtifactId=${metadata.parentArtifactId}, isAggregator=${metadata.isAggregator}, isLibertyEnabled=${metadata.isLibertyEnabled}`);
 					project.artifactId = metadata.artifactId;
 					project.parentArtifactId = metadata.parentArtifactId;
 					project.isAggregator = metadata.isAggregator;
 					project.isLibertyEnabled = metadata.isLibertyEnabled
 					  || hasServerXML(entry.path);
 					project.installDirectory = metadata.installDirectory;
+          project.updateExplorerIcon();
 					mavenMetadataMap.set(entry.path, metadata);
 				} else if (entry.type === "gradle" && (entry.parsedBuild || entry.regexBuildFile || entry.parsedSettings)) {
 					const metadata = await gradleUtil.extractGradleMetadata(entry.path, entry.parsedBuild ?? null, entry.parsedSettings);
+					console.log(`[stamp] gradle ${entry.path}: projectName=${metadata.projectName}, parentProjectName=${metadata.parentProjectName}, isAggregator=${metadata.isAggregator}, isLibertyEnabled=${metadata.isLibertyEnabled}`);
 					project.artifactId = metadata.projectName;
 					project.parentArtifactId = metadata.parentProjectName;
 					project.isAggregator = metadata.isAggregator;
 					project.isLibertyEnabled = metadata.isLibertyEnabled
 					  || hasServerXML(entry.path);
 					project.installDirectory = metadata.installDirectory;
+          project.updateExplorerIcon();
 					gradleMetadataMap.set(entry.path, metadata);
 				}
 		} catch (error) {
@@ -316,6 +333,7 @@ async function stampProjects(
 			project.isLibertyEnabled = true;
 		}
 	}
+	console.log(`[perf] stampProjects: ${Date.now() - t0}ms  (${mavenMetadataMap.size} maven, ${gradleMetadataMap.size} gradle)`);
 	return { projectsMap, mavenMetadataMap, gradleMetadataMap };
 }
 
@@ -347,6 +365,8 @@ async function linkProjects(
 	mavenMetadataMap: Map<string, mavenUtil.MavenProjectMetadata>,
 	gradleMetadataMap: Map<string, gradleUtil.GradleProjectMetadata>
 ): Promise<{ rootProjects: LibertyProject[]; maxAggregatorDepth: number }> {
+	const t0 = Date.now();
+
 	for (const project of projectsMap.values()) {
 		project.parent = undefined;
 		project.children = [];
@@ -428,6 +448,7 @@ async function linkProjects(
 		.filter(p => p.isAggregator)
 		.reduce((max, p) => Math.max(max, aggregatorDepth(p, 1)), 0);
 
+	console.log(`[perf] linkProjects: ${Date.now() - t0}ms  (${rootProjects.length} roots, maxAggregatorDepth=${maxAggregatorDepth})`);
 	return { rootProjects, maxAggregatorDepth };
 }
 
@@ -525,6 +546,8 @@ export async function discoverWorkspace(
 	let foldersComplete = 0;
 
 	await Promise.all(wsFolders.map(async (folder) => {
+		const folderPath = folder.uri.fsPath;
+
 		const [pomUris, gradleUris] = await Promise.all([
 			vscode.workspace.findFiles(
 				new vscode.RelativePattern(folder, "**/pom.xml"), EXCLUDED_DIR_PATTERN
@@ -536,6 +559,8 @@ export async function discoverWorkspace(
 		const pomPaths = pomUris.map(u => u.fsPath);
 		const gradlePaths = gradleUris.map(u => u.fsPath);
 
+		console.log(`[perf] folder ${folderPath} findFiles: ${Date.now() - t0}ms  (${pomPaths.length} pom, ${gradlePaths.length} gradle)`);
+
 		const folderMap: Map<string, LibertyProject> = new Map();
 		const { allEntries: folderEntries } = await discoverProjects(context, pomPaths, gradlePaths, folderMap, existingProjects);
 
@@ -546,6 +571,8 @@ export async function discoverWorkspace(
 		if (onFolderComplete) {
 			onFolderComplete(new Map(newProjectsMap), foldersComplete, totalFolders);
 		}
+
+		console.log(`[perf] folder ${folderPath} complete (${foldersComplete}/${totalFolders}): ${Date.now() - t0}ms`);
 	}));
 
 	await addServerXMLProjects(context, newProjectsMap, existingProjects);
@@ -554,5 +581,6 @@ export async function discoverWorkspace(
 	const { rootProjects, maxAggregatorDepth } = await linkProjects(newProjectsMap, mavenMetadataMap, gradleMetadataMap);
 	const rejectedBuildFiles = allEntries.map(e => e.path).filter(p => !newProjectsMap.has(p));
 
+	console.log(`[perf] discoverWorkspace total: ${Date.now() - t0}ms  (${newProjectsMap.size} projects, ${rootProjects.length} roots)`);
 	return { projects: newProjectsMap, rootProjects, rejectedBuildFiles, maxAggregatorDepth };
 }
