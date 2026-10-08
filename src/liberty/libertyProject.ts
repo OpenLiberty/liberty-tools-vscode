@@ -76,7 +76,7 @@ export class LibertyProject extends vscode.TreeItem {
 	// Initialised as a leaf (status) icon. updateExplorerIcon() is called by
 	// projectDiscovery after isAggregator is stamped to switch aggregators to
 	// their Maven/Gradle icon.
-	iconPath = this.getStatusIconPath(this.state);
+	iconPath = this.getStatusIconPath(this.state) as vscode.TreeItem["iconPath"];
 
 	public getLabel(): string {
 		return `${this.label}`;
@@ -93,7 +93,7 @@ export class LibertyProject extends vscode.TreeItem {
 	public setState(state: DevModeState | undefined): void {
 		this.state = state;
 		this.contextValue = computeContextValue(this.baseContextValue, state);
-		this.iconPath = this.getStatusIconPath(state);
+		this.iconPath = this.getStatusIconPath(state) as vscode.TreeItem["iconPath"];
 	}
 
 	public getPath(): string {
@@ -233,7 +233,7 @@ export class LibertyProject extends vscode.TreeItem {
 	 * Must be called by projectDiscovery after both isAggregator and parent are fully resolved.
 	 */
 	public updateExplorerIcon(): void {
-		this.iconPath = this.getStatusIconPath(this.state);
+		this.iconPath = this.getStatusIconPath(this.state) as vscode.TreeItem["iconPath"];
 	}
 
 	private getBuildToolIconPath(): { light: string; dark: string } {
@@ -241,36 +241,42 @@ export class LibertyProject extends vscode.TreeItem {
 		return { light: abs, dark: abs };
 	}
 
-	private getStatusIconPath(state: DevModeState | undefined): { light: string; dark: string } {
-		// Aggregators always show their build-tool icon.
-		if (this.isAggregator) {
-			return this.getBuildToolIconPath();
-		}
-		// Standalone leaf (no parent, not an aggregator) shows build-tool icon when stopped.
-		if (state === undefined && this.parent === undefined) {
-			return this.getBuildToolIconPath();
-		}
-		let filename: string;
-		switch (state) {
-			case DevModeState.Running:
-				filename = "active.svg";
-				break;
-			case DevModeState.Stopping:
-				filename = "stopping.svg";
-				break;
-			case DevModeState.Starting:
-			case DevModeState.ServerStarted:
-				filename = "incomplete.svg";
-				break;
-			default:
-				filename = "stopped.svg";
-				break;
-		}
+	private getStatusIconPath(state: DevModeState | undefined): vscode.ThemeIcon | { light: string; dark: string } | undefined {
 		const base = this._context.extensionPath;
-		return {
-			light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, filename),
-			dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  filename),
-		};
+
+		// For aggregators and standalone leaf without state, show build-tool icon
+		if (this.isAggregator || (state === undefined && this.parent === undefined)) {
+			return this.getBuildToolIconPath();
+		}
+
+		switch (state) {
+			case DevModeState.Starting:
+				return new vscode.ThemeIcon("loading~spin", new vscode.ThemeColor("charts.blue"));
+			case DevModeState.ServerStarted:
+				// Blue half-moon - server ready, app starting
+				return {
+					light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, "incomplete.svg"),
+					dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  "incomplete.svg"),
+				};
+			case DevModeState.Running:
+				// Green checkmark - fully running
+				return {
+					light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, "active.svg"),
+					dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  "active.svg"),
+				};
+			case DevModeState.Stopping:
+				// Yellow stopping icon
+				return {
+					light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, "stopping.svg"),
+					dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  "stopping.svg"),
+				};
+			default:
+				// Stopped state - gray circle
+				return {
+					light: vscodePath.join(base, "images", STATUS_ICON_BASE_LIGHT, "stopped.svg"),
+					dark:  vscodePath.join(base, "images", STATUS_ICON_BASE_DARK,  "stopped.svg"),
+				};
+		}
 	}
 }
 
@@ -289,15 +295,29 @@ export async function getLabelFromBuildFile(buildFile: string, xmlString?: strin
 		// eslint-disable-next-line @typescript-eslint/no-var-requires
 		const parseString = require("xml2js").parseString;
 		parseString(xmlString, (err: any, result: any) => {
-			if (result.project.artifactId[0] !== undefined) {
-				label = result.project.artifactId[0];
-			} else {
+			try {
+				// Safely access artifactId - xml2js may return different structures
+				const artifactId = result?.project?.artifactId;
+				if (Array.isArray(artifactId) && artifactId[0] !== undefined) {
+					label = artifactId[0];
+				} else if (typeof artifactId === 'string') {
+					label = artifactId;
+				} else {
+					const dirName = vscodePath.dirname(buildFile);
+					label = vscodePath.basename(dirName);
+				}
+			} catch (e) {
+				console.error(`[getLabelFromBuildFile] Error parsing ${buildFile}:`, e);
 				const dirName = vscodePath.dirname(buildFile);
 				label = vscodePath.basename(dirName);
 			}
 		});
 	} else {
 		label = await gradleUtil.getGradleProjectName(buildFile);
+	}
+	if (!label) {
+		const dirName = vscodePath.dirname(buildFile);
+		label = vscodePath.basename(dirName);
 	}
 	return label;
 }
