@@ -225,13 +225,29 @@ function registerCommands(context: ExtensionContext) {
                 return;
             }
 
-            // If more than one workspace folder exists, ask the user which project to reset.
+            // Find only the folders that have a .jakarta-version file.
+            const foldersWithVersion: vscode.WorkspaceFolder[] = [];
+            for (const folder of folders) {
+                try {
+                    await vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, ".jakarta-version"));
+                    foldersWithVersion.push(folder);
+                } catch {
+                    // no version file in this folder
+                }
+            }
+
+            if (foldersWithVersion.length === 0) {
+                vscode.window.showInformationMessage(localize("jakarta.version.reset.none.found"));
+                return;
+            }
+
+            // Single match — reset directly. Multiple — ask which one.
             let target: vscode.WorkspaceFolder;
-            if (folders.length === 1) {
-                target = folders[0];
+            if (foldersWithVersion.length === 1) {
+                target = foldersWithVersion[0];
             } else {
                 const picked = await vscode.window.showQuickPick(
-                    Array.from(folders).map(f => ({ label: f.name, description: f.uri.fsPath, folder: f })),
+                    foldersWithVersion.map(f => ({ label: f.name, description: f.uri.fsPath, folder: f })),
                     {
                         title: localize("jakarta.version.reset.pick.title"),
                         placeHolder: localize("jakarta.version.reset.pick.placeholder"),

@@ -7,6 +7,7 @@
     "liberty.ls.started": "Language Server for Liberty started.",
     "liberty.ls.failstart": "Language Server for Liberty failed to start.",
     "jakarta.version.reset.no.workspace": "No workspace folder is open.",
+    "jakarta.version.reset.none.found": "No Jakarta EE version selection found in the current workspace.",
     "jakarta.version.reset.pick.title": "Reset Jakarta EE Version Selection",
     "jakarta.version.reset.pick.placeholder": "Select a project to reset",
     "jakarta.version.select.title": "Select Jakarta EE Version",
