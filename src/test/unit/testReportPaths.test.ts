@@ -22,18 +22,15 @@ const Module = require("module");
 const originalLoad = Module._load;
 
 // Mutable so individual tests can control what parseFile resolves.
-let g2jsResult: string | undefined = undefined;
+// Set to a plain object to simulate the parsed build.gradle structure.
+// Each test that needs specific keys should assign a new object here.
+// Default simulates a build.gradle with no custom destination keys.
+let g2jsBuildFile: Record<string, any> = {};
 
 Module._load = function (request: string, ...args: any[]) {
     if (request === "gradle-to-js/lib/parser") {
         return {
-            parseFile: () =>
-                Promise.resolve({
-                    // Simulate build.gradle with no custom destination.
-                    // Tests that need a custom dest can set g2jsResult via the
-                    // helper below; for the tests here undefined is sufficient.
-                    "test.reports.html.destination": g2jsResult,
-                }),
+            parseFile: () => Promise.resolve(g2jsBuildFile),
         };
     }
     return originalLoad.apply(this, [request, ...args]);
@@ -52,6 +49,8 @@ Object.keys(require.cache).forEach((key) => {
 const { resolveMavenReportPath } = require("../../liberty/devCommands");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { getGradleTestReport } = require("../../util/gradleUtil");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { getMavenReportOutputDirectory } = require("../../util/mavenUtil");
 
 // ── resolveMavenReportPath ─────────────────────────────────────────────────────
 
@@ -128,10 +127,10 @@ describe("getGradleTestReport() with a non-empty customPath", () => {
 // ── getGradleTestReport — default fallback ────────────────────────────────────
 
 describe("getGradleTestReport() with no customPath", () => {
-    it("falls back to the default path when build.gradle has no custom destination", async () => {
-        // g2jsResult is undefined (set at module level), so parseFile resolves a
-        // build file with no 'test.reports.html.destination' key.
-        g2jsResult = undefined;
+    beforeEach(() => { g2jsBuildFile = {}; });
+
+    it("falls back to the default path when build.gradle has no custom destination keys", async () => {
+        // g2jsBuildFile is empty — no destination or outputLocation keys set.
         const projectRoot = "/home/user/myapp";
         const result = await getGradleTestReport(
             "/home/user/myapp/build.gradle",
@@ -147,5 +146,206 @@ describe("getGradleTestReport() with no customPath", () => {
             "index.html",
         );
         assert.strictEqual(result, expectedDefault);
+    });
+});
+
+// ── getGradleTestReport — Gradle 7 destination key ────────────────────────────
+
+describe("getGradleTestReport() — Gradle 7 destination keys", () => {
+    beforeEach(() => { g2jsBuildFile = {}; });
+
+    it("uses flat 'test.reports.html.destination' key (Gradle 7)", async () => {
+        // build.gradle value is a directory; function appends index.html
+        g2jsBuildFile = { "test.reports.html.destination": "/custom/g7/flat" };
+        const result = await getGradleTestReport("/build.gradle", "/root");
+        assert.strictEqual(result, "/custom/g7/flat/index.html");
+    });
+
+    it("uses nested test['reports.html.destination'] key (Gradle 7)", async () => {
+        g2jsBuildFile = { test: { "reports.html.destination": "/custom/g7/nested" } };
+        const result = await getGradleTestReport("/build.gradle", "/root");
+        assert.strictEqual(result, "/custom/g7/nested/index.html");
+    });
+
+    it("uses deep test.reports['html.destination'] key (Gradle 7 — actual g2js shape)", async () => {
+        // gradle-to-js parses `test { reports { html.destination = "..." } }` as:
+        // { test: { reports: { "html.destination": "..." } } }
+        g2jsBuildFile = { test: { reports: { "html.destination": "/custom/g7/deep" } } };
+        const result = await getGradleTestReport("/build.gradle", "/root");
+        assert.strictEqual(result, "/custom/g7/deep/index.html");
+    });
+});
+
+// ── getGradleTestReport — Gradle 8/9 outputLocation keys ─────────────────────
+
+describe("getGradleTestReport() — Gradle 8/9 outputLocation keys", () => {
+    beforeEach(() => { g2jsBuildFile = {}; });
+
+    it("uses flat 'test.reports.html.outputLocation' key (Gradle 8/9)", async () => {
+        // build.gradle value is a directory; function appends index.html
+        g2jsBuildFile = { "test.reports.html.outputLocation": "/custom/g9/flat" };
+        const result = await getGradleTestReport("/build.gradle", "/root");
+        assert.strictEqual(result, "/custom/g9/flat/index.html");
+    });
+
+    it("uses nested test['reports.html.outputLocation'] key (Gradle 8/9)", async () => {
+        g2jsBuildFile = { test: { "reports.html.outputLocation": "/custom/g9/nested" } };
+        const result = await getGradleTestReport("/build.gradle", "/root");
+        assert.strictEqual(result, "/custom/g9/nested/index.html");
+    });
+
+    it("uses deep test.reports['html.outputLocation'] key (Gradle 8/9 — actual g2js shape)", async () => {
+        // gradle-to-js parses `test { reports { html.outputLocation = "..." } }` as:
+        // { test: { reports: { "html.outputLocation": "..." } } }
+        g2jsBuildFile = { test: { reports: { "html.outputLocation": "/custom/g9/deep" } } };
+        const result = await getGradleTestReport("/build.gradle", "/root");
+        assert.strictEqual(result, "/custom/g9/deep/index.html");
+    });
+});
+
+// ── getGradleTestReport — variable guard ──────────────────────────────────────
+
+describe("getGradleTestReport() — Gradle variable guard", () => {
+    const projectRoot = "/home/user/myapp";
+    const expectedDefault = path.join(projectRoot, "build", "reports", "tests", "test", "index.html");
+
+    beforeEach(() => { g2jsBuildFile = {}; });
+
+    it("falls back to default when destination contains a $ variable (flat key)", async () => {
+        g2jsBuildFile = { "test.reports.html.destination": "$buildDir/custom/index.html" };
+        const result = await getGradleTestReport("/build.gradle", projectRoot);
+        assert.strictEqual(result, expectedDefault);
+    });
+
+    it("falls back to default when outputLocation contains a $ variable (nested key)", async () => {
+        g2jsBuildFile = { test: { "reports.html.outputLocation": "${project.buildDir}/reports" } };
+        const result = await getGradleTestReport("/build.gradle", projectRoot);
+        assert.strictEqual(result, expectedDefault);
+    });
+
+    it("falls back to default when outputLocation contains a $ variable (deep reports block)", async () => {
+        g2jsBuildFile = { test: { reports: { "html.outputLocation": "$buildDir/custom" } } };
+        const result = await getGradleTestReport("/build.gradle", projectRoot);
+        assert.strictEqual(result, expectedDefault);
+    });
+});
+
+// ── getGradleTestReport — taskName = "integrationTest" ───────────────────────
+
+describe("getGradleTestReport() — integrationTest taskName", () => {
+    const projectRoot = "/home/user/myapp";
+
+    beforeEach(() => { g2jsBuildFile = {}; });
+
+    it("default path uses integrationTest segment when taskName is integrationTest", async () => {
+        const expected = path.join(projectRoot, "build", "reports", "tests", "integrationTest", "index.html");
+        const result = await getGradleTestReport("/build.gradle", projectRoot, undefined, "integrationTest");
+        assert.strictEqual(result, expected);
+    });
+
+    it("uses integrationTest flat destination key (Gradle 7)", async () => {
+        // build.gradle value is a directory; function appends index.html
+        g2jsBuildFile = { "integrationTest.reports.html.destination": "/custom/it" };
+        const result = await getGradleTestReport("/build.gradle", projectRoot, undefined, "integrationTest");
+        assert.strictEqual(result, "/custom/it/index.html");
+    });
+
+    it("uses integrationTest nested outputLocation key (Gradle 8/9)", async () => {
+        g2jsBuildFile = { integrationTest: { "reports.html.outputLocation": "/custom/it9" } };
+        const result = await getGradleTestReport("/build.gradle", projectRoot, undefined, "integrationTest");
+        assert.strictEqual(result, "/custom/it9/index.html");
+    });
+
+    it("falls back to default when integrationTest destination contains a variable", async () => {
+        const expected = path.join(projectRoot, "build", "reports", "tests", "integrationTest", "index.html");
+        g2jsBuildFile = { "integrationTest.reports.html.destination": "$buildDir/it/index.html" };
+        const result = await getGradleTestReport("/build.gradle", projectRoot, undefined, "integrationTest");
+        assert.strictEqual(result, expected);
+    });
+
+    it("does not pick up the test task's key when taskName is integrationTest", async () => {
+        // Only the 'test' task key is set — integration test should fall back to its own default.
+        g2jsBuildFile = { "test.reports.html.destination": "/custom/test/index.html" };
+        const expected = path.join(projectRoot, "build", "reports", "tests", "integrationTest", "index.html");
+        const result = await getGradleTestReport("/build.gradle", projectRoot, undefined, "integrationTest");
+        assert.strictEqual(result, expected);
+    });
+});
+
+// ── getMavenReportOutputDirectory ─────────────────────────────────────────────
+
+// Minimal pom.xml helpers — build only the XML needed for each scenario.
+function makePomWithReportPlugin(artifactId: string, outputDir?: string): string {
+    const configBlock = outputDir !== undefined
+        ? `<configuration><outputDirectory>${outputDir}</outputDirectory></configuration>`
+        : "";
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>${artifactId}</artifactId>
+        ${configBlock}
+      </plugin>
+    </plugins>
+  </build>
+</project>`;
+}
+
+function makePomWithoutPlugin(): string {
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>`;
+}
+
+describe("getMavenReportOutputDirectory()", () => {
+    const SUREFIRE  = "maven-surefire-report-plugin";
+    const FAILSAFE  = "maven-failsafe-report-plugin";
+
+    it("returns undefined when the report plugin is absent from pom.xml", () => {
+        const xml = makePomWithoutPlugin();
+        assert.strictEqual(getMavenReportOutputDirectory(xml, SUREFIRE), undefined);
+    });
+
+    it("returns undefined when the plugin has no <configuration> block", () => {
+        const xml = makePomWithReportPlugin(SUREFIRE); // no outputDir arg → no <configuration>
+        assert.strictEqual(getMavenReportOutputDirectory(xml, SUREFIRE), undefined);
+    });
+
+    it("returns the plain path for maven-surefire-report-plugin", () => {
+        const xml = makePomWithReportPlugin(SUREFIRE, "custom/surefire-reports");
+        assert.strictEqual(getMavenReportOutputDirectory(xml, SUREFIRE), "custom/surefire-reports");
+    });
+
+    it("returns the plain absolute path for maven-failsafe-report-plugin", () => {
+        const xml = makePomWithReportPlugin(FAILSAFE, "/opt/ci/failsafe-reports");
+        assert.strictEqual(getMavenReportOutputDirectory(xml, FAILSAFE), "/opt/ci/failsafe-reports");
+    });
+
+    it("returns undefined when <outputDirectory> contains a Maven variable", () => {
+        const xml = makePomWithReportPlugin(SUREFIRE, "${project.build.directory}/custom-reports");
+        assert.strictEqual(getMavenReportOutputDirectory(xml, SUREFIRE), undefined);
+    });
+
+    it("does not match a different plugin in the same pom.xml", () => {
+        // Asking for surefire but only failsafe is configured — should return undefined.
+        const xml = makePomWithReportPlugin(FAILSAFE, "custom/failsafe-reports");
+        assert.strictEqual(getMavenReportOutputDirectory(xml, SUREFIRE), undefined);
+    });
+
+    it("trims leading/trailing whitespace from the returned path", () => {
+        const xml = makePomWithReportPlugin(SUREFIRE, "  target/my-reports  ");
+        assert.strictEqual(getMavenReportOutputDirectory(xml, SUREFIRE), "target/my-reports");
     });
 });

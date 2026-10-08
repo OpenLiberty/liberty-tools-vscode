@@ -427,3 +427,62 @@ function extractInstallDirectoryFromProfiles(profiles: any[] | undefined): strin
     }
     return undefined;
 }
+
+/**
+ * Scan a <build><plugins> array for the given Maven reporting plugin and return
+ * the value of <configuration><outputDirectory> if present and variable-free,
+ * otherwise undefined.
+ *
+ * Plugin artifact IDs to pass:
+ *   "maven-surefire-report-plugin"  — unit test HTML report
+ *   "maven-failsafe-report-plugin"  — integration test HTML report
+ *
+ * Values containing "${" are skipped because variable resolution is out of scope.
+ *
+ * @param xmlString  Full text content of a pom.xml file
+ * @param pluginArtifactId  The artifactId of the reporting plugin to look for
+ * @returns The configured output directory string, or undefined if not found/not usable
+ */
+export function getMavenReportOutputDirectory(xmlString: string, pluginArtifactId: string): string | undefined {
+    const parseString = require("xml2js").parseString;
+    let result: string | undefined;
+    parseString(xmlString, (err: any, parsed: any) => {
+        if (err || !parsed?.project) { return; }
+        result = extractReportOutputDirFromBuild(parsed.project.build, pluginArtifactId);
+    });
+    return result;
+}
+
+/**
+ * Walk a <build><plugins> array looking for the given reporting plugin and
+ * return its <configuration><outputDirectory> value when present and free of
+ * Maven variable syntax ("${").
+ *
+ * NOTE: <profiles> are not checked here. A follow-up task should extend this
+ * to also scan <profiles><profile><build><plugins> the same way
+ * extractInstallDirectoryFromProfiles does for installDirectory.
+ */
+function extractReportOutputDirFromBuild(
+    build: Array<{ plugins: Array<{ plugin: any }> }> | undefined,
+    pluginArtifactId: string
+): string | undefined {
+    if (!build) { return undefined; }
+    for (const buildEntry of build) {
+        const plugins = buildEntry.plugins;
+        if (!plugins) { continue; }
+        for (const pluginGroup of plugins) {
+            const plugin = pluginGroup.plugin;
+            if (!plugin) { continue; }
+            for (const p of plugin) {
+                if (p.artifactId?.[0] === pluginArtifactId &&
+                    p.groupId?.[0] === "org.apache.maven.plugins") {
+                    const outputDir: string | undefined = p.configuration?.[0]?.outputDirectory?.[0];
+                    if (outputDir && outputDir.trim().length > 0 && !outputDir.includes("${")) {
+                        return outputDir.trim();
+                    }
+                }
+            }
+        }
+    }
+    return undefined;
+}

@@ -336,7 +336,7 @@ export async function validateGradleChildModule(
  * @param gradlePath build.gradle file
  * @param projectRootPath Path of current project
  */
-export async function getGradleTestReport(gradlePath: any, projectRootPath: string, customPath?: string): Promise<string> {
+export async function getGradleTestReport(gradlePath: any, projectRootPath: string, customPath?: string, taskName = "test"): Promise<string> {
     if (customPath) {
         return customPath;
     }
@@ -344,16 +344,42 @@ export async function getGradleTestReport(gradlePath: any, projectRootPath: stri
     const g2js = require("gradle-to-js/lib/parser");
     let testReport = await g2js.parseFile(gradlePath).then(async (buildFile: any) => {
         let dest: string | undefined;
-        if (buildFile["test.reports.html.destination"] !== undefined) {
-            dest = buildFile["test.reports.html.destination"];
-        } else if (buildFile.test !== undefined) {
-            dest = buildFile.test["reports.html.destination"];
+        const flatDest      = `${taskName}.reports.html.destination`;
+        const flatLoc       = `${taskName}.reports.html.outputLocation`;
+        const nestedBlock   = buildFile[taskName];
+        const reportsBlock  = nestedBlock?.reports;
+        // Gradle 7 and below: destination (flat and nested forms)
+        // Flat:   test.reports.html.destination = "..."
+        // Nested: test { reports.html.destination = "..." }
+        // Deep:   test { reports { html.destination = "..." } }
+        if (buildFile[flatDest] !== undefined) {
+            dest = buildFile[flatDest];
+        } else if (nestedBlock?.["reports.html.destination"] !== undefined) {
+            dest = nestedBlock["reports.html.destination"];
+        } else if (reportsBlock?.["html.destination"] !== undefined) {
+            dest = reportsBlock["html.destination"];
+        // Gradle 8/9: destination renamed to outputLocation (flat and nested forms)
+        // Flat:   test.reports.html.outputLocation = "..."
+        // Nested: test { reports.html.outputLocation = "..." }
+        // Deep:   test { reports { html.outputLocation = "..." } }
+        } else if (buildFile[flatLoc] !== undefined) {
+            dest = buildFile[flatLoc];
+        } else if (nestedBlock?.["reports.html.outputLocation"] !== undefined) {
+            dest = nestedBlock["reports.html.outputLocation"];
+        } else if (reportsBlock?.["html.outputLocation"] !== undefined) {
+            dest = reportsBlock["html.outputLocation"];
+        }
+        // Skip values that contain Gradle variable syntax — cannot resolve without evaluation
+        if (dest !== undefined && dest.includes("$")) {
+            dest = undefined;
         }
         return dest;
     }).catch((err: any) => console.error(localize("unable.to.parse.build.gradle", gradlePath, err)));
     if (testReport === undefined) {
-        testReport = path.join(projectRootPath, "build", "reports", "tests", "test", "index.html");
+        testReport = path.join(projectRootPath, "build", "reports", "tests", taskName, "index.html");
     } else {
+        // The destination from build.gradle is a directory — append index.html to get the report file.
+        testReport = path.join(testReport, "index.html");
         if (!fse.existsSync(testReport)) {
             testReport = findCustomTestReport(projectRootPath, testReport);
         }
