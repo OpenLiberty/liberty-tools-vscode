@@ -27,6 +27,7 @@ import {
     SETTING_SUREFIRE_REPORT_PATH, SETTING_FAILSAFE_REPORT_PATH, SETTING_GRADLE_REPORT_PATH,
 } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
+import { getMavenReportOutputDirectory } from "../util/mavenUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
 import { getCommandForMaven, getCommandForGradle, defaultWindowsShell, isWin, extractInstallDirFromParams } from "../util/commandUtils";
@@ -685,15 +686,36 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                 const customPath = helperUtil.getConfiguration<string>(settingKey, targetProject.getPath());
                 const resolvedCustom = resolveMavenReportPath(path, customPath);
                 if (resolvedCustom) {
+                    // Priority 1: VS Code setting override
                     report = resolvedCustom;
                     await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
                 } else {
-                    report = getReportFile(path, "reports", reportType + ".html");
-                    showErrorMessage = false;
-                    if (!await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage)) {
-                        report = getReportFile(path, "site", reportType + "-report.html");
-                        showErrorMessage = true;
+                    // Priority 2: <outputDirectory> from maven-surefire/failsafe-report-plugin in pom.xml
+                    const pomPluginId = reportType === "surefire"
+                        ? "maven-surefire-report-plugin"
+                        : "maven-failsafe-report-plugin";
+                    let pomReportDir: string | undefined;
+                    try {
+                        const pomXml = fse.readFileSync(targetProject.getPath(), "utf8");
+                        const rawDir = getMavenReportOutputDirectory(pomXml, pomPluginId);
+                        if (rawDir) {
+                            pomReportDir = Path.isAbsolute(rawDir) ? rawDir : Path.resolve(path, rawDir);
+                        }
+                    } catch {
+                        // pom.xml unreadable — fall through to default
+                    }
+                    if (pomReportDir) {
+                        report = Path.join(pomReportDir, reportType + ".html");
                         await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
+                    } else {
+                        // Priority 3: hardcoded default locations
+                        report = getReportFile(path, "reports", reportType + ".html");
+                        showErrorMessage = false;
+                        if (!await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage)) {
+                            report = getReportFile(path, "site", reportType + "-report.html");
+                            showErrorMessage = true;
+                            await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
+                        }
                     }
                 }
             } else if (isGradle(targetProject.getContextValue())) {
