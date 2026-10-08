@@ -32,6 +32,8 @@ export const GRADLE_TEST_REPORT_TITLE = "liberty-gradle-test-wrapper-app test re
 export const GRADLE_9_TEST_REPORT_TITLE = "liberty-gradle-9-test-wrapper-app test report";
 export const ATTACH_DEBUGGER_DASHBOARD_ACTION = "Attach debugger";
 export const ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION = "Liberty: Attach debugger";
+export const START_DEBUG_DASHBOARD_ACTION = "Start in debug mode";
+export const START_DEBUG_DASHBOARD_MAC_ACTION = "Liberty: Start in debug mode";
 /** Maven: Dev mode debug port argument key. */
 export const  MAVEN_DEVMODE_DEBUG_PORT_PARM = "-DdebugPort";
 /** Gradle: Dev mode debug port argument key. */

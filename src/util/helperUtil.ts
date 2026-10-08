@@ -9,7 +9,7 @@ import * as vscode from "vscode";
 import { LibertyProject, DevModeState } from "./../liberty/libertyProject";
 import {
 	LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY, isMaven, isGradle, isContainer, isLibertyProject, isAggregator,
-	CMD_START, CMD_CUSTOM, CMD_START_CONTAINER, CMD_STOP, CMD_RUN_TESTS, CMD_DEBUG,
+	CMD_START, CMD_CUSTOM, CMD_START_CONTAINER, CMD_START_DEBUG, CMD_STOP, CMD_RUN_TESTS, CMD_DEBUG,
 } from "../definitions/constants";
 import path = require('path');
 
@@ -46,6 +46,7 @@ export function devModeRequirement(command: string): boolean | undefined {
 		case CMD_START:
 		case CMD_CUSTOM:
 		case CMD_START_CONTAINER:
+		case CMD_START_DEBUG:
 			return false;  // must NOT be running
 		default:
 			return undefined; // no restriction
@@ -80,6 +81,7 @@ export function filterProjects(projects: LibertyProject[], command: string): Lib
 		switch (command) {
 			case CMD_START:
 			case CMD_CUSTOM:
+			case CMD_START_DEBUG:
 				return !isAggregator(cv) && project.state === undefined;
 			case CMD_START_CONTAINER:
 				return isContainer(cv) && project.state === undefined;

@@ -20,7 +20,7 @@ import { prepareExecutable } from "./util/javaServerStarter";
 import * as helperUtil from "./util/helperUtil";
 import {
     CMD_EXPLORER_REFRESH, CMD_EXPLORER_EXPAND_ALL, CMD_SHOW_COMMANDS, CMD_OPEN_BUILD_FILE,
-    CMD_START, CMD_DEBUG, CMD_STOP, CMD_CUSTOM, CMD_START_CONTAINER,
+    CMD_START, CMD_START_DEBUG, CMD_DEBUG, CMD_STOP, CMD_CUSTOM, CMD_START_CONTAINER,
     CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
     CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
     CMD_SORT_WORKSPACE, CMD_SORT_WORKSPACE_ACTIVE, CMD_SORT_ALPHABETICAL, CMD_SORT_ALPHABETICAL_ACTIVE,
@@ -181,6 +181,7 @@ function registerCommands(context: ExtensionContext) {
         [CMD_OPEN_BUILD_FILE, (p?: LibertyProject) => devCommands.openBuildFile(p)],
         [CMD_SHOW_COMMANDS, () => devCommands.listAllCommands()],
         [CMD_START, (p?: LibertyProject) => devCommands.startDevMode(p, treeView)],
+        [CMD_START_DEBUG, (p?: LibertyProject) => devCommands.startDevModeWithDebugger(p, treeView)],
         [CMD_DEBUG, (p?: LibertyProject) => devCommands.attachDebugger(p)],
         [CMD_STOP, (p?: LibertyProject) => devCommands.stopDevMode(p)],
         [CMD_CUSTOM, (p?: LibertyProject) => devCommands.customDevModeWithHistory(p, treeView)],
