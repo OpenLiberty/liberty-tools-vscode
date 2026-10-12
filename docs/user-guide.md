@@ -210,7 +210,53 @@ This command looks for the test report at the `build/reports/tests/test/index.ht
 
 ### Customize test report locations
 
-By default, Liberty Tools looks for test reports at the locations described above. If your build produces reports at a different path, you can override these locations with the following settings in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file:
+By default, Liberty Tools looks for test reports at the locations described above. If your build produces reports at a different path, Liberty Tools resolves the location using the following priority order.
+
+#### Maven report location resolution
+
+1. **VS Code setting** — if `liberty.test.report.surefire.path` or `liberty.test.report.failsafe.path` is set, that path is used and no further lookup is performed.
+2. **`<outputDirectory>` in `pom.xml`** — if the `maven-surefire-report-plugin` or `maven-failsafe-report-plugin` declares a custom `<outputDirectory>`, Liberty Tools reads that value directly from your `pom.xml`. The plugin may be declared in either the `<reporting>` section (conventional) or the `<build>` section.
+3. **Default locations** — if neither of the above is configured, Liberty Tools checks `target/reports/surefire.html` (or `failsafe.html`) and then `target/site/surefire-report.html` (or `failsafe-report.html`).
+
+**Example: plugin in `<reporting>` (conventional, Maven Surefire Report Plugin ≤ 3.4.x)**
+
+```xml
+<reporting>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-surefire-report-plugin</artifactId>
+      <configuration>
+        <outputDirectory>target/my-reports</outputDirectory>
+      </configuration>
+    </plugin>
+  </plugins>
+</reporting>
+```
+
+> **Note:** Liberty Tools skips `<outputDirectory>` values that contain Maven variable expressions such as `${project.build.directory}` because they cannot be resolved statically. In that case, resolution falls through to the default locations. Use the VS Code setting to specify an explicit path when your configuration uses variables.
+
+**Example: plugin in `<build>` (Maven Surefire Report Plugin ≥ 3.5.x)**
+
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-surefire-report-plugin</artifactId>
+      <configuration>
+        <outputDirectory>target/my-reports</outputDirectory>
+      </configuration>
+    </plugin>
+  </plugins>
+</build>
+```
+
+The same patterns apply to `maven-failsafe-report-plugin` for integration test reports.
+
+#### VS Code settings override
+
+To override the automatically resolved location entirely, set the following in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file:
 
 | Setting | Description |
 | --- | --- |
