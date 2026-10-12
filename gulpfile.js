@@ -1,6 +1,5 @@
 const axios = require("axios");
 const gulp = require("gulp");
-const download = require("gulp-download2");
 const cp = require("child_process");
 const { XMLParser } = require('fast-xml-parser');
 
