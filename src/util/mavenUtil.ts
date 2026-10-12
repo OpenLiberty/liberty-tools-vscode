@@ -444,31 +444,63 @@ function extractInstallDirectoryFromProfiles(profiles: any[] | undefined): strin
  * @returns The configured output directory string, or undefined if not found/not usable
  */
 export function getMavenReportOutputDirectory(xmlString: string, pluginArtifactId: string): string | undefined {
+    return getMavenReportLocation(xmlString, pluginArtifactId)?.dir;
+}
+
+/**
+ * Like {@link getMavenReportOutputDirectory} but also returns which pom.xml
+ * section the plugin was found in ("build" or "reporting"), so callers can
+ * derive the correct HTML report filename.
+ *
+ * The maven-surefire-report-plugin / maven-failsafe-report-plugin can appear in
+ * either section with different default output filenames:
+ *   - found in <build><plugins>      → new-style (>= 3.5.x): surefire.html / failsafe.html
+ *   - found in <reporting><plugins>  → old-style (<= 3.4.x): surefire-report.html / failsafe-report.html
+ *
+ * @param xmlString  Full text content of a pom.xml file
+ * @param pluginArtifactId  The artifactId of the reporting plugin to look for
+ * @returns { dir, source } or undefined if not found/not usable
+ */
+export function getMavenReportLocation(
+    xmlString: string,
+    pluginArtifactId: string
+): { dir: string; source: "build" | "reporting" } | undefined {
     const parseString = require("xml2js").parseString;
-    let result: string | undefined;
+    let result: { dir: string; source: "build" | "reporting" } | undefined;
     parseString(xmlString, (err: any, parsed: any) => {
         if (err || !parsed?.project) { return; }
-        result = extractReportOutputDirFromBuild(parsed.project.build, pluginArtifactId);
+        const buildDir = extractReportOutputDirFromPlugins(parsed.project.build, pluginArtifactId);
+        if (buildDir) {
+            result = { dir: buildDir, source: "build" };
+            return;
+        }
+        const reportingDir = extractReportOutputDirFromPlugins(parsed.project.reporting, pluginArtifactId);
+        if (reportingDir) {
+            result = { dir: reportingDir, source: "reporting" };
+        }
     });
     return result;
 }
 
 /**
- * Walk a <build><plugins> array looking for the given reporting plugin and
- * return its <configuration><outputDirectory> value when present and free of
- * Maven variable syntax ("${").
+ * Walk a plugins container (either <build> or <reporting>) looking for the
+ * given plugin and return its <configuration><outputDirectory> value when
+ * present and free of Maven variable syntax ("${").
+ *
+ * Both <build><plugins><plugin> and <reporting><plugins><plugin> share the
+ * same xml2js structure, so this single helper handles both sections.
  *
  * NOTE: <profiles> are not checked here. A follow-up task should extend this
  * to also scan <profiles><profile><build><plugins> the same way
  * extractInstallDirectoryFromProfiles does for installDirectory.
  */
-function extractReportOutputDirFromBuild(
-    build: Array<{ plugins: Array<{ plugin: any }> }> | undefined,
+function extractReportOutputDirFromPlugins(
+    container: Array<{ plugins: Array<{ plugin: any }> }> | undefined,
     pluginArtifactId: string
 ): string | undefined {
-    if (!build) { return undefined; }
-    for (const buildEntry of build) {
-        const plugins = buildEntry.plugins;
+    if (!container) { return undefined; }
+    for (const containerEntry of container) {
+        const plugins = containerEntry.plugins;
         if (!plugins) { continue; }
         for (const pluginGroup of plugins) {
             const plugin = pluginGroup.plugin;

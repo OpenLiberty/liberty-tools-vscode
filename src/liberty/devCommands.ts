@@ -27,7 +27,7 @@ import {
     SETTING_SUREFIRE_REPORT_PATH, SETTING_FAILSAFE_REPORT_PATH, SETTING_GRADLE_REPORT_PATH,
 } from "../definitions/constants";
 import { getGradleTestReport } from "../util/gradleUtil";
-import { getMavenReportOutputDirectory } from "../util/mavenUtil";
+import { getMavenReportLocation } from "../util/mavenUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
 import { getCommandForMaven, getCommandForGradle, defaultWindowsShell, isWin, extractInstallDirFromParams } from "../util/commandUtils";
@@ -690,22 +690,32 @@ export async function openReport(reportType: string, libProject?: LibertyProject
                     report = resolvedCustom;
                     await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
                 } else {
-                    // Priority 2: <outputDirectory> from maven-surefire/failsafe-report-plugin in pom.xml
+                    // Priority 2: <outputDirectory> from maven-surefire/failsafe-report-plugin in pom.xml.
+                    // The plugin may appear in either <build><plugins> (new-style, >= 3.5.x, filename
+                    // "surefire.html") or <reporting><plugins> (old-style, <= 3.4.x, filename
+                    // "surefire-report.html"), so we check both sections via getMavenReportLocation.
                     const pomPluginId = reportType === "surefire"
                         ? "maven-surefire-report-plugin"
                         : "maven-failsafe-report-plugin";
                     let pomReportDir: string | undefined;
+                    let pomReportSource: "build" | "reporting" | undefined;
                     try {
                         const pomXml = fse.readFileSync(targetProject.getPath(), "utf8");
-                        const rawDir = getMavenReportOutputDirectory(pomXml, pomPluginId);
-                        if (rawDir) {
-                            pomReportDir = Path.isAbsolute(rawDir) ? rawDir : Path.resolve(path, rawDir);
+                        const location = getMavenReportLocation(pomXml, pomPluginId);
+                        if (location) {
+                            pomReportDir = Path.isAbsolute(location.dir) ? location.dir : Path.resolve(path, location.dir);
+                            pomReportSource = location.source;
                         }
                     } catch {
                         // pom.xml unreadable — fall through to default
                     }
                     if (pomReportDir) {
-                        report = Path.join(pomReportDir, reportType + ".html");
+                        // Old-style <reporting> plugins use "surefire-report.html"; new-style <build>
+                        // plugins (>= 3.5.x) use "surefire.html" / "failsafe.html".
+                        const pomReportFilename = pomReportSource === "reporting"
+                            ? reportType + "-report.html"
+                            : reportType + ".html";
+                        report = Path.join(pomReportDir, pomReportFilename);
                         await checkReportAndDisplay(report, reportType, reportTypeLabel, targetProject, showErrorMessage);
                     } else {
                         // Priority 3: hardcoded default locations

@@ -50,7 +50,7 @@ const { resolveMavenReportPath } = require("../../liberty/devCommands");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { getGradleTestReport } = require("../../util/gradleUtil");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { getMavenReportOutputDirectory } = require("../../util/mavenUtil");
+const { getMavenReportOutputDirectory, getMavenReportLocation } = require("../../util/mavenUtil");
 
 // ── resolveMavenReportPath ─────────────────────────────────────────────────────
 
@@ -347,5 +347,99 @@ describe("getMavenReportOutputDirectory()", () => {
     it("trims leading/trailing whitespace from the returned path", () => {
         const xml = makePomWithReportPlugin(SUREFIRE, "  target/my-reports  ");
         assert.strictEqual(getMavenReportOutputDirectory(xml, SUREFIRE), "target/my-reports");
+    });
+});
+
+// ── getMavenReportLocation ─────────────────────────────────────────────────────
+
+/** Build a minimal pom.xml with the reporting plugin in <reporting><plugins>. */
+function makePomWithReportingSection(artifactId: string, outputDir?: string): string {
+    const configBlock = outputDir !== undefined
+        ? `<configuration><outputDirectory>${outputDir}</outputDirectory></configuration>`
+        : "";
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <artifactId>my-app</artifactId>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>${artifactId}</artifactId>
+        ${configBlock}
+      </plugin>
+    </plugins>
+  </reporting>
+</project>`;
+}
+
+describe("getMavenReportLocation()", () => {
+    const SUREFIRE = "maven-surefire-report-plugin";
+    const FAILSAFE = "maven-failsafe-report-plugin";
+
+    it("returns undefined when the plugin is absent", () => {
+        const xml = makePomWithoutPlugin();
+        assert.strictEqual(getMavenReportLocation(xml, SUREFIRE), undefined);
+    });
+
+    it("returns { source: 'build' } when plugin is in <build><plugins>", () => {
+        const xml = makePomWithReportPlugin(SUREFIRE, "custom/surefire-reports");
+        const loc = getMavenReportLocation(xml, SUREFIRE);
+        assert.deepStrictEqual(loc, { dir: "custom/surefire-reports", source: "build" });
+    });
+
+    it("returns { source: 'reporting' } when plugin is in <reporting><plugins>", () => {
+        const xml = makePomWithReportingSection(SUREFIRE, "custom/reporting-dir");
+        const loc = getMavenReportLocation(xml, SUREFIRE);
+        assert.deepStrictEqual(loc, { dir: "custom/reporting-dir", source: "reporting" });
+    });
+
+    it("returns { source: 'reporting' } for failsafe in <reporting><plugins>", () => {
+        const xml = makePomWithReportingSection(FAILSAFE, "/abs/failsafe-out");
+        const loc = getMavenReportLocation(xml, FAILSAFE);
+        assert.deepStrictEqual(loc, { dir: "/abs/failsafe-out", source: "reporting" });
+    });
+
+    it("prefers <build> over <reporting> when both sections declare the plugin", () => {
+        // Both sections present — <build> should win.
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>${SUREFIRE}</artifactId>
+        <configuration><outputDirectory>build-dir</outputDirectory></configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>${SUREFIRE}</artifactId>
+        <configuration><outputDirectory>reporting-dir</outputDirectory></configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+</project>`;
+        const loc = getMavenReportLocation(xml, SUREFIRE);
+        assert.deepStrictEqual(loc, { dir: "build-dir", source: "build" });
+    });
+
+    it("returns undefined when <reporting> plugin has no <configuration> block", () => {
+        const xml = makePomWithReportingSection(SUREFIRE); // no outputDir
+        assert.strictEqual(getMavenReportLocation(xml, SUREFIRE), undefined);
+    });
+
+    it("returns undefined when <reporting> plugin outputDirectory contains a Maven variable", () => {
+        const xml = makePomWithReportingSection(SUREFIRE, "${project.build.directory}/reports");
+        assert.strictEqual(getMavenReportLocation(xml, SUREFIRE), undefined);
+    });
+
+    it("trims whitespace from the dir returned via <reporting>", () => {
+        const xml = makePomWithReportingSection(SUREFIRE, "  target/site  ");
+        const loc = getMavenReportLocation(xml, SUREFIRE);
+        assert.deepStrictEqual(loc, { dir: "target/site", source: "reporting" });
     });
 });
