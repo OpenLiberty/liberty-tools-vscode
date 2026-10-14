@@ -34,12 +34,13 @@ export function getWaitHelper(): WaitHelper {
  *
  * @param channelName The name of the output channel (e.g., 'Language Support for Liberty')
  * @param initMessage The message to look for indicating initialization (e.g., 'Initialized Liberty Language server')
- * @param timeout Timeout in seconds (default: 60)
+ * @param timeout Timeout in seconds (default: 180). Language servers can take a long
+ *                time to start while the project is still loading.
  */
 export async function waitForLanguageServerInit(
     channelName: string,
     initMessage: string,
-    timeout: number = 60
+    timeout: number = 180
 ): Promise<void> {
     const wait = getWaitHelper();
     
@@ -564,7 +565,7 @@ export async function waitForTestReport(reportPath: string, alternatePath?: stri
             }
             return;
         }, {
-            timeout: seconds(50),
+            timeout: seconds(120),
             pollInterval: seconds(1),
             message: alternatePath
                 ? `Test report not found at either ${reportPath} or ${alternatePath}`

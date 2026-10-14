@@ -71,14 +71,14 @@ export function runHoverTestSuite(config: HoverConfig){
         });
 
         it('Liberty Language Server should initialize', async function() {
-            this.timeout(60000);
+            this.timeout(200000);
             logger.testStart('Liberty Language Server should initialize');
             
             try {
                 await utils.waitForLanguageServerInit(
                     'Language Support for Liberty',
                     'Initialized Liberty Language server',
-                    60
+                    180
                 );
                 logger.testComplete('Liberty Language Server initialized successfully');
             } catch (error) {
@@ -138,14 +138,14 @@ export function runHoverTestSuite(config: HoverConfig){
             });
 
             it('LSP4Jakarta Language Server should initialize', async function() {
-                this.timeout(60000);
+                this.timeout(200000);
                 logger.testStart('LSP4Jakarta Language Server should initialize');
                 
                 try {
                     await utils.waitForLanguageServerInit(
                         'Language Support for Jakarta EE',
                         'Initializing Jakarta EE server',
-                        60
+                        180
                     );
                     logger.testComplete('LSP4Jakarta Language Server initialized successfully');
                 } catch (error) {

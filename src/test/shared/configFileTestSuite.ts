@@ -121,13 +121,13 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
         });
 
         it('Liberty Language Server should initialize', async function () {
-            this.timeout(60000);
+            this.timeout(200000);
             logger.testStart('Liberty Language Server should initialize');
             try {
                 await utils.waitForLanguageServerInit(
                     'Language Support for Liberty',
                     'Initialized Liberty Language server',
-                    60
+                    180
                 );
                 logger.testComplete('Liberty Language Server initialized successfully');
             } catch (error) {
