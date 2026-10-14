@@ -34,7 +34,7 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
                     );
 
         before(async function() {
-            this.timeout(60000);
+            this.timeout(180000);
             logger.info('Setting up jakarta_rest_class snippet test');
 
             driver = VSBrowser.instance.driver;

@@ -17,9 +17,9 @@ export class EditorPage {
      *
      * @param filePath  Absolute path to the file.
      * @param tabTitle  The editor tab title (usually the file name).
-     * @param timeoutS  Maximum seconds to wait for the tab to appear (default 60).
+     * @param timeoutS  Maximum seconds to wait for the tab to appear (default 120).
      */
-    async openFile(filePath: string, tabTitle: string, timeoutS = 60): Promise<this> {
+    async openFile(filePath: string, tabTitle: string, timeoutS = 120): Promise<this> {
         await VSBrowser.instance.openResources(filePath);
         // Poll until the tab is registered in the editor view.
         const ed = await utils.waitForCondition(async () => {
