@@ -254,6 +254,36 @@ By default, Liberty Tools looks for test reports at the locations described abov
 
 The same patterns apply to `maven-failsafe-report-plugin` for integration test reports.
 
+#### Gradle report location resolution
+
+1. **VS Code setting** — if `liberty.test.report.gradle.path` is set, that path is used and no further lookup is performed.
+2. **`build.gradle` destination** — Liberty Tools parses your `build.gradle` and reads the custom HTML report directory from the `test` task's `reports.html` block. It checks the following keys in order:
+   - `destination` (Gradle ≤ 7) — in flat (`test.reports.html.destination = "..."`), nested, or deep form
+   - `outputLocation` (Gradle 8/9) — in flat (`test.reports.html.outputLocation = "..."`), nested, or deep form
+3. **Default location** — if neither of the above is configured, Liberty Tools falls back to `build/reports/tests/test/index.html`.
+
+**Example: Gradle ≤ 7 (`destination`)**
+
+```groovy
+test {
+    reports {
+        html.destination = file("build/my-reports/tests")
+    }
+}
+```
+
+**Example: Gradle 8/9 (`outputLocation`)**
+
+```groovy
+test {
+    reports {
+        html.outputLocation = file("build/my-reports/tests")
+    }
+}
+```
+
+> **Note:** Liberty Tools skips `destination` or `outputLocation` values that contain Gradle variable expressions such as `$buildDir` or `${project.buildDir}` because they cannot be resolved statically. In that case, resolution falls through to the default location. Use the VS Code setting to specify an explicit path when your configuration uses variables.
+
 #### VS Code settings override
 
 To override the automatically resolved location entirely, set the following in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file:
