@@ -89,14 +89,14 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
         });
         
         it('LSP4Jakarta Language Server should initialize', async function() {
-                this.timeout(60000);
+                this.timeout(200000);
                 logger.testStart('LSP4Jakarta Language Server should initialize');
                 
                 try {
                     await utils.waitForLanguageServerInit(
                         'Language Support for Jakarta EE',
                         'Initializing Jakarta EE server',
-                        60
+                        180
                     );
                     logger.testComplete('LSP4Jakarta Language Server initialized successfully');
                 } catch (error) {

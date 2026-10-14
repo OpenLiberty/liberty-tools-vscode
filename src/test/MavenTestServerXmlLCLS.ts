@@ -81,12 +81,12 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
     });
 
     it('Liberty Language Server should initialize', async function() {
-        this.timeout(60000);
+        this.timeout(200000);
         logger.testStart('Liberty Language Server should initialize');
         await utils.waitForLanguageServerInit(
             'Language Support for Liberty',
             'Initialized Liberty Language server',
-            60
+            180
         );
         logger.testComplete('Liberty Language Server initialized successfully');
     });

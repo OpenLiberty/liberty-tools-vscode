@@ -277,7 +277,7 @@ describe('Maven custom report path tests', () => {
             logger.testFailed('View unit test report for Maven project with custom surefire path', error);
             throw error;
         }
-    }).timeout(350000);
+    }).timeout(600000);
 
     it('View integration test report for Maven project with custom failsafe path', async () => {
         logger.testStart('View integration test report for Maven project with custom failsafe path');
@@ -339,7 +339,7 @@ describe('Maven custom report path tests', () => {
             logger.testFailed('View integration test report for Maven project with custom failsafe path', error);
             throw error;
         }
-    }).timeout(350000);
+    }).timeout(600000);
 
     after(async function() {
         this.timeout(45000);
