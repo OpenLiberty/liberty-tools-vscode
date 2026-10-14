@@ -254,6 +254,38 @@ The default timeout is **180 seconds (3 minutes)**. If your server consistently 
 
 To configure this setting, open the Settings UI (`Cmd+,` / `Ctrl+,`) and search for **Liberty debug**.
 
+#### Change the debug port
+
+By default, the server listens for the debugger on port **7777**. You can use a different port in any of the following ways:
+
+- **`server.env` (Maven and Gradle):** Add `WLP_DEBUG_ADDRESS=<port>` to `src/main/liberty/config/server.env`. **Start in debug mode** starts the server on that port and attaches the debugger to it.
+
+  ```
+  WLP_DEBUG_ADDRESS=8888
+  ```
+
+  Liberty Tools reads only `src/main/liberty/config/server.env`. If your project uses a different `configDirectory`, the `server.env` file in that directory is not read, and **Start in debug mode** uses port 7777.
+
+- **Maven build configuration:** Set `libertyDebugPort` in the `liberty-maven-plugin` configuration in your `pom.xml`. The parameter name is `libertyDebugPort`, not `debugPort`. A value set in the `pom.xml` takes precedence over the `-DdebugPort` command-line parameter.
+
+  ```xml
+  <plugin>
+      <groupId>io.openliberty.tools</groupId>
+      <artifactId>liberty-maven-plugin</artifactId>
+      <configuration>
+          <libertyDebugPort>8888</libertyDebugPort>
+      </configuration>
+  </plugin>
+  ```
+
+- **Custom parameters:** Use the **Start...** command and enter a custom parameter, then attach with the **Attach debugger** command.
+  - Maven: `-DdebugPort=<port>`
+  - Gradle: `--libertyDebugPort=<port>`
+
+  For Gradle, `libertyDebugPort` is honored only as a command-line parameter. Setting it in `build.gradle` or `gradle.properties` has no effect.
+
+For more information, see the [Liberty Maven plugin dev goal](https://github.com/OpenLiberty/ci.maven/blob/main/docs/dev.md#dev) and the [Liberty Gradle plugin `libertyDev` task](https://github.com/OpenLiberty/ci.gradle/blob/main/docs/libertyDev.md) documentation.
+
 ### Attach debugger manually
 
 To attach the debugger, you must have a [running server](#run-your-application-on-liberty-using-dev-mode). Once the server is running, click the **Attach debugger** command or select the **Liberty: Attach debugger** command in the command palette, followed by your application.

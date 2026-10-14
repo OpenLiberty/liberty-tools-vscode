@@ -48,8 +48,9 @@ export const MAVEN_GOAL_DEVC = "io.openliberty.tools:liberty-maven-plugin:devc";
 export const GRADLE_TASK_DEV  = "libertyDev";
 export const GRADLE_TASK_DEVC = "libertyDevc";
 
-export const MAVEN_DEVMODE_DEBUG_PORT_PARM  = "-DdebugPort=7777";
-export const GRADLE_DEVMODE_DEBUG_PORT_PARM = "--libertyDebugPort=7777";
+export const MAVEN_DEVMODE_DEBUG_PORT_PREFIX  = "-DdebugPort";
+export const GRADLE_DEVMODE_DEBUG_PORT_PREFIX = "--libertyDebugPort";
+export const DEFAULT_DEVMODE_DEBUG_PORT        = "7777";
 
 export const LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION  = "3.3.0";
 export const LIBERTY_GRADLE_PLUGIN_CONTAINER_VERSION = "3.1.0";
@@ -96,7 +97,6 @@ export const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target,build}/**";
 // ---------------------------------------------------------------------------
 // Runtime
 // ---------------------------------------------------------------------------
-export const LIBERTY_SERVER_ENV_PORT_REGEX        = /^WLP_DEBUG_ADDRESS=([\d]+)$/;
 export const LIBERTY_DASHBOARD_WORKSPACE_STORAGE_KEY = "liberty.dashboard.data";
 export const TEST_REPORT_STRING                   = "Test Summary";
 export const UNTITLED_WORKSPACE                   = "Untitled (Workspace)";

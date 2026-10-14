@@ -314,7 +314,7 @@ async function stampProjects(
 					project.isLibertyEnabled = metadata.isLibertyEnabled
 					  || hasServerXML(entry.path);
 					project.installDirectory = metadata.installDirectory;
-          project.updateExplorerIcon();
+					project.updateExplorerIcon();
 					mavenMetadataMap.set(entry.path, metadata);
 				} else if (entry.type === "gradle" && (entry.parsedBuild || entry.regexBuildFile || entry.parsedSettings)) {
 					const metadata = await gradleUtil.extractGradleMetadata(entry.path, entry.parsedBuild ?? null, entry.parsedSettings);
@@ -325,7 +325,7 @@ async function stampProjects(
 					project.isLibertyEnabled = metadata.isLibertyEnabled
 					  || hasServerXML(entry.path);
 					project.installDirectory = metadata.installDirectory;
-          project.updateExplorerIcon();
+					project.updateExplorerIcon();
 					gradleMetadataMap.set(entry.path, metadata);
 				}
 		} catch (error) {

@@ -18,9 +18,8 @@ import { ProjectRegistry } from "./projectRegistry";
 import { ProjectTreeProvider } from "./projectTreeProvider";
 import { getReport } from "../util/helperUtil";
 import {
-    LIBERTY_SERVER_ENV_PORT_REGEX, isMaven, isGradle,
+    isMaven, isGradle,
     MAVEN_GOAL_DEV, MAVEN_GOAL_DEVC, GRADLE_TASK_DEV, GRADLE_TASK_DEVC,
-    MAVEN_DEVMODE_DEBUG_PORT_PARM, GRADLE_DEVMODE_DEBUG_PORT_PARM,
     CMD_EXPLORER_REFRESH, CMD_OPEN_BUILD_FILE, CMD_START, CMD_START_DEBUG, CMD_STOP, CMD_DEBUG, CMD_CUSTOM,
     CMD_START_CONTAINER, CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
     CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
@@ -31,6 +30,7 @@ import { getGradleTestReport } from "../util/gradleUtil";
 import { DashboardData } from "./dashboard";
 import { ProjectStartCmdParam } from "./projectStartCmdParam";
 import { getCommandForMaven, getCommandForGradle, defaultWindowsShell, isWin, extractInstallDirFromParams } from "../util/commandUtils";
+import { resolveDebugPort, buildDevModeDebugPortFlag, parseDebugPortFromServerEnv } from "../util/serverEnvUtil";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 
@@ -262,10 +262,11 @@ export async function startDevModeWithDebugger(libProject?: LibertyProject | und
         }
 
         // Append the debug port flag as a custom parameter so the Liberty dev goal
-        // starts with the Java debug agent listening on port 7777.
-        const debugParam = isMaven(targetProject.getContextValue())
-            ? MAVEN_DEVMODE_DEBUG_PORT_PARM
-            : GRADLE_DEVMODE_DEBUG_PORT_PARM;
+        // starts with the Java debug agent listening on the resolved port.
+        const projectDir = Path.dirname(targetProject.getPath());
+        const isMavenProject = isMaven(targetProject.getContextValue());
+        const debugPort = resolveDebugPort(projectDir);
+        const debugParam = buildDevModeDebugPortFlag(isMavenProject, debugPort);
 
         await sendDevModeCommand(result.terminal, targetProject, MAVEN_GOAL_DEV, GRADLE_TASK_DEV, debugParam, result.javaHome);
         targetProject.setState(DevModeState.Starting);
@@ -276,18 +277,17 @@ export async function startDevModeWithDebugger(libProject?: LibertyProject | und
         let watchPattern: vscode.RelativePattern | undefined;
 
         if (targetProject.installDirectory) {
-            const projectDir = Path.dirname(targetProject.getPath());
             const resolvedInstallDir = Path.resolve(projectDir, targetProject.installDirectory);
             watchPattern = new vscode.RelativePattern(resolvedInstallDir, "usr/servers/**/server.env");
         } else {
             let pathPrefix = "";
-            if (isMaven(targetProject.getContextValue())) {
+            if (isMavenProject) {
                 pathPrefix = "target";
             } else if (isGradle(targetProject.getContextValue())) {
                 pathPrefix = "build";
             }
             if (pathPrefix !== "") {
-                watchPattern = new vscode.RelativePattern(Path.dirname(targetProject.getPath()), pathPrefix + "/**/server.env");
+                watchPattern = new vscode.RelativePattern(projectDir, pathPrefix + "/**/server.env");
             }
         }
 
@@ -307,15 +307,8 @@ export async function startDevModeWithDebugger(libProject?: LibertyProject | und
                 return;
             }
             try {
-                const lines = fse.readFileSync(uri.fsPath, "utf8").split("\n");
-                let port = "";
-                for (let i = 0; i < lines.length && port === ""; i++) {
-                    const match = LIBERTY_SERVER_ENV_PORT_REGEX.exec(lines[i]);
-                    if (match !== null) {
-                        port = match[1];
-                    }
-                }
-                if (port === "") {
+                const port = parseDebugPortFromServerEnv(fse.readFileSync(uri.fsPath, "utf8"));
+                if (port === undefined) {
                     return; // WLP_DEBUG_ADDRESS not written yet — wait for the next event.
                 }
 
@@ -534,16 +527,8 @@ export async function attachDebugger(libProject?: LibertyProject | undefined): P
         if (paths.length === 1) {
             console.log(localize("attach.debugger.liverty.dev.in", targetProject.getLabel()));
             const file = Path.resolve(paths[0]);
-            const lines = fse.readFileSync(file, "utf8").split("\n");
-            let port = "";
-            for (let i = 0; i < lines.length && port === ""; i++) {
-                const line = lines[i];
-                let match = undefined;
-                if ((match = LIBERTY_SERVER_ENV_PORT_REGEX.exec(line)) !== null) {
-                    port = match[1];
-                }
-            }
-            if (port !== "") {
+            const port = parseDebugPortFromServerEnv(fse.readFileSync(file, "utf8"));
+            if (port !== undefined) {
                 const path = Path.dirname(targetProject.getPath());
                 const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(targetProject.getPath()));
                 vscode.debug.startDebugging(workspaceFolder, {
