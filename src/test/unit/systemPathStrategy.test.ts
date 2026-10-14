@@ -11,6 +11,7 @@ const originalLoad = Module._load;
 
 // Mutable so individual tests can replace findRuntimes behaviour.
 let findRuntimesImpl: () => Promise<any[]> = async () => [];
+let lastFindRuntimesOptions: any;
 
 // Evict jdk-utils and system-path-strategy from cache so our hook is used
 // instead of whatever was cached by an earlier test file in this run.
@@ -22,7 +23,12 @@ Object.keys(require.cache).forEach(key => {
 
 Module._load = function(request: string, ...args: any[]) {
     if (request === "jdk-utils") {
-        return { findRuntimes: () => findRuntimesImpl() };
+        return {
+            findRuntimes: (options?: any) => {
+                lastFindRuntimesOptions = options;
+                return findRuntimesImpl();
+            },
+        };
     }
     if (request === "vscode") {
         return {
@@ -42,6 +48,11 @@ describe("systemPathStrategy", () => {
 
     afterEach(() => {
         findRuntimesImpl = async () => [];
+    });
+
+    it("requests withTags so JAVA_HOME / JDK_HOME flags are populated", async () => {
+        await systemPathStrategy.detect();
+        assert.strictEqual(lastFindRuntimesOptions?.withTags, true);
     });
 
     it("returns [] when findRuntimes returns nothing", async () => {

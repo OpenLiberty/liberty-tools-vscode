@@ -17,7 +17,10 @@ export const systemPathStrategy: IJavaDetectStrategy = {
     // scope is not used — system-path is machine-wide, not project-scoped
     async detect(_scope?: import("vscode").Uri): Promise<IJavaInstallation[]> {
         try {
+            // withTags is required for jdk-utils to set isJavaHomeEnv / isJdkHomeEnv.
+            // Without it every runtime ties at the lowest priority and JAVA_HOME is ignored.
             const runtimes: IJavaRuntime[] = await findRuntimes({
+                withTags: true,
                 withVersion: true,
                 checkJavac: true,
             });
