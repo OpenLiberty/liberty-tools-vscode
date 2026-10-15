@@ -31,8 +31,7 @@ export function runHoverTestSuite(config: HoverConfig){
             logger.info(`Setting up ${config.buildTool === 'maven' ? 'Maven' : 'Gradle'} LSP Hover tests`);
             
             // Wait for workbench to be ready
-            await VSBrowser.instance.openResources(config.getProjectPath());
-            await VSBrowser.instance.waitForWorkbench();
+            await utils.openProjectFolder(config.getProjectPath());
             
             // Open server.xml file once for all tests
             logger.info('Opening server.xml file for all tests');

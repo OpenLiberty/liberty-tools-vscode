@@ -27,8 +27,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
         wait = utils.getWaitHelper();
 
         // Open workspace
-        await VSBrowser.instance.openResources(utils.getMvnProjectPath());
-        await VSBrowser.instance.waitForWorkbench();
+        await utils.openProjectFolder(utils.getMvnProjectPath());
         editorView = new EditorView();
 
         // Open the real server.xml via EditorPage so the tab is confirmed visible

@@ -699,6 +699,44 @@ export async function closeWorkspace(): Promise<void> {
 }
 
 /**
+ * Open a project folder and wait for the window to settle on it.
+ *
+ * Opening a folder from the CLI can reload the VS Code window. vscode-extension-tester
+ * 8.28+ drops CLI open requests that arrive while that reload is in progress and then
+ * fails with "Failed to open resource(s) in the editor". Waiting until the window title
+ * shows the folder name keeps the next file open from racing the reload.
+ *
+ * Best effort: if the title never shows the folder, continue after the timeout so a
+ * title-format difference cannot fail a suite on its own.
+ */
+export async function openProjectFolder(projectPath: string, timeout: number = 60): Promise<void> {
+    await VSBrowser.instance.openResources(projectPath);
+    await VSBrowser.instance.waitForWorkbench();
+
+    const folderName = path.basename(projectPath);
+    try {
+        await getWaitHelper().forCondition(async () => {
+            try {
+                const title = await VSBrowser.instance.driver.getTitle();
+                return title.includes(folderName) ? true : undefined;
+            } catch {
+                // Window may be mid-reload; retry.
+                return undefined;
+            }
+        }, {
+            timeout: seconds(timeout),
+            pollInterval: seconds(1),
+            message: `Window title did not show ${folderName} within ${timeout} seconds`
+        });
+        logger.info(`Window settled on ${folderName}`);
+    } catch {
+        logger.info(`Window title did not show ${folderName}; continuing`);
+    }
+    // Let extension activation and the explorer finish after the title updates.
+    await getWaitHelper().sleep(2000);
+}
+
+/**
  * Remove specific directory with contents.
  */
 export async function removeDirectoryByPath(dirPath: string): Promise<void> {
