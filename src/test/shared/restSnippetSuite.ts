@@ -40,8 +40,7 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
             driver = VSBrowser.instance.driver;
             wait = utils.getWaitHelper(); 
             // Open folder, wait for workbench 
-            await VSBrowser.instance.openResources(config.getProjectPath());
-            await VSBrowser.instance.waitForWorkbench();
+            await utils.openProjectFolder(config.getProjectPath());
 
             // Open file and bind page object to editor
             editorPage = await new EditorPage().openFile(testRestPath, 'TestRest.java');

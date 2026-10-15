@@ -69,8 +69,7 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
             this.timeout(180000);
             logger.info(`Setting up Maven ${config.tabTitle} tests`);
 
-            await VSBrowser.instance.openResources(config.getProjectPath());
-            await VSBrowser.instance.waitForWorkbench();
+            await utils.openProjectFolder(config.getProjectPath());
 
             wait = utils.getWaitHelper();
 
