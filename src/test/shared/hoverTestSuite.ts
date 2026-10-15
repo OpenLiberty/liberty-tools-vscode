@@ -58,7 +58,8 @@ export function runHoverTestSuite(config: HoverConfig){
         });
 
         after(async function() {
-            this.timeout(10000);
+            this.timeout(20000);
+            await utils.screenshotIfSetupFailed(this, `${config.buildTool} LSP hover`);
             try {
                 await editorUtils.closeAllEditors();
                 logger.info('Closed all editors after test suite');
@@ -113,6 +114,12 @@ export function runHoverTestSuite(config: HoverConfig){
 
         describe('LSP4Jakarta Hover tests in Java file', () => {
             let javaFile: EditorPage; 
+
+            after(async function() {
+                this.timeout(20000);
+                await utils.screenshotIfSetupFailed(this, `${config.buildTool} LSP4Jakarta hover`);
+                utils.copyScreenshotsToProjectFolder(config.buildTool);
+            });
 
             before(async function() {
                 this.timeout(180000);

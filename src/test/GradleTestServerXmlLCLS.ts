@@ -329,6 +329,7 @@ describe('LCLS tests for Gradle Project', function () {
 
     after(async function () {
         this.timeout(30000);
+        await utils.screenshotIfSetupFailed(this, 'Gradle Liberty Config Language Server');
         await utils.removeDirectoryByPath(path.join(utils.getGradleProjectPath(), 'src', 'main', 'liberty', 'config2'));
         logger.info("Removed new config folder:");
         utils.copyScreenshotsToProjectFolder('gradle');

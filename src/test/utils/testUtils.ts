@@ -614,6 +614,27 @@ export async function waitForEditorTab(tabTitle: string): Promise<string[]> {
 }
 
 /**
+ * Takes a screenshot when a suite's `before` hook failed. Mocha skips every test and
+ * `afterEach` in that case, so no other handler captures the screen. Call it from an
+ * `after` hook, before copyScreenshotsToProjectFolder. In `after`, `currentTest.state`
+ * is undefined only when the `before` hook failed; it is a no-op otherwise.
+ * @param ctx The mocha context (`this`) of the `after` hook
+ * @param suiteName Name used in the log message and screenshot file name
+ */
+export async function screenshotIfSetupFailed(ctx: Mocha.Context, suiteName: string): Promise<void> {
+    if (ctx.currentTest?.state !== undefined) {
+        return;
+    }
+    logger.error(`Setup failed: ${suiteName}`);
+    try {
+        const VSBrowser = require('vscode-extension-tester').VSBrowser;
+        await VSBrowser.instance.takeScreenshot(`setup-failed-${suiteName.replace(/[^a-zA-Z0-9]+/g, '-')}`);
+    } catch (error) {
+        logger.error('Failed to take setup failure screenshot', error);
+    }
+}
+
+/**
  * Copies screenshots from the temporary VSCode screenshots directory to a permanent location
  * organized by build tool (maven or gradle).
  * @param buildTool The build tool name ('maven' or 'gradle') to organize screenshots
