@@ -21,12 +21,17 @@ export class EditorPage {
      */
     async openFile(filePath: string, tabTitle: string, timeoutS = 120): Promise<this> {
         await VSBrowser.instance.openResources(filePath);
-        // Poll until the tab is registered in the editor view.
+        // Poll until the tab is registered in the editor view. Search every editor group:
+        // EditorView.openEditor() only looks in the leftmost group, which can be empty when
+        // the file opened in a second group.
         const ed = await utils.waitForCondition(async () => {
             try {
-                const titles = await this.editorView.getOpenEditorTitles();
-                if (!(titles as string[]).includes(tabTitle)) { return undefined; }
-                return await this.editorView.openEditor(tabTitle) as TextEditor;
+                for (const group of await this.editorView.getEditorGroups()) {
+                    if ((await group.getOpenEditorTitles()).includes(tabTitle)) {
+                        return await group.openEditor(tabTitle) as TextEditor;
+                    }
+                }
+                return undefined;
             } catch {
                 return undefined;
             }
