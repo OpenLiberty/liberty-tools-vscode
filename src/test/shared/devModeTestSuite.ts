@@ -75,7 +75,7 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
         }
     }).timeout(60000);
      it(`Liberty Tools shows items -  ${config.buildTool}`, async () => {
-            logger.testStart('Liberty Tools shows items - Maven');
+            logger.testStart(`Liberty Tools shows items - ${config.buildTool}`);
             try {
                 logger.step(1, 'Getting dashboard section');
                 const section = await dashboard.getSection(); 
@@ -109,7 +109,7 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
         }).timeout(275000);
 
         it(`Start ${config.buildTool} project from Liberty Tools`, async () => {
-                logger.testStart('Start Maven project from Liberty Tools');
+                logger.testStart(`Start ${config.buildTool} project from Liberty Tools`);
                 try {
                     logger.step(1, 'Getting dashboard section and item');
                     await dashboard.runAction(config.projectConstant, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
@@ -145,7 +145,7 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
             }).timeout(550000);
         
          it(`Start ${config.buildTool} with Docker from Liberty Tools`, async () => {
-                logger.testStart('Start Maven with Docker from Liberty Tools');
+                logger.testStart(`Start ${config.buildTool} with Docker from Liberty Tools`);
         
                 if ((process.platform === 'darwin') || (process.platform === 'win32')) {
                     logger.skip(`Test skipped for platform: ${process.platform} (Docker test only runs on Linux)`);
@@ -187,7 +187,7 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
             }).timeout(350000);
 
         it(`Run tests for ${config.buildTool} project`, async () => {
-                logger.testStart('Run tests for Maven project');
+                logger.testStart(`Run tests for ${config.buildTool} project`);
                 try {
                     logger.step(1, 'Launching dashboard start action');
                     await dashboard.runAction(config.projectConstant, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
