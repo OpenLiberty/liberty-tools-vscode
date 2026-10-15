@@ -69,3 +69,18 @@ export async function closeAllEditors(): Promise<void> {
     }
 }
 
+
+/**
+ * Open the editor tab with the given title, searching every editor group.
+ * EditorView.openEditor() only looks in the leftmost group, which fails when the file
+ * is open in a second group and the first one is empty.
+ * @throws if no group contains a tab with that title.
+ */
+export async function openEditorInAnyGroup(title: string): Promise<TextEditor> {
+    for (const group of await new EditorView().getEditorGroups()) {
+        if ((await group.getOpenEditorTitles()).includes(title)) {
+            return await group.openEditor(title) as TextEditor;
+        }
+    }
+    throw new Error(`No editor with title '${title}' in any editor group`);
+}

@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar, SideBarView } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar, SideBarView, EditorView } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
 import * as constants from '../definitions/constants';
@@ -755,6 +755,42 @@ export async function openProjectFolder(projectPath: string, timeout: number = 6
     }
     // Let extension activation and the explorer finish after the title updates.
     await getWaitHelper().sleep(2000);
+
+    await logEditorGroups(`after opening ${folderName}`);
+    await joinEditorGroups();
+}
+
+/**
+ * Log how many editor groups exist and which tabs each holds. Diagnostic only; never throws.
+ */
+export async function logEditorGroups(context: string): Promise<void> {
+    try {
+        const groups = await new EditorView().getEditorGroups();
+        const tabs = await Promise.all(groups.map(async group => (await group.getOpenEditorTitles()).join(', ') || '(empty)'));
+        logger.info(`Editor groups ${context}: ${groups.length} [${tabs.join(' | ')}]`);
+    } catch (error) {
+        logger.info(`Could not read editor groups ${context}: ${String(error).split('\n')[0]}`);
+    }
+}
+
+/**
+ * Collapse multiple editor groups into one so suites start from a single-group layout.
+ * A stray empty group can appear on macOS after a workspace switch; tests that look up
+ * tabs in the leftmost group then fail. Best effort; never throws.
+ */
+export async function joinEditorGroups(): Promise<void> {
+    try {
+        const groups = await new EditorView().getEditorGroups();
+        if (groups.length <= 1) {
+            return;
+        }
+        logger.info(`Joining ${groups.length} editor groups into one`);
+        await new Workbench().executeCommand('join all editor groups');
+        await getWaitHelper().sleep(1000);
+        await logEditorGroups('after joining');
+    } catch (error) {
+        logger.info(`Could not join editor groups: ${String(error).split('\n')[0]}`);
+    }
 }
 
 /**

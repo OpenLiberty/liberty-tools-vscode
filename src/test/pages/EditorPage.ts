@@ -3,12 +3,12 @@
  * Copyright IBM Corp. 2026
  */
 
-import { EditorView, TextEditor, VSBrowser } from 'vscode-extension-tester';
+import { TextEditor, VSBrowser } from 'vscode-extension-tester';
 import * as utils from '../utils/testUtils';
+import * as editorUtils from '../utils/editorUtils';
 
 export class EditorPage {
     private editor!: TextEditor;
-    private editorView = new EditorView();
 
     /**
      * Open a file and bind this page object to its editor.
@@ -21,21 +21,15 @@ export class EditorPage {
      */
     async openFile(filePath: string, tabTitle: string, timeoutS = 120): Promise<this> {
         await VSBrowser.instance.openResources(filePath);
-        // Poll until the tab is registered in the editor view. Search every editor group:
-        // EditorView.openEditor() only looks in the leftmost group, which can be empty when
-        // the file opened in a second group.
+        // Poll until the tab is registered in any editor group.
         const ed = await utils.waitForCondition(async () => {
             try {
-                for (const group of await this.editorView.getEditorGroups()) {
-                    if ((await group.getOpenEditorTitles()).includes(tabTitle)) {
-                        return await group.openEditor(tabTitle) as TextEditor;
-                    }
-                }
-                return undefined;
+                return await editorUtils.openEditorInAnyGroup(tabTitle);
             } catch {
                 return undefined;
             }
         }, timeoutS);
+        await utils.logEditorGroups(`after opening ${tabTitle}`);
         // Brief pause to let the editor content area become interactable after the tab appears.
         // getText() cannot be used here because it hangs indefinitely on empty files.
         await utils.getWaitHelper().sleep(1500);
