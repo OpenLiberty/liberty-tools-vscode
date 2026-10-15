@@ -50,7 +50,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
 
         // Close the bottom bar and re-focus the editor
         await new BottomBarPanel().toggle(false);
-        editor = await editorView.openEditor('server.xml') as TextEditor;
+        editor = await editorUtils.openEditorInAnyGroup('server.xml');
         // Wait until getText() returns the actual server.xml content
         await utils.waitForCondition(async () => {
             const text = await editor.getText();
@@ -97,7 +97,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
         logger.testStart('Testing diagnostic detection and quick fix for invalid feature');
 
 
-        editor = await editorView.openEditor('server.xml') as TextEditor;
+        editor = await editorUtils.openEditorInAnyGroup('server.xml');
 
         logger.step(1, 'Finding feature line and replacing with invalid feature');
         const lineNumber = await editor.getLineOfText('jsp-2.3');
@@ -114,7 +114,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
         logger.stepSuccess(2, 'Diagnostic found in Problems view');
 
         await new BottomBarPanel().toggle(false);
-        editor = await editorView.openEditor('server.xml') as TextEditor;
+        editor = await editorUtils.openEditorInAnyGroup('server.xml');
         await utils.waitForCondition(async () => {
             const text = await editor.getText();
             return text.includes('<server') ? true : undefined;
@@ -143,7 +143,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
         this.timeout(60000);
         logger.testStart('Testing autocomplete for features');
 
-        editor = await editorView.openEditor('server.xml') as TextEditor;
+        editor = await editorUtils.openEditorInAnyGroup('server.xml');
 
 
         // verify the list opens with items, then dismiss it and type the value directly
@@ -199,7 +199,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             this.timeout(60000);
             logger.testStart('Testing autocomplete for logging stanza');
 
-            editor = await editorView.openEditor('server.xml') as TextEditor;
+            editor = await editorUtils.openEditorInAnyGroup('server.xml');
 
             logger.step(1, 'Finding </featureManager> as insertion point');
             const lineNumber = await editor.getLineOfText('</featureManager>');
@@ -246,7 +246,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             this.timeout(60000);
             logger.testStart('Testing autocomplete for application stanza');
 
-            editor = await editorView.openEditor('server.xml') as TextEditor;
+            editor = await editorUtils.openEditorInAnyGroup('server.xml');
 
             logger.step(1, 'Finding </featureManager> as insertion point');
             const lineNumber = await editor.getLineOfText('</featureManager>');
@@ -308,7 +308,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             const { readFileSync } = await import('fs');
             const minimalContent = readFileSync(platformXmlPath, 'utf8');
             const editorPage = EditorPage.from(
-                await editorView.openEditor('server.xml') as TextEditor
+                await editorUtils.openEditorInAnyGroup('server.xml')
             );
             await editorPage.getEditor().setText(minimalContent);
             await editorPage.getEditor().save();
@@ -347,7 +347,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
             // Wait for LCLS to raise the diagnostic, then re-focus the editor
             await new ProblemsPage().hasDiagnostic(constants.PLATFORM_JAKARTA_ERROR);
             await new BottomBarPanel().toggle(false);
-            editor = await editorView.openEditor('server.xml') as TextEditor;
+            editor = await editorUtils.openEditorInAnyGroup('server.xml');
             await utils.waitForCondition(async () => {
                 const text = await editor.getText();
                 return text.includes('jakarta') ? true : undefined;
