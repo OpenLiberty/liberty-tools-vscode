@@ -343,6 +343,8 @@ describe('Maven custom report path tests', () => {
 
     after(async function() {
         this.timeout(45000);
+        await utils.screenshotIfSetupFailed(this, 'Maven custom report path');
+        utils.copyScreenshotsToProjectFolder('maven');
         utils.removeVscodeSettings(utils.getMvnProjectPath());
         await utils.closeWorkspace();
     });

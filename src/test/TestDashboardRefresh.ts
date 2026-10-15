@@ -54,6 +54,8 @@ describe("Liberty Tools Dashboard Refresh", () => {
      */
     after(async function() {
         this.timeout(45000);
+        await utils.screenshotIfSetupFailed(this, 'Dashboard refresh');
+        utils.copyScreenshotsToProjectFolder('maven');
         await utils.closeWorkspace();
     });
 

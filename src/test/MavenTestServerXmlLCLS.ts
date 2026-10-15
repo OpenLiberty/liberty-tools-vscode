@@ -68,6 +68,7 @@ describe('Liberty Config Language Server Tests for Maven Project', () => {
 
     after(async function() {
         this.timeout(30000);
+        await utils.screenshotIfSetupFailed(this, 'Maven Liberty Config Language Server');
         try {
             await new Workbench().executeCommand('revert file');
             await wait.sleep(500);

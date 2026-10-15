@@ -271,6 +271,8 @@ describe('Gradle custom report path tests', () => {
 
     after(async function() {
         this.timeout(45000);
+        await utils.screenshotIfSetupFailed(this, 'Gradle custom report path');
+        utils.copyScreenshotsToProjectFolder('gradle');
         utils.removeVscodeSettings(utils.getGradleProjectPath());
         await utils.closeWorkspace();
     });

@@ -301,7 +301,9 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
             /**
              * The following after hook copies the screenshot from the temporary folder in which it is saved to a known permanent location in the project folder.
              */
-            after(() => {
+            after(async function() {
+                this.timeout(20000);
+                await utils.screenshotIfSetupFailed(this, `${config.buildTool} devmode actions`);
                 utils.copyScreenshotsToProjectFolder(config.buildTool);
             });
         

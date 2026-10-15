@@ -58,6 +58,7 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
 
         after(async function() {
             this.timeout(15000);
+            await utils.screenshotIfSetupFailed(this, `${config.buildTool} REST snippet`);
             try {
                 if (editorPage) {
                     // Select all text first, then clear

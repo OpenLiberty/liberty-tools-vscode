@@ -95,6 +95,7 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
 
         after(async function () {
             this.timeout(30000);
+            await utils.screenshotIfSetupFailed(this, config.suiteTitle);
             try {
                 if (editor) {
                     const currentText = await editor.getEditor().getText();
