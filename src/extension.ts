@@ -24,6 +24,7 @@ import {
     CMD_RUN_TESTS, CMD_OPEN_FAILSAFE_REPORT, CMD_OPEN_SUREFIRE_REPORT,
     CMD_OPEN_GRADLE_TEST_REPORT, CMD_ADD_PROJECT, CMD_REMOVE_PROJECT,
     CMD_SORT_WORKSPACE, CMD_SORT_WORKSPACE_ACTIVE, CMD_SORT_ALPHABETICAL, CMD_SORT_ALPHABETICAL_ACTIVE,
+    CMD_JAKARTA_RESET_VERSION,
 } from "./definitions/constants";
 import { createLsOutputChannel } from "./util/lsOutputChannel";
 import path = require('path');
@@ -34,7 +35,7 @@ const JAVA_EXTENSION_ID = "redhat.java";
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
 export const LIBERTY_LS_JAR = "liberty-langserver-2.4.2-jar-with-dependencies.jar";
-export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.2.7-jar-with-dependencies.jar";
+export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.3.0-SNAPSHOT-jar-with-dependencies.jar";
 
 let libertyClient: LanguageClient;
 let jakartaClient: LanguageClient;
@@ -130,6 +131,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             bindRequest(lsp4jakartaLS.JAVA_CODEACTION_RESOLVE_REQUEST);
             bindRequest(lsp4jakartaLS.JAVA_DIAGNOSTICS_REQUEST);
             bindRequest(lsp4jakartaLS.JAVA_PROJECT_LABELS_REQUEST);
+
+            jakartaClient.onRequest(lsp4jakartaLS.JAKARTA_SELECT_VERSION_REQUEST,
+                async (params: { projectUri: string; versions: string[] }) => {
+                    const selected = await vscode.window.showQuickPick(params.versions, {
+                        title: localize("jakarta.version.select.title"),
+                        placeHolder: localize("jakarta.version.select.placeholder"),
+                        ignoreFocusOut: true,
+                    });
+                    return selected ?? null;
+                }
+            );
+
             item.text = localize("jakarta.ls.thumbs.up");
             item.tooltip = localize("jakarta.ls.started");
             toggleItem(window.activeTextEditor, item);
@@ -203,6 +216,59 @@ function registerCommands(context: ExtensionContext) {
     );
     context.subscriptions.push(
         vscode.commands.registerCommand('liberty.starterProject', () => starterProject(context))
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(CMD_JAKARTA_RESET_VERSION, async () => {
+            const folders = vscode.workspace.workspaceFolders;
+            if (!folders || folders.length === 0) {
+                vscode.window.showInformationMessage(localize("jakarta.version.reset.no.workspace"));
+                return;
+            }
+
+            // Find only the folders that have a .jakarta-version file.
+            const foldersWithVersion: vscode.WorkspaceFolder[] = [];
+            for (const folder of folders) {
+                try {
+                    await vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, ".jakarta-version"));
+                    foldersWithVersion.push(folder);
+                } catch {
+                    // no version file in this folder
+                }
+            }
+
+            if (foldersWithVersion.length === 0) {
+                vscode.window.showInformationMessage(localize("jakarta.version.reset.none.found"));
+                return;
+            }
+
+            // Single match — reset directly. Multiple — ask which one.
+            let target: vscode.WorkspaceFolder;
+            if (foldersWithVersion.length === 1) {
+                target = foldersWithVersion[0];
+            } else {
+                const picked = await vscode.window.showQuickPick(
+                    foldersWithVersion.map(f => ({ label: f.name, description: f.uri.fsPath, folder: f })),
+                    {
+                        title: localize("jakarta.version.reset.pick.title"),
+                        placeHolder: localize("jakarta.version.reset.pick.placeholder"),
+                        ignoreFocusOut: true,
+                    }
+                );
+                if (!picked) {
+                    return; // user cancelled
+                }
+                target = picked.folder;
+            }
+
+            // Delegate the full reset to the language server — it clears its cache,
+            // deletes the .jakarta-version file, and re-triggers version selection.
+            if (jakartaClient) {
+                jakartaClient.sendRequest("workspace/executeCommand", {
+                    command: "jakarta.resetVersion",
+                    arguments: [target.uri.fsPath]
+                });
+            }
+        })
     );
 }
 
@@ -322,6 +388,11 @@ function prepareClientOptions(Liberty_LS: boolean) {
                 fileEvents: [
                     workspace.createFileSystemWatcher("**/*.java")
                 ],
+            },
+            initializationOptions: {
+                extendedClientCapabilities: {
+                    jakartaVersionSelector: true
+                }
             }
         };
     }
