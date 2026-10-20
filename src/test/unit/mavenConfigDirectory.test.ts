@@ -16,7 +16,14 @@
  */
 
 import { strict as assert } from "assert";
-import { extractConfigDirectoryFromPom } from "../../util/mavenUtil";
+import * as path from "path";
+import {
+    extractConfigDirectoryFromPom,
+    resolveConfigDirectory,
+    extractPomIdentity,
+    indexPomsByArtifactId,
+    findInheritedConfigDirectory,
+} from "../../util/mavenUtil";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -217,5 +224,107 @@ describe("extractConfigDirectoryFromPom", () => {
   </build>`);
         const result = extractConfigDirectoryFromPom(xml);
         assert.equal(result, "my-config-dir");
+    });
+});
+
+// ── resolveConfigDirectory ────────────────────────────────────────────────────
+
+describe("resolveConfigDirectory", () => {
+    const projectDir = path.resolve("/ws/module");
+
+    it("resolves a relative path against the module directory", () => {
+        assert.equal(resolveConfigDirectory("liberty/cfg", projectDir), path.resolve(projectDir, "liberty/cfg"));
+    });
+
+    it("returns an absolute path unchanged", () => {
+        const abs = path.resolve("/somewhere/else");
+        assert.equal(resolveConfigDirectory(abs, projectDir), abs);
+    });
+
+    it("expands ${project.basedir}", () => {
+        assert.equal(resolveConfigDirectory("${project.basedir}/cfg", projectDir), path.resolve(projectDir, "cfg"));
+    });
+
+    it("expands ${basedir}", () => {
+        assert.equal(resolveConfigDirectory("${basedir}/cfg", projectDir), path.resolve(projectDir, "cfg"));
+    });
+
+    it("expands the placeholder when it is the whole value", () => {
+        assert.equal(resolveConfigDirectory("${project.basedir}", projectDir), projectDir);
+    });
+});
+
+// ── parent-chain helpers ──────────────────────────────────────────────────────
+
+function pom(artifactId: string, parentArtifactId?: string, configDir?: string): string {
+    const parent = parentArtifactId
+        ? `<parent><groupId>g</groupId><artifactId>${parentArtifactId}</artifactId><version>1</version></parent>`
+        : "";
+    const build = configDir ? buildPluginManagementBlock(configDir) : "";
+    return `<project>${parent}<groupId>g</groupId><artifactId>${artifactId}</artifactId><version>1</version>${build}</project>`;
+}
+
+describe("extractPomIdentity", () => {
+    it("returns artifactId and parent artifactId", () => {
+        assert.deepEqual(extractPomIdentity(pom("child", "parent")), { artifactId: "child", parentArtifactId: "parent" });
+    });
+
+    it("returns an undefined parent when none is declared", () => {
+        assert.deepEqual(extractPomIdentity(pom("root")), { artifactId: "root", parentArtifactId: undefined });
+    });
+
+    it("returns an empty identity for invalid XML", () => {
+        assert.deepEqual(extractPomIdentity("not xml"), {});
+    });
+});
+
+describe("findInheritedConfigDirectory", () => {
+    it("returns the configDirectory declared in the direct parent's pluginManagement", () => {
+        const parent = pom("parent", undefined, "src/main/custom");
+        const child = pom("child", "parent");
+        const index = indexPomsByArtifactId([{ xmlString: parent }, { xmlString: child }]);
+        assert.equal(findInheritedConfigDirectory(child, index), "src/main/custom");
+    });
+
+    it("walks multiple levels of parents", () => {
+        const root = pom("root", undefined, "cfg");
+        const mid = pom("mid", "root");
+        const leaf = pom("leaf", "mid");
+        const index = indexPomsByArtifactId([{ xmlString: root }, { xmlString: mid }, { xmlString: leaf }]);
+        assert.equal(findInheritedConfigDirectory(leaf, index), "cfg");
+    });
+
+    it("prefers the nearest ancestor", () => {
+        const root = pom("root", undefined, "root-cfg");
+        const mid = pom("mid", "root", "mid-cfg");
+        const leaf = pom("leaf", "mid");
+        const index = indexPomsByArtifactId([{ xmlString: root }, { xmlString: mid }, { xmlString: leaf }]);
+        assert.equal(findInheritedConfigDirectory(leaf, index), "mid-cfg");
+    });
+
+    it("does not consult the module's own pom", () => {
+        const own = pom("solo", undefined, "own-cfg");
+        const index = indexPomsByArtifactId([{ xmlString: own }]);
+        assert.equal(findInheritedConfigDirectory(own, index), undefined);
+    });
+
+    it("returns undefined when the parent is not in the index", () => {
+        const child = pom("child", "missing-parent");
+        const index = indexPomsByArtifactId([{ xmlString: child }]);
+        assert.equal(findInheritedConfigDirectory(child, index), undefined);
+    });
+
+    it("returns undefined when no ancestor declares configDirectory", () => {
+        const parent = pom("parent");
+        const child = pom("child", "parent");
+        const index = indexPomsByArtifactId([{ xmlString: parent }, { xmlString: child }]);
+        assert.equal(findInheritedConfigDirectory(child, index), undefined);
+    });
+
+    it("terminates on a cyclic parent chain", () => {
+        const a = pom("a", "b");
+        const b = pom("b", "a");
+        const index = indexPomsByArtifactId([{ xmlString: a }, { xmlString: b }]);
+        assert.equal(findInheritedConfigDirectory(a, index), undefined);
     });
 });

@@ -11,7 +11,7 @@ import { strict as assert } from "assert";
 import * as os from "os";
 import * as path from "path";
 import * as fs from "fs";
-import { addServerXMLProjects, ParsedBuildEntry } from "../../liberty/projectDiscovery";
+import { addServerXMLProjects, discoverWorkspace, ParsedBuildEntry } from "../../liberty/projectDiscovery";
 import { LibertyProject } from "../../liberty/libertyProject";
 
 function makeTmpDir(): string {
@@ -125,5 +125,123 @@ plugins {
         assert.equal(allEntries.length, 1, "allEntries should have exactly 1 entry");
         assert.equal(allEntries[0].path, gradleFile);
         assert.equal(allEntries[0].type, "gradle");
+    });
+
+    // ── helpers for the scenarios below ──────────────────────────────────────
+
+    const LIBERTY_PLUGIN = `<plugin><groupId>io.openliberty.tools</groupId><artifactId>liberty-maven-plugin</artifactId>`;
+    const pluginMgmtConfig = (dir: string) =>
+        `<build><pluginManagement><plugins>${LIBERTY_PLUGIN}<configuration><configDirectory>${dir}</configDirectory></configuration></plugin></plugins></pluginManagement></build>`;
+
+    function listFiles(dir: string, out: string[] = []): string[] {
+        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+            const p = path.join(dir, e.name);
+            if (e.isDirectory()) { listFiles(p, out); } else { out.push(p); }
+        }
+        return out;
+    }
+
+    /** findFiles fake that globs "**\/<suffix>" under tmpDir. */
+    function mockFindFiles(): void {
+        fakeVscode.workspace.findFiles = async (pattern: any) => {
+            const suffix = String(pattern.pattern).replace(/^\*\*\//, "").split("/").join(path.sep);
+            return listFiles(tmpDir)
+                .filter(f => f.endsWith(path.sep + suffix) || f === path.join(tmpDir, suffix))
+                .map(f => ({ fsPath: f }));
+        };
+    }
+
+    // ── inheritance / guard / placeholders ───────────────────────────────────
+
+    it("enables a child module that inherits configDirectory from its parent's pluginManagement", async () => {
+        createFile(path.join(tmpDir, "pom.xml"),
+            `<project><groupId>g</groupId><artifactId>parent</artifactId><version>1</version><packaging>pom</packaging>
+             <modules><module>child</module></modules>${pluginMgmtConfig("src/main/custom")}</project>`);
+        createFile(path.join(tmpDir, "child", "pom.xml"),
+            `<project><parent><groupId>g</groupId><artifactId>parent</artifactId><version>1</version></parent><artifactId>child</artifactId></project>`);
+        createFile(path.join(tmpDir, "child", "src", "main", "custom", "server.xml"), "<server/>");
+        mockFindFiles();
+
+        const result = await discoverWorkspace(fakeContext, [{ uri: { fsPath: tmpDir } } as any], new Map());
+
+        const child = result.projects.get(path.join(tmpDir, "child", "pom.xml"));
+        assert.ok(child, "child should be a project");
+        assert.equal(child!.isLibertyEnabled, true);
+        assert.deepEqual(result.rootProjects.map(r => r.path), [path.join(tmpDir, "pom.xml")]);
+    });
+
+    it("discovers a nested pom whose only Liberty signal is a pluginManagement configDirectory, even when a root project exists", async () => {
+        // A root-level project exists, which used to disable the whole fallback.
+        createFile(path.join(tmpDir, "pom.xml"),
+            `<project><groupId>g</groupId><artifactId>root</artifactId><version>1</version>
+             <build><plugins>${LIBERTY_PLUGIN}</plugin></plugins></build></project>`);
+        createFile(path.join(tmpDir, "app", "pom.xml"),
+            `<project><groupId>g</groupId><artifactId>app</artifactId><version>1</version>${pluginMgmtConfig("src/main/custom")}</project>`);
+        createFile(path.join(tmpDir, "app", "src", "main", "custom", "server.xml"), "<server/>");
+        mockFindFiles();
+
+        const result = await discoverWorkspace(fakeContext, [{ uri: { fsPath: tmpDir } } as any], new Map());
+
+        const app = result.projects.get(path.join(tmpDir, "app", "pom.xml"));
+        assert.ok(app, "app should be discovered through the fallback");
+        assert.equal(app!.isLibertyEnabled, true);
+    });
+
+    it("discovers a pom whose configDirectory uses ${project.basedir}", async () => {
+        createFile(path.join(tmpDir, "app", "pom.xml"),
+            `<project><groupId>g</groupId><artifactId>app</artifactId><version>1</version>${pluginMgmtConfig("${project.basedir}/cfg")}</project>`);
+        createFile(path.join(tmpDir, "app", "cfg", "server.xml"), "<server/>");
+        mockFindFiles();
+
+        const result = await discoverWorkspace(fakeContext, [{ uri: { fsPath: tmpDir } } as any], new Map());
+
+        const app = result.projects.get(path.join(tmpDir, "app", "pom.xml"));
+        assert.ok(app, "app should be discovered");
+        assert.equal(app!.isLibertyEnabled, true);
+    });
+
+    it("does not register a pom that has neither the plugin nor a server.xml in its configDirectory", async () => {
+        createFile(path.join(tmpDir, "app", "pom.xml"),
+            `<project><groupId>g</groupId><artifactId>app</artifactId><version>1</version>${pluginMgmtConfig("src/main/custom")}</project>`);
+        // server.xml exists elsewhere, not at the configDirectory
+        createFile(path.join(tmpDir, "app", "other", "server.xml"), "<server/>");
+        mockFindFiles();
+
+        const result = await discoverWorkspace(fakeContext, [{ uri: { fsPath: tmpDir } } as any], new Map());
+
+        assert.equal(result.projects.has(path.join(tmpDir, "app", "pom.xml")), false);
+    });
+
+    // ── Gradle stamping for already-known projects ───────────────────────────
+
+    it("pushes a stampable entry (regexBuildFile) for an existing Gradle project found via the standard path", async () => {
+        const gradleFile = path.join(tmpDir, "app", "build.gradle");
+        const serverXML = path.join(tmpDir, "app", "src", "main", "liberty", "config", "server.xml");
+        createFile(gradleFile, "plugins { id 'io.openliberty.tools.gradle.Liberty' }\n");
+        createFile(serverXML, "<server/>");
+        fakeVscode.workspace.findFiles = async (pattern: any) =>
+            String(pattern.pattern).includes("src/main/liberty/config/server.xml") ? [{ fsPath: serverXML }] : [];
+
+        const existing = new Map<string, LibertyProject>([[gradleFile, {} as LibertyProject]]);
+        const allEntries: ParsedBuildEntry[] = [];
+        await addServerXMLProjects(fakeContext, new Map(), existing, allEntries);
+
+        assert.equal(allEntries.length, 1);
+        assert.ok(allEntries[0].regexBuildFile, "existing Gradle entries must carry regexBuildFile so stampProjects stamps them");
+    });
+
+    it("pushes a stampable entry (regexBuildFile) for an existing Gradle project found via the tree-climb", async () => {
+        const gradleFile = path.join(tmpDir, "app", "build.gradle");
+        const serverXML = path.join(tmpDir, "app", "custom", "server.xml");
+        createFile(gradleFile, "plugins { id 'io.openliberty.tools.gradle.Liberty' }\n");
+        createFile(serverXML, "<server/>");
+        mockFindFiles();
+
+        const existing = new Map<string, LibertyProject>([[gradleFile, {} as LibertyProject]]);
+        const allEntries: ParsedBuildEntry[] = [];
+        await addServerXMLProjects(fakeContext, new Map(), existing, allEntries);
+
+        assert.equal(allEntries.length, 1);
+        assert.ok(allEntries[0].regexBuildFile);
     });
 });

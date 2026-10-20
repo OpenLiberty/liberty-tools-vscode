@@ -6,6 +6,7 @@ import { LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION, LIBERTY_PROJECT_MAVEN_CONTAINER
 import { BuildFileImpl } from "./buildFile";
 import { localize } from "../util/i18nUtil";
 import * as semver from "semver";
+import * as path from "path";
 
 /**
  * Look for a valid parent pom.xml.
@@ -553,4 +554,78 @@ export function extractConfigDirectoryFromPom(xmlString: string): string | undef
     });
 
     return configDirectory;
+}
+
+/**
+ * Resolve a raw <configDirectory> value to an absolute path.
+ * Expands the Maven `${project.basedir}` and `${basedir}` placeholders to the
+ * module directory; any other relative value is resolved against that directory too.
+ *
+ * @param configDir  Raw value returned by extractConfigDirectoryFromPom
+ * @param projectDir Directory containing the module's pom.xml
+ */
+export function resolveConfigDirectory(configDir: string, projectDir: string): string {
+    const expanded = configDir.replace(/\$\{(?:project\.)?basedir\}/g, projectDir);
+    return path.isAbsolute(expanded) ? expanded : path.resolve(projectDir, expanded);
+}
+
+/**
+ * Return the <artifactId> and <parent><artifactId> declared in a pom.xml string.
+ * Used to walk a module's parent chain so inherited plugin configuration
+ * (e.g. configDirectory in a parent's pluginManagement) can be located.
+ *
+ * @param xmlString The raw text content of a pom.xml file.
+ */
+export function extractPomIdentity(xmlString: string): { artifactId?: string; parentArtifactId?: string } {
+    const parseString = require("xml2js").parseString;
+    const identity: { artifactId?: string; parentArtifactId?: string } = {};
+    parseString(xmlString, (err: any, result: any) => {
+        if (err || !result?.project) { return; }
+        identity.artifactId = result.project.artifactId?.[0];
+        identity.parentArtifactId = result.project.parent?.[0]?.artifactId?.[0];
+    });
+    return identity;
+}
+
+/**
+ * Index pom.xml contents by <artifactId> so a module's parent chain can be walked
+ * without re-reading files. If two poms share an artifactId the first one wins.
+ *
+ * @param entries Array of objects carrying xmlString for each pom.xml
+ */
+export function indexPomsByArtifactId(entries: Array<{ xmlString?: string }>): Map<string, string> {
+    const index = new Map<string, string>();
+    for (const entry of entries) {
+        if (!entry.xmlString) { continue; }
+        const artifactId = extractPomIdentity(entry.xmlString).artifactId;
+        if (artifactId && !index.has(artifactId)) { index.set(artifactId, entry.xmlString); }
+    }
+    return index;
+}
+
+/**
+ * Walk a pom's <parent> chain and return the first <configDirectory> declared by an
+ * ancestor (Maven inherits plugin configuration from <build><pluginManagement> and
+ * <build><plugins> of parent poms). The module's own pom is NOT consulted.
+ * The raw value is returned; resolve it against the module directory with
+ * resolveConfigDirectory().
+ *
+ * @param xmlString     The module's pom.xml content
+ * @param pomsByArtifactId Index built by indexPomsByArtifactId()
+ */
+export function findInheritedConfigDirectory(
+    xmlString: string,
+    pomsByArtifactId: Map<string, string>
+): string | undefined {
+    const visited = new Set<string>();
+    let parentId = extractPomIdentity(xmlString).parentArtifactId;
+    while (parentId && !visited.has(parentId)) {
+        visited.add(parentId);
+        const parentXml = pomsByArtifactId.get(parentId);
+        if (!parentXml) { return undefined; }
+        const found = extractConfigDirectoryFromPom(parentXml);
+        if (found) { return found; }
+        parentId = extractPomIdentity(parentXml).parentArtifactId;
+    }
+    return undefined;
 }

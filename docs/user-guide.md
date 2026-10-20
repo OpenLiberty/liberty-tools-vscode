@@ -25,6 +25,7 @@ For information regarding known issues and limitations, refer to our [Common Iss
 - [Manually add your Liberty project to Liberty Tools](#manually-add-your-liberty-project-to-liberty-tools)
   - [Manually remove project](#manually-remove-project)
 - [Multi-module projects](#multi-module-projects)
+- [Custom configuration directory (Maven)](#custom-configuration-directory-maven)
 - [Configure a Liberty server](#configure-a-liberty-server)
 - [Develop with Jakarta EE and MicroProfile APIs](#develop-with-jakarta-ee-and-microprofile-apis)
 
@@ -37,7 +38,7 @@ For information regarding known issues and limitations, refer to our [Common Iss
 
 ### Application requirements
 
-- Define a Liberty `server.xml` configuration file in the `src/main/liberty/config` location.
+- Define a Liberty `server.xml` configuration file in the `src/main/liberty/config` location. For Maven projects, you can use a different location by setting `configDirectory` in the Liberty Maven Plugin configuration. See [Custom configuration directory (Maven)](#custom-configuration-directory-maven).
 - Ensure the `src/main/webapp` directory exists in your project. If your application serves web content, this directory is required for Liberty to resolve file paths correctly (for example, `getRealPath()` returns `null` without it). If you use a deployment descriptor, place your `web.xml` file at `src/main/webapp/WEB-INF/web.xml`.
 - [Configure the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven#configuration) or [configure the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle#adding-the-plugin-to-the-build-script). We recommend using the most recent versions of the plugins as they include several important bug fixes.
 
@@ -294,6 +295,34 @@ In the Liberty Tools dashboard:
 - Adding or removing a parent project also adds or removes its child submodules.
 
 ![Run start a multi-module project](/docs/user-guide-screenshots/multi-mod-start.png)
+
+## Custom configuration directory (Maven)
+
+By default, Liberty Tools looks for `server.xml` in `src/main/liberty/config`.
+
+If your Maven project keeps its Liberty configuration in a different directory, set `configDirectory` in the `liberty-maven-plugin` configuration. Liberty Tools then also looks for a `server.xml` in that directory when it decides whether a `pom.xml` is a Liberty project. This lets Liberty Tools show projects that configure the Liberty Maven Plugin only in `<pluginManagement>`, or that inherit the plugin configuration from a parent `pom.xml`:
+
+```xml
+<plugin>
+    <groupId>io.openliberty.tools</groupId>
+    <artifactId>liberty-maven-plugin</artifactId>
+    <configuration>
+        <configDirectory>${project.basedir}/src/main/custom-liberty-config</configDirectory>
+    </configuration>
+</plugin>
+```
+
+Liberty Tools reads `configDirectory` from the following locations in the `pom.xml`, in this order:
+1. `<build><plugins>`
+2. `<build><pluginManagement><plugins>`
+3. `<profiles>`
+
+Notes:
+- A relative path is resolved against the directory that contains the module's `pom.xml`. An absolute path is used as is.
+- The `${project.basedir}` and `${basedir}` properties are expanded. Other Maven properties are not.
+- A module that does not set `configDirectory` inherits the value from its parent `pom.xml` (for example, one declared in the parent's `<pluginManagement>`). The parent must be part of the opened workspace and must be referenced through its `<parent><artifactId>`.
+- If no `server.xml` exists in the configured directory, and the Liberty Maven Plugin is not declared in `<build><plugins>` or a profile, the project is not shown in Liberty Tools. You can [manually add it](#manually-add-your-liberty-project-to-liberty-tools).
+- Custom configuration directories are supported for Maven projects only. For Gradle projects, use the default `src/main/liberty/config` location.
 
 ## Configure a Liberty server
 

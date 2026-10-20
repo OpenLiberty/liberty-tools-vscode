@@ -201,4 +201,66 @@ describe("hasServerXML", () => {
 
         assert.ok(hasServerXML(pomFile, xmlString));
     });
+
+    it("expands ${project.basedir} in configDirectory", () => {
+        const pomFile = path.join(tmpDir, "pom.xml");
+        createFile(pomFile);
+        createFile(path.join(tmpDir, "liberty", "server.xml"));
+
+        const xmlString = `
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+        <configuration>
+          <configDirectory>\${project.basedir}/liberty</configDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>`;
+
+        assert.ok(hasServerXML(pomFile, xmlString));
+    });
+
+    it("uses an inherited configDirectory when the pom declares none", () => {
+        const pomFile = path.join(tmpDir, "child", "pom.xml");
+        createFile(pomFile);
+        createFile(path.join(tmpDir, "child", "src", "main", "custom", "server.xml"));
+
+        assert.ok(hasServerXML(pomFile, "<project><artifactId>child</artifactId></project>", "src/main/custom"));
+    });
+
+    it("prefers the pom's own configDirectory over an inherited one", () => {
+        const pomFile = path.join(tmpDir, "child", "pom.xml");
+        createFile(pomFile);
+        createFile(path.join(tmpDir, "child", "inherited", "server.xml"));
+
+        const xmlString = `
+<project>
+  <artifactId>child</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+        <configuration>
+          <configDirectory>own</configDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>`;
+
+        assert.equal(hasServerXML(pomFile, xmlString, "inherited"), false);
+    });
+
+    it("returns false when the inherited configDirectory has no server.xml", () => {
+        const pomFile = path.join(tmpDir, "child", "pom.xml");
+        createFile(pomFile);
+        assert.equal(hasServerXML(pomFile, "<project><artifactId>child</artifactId></project>", "nowhere"), false);
+    });
 });

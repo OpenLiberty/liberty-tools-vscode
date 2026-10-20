@@ -297,6 +297,12 @@ async function stampProjects(
 	const t0 = Date.now();
 	const mavenMetadataMap = new Map<string, mavenUtil.MavenProjectMetadata>();
 	const gradleMetadataMap = new Map<string, gradleUtil.GradleProjectMetadata>();
+	let pomsByArtifactId: Map<string, string> | undefined;
+	const inheritedConfigDirectory = (xmlString: string, parentArtifactId?: string): string | undefined => {
+		if (!parentArtifactId) { return undefined; }
+		pomsByArtifactId ??= mavenUtil.indexPomsByArtifactId(allEntries.filter(e => e.type === "maven"));
+		return mavenUtil.findInheritedConfigDirectory(xmlString, pomsByArtifactId);
+	};
 
 	for (const entry of allEntries) {
 		const project = projectsMap.get(entry.path);
@@ -312,7 +318,7 @@ async function stampProjects(
 					project.parentArtifactId = metadata.parentArtifactId;
 					project.isAggregator = metadata.isAggregator;
 					project.isLibertyEnabled = metadata.isLibertyEnabled
-					  || hasServerXML(entry.path, entry.xmlString);
+					  || hasServerXML(entry.path, entry.xmlString, inheritedConfigDirectory(entry.xmlString, metadata.parentArtifactId));
 					project.installDirectory = metadata.installDirectory;
           project.updateExplorerIcon();
 					mavenMetadataMap.set(entry.path, metadata);
@@ -462,6 +468,12 @@ export async function addServerXMLProjects(
 	existingProjects: Map<string, LibertyProject>,
 	allEntries: ParsedBuildEntry[]
 ): Promise<void> {
+	// stampProjects only stamps Gradle entries carrying parsedBuild/regexBuildFile/parsedSettings,
+	// so entries for already-known projects must carry the regex-detected build file as well.
+	const gradleEntryFor = async (gradleFile: string): Promise<ParsedBuildEntry> => {
+		const rawContent = await fse.readFile(gradleFile, "utf8");
+		return { path: gradleFile, type: "gradle", regexBuildFile: gradleUtil.detectLibertyPluginFromText(rawContent) ?? undefined };
+	};
 	let serverXMLPaths: string[] = [];
 	const wsFolders = vscode.workspace.workspaceFolders;
 	if (wsFolders) {
@@ -504,7 +516,11 @@ export async function addServerXMLProjects(
 			if (fse.existsSync(gradleFile) && !projectsMap.has(gradleFile)) {
 				if (existingProjects.has(gradleFile)) {
 					projectsMap.set(gradleFile, existingProjects.get(gradleFile)!);
-					allEntries.push({ path: gradleFile, type: "gradle" });
+					try {
+						allEntries.push(await gradleEntryFor(gradleFile));
+					} catch {
+						// Ignore
+					}
 				} else {
 					try {
 						const rawContent = await fse.readFile(gradleFile, "utf8");
@@ -521,21 +537,28 @@ export async function addServerXMLProjects(
 		}
 	}
 
-	// Phase 2: Tree-climb fallback with broad **/server.xml search
+	// Phase 2: Tree-climb fallback with broad **/server.xml search.
+	// Runs for every workspace folder (not only those without a root-level project):
+	// build files already in projectsMap are skipped below, so a folder that is fully
+	// covered costs one findFiles call and adds nothing.
 	const standardPathSuffix = vscodePath.join("src", "main", "liberty", "config", "server.xml");
 	const broadServerXMLPathsByFolder: { folderRoot: string; paths: string[] }[] = [];
 	if (wsFolders) {
 		for (const folder of wsFolders) {
-			if (!projectRootPathExists(folder.uri.fsPath, projectsMap.keys())) {
-				const pattern = new vscode.RelativePattern(folder.uri.fsPath, "**/server.xml");
-				const paths = (await vscode.workspace.findFiles(pattern, EXCLUDED_DIR_PATTERN)).map(u => u.fsPath);
-				broadServerXMLPathsByFolder.push({
-					folderRoot: folder.uri.fsPath,
-					paths
-				});
-			}
+			const pattern = new vscode.RelativePattern(folder.uri.fsPath, "**/server.xml");
+			const paths = (await vscode.workspace.findFiles(pattern, EXCLUDED_DIR_PATTERN)).map(u => u.fsPath);
+			broadServerXMLPathsByFolder.push({
+				folderRoot: folder.uri.fsPath,
+				paths
+			});
 		}
 	}
+
+	let pomsByArtifactId: Map<string, string> | undefined;
+	const inheritedConfigDirectory = (xmlString: string): string | undefined => {
+		pomsByArtifactId ??= mavenUtil.indexPomsByArtifactId(allEntries.filter(e => e.type === "maven"));
+		return mavenUtil.findInheritedConfigDirectory(xmlString, pomsByArtifactId);
+	};
 
 	for (const folderEntry of broadServerXMLPathsByFolder) {
 		const workspaceFolderRoot = folderEntry.folderRoot;
@@ -564,8 +587,12 @@ export async function addServerXMLProjects(
 						try {
 							const xmlString = await fse.readFile(candidate, "utf8");
 							const buildFile = mavenUtil.validPom(xmlString, new Map());
-							if (buildFile.isValidBuildFile()) {
-								projectsMap.set(candidate, await createProject(context, candidate, buildFile.getProjectType(), xmlString));
+							// A server.xml in the pom's own (or inherited) configDirectory is a sufficient
+							// Liberty signal even when the plugin is only declared in pluginManagement.
+							const configDirMatch = hasServerXML(candidate, xmlString, inheritedConfigDirectory(xmlString));
+							if (buildFile.isValidBuildFile() || configDirMatch) {
+								const projectType = buildFile.isValidBuildFile() ? buildFile.getProjectType() : LIBERTY_PROJECT_MAVEN;
+								projectsMap.set(candidate, await createProject(context, candidate, projectType, xmlString));
 								allEntries.push({ path: candidate, type: "maven", xmlString });
 							}
 						} catch {
@@ -575,7 +602,11 @@ export async function addServerXMLProjects(
 				} else if (vscodePath.basename(candidate) === "build.gradle") {
 					if (existingProjects.has(candidate)) {
 						projectsMap.set(candidate, existingProjects.get(candidate)!);
-						allEntries.push({ path: candidate, type: "gradle" });
+						try {
+							allEntries.push(await gradleEntryFor(candidate));
+						} catch {
+							// Ignore
+						}
 					} else {
 						try {
 							const rawContent = await fse.readFile(candidate, "utf8");
@@ -635,27 +666,27 @@ function walkUpToBuildFiles(startDir: string, workspaceRoot: string): string[] {
 /**
  * Returns true when a Liberty server.xml exists at the standard path
  * (src/main/liberty/config/server.xml) relative to the build file's directory,
- * OR at the `configDirectory` path extracted from the given pom.xml string.
+ * OR at the `configDirectory` path extracted from the given pom.xml string
+ * (or supplied via `inheritedConfigDir`).
  * A server.xml alone is a sufficient Liberty signal even when no plugin is declared.
  *
- * @param buildFilePath Path to the build file (pom.xml or build.gradle)
- * @param xmlString     Optional pom.xml content; when provided, also checks configDirectory
+ * `${project.basedir}` / `${basedir}` in configDirectory are expanded to the module directory.
+ *
+ * @param buildFilePath      Path to the build file (pom.xml or build.gradle)
+ * @param xmlString          Optional pom.xml content; when provided, also checks its configDirectory
+ * @param inheritedConfigDir Optional raw configDirectory inherited from a parent pom
  */
-export function hasServerXML(buildFilePath: string, xmlString?: string): boolean {
+export function hasServerXML(buildFilePath: string, xmlString?: string, inheritedConfigDir?: string): boolean {
 	const projectDir = vscodePath.dirname(buildFilePath);
 	const serverXMLPath = vscodePath.join(projectDir, "src", "main", "liberty", "config", "server.xml");
 	if (fse.existsSync(serverXMLPath)) {
 		return true;
 	}
-	if (xmlString) {
-		const configDir = mavenUtil.extractConfigDirectoryFromPom(xmlString);
-		if (configDir) {
-			const resolvedConfigDir = vscodePath.isAbsolute(configDir)
-				? configDir
-				: vscodePath.resolve(projectDir, configDir);
-			if (fse.existsSync(vscodePath.join(resolvedConfigDir, "server.xml"))) {
-				return true;
-			}
+	const configDir = (xmlString ? mavenUtil.extractConfigDirectoryFromPom(xmlString) : undefined) ?? inheritedConfigDir;
+	if (configDir) {
+		const resolvedConfigDir = mavenUtil.resolveConfigDirectory(configDir, projectDir);
+		if (fse.existsSync(vscodePath.join(resolvedConfigDir, "server.xml"))) {
+			return true;
 		}
 	}
 	return false;
