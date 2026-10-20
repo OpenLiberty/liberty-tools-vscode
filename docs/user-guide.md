@@ -222,7 +222,83 @@ This command looks for the test report at the `build/reports/tests/test/index.ht
 
 ### Customize test report locations
 
-By default, Liberty Tools looks for test reports at the locations described above. If your build produces reports at a different path, you can override these locations with the following settings in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file:
+By default, Liberty Tools looks for test reports at the locations described above. If your build produces reports at a different path, Liberty Tools resolves the location using the following priority order.
+
+#### Maven report location resolution
+
+1. **VS Code setting** — if `liberty.test.report.surefire.path` or `liberty.test.report.failsafe.path` is set, that path is used and no further lookup is performed.
+2. **`<outputDirectory>` in `pom.xml`** — if the `maven-surefire-report-plugin` or `maven-failsafe-report-plugin` declares a custom `<outputDirectory>`, Liberty Tools reads that value directly from your `pom.xml`. The plugin may be declared in either the `<reporting>` section (conventional) or the `<build>` section.
+3. **Default locations** — if neither of the above is configured, Liberty Tools checks `target/reports/surefire.html` (or `failsafe.html`) and then `target/site/surefire-report.html` (or `failsafe-report.html`).
+
+**Example: plugin in `<reporting>` (conventional, Maven Surefire Report Plugin ≤ 3.4.x)**
+
+```xml
+<reporting>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-surefire-report-plugin</artifactId>
+      <configuration>
+        <outputDirectory>target/my-reports</outputDirectory>
+      </configuration>
+    </plugin>
+  </plugins>
+</reporting>
+```
+
+> **Note:** Liberty Tools skips `<outputDirectory>` values that contain Maven variable expressions such as `${project.build.directory}` because they cannot be resolved statically. In that case, resolution falls through to the default locations. Use the VS Code setting to specify an explicit path when your configuration uses variables.
+
+**Example: plugin in `<build>` (Maven Surefire Report Plugin ≥ 3.5.x)**
+
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-surefire-report-plugin</artifactId>
+      <configuration>
+        <outputDirectory>target/my-reports</outputDirectory>
+      </configuration>
+    </plugin>
+  </plugins>
+</build>
+```
+
+The same patterns apply to `maven-failsafe-report-plugin` for integration test reports.
+
+#### Gradle report location resolution
+
+1. **VS Code setting** — if `liberty.test.report.gradle.path` is set, that path is used and no further lookup is performed.
+2. **`build.gradle` destination** — Liberty Tools parses your `build.gradle` and reads the custom HTML report directory from the `test` task's `reports.html` block. It checks the following keys in order:
+   - `destination` (Gradle ≤ 7) — in flat (`test.reports.html.destination = "..."`), nested, or deep form
+   - `outputLocation` (Gradle 8/9) — in flat (`test.reports.html.outputLocation = "..."`), nested, or deep form
+3. **Default location** — if neither of the above is configured, Liberty Tools falls back to `build/reports/tests/test/index.html`.
+
+**Example: Gradle ≤ 7 (`destination`)**
+
+```groovy
+test {
+    reports {
+        html.destination = file("build/my-reports/tests")
+    }
+}
+```
+
+**Example: Gradle 8/9 (`outputLocation`)**
+
+```groovy
+test {
+    reports {
+        html.outputLocation = file("build/my-reports/tests")
+    }
+}
+```
+
+> **Note:** Liberty Tools skips `destination` or `outputLocation` values that contain Gradle variable expressions such as `$buildDir` or `${project.buildDir}` because they cannot be resolved statically. In that case, resolution falls through to the default location. Use the VS Code setting to specify an explicit path when your configuration uses variables.
+
+#### VS Code settings override
+
+To override the automatically resolved location entirely, set the following in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file:
 
 | Setting | Description |
 | --- | --- |
