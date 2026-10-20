@@ -45,6 +45,7 @@
 		"onStartupFinished",
 		"onCommand:liberty.dev.debug",
 		"onCommand:liberty.dev.start.container",
+		"onCommand:liberty.dev.start.debug",
 		"onCommand:liberty.dev.open.build.file"
 	],
 	"main": "./dist/extension",
@@ -140,6 +141,11 @@
 				"command": "liberty.dev.start.container",
 				"category": "Liberty",
 				"title": "%commands.title.start.in.container%"
+			},
+			{
+				"command": "liberty.dev.start.debug",
+				"category": "Liberty",
+				"title": "%commands.title.start.debug%"
 			},
 			{
 				"command": "liberty.dev.run.tests",
@@ -278,6 +284,11 @@
 					"group": "libertyCore@1"
 				},
 				{
+					"command": "liberty.dev.start.debug",
+					"when": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:server-started)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/",
+					"group": "libertyCore@2"
+				},
+				{
 					"command": "liberty.dev.debug",
 					"when": "viewItem =~ /^libertyProject.*:running/ || viewItem =~ /^libertyProject.*:aggregator/",
 					"group": "libertyCore@3"
@@ -344,6 +355,12 @@
 						"type": "string",
 						"default": "",
 						"description": "Path to the JDK used to run Liberty dev mode in the terminal. When set, this overrides any JDK detected from VS Code Java settings (java.configuration.runtimes, java.jdt.ls.java.home). Leave empty to use the JDK configured via VS Code Java settings, or the system PATH if none is set.",
+						"scope": "window"
+					},
+					"liberty.dev.debugStartTimeout": {
+						"type": "number",
+						"default": 180,
+						"description": "%configuration.liberty.dev.debugStartTimeout.description%",
 						"scope": "window"
 					},
 					"liberty.test.report.surefire.path": {

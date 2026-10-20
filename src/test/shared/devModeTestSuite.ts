@@ -231,6 +231,61 @@ export function runDevModeTestSuite(config: DevModeConfig): void {
                 }
             }).timeout(350000);
 
+            it(`Start in debug mode for ${config.buildTool}`, async () => {
+                logger.testStart(`Start in debug mode for ${config.buildTool}`);
+                let isServerRunning: Boolean = true;
+                let attachStatus: Boolean = false;
+
+                try {
+                    logger.step(1, 'Launching "Start in debug mode" dashboard action');
+                    await dashboard.runAction(config.projectConstant, constants.START_DEBUG_DASHBOARD_ACTION, constants.START_DEBUG_DASHBOARD_MAC_ACTION);
+
+                    logger.step(2, 'Waiting for server to start in debug mode');
+                    isServerRunning = await utils.waitForServerStart(constants.SERVER_START_STRING);
+
+                    if (!isServerRunning) {
+                        logger.error('Server started message not found in terminal');
+                    } else {
+                        logger.stepSuccess(2, 'Server successfully started in debug mode');
+
+                        logger.step(3, 'Waiting for debugger to auto-attach');
+                        attachStatus = await utils.waitForDebuggerAttach();
+
+                        if (!attachStatus) {
+                            logger.error('DebugToolbar not found - debugger may not have auto-attached');
+                        } else {
+                            logger.stepSuccess(3, 'Debugger auto-attached successfully');
+                        }
+
+                        logger.step(4, 'Stopping Liberty server');
+                        await dashboard.runAction(config.projectConstant, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+
+                        logger.step(5, 'Waiting for server to stop');
+                        isServerRunning = !await utils.waitForServerStop(constants.SERVER_STOP_STRING);
+
+                        if (!isServerRunning) {
+                            logger.stepSuccess(5, 'Server stopped successfully');
+                        } else {
+                            logger.error('Server stop message not found in terminal');
+                        }
+                    }
+                } catch (e) {
+                    logger.error('Exception occurred during start in debug mode test', e);
+                    throw e;
+                } finally {
+                    logger.info(`Finally block - Server running status: ${isServerRunning}`);
+                    if (isServerRunning) {
+                        logger.info('Attempting to stop server in finally block');
+                        await dashboard.runAction(config.projectConstant, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+                    } else {
+                        logger.info('Server already stopped, test cleanup complete');
+                    }
+                }
+
+                expect(attachStatus).to.be.true;
+                logger.testComplete(`Start in debug mode for ${config.buildTool}`);
+            }).timeout(350000);
+
          /**
              * All future test cases should be written before the test that attaches the debugger, as this will switch the UI to the debugger view.
              * If, for any reason, a test case needs to be written after the debugger test, ensure that the UI is switched back to the explorer view before executing the subsequent tests.
