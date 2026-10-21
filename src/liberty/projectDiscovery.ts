@@ -493,22 +493,14 @@ export async function addServerXMLProjects(
 		if (fse.existsSync(pomFile) && !projectsMap.has(pomFile)) {
 			if (existingProjects.has(pomFile)) {
 				projectsMap.set(pomFile, existingProjects.get(pomFile)!);
-				try {
-					const xmlString = await fse.readFile(pomFile, "utf8");
-					allEntries.push({ path: pomFile, type: "maven", xmlString });
-				} catch {
-					// Ignore
-				}
+				const xmlString = await fse.readFile(pomFile, "utf8");
+				allEntries.push({ path: pomFile, type: "maven", xmlString });
 			} else {
-				try {
-					const xmlString = await fse.readFile(pomFile, "utf8");
-					const buildFile = mavenUtil.validPom(xmlString, new Map());
-					if (buildFile.isValidBuildFile()) {
-						projectsMap.set(pomFile, await createProject(context, pomFile, buildFile.getProjectType(), xmlString));
-						allEntries.push({ path: pomFile, type: "maven", xmlString });
-					}
-				} catch {
-					// Ignore
+				const xmlString = await fse.readFile(pomFile, "utf8");
+				const buildFile = mavenUtil.validPom(xmlString, new Map());
+				if (buildFile.isValidBuildFile()) {
+					projectsMap.set(pomFile, await createProject(context, pomFile, buildFile.getProjectType(), xmlString));
+					allEntries.push({ path: pomFile, type: "maven", xmlString });
 				}
 			}
 		} else {
@@ -516,21 +508,13 @@ export async function addServerXMLProjects(
 			if (fse.existsSync(gradleFile) && !projectsMap.has(gradleFile)) {
 				if (existingProjects.has(gradleFile)) {
 					projectsMap.set(gradleFile, existingProjects.get(gradleFile)!);
-					try {
-						allEntries.push(await gradleEntryFor(gradleFile));
-					} catch {
-						// Ignore
-					}
+					allEntries.push(await gradleEntryFor(gradleFile));
 				} else {
-					try {
-						const rawContent = await fse.readFile(gradleFile, "utf8");
-						const buildFile = gradleUtil.detectLibertyPluginFromText(rawContent);
-						if (buildFile) {
-							projectsMap.set(gradleFile, await createProject(context, gradleFile, buildFile.getProjectType()));
-							allEntries.push({ path: gradleFile, type: "gradle", regexBuildFile: buildFile });
-						}
-					} catch {
-						// Ignore
+					const rawContent = await fse.readFile(gradleFile, "utf8").catch(() => "");
+					const buildFile = gradleUtil.detectLibertyPluginFromText(rawContent);
+					if (buildFile) {
+						projectsMap.set(gradleFile, await createProject(context, gradleFile, buildFile.getProjectType()));
+						allEntries.push({ path: gradleFile, type: "gradle", regexBuildFile: buildFile });
 					}
 				}
 			}
@@ -575,48 +559,31 @@ export async function addServerXMLProjects(
 				}
 
 				if (vscodePath.basename(candidate) === "pom.xml") {
+					const xmlString = await fse.readFile(candidate, "utf8");
 					if (existingProjects.has(candidate)) {
 						projectsMap.set(candidate, existingProjects.get(candidate)!);
-						try {
-							const xmlString = await fse.readFile(candidate, "utf8");
-							allEntries.push({ path: candidate, type: "maven", xmlString });
-						} catch {
-							// Ignore
-						}
+						allEntries.push({ path: candidate, type: "maven", xmlString });
 					} else {
-						try {
-							const xmlString = await fse.readFile(candidate, "utf8");
-							const buildFile = mavenUtil.validPom(xmlString, new Map());
-							// A server.xml in the pom's own (or inherited) configDirectory is a sufficient
-							// Liberty signal even when the plugin is only declared in pluginManagement.
-							const configDirMatch = hasServerXML(candidate, xmlString, inheritedConfigDirectory(xmlString));
-							if (buildFile.isValidBuildFile() || configDirMatch) {
-								const projectType = buildFile.isValidBuildFile() ? buildFile.getProjectType() : LIBERTY_PROJECT_MAVEN;
-								projectsMap.set(candidate, await createProject(context, candidate, projectType, xmlString));
-								allEntries.push({ path: candidate, type: "maven", xmlString });
-							}
-						} catch {
-							// Ignore
+						const buildFile = mavenUtil.validPom(xmlString, new Map());
+						// A server.xml in the pom's own (or inherited) configDirectory is a sufficient
+						// Liberty signal even when the plugin is only declared in pluginManagement.
+						const configDirMatch = hasServerXML(candidate, xmlString, inheritedConfigDirectory(xmlString));
+						if (buildFile.isValidBuildFile() || configDirMatch) {
+							const projectType = buildFile.isValidBuildFile() ? buildFile.getProjectType() : LIBERTY_PROJECT_MAVEN;
+							projectsMap.set(candidate, await createProject(context, candidate, projectType, xmlString));
+							allEntries.push({ path: candidate, type: "maven", xmlString });
 						}
 					}
 				} else if (vscodePath.basename(candidate) === "build.gradle") {
 					if (existingProjects.has(candidate)) {
 						projectsMap.set(candidate, existingProjects.get(candidate)!);
-						try {
-							allEntries.push(await gradleEntryFor(candidate));
-						} catch {
-							// Ignore
-						}
+						allEntries.push(await gradleEntryFor(candidate));
 					} else {
-						try {
-							const rawContent = await fse.readFile(candidate, "utf8");
-							const buildFile = gradleUtil.detectLibertyPluginFromText(rawContent);
-							if (buildFile) {
-								projectsMap.set(candidate, await createProject(context, candidate, buildFile.getProjectType()));
-								allEntries.push({ path: candidate, type: "gradle", regexBuildFile: buildFile });
-							}
-						} catch {
-							// Ignore
+						const rawContent = await fse.readFile(candidate, "utf8");
+						const buildFile = gradleUtil.detectLibertyPluginFromText(rawContent);
+						if (buildFile) {
+							projectsMap.set(candidate, await createProject(context, candidate, buildFile.getProjectType()));
+							allEntries.push({ path: candidate, type: "gradle", regexBuildFile: buildFile });
 						}
 					}
 				}

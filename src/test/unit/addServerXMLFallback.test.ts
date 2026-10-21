@@ -244,4 +244,42 @@ plugins {
         assert.equal(allEntries.length, 1);
         assert.ok(allEntries[0].regexBuildFile);
     });
+
+    // ── errors are surfaced, not swallowed ───────────────────────────────────
+
+    it("rejects when a build file found by the tree-climb cannot be read (pom.xml)", async () => {
+        // A directory named pom.xml makes readFile fail with EISDIR.
+        fs.mkdirSync(path.join(tmpDir, "app", "pom.xml"), { recursive: true });
+        createFile(path.join(tmpDir, "app", "custom", "server.xml"), "<server/>");
+        mockFindFiles();
+
+        await assert.rejects(
+            addServerXMLProjects(fakeContext, new Map(), new Map(), []),
+            (err: any) => err.code === "EISDIR"
+        );
+    });
+
+    it("rejects when a build file found by the tree-climb cannot be read (build.gradle)", async () => {
+        fs.mkdirSync(path.join(tmpDir, "app", "build.gradle"), { recursive: true });
+        createFile(path.join(tmpDir, "app", "custom", "server.xml"), "<server/>");
+        mockFindFiles();
+
+        await assert.rejects(
+            addServerXMLProjects(fakeContext, new Map(), new Map(), []),
+            (err: any) => err.code === "EISDIR"
+        );
+    });
+
+    it("rejects when an existing Gradle project's build file cannot be read", async () => {
+        const gradleFile = path.join(tmpDir, "app", "build.gradle");
+        fs.mkdirSync(gradleFile, { recursive: true });
+        createFile(path.join(tmpDir, "app", "custom", "server.xml"), "<server/>");
+        mockFindFiles();
+
+        const existing = new Map<string, LibertyProject>([[gradleFile, {} as LibertyProject]]);
+        await assert.rejects(
+            addServerXMLProjects(fakeContext, new Map(), existing, []),
+            (err: any) => err.code === "EISDIR"
+        );
+    });
 });
