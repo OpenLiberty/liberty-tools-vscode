@@ -34,14 +34,13 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
                     );
 
         before(async function() {
-            this.timeout(60000);
+            this.timeout(180000);
             logger.info('Setting up jakarta_rest_class snippet test');
 
             driver = VSBrowser.instance.driver;
             wait = utils.getWaitHelper(); 
             // Open folder, wait for workbench 
-            await VSBrowser.instance.openResources(config.getProjectPath());
-            await VSBrowser.instance.waitForWorkbench();
+            await utils.openProjectFolder(config.getProjectPath());
 
             // Open file and bind page object to editor
             editorPage = await new EditorPage().openFile(testRestPath, 'TestRest.java');
@@ -59,6 +58,7 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
 
         after(async function() {
             this.timeout(15000);
+            await utils.screenshotIfSetupFailed(this, `${config.buildTool} REST snippet`);
             try {
                 if (editorPage) {
                     // Select all text first, then clear
@@ -89,14 +89,14 @@ export function runRestSnippetSuite(config: RestSnippetConfig) {
         });
         
         it('LSP4Jakarta Language Server should initialize', async function() {
-                this.timeout(60000);
+                this.timeout(200000);
                 logger.testStart('LSP4Jakarta Language Server should initialize');
                 
                 try {
                     await utils.waitForLanguageServerInit(
                         'Language Support for Jakarta EE',
                         'Initializing Jakarta EE server',
-                        60
+                        180
                     );
                     logger.testComplete('LSP4Jakarta Language Server initialized successfully');
                 } catch (error) {

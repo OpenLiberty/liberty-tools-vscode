@@ -265,7 +265,8 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 	}
 
 	// Unified project picker. Handles command palette, aggregator delegation, and direct selection.
-	public async pickProject(project: LibertyProject | undefined, command: string): Promise<LibertyProject[] | undefined> {
+	// Pass singleSelect: true to restrict the picker to a single choice (canPickMany: false).
+	public async pickProject(project: LibertyProject | undefined, command: string, singleSelect?: boolean): Promise<LibertyProject[] | undefined> {
 		const placeholder = localize("select.module.for.command");
 
 		if (project === undefined) {
@@ -286,6 +287,11 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 				detail: p.path,
 				project: p,
 			}));
+			if (singleSelect) {
+				const selected = await vscode.window.showQuickPick(items, { placeHolder: placeholder, canPickMany: false });
+				if (!selected) { return undefined; }
+				return [selected.project];
+			}
 			const selected = await vscode.window.showQuickPick(items, { placeHolder: placeholder, canPickMany: true });
 			if (!selected || selected.length === 0) { return undefined; }
 			return selected.map(s => s.project);
@@ -319,6 +325,11 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 				detail: c.path,
 				project: c,
 			}));
+			if (singleSelect) {
+				const selected = await vscode.window.showQuickPick(items, { placeHolder: placeholder, canPickMany: false });
+				if (!selected) { return undefined; }
+				return [selected.project];
+			}
 			const selected = await vscode.window.showQuickPick(items, { placeHolder: placeholder, canPickMany: true });
 			if (!selected || selected.length === 0) { return undefined; }
 			return selected.map(s => s.project);

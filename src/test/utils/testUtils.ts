@@ -3,7 +3,7 @@
  * Copyright IBM Corp. 2023, 2026
  */
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar, SideBarView } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar, SideBarView, EditorView } from 'vscode-extension-tester';
 import * as fs from 'fs';
 import { STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
 import * as constants from '../definitions/constants';
@@ -34,12 +34,13 @@ export function getWaitHelper(): WaitHelper {
  *
  * @param channelName The name of the output channel (e.g., 'Language Support for Liberty')
  * @param initMessage The message to look for indicating initialization (e.g., 'Initialized Liberty Language server')
- * @param timeout Timeout in seconds (default: 60)
+ * @param timeout Timeout in seconds (default: 180). Language servers can take a long
+ *                time to start while the project is still loading.
  */
 export async function waitForLanguageServerInit(
     channelName: string,
     initMessage: string,
-    timeout: number = 60
+    timeout: number = 180
 ): Promise<void> {
     const wait = getWaitHelper();
     
@@ -564,7 +565,7 @@ export async function waitForTestReport(reportPath: string, alternatePath?: stri
             }
             return;
         }, {
-            timeout: seconds(50),
+            timeout: seconds(120),
             pollInterval: seconds(1),
             message: alternatePath
                 ? `Test report not found at either ${reportPath} or ${alternatePath}`
@@ -610,6 +611,27 @@ export async function waitForEditorTab(tabTitle: string): Promise<string[]> {
         }
         return;
     }, 60); // Increased to 60 seconds to allow time for report generation
+}
+
+/**
+ * Takes a screenshot when a suite's `before` hook failed. Mocha skips every test and
+ * `afterEach` in that case, so no other handler captures the screen. Call it from an
+ * `after` hook, before copyScreenshotsToProjectFolder. In `after`, `currentTest.state`
+ * is undefined only when the `before` hook failed; it is a no-op otherwise.
+ * @param ctx The mocha context (`this`) of the `after` hook
+ * @param suiteName Name used in the log message and screenshot file name
+ */
+export async function screenshotIfSetupFailed(ctx: Mocha.Context, suiteName: string): Promise<void> {
+    if (ctx.currentTest?.state !== undefined) {
+        return;
+    }
+    logger.error(`Setup failed: ${suiteName}`);
+    try {
+        const VSBrowser = require('vscode-extension-tester').VSBrowser;
+        await VSBrowser.instance.takeScreenshot(`setup-failed-${suiteName.replace(/[^a-zA-Z0-9]+/g, '-')}`);
+    } catch (error) {
+        logger.error('Failed to take setup failure screenshot', error);
+    }
 }
 
 /**
@@ -694,6 +716,80 @@ export async function closeWorkspace(): Promise<void> {
     } catch (error) {
         logger.error('Error closing workspace', error);
         // Don't throw - allow tests to continue even if close fails
+    }
+}
+
+/**
+ * Open a project folder and wait for the window to settle on it.
+ *
+ * Opening a folder from the CLI can reload the VS Code window. vscode-extension-tester
+ * 8.28+ drops CLI open requests that arrive while that reload is in progress and then
+ * fails with "Failed to open resource(s) in the editor". Waiting until the window title
+ * shows the folder name keeps the next file open from racing the reload.
+ *
+ * Best effort: if the title never shows the folder, continue after the timeout so a
+ * title-format difference cannot fail a suite on its own.
+ */
+export async function openProjectFolder(projectPath: string, timeout: number = 60): Promise<void> {
+    await VSBrowser.instance.openResources(projectPath);
+    await VSBrowser.instance.waitForWorkbench();
+
+    const folderName = path.basename(projectPath);
+    try {
+        await getWaitHelper().forCondition(async () => {
+            try {
+                const title = await VSBrowser.instance.driver.getTitle();
+                return title.includes(folderName) ? true : undefined;
+            } catch {
+                // Window may be mid-reload; retry.
+                return undefined;
+            }
+        }, {
+            timeout: seconds(timeout),
+            pollInterval: seconds(1),
+            message: `Window title did not show ${folderName} within ${timeout} seconds`
+        });
+        logger.info(`Window settled on ${folderName}`);
+    } catch {
+        logger.info(`Window title did not show ${folderName}; continuing`);
+    }
+    // Let extension activation and the explorer finish after the title updates.
+    await getWaitHelper().sleep(2000);
+
+    await logEditorGroups(`after opening ${folderName}`);
+    await joinEditorGroups();
+}
+
+/**
+ * Log how many editor groups exist and which tabs each holds. Diagnostic only; never throws.
+ */
+export async function logEditorGroups(context: string): Promise<void> {
+    try {
+        const groups = await new EditorView().getEditorGroups();
+        const tabs = await Promise.all(groups.map(async group => (await group.getOpenEditorTitles()).join(', ') || '(empty)'));
+        logger.info(`Editor groups ${context}: ${groups.length} [${tabs.join(' | ')}]`);
+    } catch (error) {
+        logger.info(`Could not read editor groups ${context}: ${String(error).split('\n')[0]}`);
+    }
+}
+
+/**
+ * Collapse multiple editor groups into one so suites start from a single-group layout.
+ * A stray empty group can appear on macOS after a workspace switch; tests that look up
+ * tabs in the leftmost group then fail. Best effort; never throws.
+ */
+export async function joinEditorGroups(): Promise<void> {
+    try {
+        const groups = await new EditorView().getEditorGroups();
+        if (groups.length <= 1) {
+            return;
+        }
+        logger.info(`Joining ${groups.length} editor groups into one`);
+        await new Workbench().executeCommand('join all editor groups');
+        await getWaitHelper().sleep(1000);
+        await logEditorGroups('after joining');
+    } catch (error) {
+        logger.info(`Could not join editor groups: ${String(error).split('\n')[0]}`);
     }
 }
 

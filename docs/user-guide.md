@@ -7,6 +7,7 @@ For information regarding known issues and limitations, refer to our [Common Iss
   - [Software requirements](#software-requirements)
   - [Application requirements](#application-requirements)
   - [Configure your Java runtime for language servers](#configure-your-java-runtime-for-language-servers)
+  - [Liberty Tools settings](#liberty-tools-settings)
   - [External extension settings](#external-extension-settings)
   - [Terminal shell support](#terminal-shell-support)
 - [Liberty Tools](#liberty-tools)
@@ -21,6 +22,8 @@ For information regarding known issues and limitations, refer to our [Common Iss
   - [Customize test report locations](#customize-test-report-locations)
 - [Stop your application](#stop-your-application)
 - [Debug your application](#debug-your-application)
+  - [Start in debug mode](#start-in-debug-mode)
+  - [Attach debugger manually](#attach-debugger-manually)
 - [Create a Liberty project](#create-a-liberty-project)
 - [Manually add your Liberty project to Liberty Tools](#manually-add-your-liberty-project-to-liberty-tools)
   - [Manually remove project](#manually-remove-project)
@@ -75,6 +78,15 @@ If a source provides a Java version older than 21, it is skipped and the next so
 By default, Liberty Tools installs the latest version of the Language Support for Java(TM) by Red Hat extension. The latest version contains an embedded JRE higher than Java 21 and therefore no additional configuration is required. However, if using an older version of the Language Support for Java(TM) by Red Hat extension or using the universal version without the embedded JRE causes an issue, then any of the settings listed above can be configured to point to Java 21 or later.
 
 ![settings.json example](/docs/screenshots/settings.json%20path%20example.png)
+
+### Liberty Tools settings
+
+The following settings are provided by Liberty Tools and can be configured in your VS Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file or through the Settings UI (`Cmd+,` / `Ctrl+,`) by searching for **Liberty**.
+
+| Setting | Description | Default |
+| --- | --- | --- |
+| `liberty.java.home` | Path to the JDK used to run Liberty dev mode in the terminal. When set, this overrides any JDK detected from VS Code Java settings (`java.configuration.runtimes`, `java.jdt.ls.java.home`). Leave empty to use the JDK configured via VS Code Java settings, or the system PATH if none is set. | `""` |
+| `liberty.dev.debugStartTimeout` | Maximum time in seconds to wait for the Liberty server to start before automatically attaching the debugger when using **Start in debug mode**. Increase this value if your server takes longer than the default to start. | `180` |
 
 ### External extension settings
 
@@ -211,7 +223,83 @@ This command looks for the test report at the `build/reports/tests/test/index.ht
 
 ### Customize test report locations
 
-By default, Liberty Tools looks for test reports at the locations described above. If your build produces reports at a different path, you can override these locations with the following settings in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file:
+By default, Liberty Tools looks for test reports at the locations described above. If your build produces reports at a different path, Liberty Tools resolves the location using the following priority order.
+
+#### Maven report location resolution
+
+1. **VS Code setting** — if `liberty.test.report.surefire.path` or `liberty.test.report.failsafe.path` is set, that path is used and no further lookup is performed.
+2. **`<outputDirectory>` in `pom.xml`** — if the `maven-surefire-report-plugin` or `maven-failsafe-report-plugin` declares a custom `<outputDirectory>`, Liberty Tools reads that value directly from your `pom.xml`. The plugin may be declared in either the `<reporting>` section (conventional) or the `<build>` section.
+3. **Default locations** — if neither of the above is configured, Liberty Tools checks `target/reports/surefire.html` (or `failsafe.html`) and then `target/site/surefire-report.html` (or `failsafe-report.html`).
+
+**Example: plugin in `<reporting>` (conventional, Maven Surefire Report Plugin ≤ 3.4.x)**
+
+```xml
+<reporting>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-surefire-report-plugin</artifactId>
+      <configuration>
+        <outputDirectory>target/my-reports</outputDirectory>
+      </configuration>
+    </plugin>
+  </plugins>
+</reporting>
+```
+
+> **Note:** Liberty Tools skips `<outputDirectory>` values that contain Maven variable expressions such as `${project.build.directory}` because they cannot be resolved statically. In that case, resolution falls through to the default locations. Use the VS Code setting to specify an explicit path when your configuration uses variables.
+
+**Example: plugin in `<build>` (Maven Surefire Report Plugin ≥ 3.5.x)**
+
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-surefire-report-plugin</artifactId>
+      <configuration>
+        <outputDirectory>target/my-reports</outputDirectory>
+      </configuration>
+    </plugin>
+  </plugins>
+</build>
+```
+
+The same patterns apply to `maven-failsafe-report-plugin` for integration test reports.
+
+#### Gradle report location resolution
+
+1. **VS Code setting** — if `liberty.test.report.gradle.path` is set, that path is used and no further lookup is performed.
+2. **`build.gradle` destination** — Liberty Tools parses your `build.gradle` and reads the custom HTML report directory from the `test` task's `reports.html` block. It checks the following keys in order:
+   - `destination` (Gradle ≤ 7) — in flat (`test.reports.html.destination = "..."`), nested, or deep form
+   - `outputLocation` (Gradle 8/9) — in flat (`test.reports.html.outputLocation = "..."`), nested, or deep form
+3. **Default location** — if neither of the above is configured, Liberty Tools falls back to `build/reports/tests/test/index.html`.
+
+**Example: Gradle ≤ 7 (`destination`)**
+
+```groovy
+test {
+    reports {
+        html.destination = file("build/my-reports/tests")
+    }
+}
+```
+
+**Example: Gradle 8/9 (`outputLocation`)**
+
+```groovy
+test {
+    reports {
+        html.outputLocation = file("build/my-reports/tests")
+    }
+}
+```
+
+> **Note:** Liberty Tools skips `destination` or `outputLocation` values that contain Gradle variable expressions such as `$buildDir` or `${project.buildDir}` because they cannot be resolved statically. In that case, resolution falls through to the default location. Use the VS Code setting to specify an explicit path when your configuration uses variables.
+
+#### VS Code settings override
+
+To override the automatically resolved location entirely, set the following in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file:
 
 | Setting | Description |
 | --- | --- |
@@ -228,6 +316,54 @@ To stop your application, select the **Stop** command for your application in Li
 ![Stop command](/docs/user-guide-screenshots/devModeStop.png)
 
 ## Debug your application
+
+### Start in debug mode
+
+To start your application in dev mode and have the debugger attach automatically, select the **Start in debug mode** command for your application in Liberty Tools or run **Liberty: Start in debug mode** from the command palette.
+
+Liberty Tools starts the server with the Java debug agent enabled and waits for the server to reach a ready state before attaching the VS Code Java debugger. If the server does not reach a ready state within the timeout period, a warning message is shown and you can attach the debugger manually using the **Attach debugger** command.
+
+The default timeout is **180 seconds (3 minutes)**. If your server consistently takes longer to start, you can increase the timeout by setting `liberty.dev.debugStartTimeout` (in seconds) in your VS Code settings:
+
+```json
+"liberty.dev.debugStartTimeout": 300
+```
+
+To configure this setting, open the Settings UI (`Cmd+,` / `Ctrl+,`) and search for **Liberty debug**.
+
+#### Change the debug port
+
+By default, the server listens for the debugger on port **7777**. You can use a different port in any of the following ways:
+
+- **`server.env` (Maven and Gradle):** Add `WLP_DEBUG_ADDRESS=<port>` to `src/main/liberty/config/server.env`. **Start in debug mode** starts the server on that port and attaches the debugger to it.
+
+  ```
+  WLP_DEBUG_ADDRESS=8888
+  ```
+
+  Liberty Tools reads only `src/main/liberty/config/server.env`. If your project uses a different `configDirectory`, the `server.env` file in that directory is not read, and **Start in debug mode** uses port 7777.
+
+- **Maven build configuration:** Set `libertyDebugPort` in the `liberty-maven-plugin` configuration in your `pom.xml`. The parameter name is `libertyDebugPort`, not `debugPort`. A value set in the `pom.xml` takes precedence over the `-DdebugPort` command-line parameter.
+
+  ```xml
+  <plugin>
+      <groupId>io.openliberty.tools</groupId>
+      <artifactId>liberty-maven-plugin</artifactId>
+      <configuration>
+          <libertyDebugPort>8888</libertyDebugPort>
+      </configuration>
+  </plugin>
+  ```
+
+- **Custom parameters:** Use the **Start...** command and enter a custom parameter, then attach with the **Attach debugger** command.
+  - Maven: `-DdebugPort=<port>`
+  - Gradle: `--libertyDebugPort=<port>`
+
+  For Gradle, `libertyDebugPort` is honored only as a command-line parameter. Setting it in `build.gradle` or `gradle.properties` has no effect.
+
+For more information, see the [Liberty Maven plugin dev goal](https://github.com/OpenLiberty/ci.maven/blob/main/docs/dev.md#dev) and the [Liberty Gradle plugin `libertyDev` task](https://github.com/OpenLiberty/ci.gradle/blob/main/docs/libertyDev.md) documentation.
+
+### Attach debugger manually
 
 To attach the debugger, you must have a [running server](#run-your-application-on-liberty-using-dev-mode). Once the server is running, click the **Attach debugger** command or select the **Liberty: Attach debugger** command in the command palette, followed by your application.
 

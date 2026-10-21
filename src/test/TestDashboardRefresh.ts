@@ -54,6 +54,8 @@ describe("Liberty Tools Dashboard Refresh", () => {
      */
     after(async function() {
         this.timeout(45000);
+        await utils.screenshotIfSetupFailed(this, 'Dashboard refresh');
+        utils.copyScreenshotsToProjectFolder('maven');
         await utils.closeWorkspace();
     });
 
@@ -65,7 +67,7 @@ describe("Liberty Tools Dashboard Refresh", () => {
         );
 
         logger.testComplete("Liberty Language Server initialized successfully");
-    }).timeout(utils.seconds(60));
+    }).timeout(utils.seconds(200));
 
     it("Find Liberty Tools in sidebar", async () => {
         logger.testStart("Find Liberty Tools in sidebar");

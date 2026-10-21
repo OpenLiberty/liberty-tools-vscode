@@ -66,11 +66,10 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
         let wait: any;
 
         before(async function () {
-            this.timeout(90000);
+            this.timeout(180000);
             logger.info(`Setting up Maven ${config.tabTitle} tests`);
 
-            await VSBrowser.instance.openResources(config.getProjectPath());
-            await VSBrowser.instance.waitForWorkbench();
+            await utils.openProjectFolder(config.getProjectPath());
 
             wait = utils.getWaitHelper();
 
@@ -96,6 +95,7 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
 
         after(async function () {
             this.timeout(30000);
+            await utils.screenshotIfSetupFailed(this, config.suiteTitle);
             try {
                 if (editor) {
                     const currentText = await editor.getEditor().getText();
@@ -121,13 +121,13 @@ export function runConfigFileTestSuite(config: ConfigFileTestConfig): void {
         });
 
         it('Liberty Language Server should initialize', async function () {
-            this.timeout(60000);
+            this.timeout(200000);
             logger.testStart('Liberty Language Server should initialize');
             try {
                 await utils.waitForLanguageServerInit(
                     'Language Support for Liberty',
                     'Initialized Liberty Language server',
-                    60
+                    180
                 );
                 logger.testComplete('Liberty Language Server initialized successfully');
             } catch (error) {

@@ -26,13 +26,12 @@ export function runHoverTestSuite(config: HoverConfig){
         let serverXml: EditorPage;
         
         before(async function() {
-            this.timeout(60000);
+            this.timeout(180000);
             
             logger.info(`Setting up ${config.buildTool === 'maven' ? 'Maven' : 'Gradle'} LSP Hover tests`);
             
             // Wait for workbench to be ready
-            await VSBrowser.instance.openResources(config.getProjectPath());
-            await VSBrowser.instance.waitForWorkbench();
+            await utils.openProjectFolder(config.getProjectPath());
             
             // Open server.xml file once for all tests
             logger.info('Opening server.xml file for all tests');
@@ -59,7 +58,8 @@ export function runHoverTestSuite(config: HoverConfig){
         });
 
         after(async function() {
-            this.timeout(10000);
+            this.timeout(20000);
+            await utils.screenshotIfSetupFailed(this, `${config.buildTool} LSP hover`);
             try {
                 await editorUtils.closeAllEditors();
                 logger.info('Closed all editors after test suite');
@@ -71,14 +71,14 @@ export function runHoverTestSuite(config: HoverConfig){
         });
 
         it('Liberty Language Server should initialize', async function() {
-            this.timeout(60000);
+            this.timeout(200000);
             logger.testStart('Liberty Language Server should initialize');
             
             try {
                 await utils.waitForLanguageServerInit(
                     'Language Support for Liberty',
                     'Initialized Liberty Language server',
-                    60
+                    180
                 );
                 logger.testComplete('Liberty Language Server initialized successfully');
             } catch (error) {
@@ -115,8 +115,14 @@ export function runHoverTestSuite(config: HoverConfig){
         describe('LSP4Jakarta Hover tests in Java file', () => {
             let javaFile: EditorPage; 
 
+            after(async function() {
+                this.timeout(20000);
+                await utils.screenshotIfSetupFailed(this, `${config.buildTool} LSP4Jakarta hover`);
+                utils.copyScreenshotsToProjectFolder(config.buildTool);
+            });
+
             before(async function() {
-                this.timeout(60000);
+                this.timeout(180000);
                 logger.info('Opening HelloServlet.java file for LSP4Jakarta hover tests');
                 
                 const javaFilePath = path.resolve(
@@ -138,14 +144,14 @@ export function runHoverTestSuite(config: HoverConfig){
             });
 
             it('LSP4Jakarta Language Server should initialize', async function() {
-                this.timeout(60000);
+                this.timeout(200000);
                 logger.testStart('LSP4Jakarta Language Server should initialize');
                 
                 try {
                     await utils.waitForLanguageServerInit(
                         'Language Support for Jakarta EE',
                         'Initializing Jakarta EE server',
-                        60
+                        180
                     );
                     logger.testComplete('LSP4Jakarta Language Server initialized successfully');
                 } catch (error) {

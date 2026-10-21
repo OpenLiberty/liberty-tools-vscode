@@ -2,7 +2,7 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Liberty Tools",
 	"description": "Liberty Tools for Visual Studio Code",
-	"version": "26.0.9",
+	"version": "26.0.10-SNAPSHOT",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
@@ -45,6 +45,7 @@
 		"onStartupFinished",
 		"onCommand:liberty.dev.debug",
 		"onCommand:liberty.dev.start.container",
+		"onCommand:liberty.dev.start.debug",
 		"onCommand:liberty.dev.open.build.file"
 	],
 	"main": "./dist/extension",
@@ -140,6 +141,11 @@
 				"command": "liberty.dev.start.container",
 				"category": "Liberty",
 				"title": "%commands.title.start.in.container%"
+			},
+			{
+				"command": "liberty.dev.start.debug",
+				"category": "Liberty",
+				"title": "%commands.title.start.debug%"
 			},
 			{
 				"command": "liberty.dev.run.tests",
@@ -278,6 +284,11 @@
 					"group": "libertyCore@1"
 				},
 				{
+					"command": "liberty.dev.start.debug",
+					"when": "viewItem =~ /^libertyProject(?!.*:running)(?!.*:server-started)(?!.*:aggregator)/ || viewItem =~ /^libertyProject.*:aggregator/",
+					"group": "libertyCore@2"
+				},
+				{
 					"command": "liberty.dev.debug",
 					"when": "viewItem =~ /^libertyProject.*:running/ || viewItem =~ /^libertyProject.*:aggregator/",
 					"group": "libertyCore@3"
@@ -346,6 +357,12 @@
 						"description": "Path to the JDK used to run Liberty dev mode in the terminal. When set, this overrides any JDK detected from VS Code Java settings (java.configuration.runtimes, java.jdt.ls.java.home). Leave empty to use the JDK configured via VS Code Java settings, or the system PATH if none is set.",
 						"scope": "window"
 					},
+					"liberty.dev.debugStartTimeout": {
+						"type": "number",
+						"default": 180,
+						"description": "%configuration.liberty.dev.debugStartTimeout.description%",
+						"scope": "window"
+					},
 					"liberty.test.report.surefire.path": {
 						"type": "string",
 						"default": "",
@@ -409,15 +426,13 @@
 		"fast-xml-parser": "5.8.0",
 		"glob": "13.0.0",
 		"gulp": "5.0.1",
-		"gulp-download2": "1.1.0",
-		"gulp-xml": "1.0.5",
 		"minimatch": "9.0.7",
 		"mocha": "12.0.0",
 		"sinon": "^22.0.0",
-		"ts-loader": "9.5.7",
+		"ts-loader": "9.6.2",
 		"ts-node": "^10.9.2",
 		"typescript": "6.0.3",
-		"vscode-extension-tester": "8.24.0",
+		"vscode-extension-tester": "8.28.1",
 		"webpack": "5.107.0",
 		"webpack-cli": "5.0.0",
 		"xml2js": "0.5.0"

@@ -629,3 +629,95 @@ export function findInheritedConfigDirectory(
     }
     return undefined;
 }
+
+
+/**
+ * Scan a <build><plugins> array for the given Maven reporting plugin and return
+ * the value of <configuration><outputDirectory> if present and variable-free,
+ * otherwise undefined.
+ *
+ * Plugin artifact IDs to pass:
+ *   "maven-surefire-report-plugin"  — unit test HTML report
+ *   "maven-failsafe-report-plugin"  — integration test HTML report
+ *
+ * Values containing "${" are skipped because variable resolution is out of scope.
+ *
+ * @param xmlString  Full text content of a pom.xml file
+ * @param pluginArtifactId  The artifactId of the reporting plugin to look for
+ * @returns The configured output directory string, or undefined if not found/not usable
+ */
+export function getMavenReportOutputDirectory(xmlString: string, pluginArtifactId: string): string | undefined {
+    return getMavenReportLocation(xmlString, pluginArtifactId)?.dir;
+}
+
+/**
+ * Like {@link getMavenReportOutputDirectory} but also returns which pom.xml
+ * section the plugin was found in ("build" or "reporting"), so callers can
+ * derive the correct HTML report filename.
+ *
+ * The maven-surefire-report-plugin / maven-failsafe-report-plugin can appear in
+ * either section with different default output filenames:
+ *   - found in <build><plugins>      → new-style (>= 3.5.x): surefire.html / failsafe.html
+ *   - found in <reporting><plugins>  → old-style (<= 3.4.x): surefire-report.html / failsafe-report.html
+ *
+ * @param xmlString  Full text content of a pom.xml file
+ * @param pluginArtifactId  The artifactId of the reporting plugin to look for
+ * @returns { dir, source } or undefined if not found/not usable
+ */
+export function getMavenReportLocation(
+    xmlString: string,
+    pluginArtifactId: string
+): { dir: string; source: "build" | "reporting" } | undefined {
+    const parseString = require("xml2js").parseString;
+    let result: { dir: string; source: "build" | "reporting" } | undefined;
+    parseString(xmlString, (err: any, parsed: any) => {
+        if (err || !parsed?.project) { return; }
+        const buildDir = extractReportOutputDirFromPlugins(parsed.project.build, pluginArtifactId);
+        if (buildDir) {
+            result = { dir: buildDir, source: "build" };
+            return;
+        }
+        const reportingDir = extractReportOutputDirFromPlugins(parsed.project.reporting, pluginArtifactId);
+        if (reportingDir) {
+            result = { dir: reportingDir, source: "reporting" };
+        }
+    });
+    return result;
+}
+
+/**
+ * Walk a plugins container (either <build> or <reporting>) looking for the
+ * given plugin and return its <configuration><outputDirectory> value when
+ * present and free of Maven variable syntax ("${").
+ *
+ * Both <build><plugins><plugin> and <reporting><plugins><plugin> share the
+ * same xml2js structure, so this single helper handles both sections.
+ *
+ * NOTE: <profiles> are not checked here. A follow-up task should extend this
+ * to also scan <profiles><profile><build><plugins> the same way
+ * extractInstallDirectoryFromProfiles does for installDirectory.
+ */
+function extractReportOutputDirFromPlugins(
+    container: Array<{ plugins: Array<{ plugin: any }> }> | undefined,
+    pluginArtifactId: string
+): string | undefined {
+    if (!container) { return undefined; }
+    for (const containerEntry of container) {
+        const plugins = containerEntry.plugins;
+        if (!plugins) { continue; }
+        for (const pluginGroup of plugins) {
+            const plugin = pluginGroup.plugin;
+            if (!plugin) { continue; }
+            for (const p of plugin) {
+                if (p.artifactId?.[0] === pluginArtifactId &&
+                    p.groupId?.[0] === "org.apache.maven.plugins") {
+                    const outputDir: string | undefined = p.configuration?.[0]?.outputDirectory?.[0];
+                    if (outputDir && outputDir.trim().length > 0 && !outputDir.includes("${")) {
+                        return outputDir.trim();
+                    }
+                }
+            }
+        }
+    }
+    return undefined;
+}
