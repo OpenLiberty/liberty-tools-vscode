@@ -77,4 +77,190 @@ describe("hasServerXML", () => {
 
         assert.equal(hasServerXML(pomFile), false);
     });
+
+    // ── xmlString / configDirectory-aware checks ─────────────────────────────
+
+    it("returns true when xmlString contains an absolute configDirectory with server.xml", () => {
+        const pomFile = path.join(tmpDir, "pom.xml");
+        createFile(pomFile);
+
+        const customConfigDir = path.join(tmpDir, "custom-config");
+        const serverXML = path.join(customConfigDir, "server.xml");
+        createFile(serverXML);
+
+        const xmlString = `
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+        <configuration>
+          <configDirectory>${customConfigDir}</configDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>`;
+
+        assert.ok(hasServerXML(pomFile, xmlString));
+    });
+
+    it("returns true when xmlString contains a relative configDirectory with server.xml", () => {
+        const pomFile = path.join(tmpDir, "pom.xml");
+        createFile(pomFile);
+
+        // server.xml lives at <tmpDir>/liberty/server.xml; configDirectory is relative
+        const serverXML = path.join(tmpDir, "liberty", "server.xml");
+        createFile(serverXML);
+
+        const xmlString = `
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+        <configuration>
+          <configDirectory>liberty</configDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>`;
+
+        assert.ok(hasServerXML(pomFile, xmlString));
+    });
+
+    it("returns false when xmlString has configDirectory but no server.xml at that path", () => {
+        const pomFile = path.join(tmpDir, "pom.xml");
+        createFile(pomFile);
+
+        const xmlString = `
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+        <configuration>
+          <configDirectory>does-not-exist</configDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>`;
+
+        assert.equal(hasServerXML(pomFile, xmlString), false);
+    });
+
+    it("returns false when xmlString has no configDirectory and standard path is missing", () => {
+        const pomFile = path.join(tmpDir, "pom.xml");
+        createFile(pomFile);
+
+        const xmlString = `
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+        <configuration>
+          <serverStartTimeout>120</serverStartTimeout>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>`;
+
+        assert.equal(hasServerXML(pomFile, xmlString), false);
+    });
+
+    it("returns true via standard path even when xmlString has no configDirectory", () => {
+        const pomFile = path.join(tmpDir, "pom.xml");
+        const serverXML = path.join(tmpDir, "src", "main", "liberty", "config", "server.xml");
+        createFile(pomFile);
+        createFile(serverXML);
+
+        const xmlString = `
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>`;
+
+        assert.ok(hasServerXML(pomFile, xmlString));
+    });
+
+    it("expands ${project.basedir} in configDirectory", () => {
+        const pomFile = path.join(tmpDir, "pom.xml");
+        createFile(pomFile);
+        createFile(path.join(tmpDir, "liberty", "server.xml"));
+
+        const xmlString = `
+<project>
+  <artifactId>my-app</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+        <configuration>
+          <configDirectory>\${project.basedir}/liberty</configDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>`;
+
+        assert.ok(hasServerXML(pomFile, xmlString));
+    });
+
+    it("uses an inherited configDirectory when the pom declares none", () => {
+        const pomFile = path.join(tmpDir, "child", "pom.xml");
+        createFile(pomFile);
+        createFile(path.join(tmpDir, "child", "src", "main", "custom", "server.xml"));
+
+        assert.ok(hasServerXML(pomFile, "<project><artifactId>child</artifactId></project>", "src/main/custom"));
+    });
+
+    it("prefers the pom's own configDirectory over an inherited one", () => {
+        const pomFile = path.join(tmpDir, "child", "pom.xml");
+        createFile(pomFile);
+        createFile(path.join(tmpDir, "child", "inherited", "server.xml"));
+
+        const xmlString = `
+<project>
+  <artifactId>child</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.openliberty.tools</groupId>
+        <artifactId>liberty-maven-plugin</artifactId>
+        <configuration>
+          <configDirectory>own</configDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>`;
+
+        assert.equal(hasServerXML(pomFile, xmlString, "inherited"), false);
+    });
+
+    it("returns false when the inherited configDirectory has no server.xml", () => {
+        const pomFile = path.join(tmpDir, "child", "pom.xml");
+        createFile(pomFile);
+        assert.equal(hasServerXML(pomFile, "<project><artifactId>child</artifactId></project>", "nowhere"), false);
+    });
 });

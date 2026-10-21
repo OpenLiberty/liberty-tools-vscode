@@ -11,6 +11,7 @@ Notable changes:
 - Added support for Maven and Gradle multi-module projects in the Liberty Tools view. Parent projects and submodules are now displayed and managed in a project hierarchy. See the [user guide](docs/user-guide.md#multi-module-projects) for more information.
 - Added server status icons to the Liberty Tools view. Each project now shows a visual indicator reflecting the current server state (running, stopped, stopping, or started but waiting).
 - Liberty Tools now reads the Liberty install directory from `build.gradle`, `gradle.properties`, and Maven plugin configuration to locate an existing Liberty runtime when one is configured.
+- Added support for Maven projects that use a custom `configDirectory` for `server.xml`. See the [user guide](docs/user-guide.md#custom-configuration-directory-maven) for more information.
 - Context menu actions in the Liberty Tools view are now excluded depending on the server state.
 - Improved dev mode custom parameters input with history management and deletion support.
 - Improved terminal handling and status tracking for running Liberty instances.
