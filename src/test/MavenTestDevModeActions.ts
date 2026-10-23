@@ -1,274 +1,206 @@
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2026
+ */
 import { expect } from 'chai';
-import { InputBox, Workbench,SideBarView, ViewItem, ViewSection,EditorView, DefaultTreeItem ,  DebugView } from 'vscode-extension-tester';
+import { EditorView, VSBrowser } from 'vscode-extension-tester';
+import { runDevModeTestSuite } from "./shared/devModeTestSuite";
 import * as utils from './utils/testUtils';
+import { logger } from './utils/testLogger';
 import * as constants from './definitions/constants';
-import path = require('path');
+import * as path from 'path';
+import { DashboardPage } from './pages/DashboardPage';
 
-describe('Devmode action tests for Maven Project', () => {
-    let sidebar: SideBarView;
-    let debugView: DebugView;
-    let section: ViewSection;
-    let menu: ViewItem[];  
-    let item: DefaultTreeItem;  
-    let tabs: string[];
-
-    before(() => {
-        sidebar = new SideBarView(); 
-        debugView = new DebugView();        
-    });
-
-it('getViewControl works with the correct label',  async() => { 
-   
-   const contentPart = sidebar.getContent();
-   section = await contentPart.getSection('Liberty Dashboard');   
-   console.log("Found Liberty Dashboard....");
-   expect(section).not.undefined; 
- 
-}).timeout(10000);
-
-
-it('Open dasboard shows items - Maven', async () => {
-
-  // Wait for the Liberty Dashboard to load and expand. The dashboard only expands after using the 'expand()' method.  
-  await utils.delay(65000);
-  section.expand();
-  await utils.delay(6000);
-  const menu = await section.getVisibleItems(); 
-  expect(menu).not.empty;     
-  item = await section.findItem(constants.MAVEN_PROJECT) as DefaultTreeItem;   
-  expect(item).not.undefined;   
-   
-    
-}).timeout(275000);
-
-
-it('Start maven project from liberty dashboard', async () => {      
-    
-  
-  await utils.launchDashboardAction(item,constants.START_DASHBOARD_ACTION,constants.START_DASHBOARD_MAC_ACTION);  
-  await utils.delay(30000);
-  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
-  if(!serverStartStatus)
-    console.log("Server started message not found in the terminal");
-  else
-  {
-    console.log("Server succuessfully started");  
-    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
-    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);   
-    if(!serverStopStatus){ 
-    console.error("Server stopped message not found in the terminal");
-    }
-    else
-      console.log("Server stopped successfully");
-    expect (serverStopStatus).to.be.true;
-}
- expect (serverStartStatus).to.be.true; 
- 
-    
-}).timeout(550000);
-
-it('Run tests for sample maven project', async () => {  
-  
-  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION, constants.START_DASHBOARD_MAC_ACTION);
-  await utils.delay(30000);
-  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
-  console.log("after checkTerminalforServerState"); 
-  if(!serverStartStatus)
-    console.log("Server started message not found in the terminal");
-  else
-  {
-    console.log("Server succuessfully started");  
-    await utils.launchDashboardAction(item,constants.RUNTEST_DASHBOARD_ACTION,constants.RUNTEST_DASHBOARD_MAC_ACTION);
-    const testStatus = await utils.checkTestStatus(constants.MAVEN_RUN_TESTS_STRING);
-    expect (testStatus).to.be.true;    
-    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
-    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
-    if(!serverStopStatus){ 
-    console.error("Server stopped message not found in the terminal");
-    }
-    else
-      console.log("Server stopped successfully");
-    expect (serverStopStatus).to.be.true;
-}
- expect (serverStartStatus).to.be.true; 
- 
-    
-}).timeout(350000);
-
-
-it('start maven with options from liberty dashboard', async () => {      
-    
-  const reportPath = path.join(utils.getMvnProjectPath(),"target","site","failsafe-report.html");
-  const alternateReportPath = path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html"); // new path to scan for the reports 
-  let deleteReport = await utils.deleteReports(reportPath);
-  let deleteAlternateReport = await utils.deleteReports(alternateReportPath);
-  expect (deleteReport && deleteAlternateReport).to.be.true; // both report files should either not exist or be successfully deleted
-  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
-  await utils.setCustomParameter("-DhotTests=true");  
-  await utils.delay(30000);  
-  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
-  if(!serverStartStatus)
-    console.log("Server started with params message not found in terminal ");
-  else
-  {
-    console.log("Server succuessfully started");  
-    let checkFile = await utils.checkIfTestReportExists(reportPath);
-    let checkAlternateFile = await utils.checkIfTestReportExists(alternateReportPath);
-    expect (checkFile || checkAlternateFile).to.be.true; // check both potential locations for the test report, one of them must exist
-    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
-    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
-    if(!serverStopStatus){ 
-    console.error("Server stopped message not found in ther terminal");
-    }
-    else
-      console.log("Server stopped successfully");
-    expect (serverStopStatus).to.be.true;
-}
- expect (serverStartStatus).to.be.true;
-    
-}).timeout(350000);
-
-
-it('start maven with history from liberty dashboard', async () => {  
-
-  const reportPath = path.join(utils.getMvnProjectPath(),"target","site","failsafe-report.html");
-  const alternateReportPath = path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html");
-  let deleteReport = await utils.deleteReports(reportPath);
-  let deleteAlternateReport = await utils.deleteReports(alternateReportPath);
-  expect (deleteReport && deleteAlternateReport).to.be.true;  // both report files should either not exist or be successfully deleted
-  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);  
-  const foundCommand = await utils.chooseCmdFromHistory("-DhotTests=true");
-  expect (foundCommand).to.be.true;  
-  await utils.delay(30000);
-  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
-  if(!serverStartStatus)
-    console.log("Server started with params message not found in the terminal ");
-  else
-  {
-    console.log("Server succuessfully started");  
-    let checkFile = await utils.checkIfTestReportExists(reportPath);
-    let checkAlternateFile = await utils.checkIfTestReportExists(alternateReportPath);
-    expect (checkFile || checkAlternateFile).to.be.true; // check both potential locations for the test report, one of them must exist
-    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
-    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
-    if(!serverStopStatus){ 
-    console.error("Server stopped message not found in terminal");
-    }
-    else
-      console.log("Server stopped successfully");
-    expect (serverStopStatus).to.be.true;
-}
- expect (serverStartStatus).to.be.true;
-    
-}).timeout(550000);
-
-
-
-
-
-
-
-
-
-it('View Unit test report for maven project', async () => {      
-    
-  await utils.launchDashboardAction(item,constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);   
-  tabs = await new EditorView().getOpenEditorTitles();
-  //expect (tabs[1], "Unit test report not found").to.equal(constants.SUREFIRE_REPORT_TITLE);
-  expect (tabs.indexOf(constants.SUREFIRE_REPORT_TITLE)>-1, "Unit test report not found").to.equal(true); 
-    
-}).timeout(10000);
-
-it('View Integration test report for maven project', async () => {      
-    
-  await utils.launchDashboardAction(item, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);   
-  tabs = await new EditorView().getOpenEditorTitles();
-  //expect (tabs[2], "Integration test report not found").to.equal(constants.FAILSAFE_REPORT_TITLE);
-  expect (tabs.indexOf(constants.FAILSAFE_REPORT_TITLE)>-1, "Integration test report not found").to.equal(true);
-    
-}).timeout(10000);
-
-it('attach debugger for start with custom parameter event', async () => {
-  console.log("start attach debugger");
-  let isServerRunning: Boolean = true;
-  let attachStatus: Boolean = false;
-  try {
-    await utils.launchDashboardAction(item,constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
-    await utils.setCustomParameter("-DdebugPort=7777");   
-    await utils.delay(30000);
-    
-    isServerRunning = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
-    if (!isServerRunning)
-      console.log("Server started with params message not found in terminal");
-    else {
-      console.log("Server succuessfully started");
-      
-    await utils.launchDashboardAction(item,constants.ATTACH_DEBUGGER_DASHBOARD_ACTION, constants.ATTACH_DEBUGGER_DASHBOARD_MAC_ACTION);    
-    console.log("Attach Debugger action done");
-    await utils.delay(8000);
-    const contentPart = debugView.getContent();
-    console.log("Get Content");
-    
-    let mysecarry: Promise<ViewSection[]> = contentPart.getSections();    
-    let mysecmap: IterableIterator<[number, ViewSection]> = (await mysecarry).entries();
-    for (const [key, value] of (mysecmap)) {
-      if ((await value.getEnclosingElement().getText()).includes("BREAKPOINTS")) {
-        //console.log("******** mysecmap getEnclosingElement " + (await value.getEnclosingElement().getText()).valueOf());
-        console.log("Found Breakpoints");
-        attachStatus = true;
-        break;
-      }
-    }
-
-    await utils.stopLibertyserver();
-    isServerRunning = !await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING); //negate isServerRunning
-    if (!isServerRunning)
-      console.log("Server stopped successfully ");
-  }
-  } catch (e) {
-    console.error("error - ", e)
-  } finally {
-    console.log("finally block: is server running -  ", isServerRunning);
-    if (isServerRunning) {
-      utils.stopLibertyserver();
-    }
-    else
-      console.log("good to close test - Attach Debugger for start with custom parameter(-DdebugPort=7777) event");
-  }
-  expect(attachStatus).to.be.true;
-}).timeout(350000);
-
- it('start maven with docker from liberty dashboard', async () => {      
-
-  if((process.platform === 'darwin' ) || (process.platform === 'win32') || (process.platform == 'linux'))
-  {
-    //skip running for platforms , enable them for linux after resolving docker setup in GHA
-    return true;
-  }
-    
-  
-  await utils.launchDashboardAction(item, constants.START_DASHBOARD_ACTION_WITHDOCKER, constants.START_DASHBOARD_MAC_ACTION_WITHDOCKER);  
-  await utils.delay(60000);
-  const serverStartStatus = await utils.checkTerminalforServerState(constants.SERVER_START_STRING);
-  if(!serverStartStatus)
-    console.log("Server started message not found in the terminal");
-  else
-  {
-    console.log("Server succuessfully started");  
-    await utils.launchDashboardAction(item, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);    
-    const serverStopStatus= await utils.checkTerminalforServerState(constants.SERVER_STOP_STRING);
-    if(!serverStopStatus){ 
-    console.error("Server stopped message not found in the terminal");
-    }
-    else
-      console.log("Server stopped successfully");
-    expect (serverStopStatus).to.be.true;
-}
- expect (serverStartStatus).to.be.true; 
- 
-    
-}).timeout(350000);
-
-
+// Run shared dev mode tests
+runDevModeTestSuite({
+    buildTool: 'maven',
+    getProjectPath: utils.getMvnProjectPath,
+    projectConstant: constants.MAVEN_PROJECT,
+    testRunString: constants.MAVEN_RUN_TESTS_STRING
 });
 
+// Maven-specific tests in their own describe block
+describe('Maven-specific devmode action tests', () => {
+    let dashboard: DashboardPage;
+
+    before(async function() {
+        this.timeout(30000);
+        dashboard = new DashboardPage();
+    });
+
+    it('Start Maven with options from Liberty Tools', async () => {
+        logger.testStart('Start Maven with options from Liberty Tools');
+        try {
+            const reportPath = path.join(utils.getMvnProjectPath(), "target", "site", "failsafe-report.html");
+            const alternateReportPath = path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html");
+            logger.info(`Primary report path: ${reportPath}`);
+            logger.info(`Alternate report path: ${alternateReportPath}`);
+
+            logger.step(1, 'Deleting existing test reports');
+            let deleteReport = await utils.deleteReports(reportPath);
+            let deleteAlternateReport = await utils.deleteReports(alternateReportPath);
+            logger.info(`Primary report deletion result: ${deleteReport}`);
+            logger.info(`Alternate report deletion result: ${deleteAlternateReport}`);
+            expect(deleteReport && deleteAlternateReport).to.be.true;
+
+            logger.step(2, 'Launching dashboard start action with custom parameters');
+            await dashboard.runAction(constants.MAVEN_PROJECT, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
+
+            logger.step(3, 'Setting custom parameter: -DhotTests=true');
+            await utils.setCustomParameter("-DhotTests=true");
+
+            logger.step(4, 'Waiting for server to start with parameters');
+            const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
+
+            if (!serverStartStatus) {
+                logger.error('Server started with params message not found in terminal');
+            } else {
+                logger.stepSuccess(4, 'Server successfully started with custom parameters');
+
+                logger.step(5, 'Waiting for test report at primary or alternate location');
+                const checkFile = await utils.waitForTestReport(reportPath, alternateReportPath);
+
+                expect(checkFile).to.be.true;
+                logger.stepSuccess(5, 'Test report found');
+
+                logger.step(6, 'Launching dashboard stop action');
+                await dashboard.runAction(constants.MAVEN_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+
+                logger.step(7, 'Waiting for server to stop');
+                const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
+
+                if (!serverStopStatus) {
+                    logger.error('Server stopped message not found in the terminal');
+                } else {
+                    logger.stepSuccess(7, 'Server stopped successfully');
+                }
+                expect(serverStopStatus).to.be.true;
+            }
+
+            expect(serverStartStatus).to.be.true;
+            logger.testComplete('Start Maven with options from Liberty Tools');
+        } catch (error) {
+            logger.testFailed('Start Maven with options from Liberty Tools', error);
+            throw error;
+        }
+    }).timeout(350000);
+
+    it('Start Maven with history from Liberty Tools', async () => {
+        logger.testStart('Start Maven with history from Liberty Tools');
+        try {
+            const reportPath = path.join(utils.getMvnProjectPath(), "target", "site", "failsafe-report.html");
+            const alternateReportPath = path.join(utils.getMvnProjectPath(), "target", "reports", "failsafe.html");
+            logger.info(`Primary report path: ${reportPath}`);
+            logger.info(`Alternate report path: ${alternateReportPath}`);
+
+            logger.step(1, 'Deleting existing test reports');
+            let deleteReport = await utils.deleteReports(reportPath);
+            let deleteAlternateReport = await utils.deleteReports(alternateReportPath);
+            logger.info(`Primary report deletion result: ${deleteReport}`);
+            logger.info(`Alternate report deletion result: ${deleteAlternateReport}`);
+            expect(deleteReport && deleteAlternateReport).to.be.true;
+
+            logger.step(2, 'Launching dashboard start action with parameters');
+            await dashboard.runAction(constants.MAVEN_PROJECT, constants.START_DASHBOARD_ACTION_WITH_PARAM, constants.START_DASHBOARD_MAC_ACTION_WITH_PARAM);
+
+            logger.step(3, 'Choosing command from history: -DhotTests=true');
+            const foundCommand = await utils.chooseCmdFromHistory("-DhotTests=true");
+            logger.info(`Command found in history: ${foundCommand}`);
+            expect(foundCommand).to.be.true;
+
+            logger.step(4, 'Waiting for server to start with historical parameters');
+            const serverStartStatus = await utils.waitForServerStart(constants.SERVER_START_STRING);
+
+            if (!serverStartStatus) {
+                logger.error('Server started with params message not found in the terminal');
+            } else {
+                logger.stepSuccess(4, 'Server successfully started with historical parameters');
+
+                logger.step(5, 'Waiting for test report at primary or alternate location');
+                const checkFile = await utils.waitForTestReport(reportPath, alternateReportPath);
+
+                expect(checkFile).to.be.true;
+                logger.stepSuccess(5, 'Test report found');
+
+                logger.step(6, 'Launching dashboard stop action');
+                await dashboard.runAction(constants.MAVEN_PROJECT, constants.STOP_DASHBOARD_ACTION, constants.STOP_DASHBOARD_MAC_ACTION);
+
+                logger.step(7, 'Waiting for server to stop');
+                const serverStopStatus = await utils.waitForServerStop(constants.SERVER_STOP_STRING);
+
+                if (!serverStopStatus) {
+                    logger.error('Server stopped message not found in terminal');
+                } else {
+                    logger.stepSuccess(7, 'Server stopped successfully');
+                }
+                expect(serverStopStatus).to.be.true;
+            }
+
+            expect(serverStartStatus).to.be.true;
+            logger.testComplete('Start Maven with history from Liberty Tools');
+        } catch (error) {
+            logger.testFailed('Start Maven with history from Liberty Tools', error);
+            throw error;
+        }
+    }).timeout(550000);
+
+    it('View unit test report for Maven project', async () => {
+        logger.testStart('View unit test report for Maven project');
+        try {
+            logger.step(1, 'Launching view unit test report dashboard action');
+            await dashboard.runAction(constants.MAVEN_PROJECT, constants.UTR_DASHABOARD_ACTION, constants.UTR_DASHABOARD_MAC_ACTION);
+
+            logger.step(2, 'Waiting for unit test report tab to open');
+            const tabs = await utils.waitForEditorTab(constants.SUREFIRE_REPORT_TITLE);
+            logger.info(`Open editor tabs: ${tabs.join(', ')}`);
+
+            logger.step(3, `Checking if unit test report tab is open: ${constants.SUREFIRE_REPORT_TITLE}`);
+            const reportFound = tabs.indexOf(constants.SUREFIRE_REPORT_TITLE) > -1;
+            logger.info(`Unit test report found: ${reportFound}`);
+
+            expect(reportFound, "Unit test report not found").to.equal(true);
+            logger.stepSuccess(3, 'Unit test report tab is open');
+
+            logger.step(4, 'Closing unit test report tab');
+            const editorView = new EditorView();
+            await editorView.closeEditor(constants.SUREFIRE_REPORT_TITLE);
+            logger.stepSuccess(4, 'Unit test report tab closed');
+
+            logger.testComplete('View unit test report for Maven project');
+        } catch (error) {
+            logger.testFailed('View unit test report for Maven project', error);
+            throw error;
+        }
+    }).timeout(10000);
+
+    it('View integration test report for Maven project', async () => {
+        logger.testStart('View integration test report for Maven project');
+        try {
+            logger.step(1, 'Launching view integration test report dashboard action');
+            await dashboard.runAction(constants.MAVEN_PROJECT, constants.ITR_DASHBOARD_ACTION, constants.ITR_DASHBOARD_MAC_ACTION);
+
+            logger.step(2, 'Waiting for integration test report tab to open');
+            const tabs = await utils.waitForEditorTab(constants.FAILSAFE_REPORT_TITLE);
+            logger.info(`Open editor tabs: ${tabs.join(', ')}`);
+
+            logger.step(3, `Checking if integration test report tab is open: ${constants.FAILSAFE_REPORT_TITLE}`);
+            const reportFound = tabs.indexOf(constants.FAILSAFE_REPORT_TITLE) > -1;
+            logger.info(`Integration test report found: ${reportFound}`);
+
+            expect(reportFound, "Integration test report not found").to.equal(true);
+            logger.stepSuccess(3, 'Integration test report tab is open');
+            logger.testComplete('View integration test report for Maven project');
+        } catch (error) {
+            logger.testFailed('View integration test report for Maven project', error);
+            throw error;
+        }
+    }).timeout(90000);
+
+    /**
+     * The following after hook closes the workspace so the next test file starts with a clean slate.
+     */
+    after(async function() {
+        this.timeout(45000);
+        await utils.closeWorkspace();
+    });
+});

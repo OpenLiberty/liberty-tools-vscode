@@ -9,9 +9,9 @@ For information regarding known issues and limitations, refer to our [Common Iss
   - [Configure your Java runtime for language servers](#configure-your-java-runtime-for-language-servers)
   - [External extension settings](#external-extension-settings)
   - [Terminal shell support](#terminal-shell-support)
-- [Open the Liberty dashboard](#open-the-liberty-dashboard)
+- [Open Liberty Tools](#open-liberty-tools)
 - [Run your application on Liberty using dev mode](#run-your-application-on-liberty-using-dev-mode)
-  - [Use the Liberty dashboard](#use-the-liberty-dashboard)
+  - [Use Liberty Tools](#use-liberty-tools)
   - [Use the Visual Studio Code Command Palette](#use-the-visual-studio-code-command-palette)
   - [Start your application in dev mode](#start-your-application-in-dev-mode)
   - [Start your application in dev mode in a container](#start-your-application-in-dev-mode-in-a-container)
@@ -20,7 +20,8 @@ For information regarding known issues and limitations, refer to our [Common Iss
 - [View your application test reports](#view-your-application-test-reports)
 - [Stop your application](#stop-your-application)
 - [Debug your application](#debug-your-application)
-- [Manually add your liberty project to the dashboard](#manually-add-your-liberty-project-to-the-dashboard)
+- [Manually add your Liberty project to Liberty Tools](#manually-add-your-liberty-project-to-liberty-tools)
+  - [Manually remove project](#manually-remove-project)
 - [Configure a Liberty server](#configure-a-liberty-server)
 - [Develop with Jakarta EE and MicroProfile APIs](#develop-with-jakarta-ee-and-microprofile-apis)
 
@@ -29,11 +30,12 @@ For information regarding known issues and limitations, refer to our [Common Iss
 ### Software requirements
 <!-- Match the VSCode and Java version with the README.md -->
 - **Visual Studio Code 1.78.0** or later.
-- **Java 17** or later is required by Liberty Tools for Visual Studio Code. To point Visual Studio Code to a specific runtime, see [Settings](#settings) for more information.
+- **Java 21** or later is required by Liberty Tools for Visual Studio Code. To point Visual Studio Code to a specific runtime, see [Settings](#settings) for more information.
 
 ### Application requirements
 
 - Define a Liberty `server.xml` configuration file in the `src/main/liberty/config` location.
+- Ensure the `src/main/webapp` directory exists in your project. If your application serves web content, this directory is required for Liberty to resolve file paths correctly (for example, `getRealPath()` returns `null` without it). If you use a deployment descriptor, place your `web.xml` file at `src/main/webapp/WEB-INF/web.xml`.
 - [Configure the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven#configuration) or [configure the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle#adding-the-plugin-to-the-build-script). We recommend using the most recent versions of the plugins as they include several important bug fixes.
 
     - [Liberty Maven Plugin latest release](https://github.com/OpenLiberty/ci.maven/releases/latest)
@@ -42,7 +44,7 @@ For information regarding known issues and limitations, refer to our [Common Iss
 
 ### Configure your Java runtime for language servers
 
-Liberty Tools for Visual Studio Code requires Java 17 or later to ensure that the following language servers start properly:
+Liberty Tools for Visual Studio Code requires Java 21 or later to ensure that the following language servers start properly:
 - [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server)
 - [Eclipse Language Server for Jakarta EE](https://github.com/eclipse/lsp4jakarta)
 - [XML Language Server (LemMinX)](https://github.com/eclipse/lemminx) 
@@ -50,20 +52,23 @@ Liberty Tools for Visual Studio Code requires Java 17 or later to ensure that th
 A toast message alerts you if any language server fails to run or if Visual Studio Code has trouble locating your Java.
 
 <img src="/docs/screenshots/update%20jdk%20toast.png" width="40%"/> 
-<img src="/docs/screenshots/java_17_toast_alert.png" width="40%" />
+<img src="/docs/screenshots/java_21_toast_alert.png" width="40%" />
 
-To resolve this issue, you can define settings in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file or set system environment variables to point Liberty Tools to Java 17 or later. 
+To resolve this issue, you can define settings in your Visual Studio Code [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) file or set system environment variables to point Liberty Tools to Java 21 or later. 
 
-For both Liberty Config Language Server and Eclipse Language Server for Jakarta EE, Liberty Tools for Visual Studio Code will check for the Java versions in the following order:
-1. `java.jdt.ls.java.home` in settings.json
-2. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [Language Support for Java(TM) by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java). 
-3. `JDK_HOME` or `JAVA_HOME` as system environment variables. (Note: if both `JDK_HOME` and `JAVA_HOME` are set, `JDK_HOME` will take precedence)
+Liberty Tools checks all available Java sources and selects the best Java 21+ installation, skipping any source that provides an older version rather than stopping with an error. The sources are checked in the following priority order:
 
-By default, Liberty Tools installs the latest version of the Language Support for Java(TM) by Red Hat extension. The latest version contains an embedded JRE higher than Java 17 and therefore no additional configuration is required. However, if using an older version of the Language Support for Java(TM) by Red Hat extension or using the universal version without the embedded JRE causes an issue, then `java.jdt.ls.java.home` or one of JDK_HOME or JAVA_HOME must be configured to use Java 17 or later.
+1. The [embedded JRE](https://github.com/redhat-developer/vscode-java#java-tooling-jdk) included by [Language Support for Java(TM) by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java).
+2. `java.configuration.runtimes` in settings.json (entry marked `default: true` is preferred).
+3. `java.jdt.ls.java.home` in settings.json.
+4. `xml.java.home` in settings.json.
+5. `java.import.maven.java.home` or `java.import.gradle.java.home` in settings.json.
+6. `JAVA_HOME` or `JDK_HOME` as system environment variables.
+7. JDKs discovered on the system path (Homebrew, SDKMAN, jEnv, OS defaults).
 
-For LemMinX, Liberty Tools for Visual Studio Code will check for the Java versions in the following order:
-1. `xml.java.home` in settings.json
-2. `JDK_HOME` or `JAVA_HOME` as system environment variables. (Note: if both `JDK_HOME` and `JAVA_HOME` are set, `JDK_HOME` takes precedence)
+If a source provides a Java version older than 21, it is skipped and the next source is tried. An error is shown only if no Java 21+ installation is found across all sources.
+
+By default, Liberty Tools installs the latest version of the Language Support for Java(TM) by Red Hat extension. The latest version contains an embedded JRE higher than Java 21 and therefore no additional configuration is required. However, if using an older version of the Language Support for Java(TM) by Red Hat extension or using the universal version without the embedded JRE causes an issue, then any of the settings listed above can be configured to point to Java 21 or later.
 
 ![settings.json example](/docs/screenshots/settings.json%20path%20example.png)
 
@@ -75,7 +80,23 @@ For LemMinX, Liberty Tools for Visual Studio Code will check for the Java versio
 | `maven.executable.preferMavenWrapper` | Maven commands executed by dev mode honour this setting. If this setting set to `true`, dev mode tries to use `mvnw` if a Maven wrapper file can be found. Otherwise, it uses `mvn`. | [Maven for Java extension](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven) |
 | `java.import.gradle.wrapper.enabled` | Gradle commands executed by dev mode honour this setting. If this setting is set to `true`, dev mode tries to use `gradlew` if a Gradle wrapper file can be found. Otherwise, it uses `gradle`. | [Language support for Java extension](https://marketplace.visualstudio.com/items?itemName=redhat.java) |
 | `xml.java.home` | This setting allows a user to define their LemMinX language server runtime without altering the `JAVA_HOME` environment variable.  | Not set |
-| `java.jdt.ls.java.home` | This setting specifies the folder path to the JDK (17 or later) that is used to launch the Java Language Server. This setting replaces the Java extension's embedded JRE to start the language servers.  | Not set |
+| `java.jdt.ls.java.home` | This setting specifies the folder path to the JDK (21 or later) that is used to launch the Java Language Server. This setting replaces the Java extension's embedded JRE to start the language servers.  | Not set |
+
+### Configure the JDK used for Liberty dev mode terminals
+
+When you start a Liberty project, Liberty Tools sets `JAVA_HOME` in the terminal to the JDK configured for that specific project. Each project in a multi-root workspace resolves its own JDK independently. The JDK is selected in the following priority order:
+
+1. `liberty.java.home` in settings.json — manual override, takes priority over everything else.
+2. `java.configuration.runtimes` in the project's `.vscode/settings.json` (entry marked `default: true` is preferred).
+3. `java.jdt.ls.java.home`, `xml.java.home`, `java.import.maven.java.home`, `java.import.gradle.java.home`, or `java.home` in settings.json.
+4. `JAVA_HOME` or `JDK_HOME` as system environment variables.
+5. JDKs discovered on the system path.
+
+If no JDK is found, the terminal opens without a `JAVA_HOME` prefix and uses whatever `java` is available on the system PATH.
+
+Note: The JDK used for the dev mode terminal is resolved independently from the JDK used to run the language servers. A project can run dev mode on Java 17 while the language servers run on Java 21.
+
+Note: The `liberty.terminal.useJavaHome` setting is deprecated and no longer has any effect. If you previously used it to point Liberty terminals at a specific JDK via `java.home`, you can now set `liberty.java.home` directly to the JDK path, or leave it unset to let Liberty Tools detect the JDK automatically from the sources listed above.
 
 ### Terminal shell support
 
@@ -86,31 +107,31 @@ Liberty Tools supports the default shell types for each OS in the Visual Studio 
 
 It may be possible to use other shell types, but support is not guaranteed. Please feel free to open an enhancement issue if your preferred shell type is not supported: https://github.com/OpenLiberty/liberty-tools-vscode/issues.
 
-## Open the Liberty dashboard
+## Open Liberty Tools
 
-By default, the Liberty dashboard appears in the Project Explorer side bar. Optionally, you can drag the Liberty dashboard into the Activity Bar.
+By default, Liberty Tools appears in the Project Explorer side bar. Optionally, you can drag Liberty Tools into the Activity Bar.
 
 | Side Bar view | Activity Bar view |
 | ------ | ----- |
-| ![Liberty Dashboard Side Bar view](/docs/user-guide-screenshots/liberty_dashboard_side_bar.png) | ![Liberty Dashboard Activity Bar view](/docs/user-guide-screenshots/liberty_dashboard_activity_bar.png)|
+| ![Liberty Tools Side Bar view](/docs/user-guide-screenshots/liberty_dashboard_side_bar.png) | ![Liberty Tools Activity Bar view](/docs/user-guide-screenshots/liberty_dashboard_activity_bar.png)|
 
-Projects that are already properly configured to run on Liberty and use Liberty dev mode are automatically added the Liberty dashboard when it opens. If your Liberty project does not show up in the Liberty dashboard automatically and you have the Liberty Maven or Liberty Gradle plugin configured, check out [how to manually add your project to the Liberty dashboard](#manually-add-your-liberty-project-to-the-dashboard).
+Projects that are already properly configured to run on Liberty and use Liberty dev mode are automatically added to Liberty Tools when it opens. If your Liberty project does not show up in Liberty Tools automatically and you have the Liberty Maven or Liberty Gradle plugin configured, check out [how to manually add your project to Liberty Tools](#manually-add-your-liberty-project-to-liberty-tools).
 
-If you add new projects or make changes, use the refresh icon in the Liberty dashboard toolbar to refresh the dashboard view.
+If you add new projects or make changes, use the refresh icon in the Liberty Tools toolbar to refresh the view.
 
 ![Dashboard Refresh highlighted](/docs/user-guide-screenshots/dashboardToolbarRefresh.png)
 
 ## Run your application on Liberty using dev mode
 
-The following three menu actions are available to start your Liberty application in dev mode through the Liberty dashboard or the Visual Studio Code command palette:
+The following three menu actions are available to start your Liberty application in dev mode through Liberty Tools or the Visual Studio Code command palette:
 
 - [Start your application in dev mode](#start-your-application-in-dev-mode)
 - [Start your application in dev mode with configuration](#start-your-application-in-dev-mode-with-configuration)
 - [Start your application in dev mode in a container](#start-your-application-in-dev-mode-in-a-container)
 
-### Use the Liberty dashboard
+### Use Liberty Tools
 
-The Liberty dashboard provides a context menu for Liberty projects. You can choose different commands from the menu to speed up application development.
+Liberty Tools provides a context menu for Liberty projects. You can choose different commands from the menu to speed up application development.
 
 ![Dashboard context menu](/docs/user-guide-screenshots/liberty_dashboard_contextual.png)
 
@@ -124,7 +145,7 @@ All Liberty Tools commands that are described in the following sections are also
 
 ### Start your application in dev mode
 
-To start your application in dev mode, select the **Start** command for your application in the Liberty dashboard.
+To start your application in dev mode, select the **Start** command for your application in Liberty Tools.
 
 A new terminal tab opens to run the application in dev mode.
 
@@ -132,7 +153,7 @@ A new terminal tab opens to run the application in dev mode.
 
 ### Start your application in dev mode with configuration
 
-To start your application in dev mode with custom configuration, select the **Start...** command for your application in the Liberty dashboard. The command opens an edit dialog where you can specify parameters for the [Liberty Maven dev goal](https://github.com/OpenLiberty/ci.maven/blob/main/docs/dev.md#additional-parameters) or [Liberty Gradle dev task](https://github.com/OpenLiberty/ci.gradle/blob/main/docs/libertyDev.md#command-line-parameters).
+To start your application in dev mode with custom configuration, select the **Start...** command for your application in Liberty Tools. The command opens an edit dialog where you can specify parameters for the [Liberty Maven dev goal](https://github.com/OpenLiberty/ci.maven/blob/main/docs/dev.md#additional-parameters) or [Liberty Gradle dev task](https://github.com/OpenLiberty/ci.gradle/blob/main/docs/libertyDev.md#command-line-parameters).
 
 ![Liberty Start... command](/docs/user-guide-screenshots/devModeStartCustom.png)
 
@@ -146,7 +167,7 @@ The next time you choose to start dev mode with configuration, the menu provides
 
 ### Start your application in dev mode in a container
 
-To use dev mode for containers, select the **Start in container** command for your application in the Liberty dashboard.
+To use dev mode for containers, select the **Start in container** command for your application in Liberty Tools.
 
 ![Liberty Start in container command](/docs/user-guide-screenshots/devModeStartContainer.png)
 
@@ -156,7 +177,7 @@ For more information on dev mode for containers, check out the [Liberty Maven de
 
 After your application is running on Liberty using dev mode, you can easily run the tests provided by your application.
 
-To run tests, select the **Run tests** command for your application in the Liberty dashboard.
+To run tests, select the **Run tests** command for your application in Liberty Tools.
 
 The tests are run in the corresponding terminal.
 
@@ -170,23 +191,23 @@ After you finish running your application tests, you can access the produced tes
 
 ### Maven-built applications
 
-To view the integration test report for Maven-built applications, select the **View integration test report** command for your application in the Liberty dashboard.
+To view the integration test report for Maven-built applications, select the **View integration test report** command for your application in Liberty Tools.
 
 This command looks for the integration test report at the `/target/site/failsafe-report.html` default location.
 
-To view the unit test report for Maven-built applications, select the **View unit test report** command for your application in the Liberty dashboard.
+To view the unit test report for Maven-built applications, select the **View unit test report** command for your application in Liberty Tools.
 
 This command looks for the unit test report at the`/target/site/surefire-report.html` default location.
 
 ### Gradle-built applications
 
-To view the test report for Gradle-built applications, select the **View test report** command for your application in the Liberty dashboard.
+To view the test report for Gradle-built applications, select the **View test report** command for your application in Liberty Tools.
 
 This command looks for the test report at the `build/reports/tests/test/index.html` default location.
 
 ## Stop your application
 
-To stop your application, select the **Stop** command for your application in the Liberty dashboard.
+To stop your application, select the **Stop** command for your application in Liberty Tools.
 
 ![Stop command](/docs/user-guide-screenshots/devModeStop.png)
 
@@ -200,19 +221,30 @@ When the debugger is attached, the Visual Studio Code [debug options](https://co
 
 ![Debug Mode](/docs/user-guide-screenshots/debugger_mode.png)
 
-## Manually add your Liberty project to the dashboard
+## Manually add your Liberty project to Liberty Tools
 
-In the event that your Liberty project is not automatically detected by the Liberty dashboard, you can manually add your Liberty project to the Liberty dashboard. To manually add your Liberty project to the Liberty dashboard, right-click into an empty space in the project explorer and select **Add project to Liberty Dashboard** or select the **Liberty: Add project to the tool window** command in the command palette, followed by your application.
+If your Liberty project is not automatically detected by Liberty Tools, you can manually add your Liberty project to Liberty Tools in one of four ways:<br>
+* Click the plus icon (+) in Liberty Tools.<br>
+  ![Add Liberty project from Liberty Tools](/docs/user-guide-screenshots/add_from_liberty_dashboard.png)<br>
+* Right-click into an empty space in the Explorer view and select **Add project to Liberty Tools**.<br>
+  ![Add Liberty project from Explorer view empty space](/docs/user-guide-screenshots/add_from_empty_space.png)<br>
+* If you have a workspace open, you also have the option to right-click on a project root folder in the Explorer view and select **Add project to Liberty Tools**.<br>
+  ![Add Liberty project from Explorer view project root](/docs/user-guide-screenshots/add_from_project_root_folder.png)<br>
+* Use the Command Palette to select the **Liberty: Add project to Liberty Tools** command.<br>
+  ![Add Liberty project from Command Palette](/docs/user-guide-screenshots/add_from_command_palette.png)<br>
 
-![Liberty add project to tool window](/docs/user-guide-screenshots/add_liberty_project.png)
+In each of these cases, you are prompted in the Command Palette to select a project from a list of projects that are currently not displayed in Liberty Tools.<br>
+![Liberty add project selection](/docs/user-guide-screenshots/add_project_selection.png)<br>
 
-You are prompted with a list of projects that are not already displayed in the in the Liberty dashboard.
+### Manually remove project
 
-![Liberty add project to tool window selection](/docs/user-guide-screenshots/add_liberty_project_2.png)
+To remove manually added Liberty projects from Liberty Tools, you have a similar set of four options:
+* Click the minus icon (-) in Liberty Tools.
+* Right-click into an empty space in the Explorer view and select **Remove project from Liberty Tools**.
+* If you have a workspace open, you also have the option to right-click on a project root folder in the Explorer view and select  **Remove project from Liberty Tools**.
+* Use the Command Palette to select the  **Liberty: Remove project from Liberty Tools** command.
 
-To remove manually added Liberty projects from the Liberty dashboard, right-click in an empty space in the project explorer and select **Remove project from Liberty Dashboard** or select the **Liberty: Remove project from the tool window** command in the command palette, followed by your application.
-
-![Liberty Remove Project](/docs/user-guide-screenshots/removeLibertyProject.png)
+Similar to adding the project, you are prompted in the Command Palette to select a project from a list of projects in Liberty Tools that can be removed.
 
 ## Configure a Liberty server
 

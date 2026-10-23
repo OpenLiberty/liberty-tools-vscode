@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ############################################################################
-# Copyright (c) 2022 IBM Corporation and others.
+# Copyright (c) 2022, 2026 IBM Corporation and others.
 # 
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,17 +14,26 @@
 ############################################################################
 set -Ex
 
-#BUILD OR TEST TO EXECUTE
+#Execute BUILD or TEST
 TYPE=$1
 
-#IF TEST TTYPE HEN RUN WITH VERSION OF VSCODE TO RUN TESTS 1.74.0, LATEST
+#Run with previous or latest version of VSCODE
 VSCODE_VERSION_TO_RUN=$2
+
+#Build tool to test (maven or gradle)
+BUILD_TOOL=${3:-gradle}
+
+# Pinned version of redhat.java that is compatible with Liberty Tools (lsp4jakarta)
+REDHAT_JAVA_VERSION="1.54.0"
 
 # Current time.
 currentTime=(date +"%Y/%m/%d-%H:%M:%S:%3N")
 
 # Operating system.
 OS=$(uname -s)
+
+# Boolean to see if any failure has occured while executing commands
+failure="false"
 
 main() {
 
@@ -40,61 +49,68 @@ main() {
         npm run build
         npm run compile
         vsce package
+        updateExitStatus
     else
 
         #Initialisation step
         npm run test-compile
-        cd src/test/resources/maven/liberty.maven.test.wrapper.app
-        mvn liberty:start
-        mvn liberty:stop
+        installPinnedRedhatJava
+        
+        # Initialize Maven project if needed
+        if [ "$BUILD_TOOL" = "maven" ]; then
+            cd src/test/resources/maven/liberty-maven-test-wrapper-app
+            mvn liberty:start
+            mvn liberty:stop
 
-
-        #Docker test initialisation step
-        if [ $OS = "Linux" ]; then
-                #Start Display and Docker-Daemon
-                startDisplayAndDocker
-
+            #Docker test initialisation step for Maven
+            if [ $OS = "Linux" ]; then
                 mvn package
                 docker build --pull -f ./Dockerfile -t inventory-dev-mode .
-	fi
-
-        cd -
-
-        if [ $VSCODE_VERSION_TO_RUN == "latest" ]; then
-            # Run the plugin's install goal against the latest vscode version
-             if [ $OS = "Darwin" ]; then
-                chown -R runner src/test/resources/maven
-              chown -R runner  src/test/resources/gradle
-                npm run test-mac-maven -- -u
-                npm run test-mac-gradle -- -u
-            else
-                npm run test -- -u
             fi
-        else
-            # Run the plugin's install goal against the target vscode version
-            if [ $OS = "Darwin" ]; then
-              chown -R runner src/test/resources/maven
-              chown -R runner  src/test/resources/gradle
-              npm run test-mac-maven -- -u -c $VSCODE_VERSION_TO_RUN
-              npm run test-mac-gradle -- -u -c $VSCODE_VERSION_TO_RUN
+            cd -
+        fi
 
-            else
-            npm run test -- -u -c $VSCODE_VERSION_TO_RUN
+         #Start Display and Docker-Daemon
+        if [ $OS = "Linux" ]; then
+            startDisplayAndDocker
+        fi
+
+        # Run Tests
+        if [ $OS = "Darwin" ]; then
+            if [ "$BUILD_TOOL" = "maven" ]; then
+                chown -R runner src/test/resources/maven
+            fi
+            if [ "$BUILD_TOOL" = "gradle" ]; then
+                chown -R runner src/test/resources/gradle
             fi
         fi
+
+        if [ $VSCODE_VERSION_TO_RUN == "latest" ]; then
+            if [ "$BUILD_TOOL" = "gradle" ]; then
+                npm run test-gradle -- -u
+            elif [ "$BUILD_TOOL" = "maven" ]; then
+                npm run test-maven -- -u
+            fi
+        else
+            if [ "$BUILD_TOOL" = "gradle" ]; then
+                npm run test-gradle -- -u -c $VSCODE_VERSION_TO_RUN
+            elif [ "$BUILD_TOOL" = "maven" ]; then
+                npm run test-maven -- -u -c $VSCODE_VERSION_TO_RUN
+            fi
+        fi
+        updateExitStatus
     fi
 
     # If there were any errors, gather some debug data before exiting.
-    rc=$?
-    if [ "$rc" -ne 0 ]; then
-        echo "ERROR: Failure while driving npm install on plugin. rc: ${rc}."
+    if [ "$failure" = "true" ]; then
+        echo "ERROR: Failure occurred while running ${TYPE} step."
 
         if [ $TYPE = "TEST" ]; then
             echo "DEBUG: Maven Liberty messages.log:\n"
-            cat src/test/resources/maven/liberty.maven.test.wrapper.app/target/liberty/wlp/usr/servers/defaultServer/logs/messages.log
+            cat src/test/resources/maven/liberty-maven-test-wrapper-app/target/liberty/wlp/usr/servers/defaultServer/logs/messages.log
 
             echo "DEBUG: Gradle Liberty messages.log:\n"
-            cat src/test/resources/gradle/liberty.gradle.test.wrapper.app/build/wlp/usr/servers/defaultServer/logs/messages.log
+            cat src/test/resources/gradle/liberty-gradle-test-wrapper-app/build/wlp/usr/servers/defaultServer/logs/messages.log
         fi
 
         echo "DEBUG: Environment variables:\n"
@@ -102,6 +118,16 @@ main() {
 
         exit -1
     fi
+}
+
+# Download and install a pinned version of redhat.java from Open VSX to avoid
+# pulling 1.55.0+ which is incompatible with lsp4jakarta used by Liberty Tools.
+installPinnedRedhatJava() {
+    local vsix_url="https://open-vsx.org/api/redhat/java/${REDHAT_JAVA_VERSION}/file/redhat.java-${REDHAT_JAVA_VERSION}.vsix"
+    local vsix_file="/tmp/redhat.java-${REDHAT_JAVA_VERSION}.vsix"
+    echo "> $(${currentTime[@]}): Installing pinned redhat.java v${REDHAT_JAVA_VERSION} from Open VSX"
+    curl -fL "$vsix_url" -o "$vsix_file"
+    npx extest install-vsix "$vsix_file"
 }
 
 #start docker and display
@@ -126,28 +152,38 @@ startDisplayAndDocker() {
 
 #find current vscode version
 setVscodeVersionToTest() {
-        latest_version=$(curl -s https://code.visualstudio.com/updates)
-        current_version=$(echo $latest_version | cut -d"v" -f2 | sed 's/_/./g')
-
-        if echo "$current_version" | grep -qE '^[1-9]+\.[0-9]+$'; then
-                echo "The string is a version string."
-                previous_version=$(awk -F. '{print $1"."$2-1}' <<<$current_version)
-                previousMinusOne=$(awk -F. '{print $1"."$2-2}' <<<$current_version)
-                echo $current_version $previous_version $previousMinusOne
-        else
-                echo "The string is not a version string."
-                current_version='latest'
-                previous_version='latest'
-                previousMinusOne='latest'
+        if [[ $VSCODE_VERSION_TO_RUN == 'latest' ]]; then
+                return
         fi
 
-        if [[ $VSCODE_VERSION_TO_RUN = 'latest' ]]; then
-                VSCODE_VERSION_TO_RUN='latest'
-        elif [[ $VSCODE_VERSION_TO_RUN = 'previous' ]]; then
-                VSCODE_VERSION_TO_RUN="$previous_version.0"
-        else
-                VSCODE_VERSION_TO_RUN="$previousMinusOne.0"
+        local versions_json
+        versions_json=$(curl -sf "https://update.code.visualstudio.com/api/releases/stable")
+
+        if [[ -z "$versions_json" ]]; then
+                echo "ERROR: Failed to fetch VS Code release list."
+                exit 1
         fi
+
+        local all_versions latest_minor previous_version
+        all_versions=$(echo "$versions_json" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+        latest_minor=$(echo "$all_versions" | head -1 | grep -oE '^[0-9]+\.[0-9]+')
+        previous_version=$(echo "$all_versions" | grep -v "^${latest_minor}\." | head -1)
+
+        if [[ -z "$previous_version" ]]; then
+                echo "ERROR: Could not extract previous VS Code version from release list."
+                exit 1
+        fi
+
+        VSCODE_VERSION_TO_RUN="$previous_version"
+}
+
+# Finding the exit status of a command and updating failure boolean.
+# Need to call this method after executing each npm command to store the status.
+updateExitStatus() {
+    status=$?
+    if [ "$failure" = "false" ] && [ $status -ne 0 ]; then
+        failure="true"
+    fi
 }
 
 main "$@"

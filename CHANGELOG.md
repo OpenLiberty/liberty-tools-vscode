@@ -2,6 +2,70 @@
 
 All notable changes to the Liberty Tools extension will be documented below.
 
+## 26.0.8
+
+Version 26.0.8 of Liberty Tools for Visual Studio Code contains minor enhancements and fixes. Version 26.0.8 requires Visual Studio Code version 1.78+ and requires Java 21 or later.
+
+Notable changes:
+- Java 21 is required for language server functionality. See the [user guide](docs/user-guide.md) for more info.
+- The extenxion's side bar item `Liberty Dashboard` was renamed to `Liberty Tools`.
+- Improved Java runtime detection for language server startup. Liberty Tools now checks all available Java sources (VS Code settings, extensions, system path) and skips sources that provide a Java version older than 21. Properties pointing to unsupported Java versions will no longer prevent the extension from loading if Java 21, or higher, is available elsewhere on the machine.
+- Added per-project Java support. When starting a Liberty project in dev mode, Liberty Tools now resolves `JAVA_HOME` for each project by reading the project's VS Code settings. Each project in a multi-root workspace independently resolves its own JDK. Use `liberty.java.home` to override all other JVM location properties when running dev mode. For more information check the [user guide](https://github.com/OpenLiberty/liberty-tools-vscode/blob/main/docs/user-guide.md#configure-your-java-runtime-for-language-servers).
+- Updated [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta) version to 0.2.6:
+  - There is a known conflict between this version of LSP4Jakarta and `Language Support for Java by Red Hat` version `1.55.0 or higher`. An notification has been added for this case. Use version `1.54.0` to resolve any issues with LSP4Jakarta features. This will be updated in the next release.
+  - For more information regarding changes for version 0.2.6, refer to the release notes: https://github.com/eclipse-lsp4jakarta/lsp4jakarta/releases/tag/0.2.6.
+- Updated [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) version to 2.4.1, which includes multiple enhancements and bug fixes. For more information regarding changes for version 2.4.1, refer to the release notes:
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/liberty-langserver-2.4.1
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/lemminx-liberty-2.4.1
+
+See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/25.0.11...26.0.8) for the full set of changes since the previous release.
+
+## 25.0.11
+
+Version 25.0.11 of Liberty Tools for Visual Studio Code is a fix release that contains minor enhancements and fixes. Version 25.0.11 requires Visual Studio Code version 1.78+ and requires Java 17 or later.
+
+Notable changes:
+
+- Updated [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta) version to 0.2.5, which resolves the following bug:
+  - For more information regarding changes for version 0.2.5, refer to the release notes: https://github.com/eclipse-lsp4jakarta/lsp4jakarta/releases/tag/0.2.5.
+- Updated [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) version to 2.4, which includes multiple enhancements and bug fixes. For more information regarding changes for version 2.4, refer to the release notes:
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/liberty-langserver-2.4
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/lemminx-liberty-2.4
+
+See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/25.0.8...25.0.11) for the full set of changes since the previous release.
+
+## 25.0.8
+
+Version 25.0.8 of Liberty Tools for Visual Studio Code is a fix release that contains minor enhancements and fixes. Version 25.0.8 requires Visual Studio Code version 1.78+ and requires Java 17 or later.
+
+Notable changes:
+- Updated [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) version to 2.3.2, which includes multiple enhancements and bug fixes. For more information regarding changes for version 2.3.2, refer to the release notes:
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/liberty-langserver-2.3.2
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/lemminx-liberty-2.3.2
+- Fixed an issue when connecting a debugger using the "Attach Debugger" context menu feature
+  - https://github.com/OpenLiberty/liberty-tools-vscode/issues/544
+
+See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/25.0.3...25.0.8) for the full set of changes since the previous release.
+
+## 25.0.3
+
+Version 25.0.3 of Liberty Tools for Visual Studio Code is a fix release that contains minor enhancements and fixes. Version 25.0.3 requires Visual Studio Code version 1.78+ and requires Java 17 or later.
+
+Notable changes:
+
+- Updated [Eclipse LSP4Jakarta](https://github.com/eclipse/lsp4jakarta) version to 0.2.3, which resolves the following bug:
+  - Diagnostic and quick fix not available for a field incorrectly annotated with @PositiveOrZero annotation - https://github.com/OpenLiberty/liberty-tools-vscode/issues/389
+  - For more information regarding changes for version 0.2.3, refer to the release notes: https://github.com/eclipse-lsp4jakarta/lsp4jakarta/releases/tag/0.2.3.
+- Updated [Liberty Config Language Server](https://github.com/OpenLiberty/liberty-language-server) version to 2.2.1, which includes multiple enhancements and bug fixes. For more information regarding changes for version 2.2.1, refer to the release notes:
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/liberty-langserver-2.2.1
+  - https://github.com/OpenLiberty/liberty-language-server/releases/tag/lemminx-liberty-2.2.1
+- New buttons added to the Liberty dashboard to allow manually adding or removing a project to or from the Liberty dashboard using the dashboard itself.
+  - https://github.com/OpenLiberty/liberty-tools-vscode/issues/498
+- Fix to prevent refreshing the Liberty dashboard when files used for project detection are generated under a project’s target or build directory.
+  - https://github.com/OpenLiberty/liberty-tools-vscode/issues/455
+
+See the [commit log](https://github.com/OpenLiberty/liberty-tools-vscode/compare/24.0.12...25.0.3) for the full set of changes since the previous release.
+
 ## 24.0.12
 
 Version 24.0.12 of Liberty Tools for Visual Studio Code is a fix release that contains minor enhancements and fixes. Version 24.0.12 requires Visual Studio Code version 1.78+ and requires Java 17 or later.

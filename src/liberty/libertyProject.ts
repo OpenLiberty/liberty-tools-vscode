@@ -1,11 +1,6 @@
-/**
- * Copyright (c) 2020, 2024 IBM Corporation.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2020, 2026
  */
 import * as fse from "fs-extra";
 import * as vscodePath from "path";
@@ -14,10 +9,11 @@ import * as gradleUtil from "../util/gradleUtil";
 import * as mavenUtil from "../util/mavenUtil";
 import * as util from "../util/helperUtil";
 import { localize } from "../util/i18nUtil";
-import { EXCLUDED_DIR_PATTERN, LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, UNTITLED_WORKSPACE } from "../definitions/constants";
+import { EXCLUDED_DIR_PATTERN, LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER, LIBERTY_MAVEN_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER } from "../definitions/constants";
 import { BuildFileImpl, GradleBuildFile } from "../util/buildFile";
 import { DashboardData } from "./dashboard";
 import { BaseLibertyProject } from "./baseLibertyProject";
+import { JavaSelector } from "../util/javaSelector";
 
 const MAVEN_ICON = "maven-tag.png";
 const GRADLE_ICON = "gradle-tag-1.png";
@@ -36,11 +32,15 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 
 	private _context: vscode.ExtensionContext;
 
+	// Resolves when the first refresh() completes. Callers that need a stable
+	// project map before acting (e.g. handleWorkspaceSaveInProgress) must await this.
+	public readonly initialRefresh: Promise<void>;
+
 	constructor(context: vscode.ExtensionContext) {
 		this._context = context;
 		this._onDidChangeTreeData = new vscode.EventEmitter<LibertyProject | undefined>();
 		this.onDidChangeTreeData = this._onDidChangeTreeData.event;
-		this.refresh();
+		this.initialRefresh = this.refresh();
 	}
 
 	public getContext(): vscode.ExtensionContext {
@@ -175,7 +175,7 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 			const project = await this.createLibertyProject(p.path, p.contextValue);
 			if ( project !== undefined) {
 				this.projects.set(p.path, project);
-				console.debug("Project " + p.path + " added to Liberty Dashboard");
+				console.debug("Project " + p.path + " added to Liberty Tools");
 			} else {
 				// add to remove list
 				projectsToBeRemoved.push(p);
@@ -217,20 +217,20 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 					'Save Workspace'
 				).then(async (selection) => {
 					if (selection === 'Save Workspace') {
+							await this._context.globalState.update('workspaceSaveInProgress', true);
+							console.log('[checkUntitledWorkspaceAndSaveIt] wrote workspaceSaveInProgress=true, selectedProject=' + this._context.globalState.get('selectedProject'));
+							// Do NOT clear globalState here: the new session needs workspaceSaveInProgress
+							// and selectedProject to restore the manually-added project to the dashboard.
+							await vscode.commands.executeCommand('workbench.action.saveWorkspaceAs');
+							console.log('[checkUntitledWorkspaceAndSaveIt] saveWorkspaceAs command returned');
+					} else {
 						/**
-						 * setting workspaceSaveInProgress to true and storing it in globalstate for identifyting that the
-						 * workspace is saved and needs to save the manually added projects to the dashboard
+						 * If the user cancels saving the workspace and exits without saving, the data stays in the global state,
+						 * which is shared across all VS Code instances. To prevent this data from being mistakenly used in other
+						 * sessions and added to the dashboard, it should be cleared if the user cancels the save.
 						 */
-						await this._context.globalState.update('workspaceSaveInProgress', true);
-						//opens the saveWorkspace as dialog box
-						await vscode.commands.executeCommand('workbench.action.saveWorkspaceAs');
+						util.clearDataSavedInGlobalState(this._context);
 					}
-					/**
-					 * If the user cancels saving the workspace and exits without saving, the data stays in the global state, 
-					 * which is shared across all VS Code instances. To prevent this data from being mistakenly used in other 
-					 * sessions and added to the dashboard, it should be cleared if the user cancels the save.
-					 */
-					util.clearDataSavedInGlobalState(this._context);
 					resolve();
 				});
 			} catch (error) {
@@ -242,12 +242,15 @@ export class ProjectProvider implements vscode.TreeDataProvider<LibertyProject> 
 	}
 
 	/*
-	This method identifies a workspace that is untitled and contains more than one project 
-	*/
+	 * Returns true when the workspace has not yet been saved to a .code-workspace file,
+	 * meaning workspaceState will be lost if the user does "Save Workspace As...".
+	 * This covers both plain single-folder windows (workspace.name == folder name)
+	 * and VS Code's auto-created "Untitled (Workspace)" multi-root workspaces.
+	 */
 	public isMultiProjectUntitledWorkspace(): boolean {
 		const workspaceFolders = vscode.workspace.workspaceFolders;
-		if ((workspaceFolders && workspaceFolders.length > 1
-			&& vscode.workspace.name === UNTITLED_WORKSPACE)) {
+		if (workspaceFolders && workspaceFolders.length >= 1
+			&& vscode.workspace.workspaceFile === undefined) {
 			return true;
 		}
 		return false;
@@ -547,19 +550,30 @@ export class LibertyProject extends vscode.TreeItem {
 		this.terminalType = terminalType;
 	}
 
-	public createTerminal(projectHome: string): vscode.Terminal | undefined {
+	// Returns a bundled object with the terminal and resolved JAVA_HOME path,
+	// or undefined if a terminal already exists for this project.
+	public async createTerminal(projectHome: string): Promise<{ terminal: vscode.Terminal; javaHome: string } | undefined> {
 		if (this.terminal === undefined) {
-			// configure terminal to use java.home if liberty.terminal.useJavaHome is true
-			const useJavaHome: any = util.getConfiguration("terminal.useJavaHome");
-			let env: { [envKey: string]: string } = {};
-			if (useJavaHome) {
-				const javaHome: string | undefined = vscode.workspace.getConfiguration("java").get<string>("home");
-				if (javaHome) {
-					env = { JAVA_HOME: javaHome };
-				}
+			let javaHome = "";
+
+			// 1. Honour the liberty.java.home manual override first.
+			const libertyJavaHome: string | undefined = util.getConfiguration("java.home");
+			if (libertyJavaHome && libertyJavaHome.trim().length > 0) {
+				javaHome = libertyJavaHome.trim();
+			} else {
+				// 2. Delegate to JavaSelector's per-project resolver.
+				// Reads this project's .vscode/settings.json (scoped to this.path)
+				// then falls back to system PATH. Never throws.
+				javaHome = await JavaSelector.getInstance().findForProject(
+					vscode.Uri.file(this.path)
+				);
 			}
-			const terminal = vscode.window.createTerminal({cwd: projectHome, name: this.label + " (liberty dev)", env:env });
-			return terminal;
+
+			// Terminal created plain with no env injection so shell startup scripts
+			// (e.g. ~/.zshrc) cannot overwrite JAVA_HOME. The caller prepends
+			// JAVA_HOME="..." directly to the mvn/gradle command via prependJavaHome().
+			const terminal = vscode.window.createTerminal({ cwd: projectHome, name: this.label + " (liberty dev)" });
+			return { terminal, javaHome };
 		}
 		return undefined;
 	}

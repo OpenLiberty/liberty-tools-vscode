@@ -2,7 +2,7 @@
 	"name": "liberty-dev-vscode-ext",
 	"displayName": "Liberty Tools",
 	"description": "Liberty Tools for Visual Studio Code",
-	"version": "25.0.1-SNAPSHOT",
+	"version": "26.0.9-SNAPSHOT",
 	"publisher": "Open-Liberty",
 	"repository": {
 		"type": "git",
@@ -11,7 +11,7 @@
 	"preview": false,
 	"license": "EPL-2.0",
 	"engines": {
-		"vscode": "^1.78.0"
+		"vscode": ">=1.76.0"
 	},
 	"categories": [
 		"Programming Languages"
@@ -50,10 +50,10 @@
 	],
 	"contributes": {
 		"javaExtensions": [
-			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.2.2.jar"
+			"./jars/org.eclipse.lsp4jakarta.jdt.core-0.2.6.jar"
 		],
 		"xml.javaExtensions": [
-			"./jars/liberty-langserver-lemminx-2.2-jar-with-dependencies.jar"
+			"./jars/liberty-langserver-lemminx-2.4.1-jar-with-dependencies.jar"
 		],
 		"views": {
 			"explorer": [
@@ -96,12 +96,14 @@
 			{
 				"command": "liberty.dev.add.project",
 				"category": "Liberty",
-				"title": "%commands.title.add.project%"
+				"title": "%commands.title.add.project%",
+				"icon": "$(add)"
 			},
 			{
 				"command": "liberty.dev.remove.project",
 				"category": "Liberty",
-				"title": "%commands.title.remove.project%"
+				"title": "%commands.title.remove.project%",
+				"icon": "$(remove)"
 			},
 			{
 				"command": "liberty.dev.stop",
@@ -157,6 +159,16 @@
 					"command": "liberty.explorer.refresh",
 					"when": "view == liberty-dev",
 					"group": "navigation@1"
+				},
+				{
+					"command": "liberty.dev.add.project",
+					"when": "view == liberty-dev",
+					"group": "navigation@2"
+				},
+				{
+					"command": "liberty.dev.remove.project",
+					"when": "view == liberty-dev",
+					"group": "navigation@3"
 				}
 			],
 			"view/item/context": [
@@ -215,6 +227,13 @@
 						"type": "boolean",
 						"default": false,
 						"description": "If this value is true, and if the setting java.home has a value, then the environment variable JAVA_HOME will be set to the value of java.home when a new terminal window is created.",
+						"scope": "window",
+						"deprecationMessage": "This setting is deprecated. Use 'liberty.java.home' to manually set the JDK for Liberty terminals."
+					},
+					"liberty.java.home": {
+						"type": "string",
+						"default": "",
+						"description": "Path to the JDK used to run Liberty dev mode in the terminal. When set, this overrides any JDK detected from VS Code Java settings (java.configuration.runtimes, java.jdt.ls.java.home). Leave empty to use the JDK configured via VS Code Java settings, or the system PATH if none is set.",
 						"scope": "window"
 					},
 					"liberty.refresh.enabled": {
@@ -242,45 +261,62 @@
 		"watch": "webpack --mode development --watch --info-verbosity verbose",
 		"test-compile": "tsc -p ./",
 		"build": "gulp downloadLibertyLSJars downloadLSP4JakartaJars",
+		"downloadLCLS": "gulp downloadLibertyLSJars",
 		"buildLcls": "gulp buildLemminxLiberty buildLibertyServer",
 		"buildJakarta": "gulp buildJakartaJdt buildJakartaLs",
-		"test": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/*.js'",
-		"test-mac-maven":"npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/M*.js'",
-		"test-mac-gradle": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js'"
+		"test": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/*.js' --code_settings src/test/resources/settings.json",
+		"test-maven": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/M*.js' --code_settings src/test/resources/settings.json",
+		"test-gradle": "npm run test-compile && extest setup-and-run -o .vscode/settings.json 'out/test/G*.js' --code_settings src/test/resources/settings.json",
+		"test-unit": "node node_modules/.bin/mocha --config .mocharc.unit.yml"
 	},
 	"devDependencies": {
-		"@types/chai": "^4.3.4",
-		"@types/glob": "^7.1.1",
-		"@types/mocha": "^7.0.2",
-		"@types/node": "^16.11.7",
-		"@types/vscode": "^1.42.0",
-		"@typescript-eslint/eslint-plugin": "^5.15.0",
-		"@typescript-eslint/parser": "^5.15.0",
-		"chai": "^4.3.7",
-		"eslint": "^8.11.0",
-		"glob": "^7.1.6",
-		"gulp": "^4.0.2",
-		"gulp-download2": "^1.1.0",
-		"mocha": "^9.2.2",
-		"ts-loader": "^9.3.1",
-		"typescript": "^4.8.4",
-		"vscode-extension-tester": "^7.3.0",
-		"vscode-test": "^1.3.0",
-		"webpack": "^5.96.1",
-		"webpack-cli": "^4.10.0",
-		"@types/selenium-webdriver": "^4.1.22",
-		"clipboardy": "^2.3.0"
+		"@types/chai": "4.3.4",
+		"@types/mocha": "10.0.0",
+		"@types/node": "20.0.0",
+		"@types/selenium-webdriver": "4.1.22",
+		"@types/sinon": "^21.0.1",
+		"@types/vscode": "1.76.0",
+		"@typescript-eslint/eslint-plugin": "8.67.0",
+		"@typescript-eslint/parser": "8.67.0",
+		"@vscode/test-electron": "2.4.0",
+		"axios": "1.18.0",
+		"chai": "4.3.7",
+		"clipboardy": "2.3.0",
+		"eslint": "10.8.1",
+		"fast-xml-parser": "5.8.0",
+		"glob": "13.0.0",
+		"gulp": "5.0.1",
+		"gulp-download2": "1.1.0",
+		"gulp-xml": "1.0.5",
+		"minimatch": "9.0.7",
+		"mocha": "11.7.6",
+		"sinon": "^22.0.0",
+		"ts-loader": "9.5.7",
+		"ts-node": "^10.9.2",
+		"typescript": "6.0.3",
+		"vscode-extension-tester": "8.24.0",
+		"webpack": "5.107.0",
+		"webpack-cli": "5.0.0",
+		"xml2js": "0.5.0"
+	},
+	"overrides": {
+		"vscode-languageclient": {
+			"rimraf": "6.1.3"
+		},
+		"serialize-javascript": "7.0.5",
+		"xml2js": "0.5.0"
 	},
 	"dependencies": {
-		"@types/fs-extra": "^8.1.0",
-		"@types/xml2js": "^0.4.5",
+		"@types/fs-extra": "8.1.0",
+		"@types/semver": "7.3.2",
+		"@types/xml2js": "0.4.5",
+		"brace-expansion": "5.0.9",
 		"expand-home-dir": "0.0.3",
-		"find-java-home": "^1.2.2",
-		"fs-extra": "^9.0.0",
-		"gradle-to-js": "^2.0.0",
-		"@types/semver": "^7.3.2",
-		"vscode-languageclient": "^8.1.0",
-		"xml2js": "^0.5.0",
-		"jsonpath-plus": "^10.2.0"
+		"find-java-home": "2.0.0",
+		"fs-extra": "9.0.0",
+		"gradle-to-js": "2.0.0",
+		"jsonpath-plus": "10.3.0",
+		"vscode-languageclient": "10.1.0",
+		"jdk-utils": "^0.4.4"
 	}
 }

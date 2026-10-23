@@ -10,3 +10,5 @@ target/
 build/
 .gradle/
 bin/
+**/screenshots
+**/test-tools

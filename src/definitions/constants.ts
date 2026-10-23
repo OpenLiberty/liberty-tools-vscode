@@ -1,11 +1,6 @@
-/**
- * Copyright (c) 2020, 2024 IBM Corporation.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2020, 2025
  */
 import { localize } from "../util/i18nUtil";
 export const LIBERTY_MAVEN_PROJECT = "libertyMavenProject";
@@ -32,7 +27,7 @@ export const COMMAND_AND_PROJECT_TYPE_MAP: { [command: string]: string[] } = {
     "gradle":[ LIBERTY_GRADLE_PROJECT, LIBERTY_GRADLE_PROJECT_CONTAINER],
     "liberty.dev.debug": [LIBERTY_MAVEN_PROJECT, LIBERTY_GRADLE_PROJECT, LIBERTY_MAVEN_PROJECT_CONTAINER, LIBERTY_GRADLE_PROJECT_CONTAINER],
 };
-export const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target}/**";
+export const EXCLUDED_DIR_PATTERN = "**/{bin,classes,target,build}/**";
 export const COMMAND_TITLES = new Map();
 export const UNTITLED_WORKSPACE="Untitled (Workspace)";
 COMMAND_TITLES.set(localize("hotkey.commands.title.refresh"), "liberty.explorer.refresh");

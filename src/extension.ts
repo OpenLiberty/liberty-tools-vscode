@@ -1,11 +1,6 @@
-/**
- * Copyright (c) 2020, 2024 IBM Corporation.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2020, 2026
  */
 import * as vscode from "vscode";
 import * as devCommands from "./liberty/devCommands";
@@ -15,16 +10,21 @@ import { LibertyProject, ProjectProvider } from "./liberty/libertyProject";
 import { LanguageClientOptions } from "vscode-languageclient";
 import { LanguageClient } from "vscode-languageclient/node";
 import { workspace, commands, ExtensionContext, extensions, window, StatusBarAlignment, TextEditor } from "vscode";
-import { JAVA_EXTENSION_ID, waitForStandardMode } from "./util/javaServerMode";
 import { localize } from "./util/i18nUtil";
 import { RequirementsData, resolveRequirements, resolveLclsRequirements } from "./util/requirements";
+import { JavaSelector } from "./util/javaSelector";
 import { prepareExecutable } from "./util/javaServerStarter";
 import * as helperUtil from "./util/helperUtil";
+import path = require('path');
+import * as fs from "fs";
+
+const JAVA_EXTENSION_ID = "redhat.java";
+const SUPPORTED_JAVA_VERSION = "1.54.0";
 
 const LIBERTY_CLIENT_ID = "LANGUAGE_ID_LIBERTY";
 const JAKARTA_CLIENT_ID = "LANGUAGE_ID_JAKARTA";
-export const LIBERTY_LS_JAR = "liberty-langserver-2.2-jar-with-dependencies.jar";
-export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.2.2-jar-with-dependencies.jar";
+export const LIBERTY_LS_JAR = "liberty-langserver-2.4.1-jar-with-dependencies.jar";
+export const JAKARTA_LS_JAR = "org.eclipse.lsp4jakarta.ls-0.2.6-jar-with-dependencies.jar";
 
 let libertyClient: LanguageClient;
 let jakartaClient: LanguageClient;
@@ -40,13 +40,29 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
      * If java ls was started in lightweight mode, It will prompt user to switch
      */
     const api: JavaExtensionAPI = await getJavaExtensionAPI();
-    await waitForStandardMode(api);
 
     const item = window.createStatusBarItem(StatusBarAlignment.Right, Number.MIN_VALUE);
     // item.name = "Liberty Language Server";
     item.text = localize("liberty.ls");
     item.tooltip = localize("liberty.ls.starting");
     toggleItem(window.activeTextEditor, item);
+
+    // Run after getJavaExtensionAPI so VS Code APIs (findFiles etc.) are ready,
+    // but before startLangServer so we don't wait for LS startup.
+    handleWorkspaceSaveInProgress(context).catch(err => console.error('[handleWorkspaceSaveInProgress] uncaught error:', err));
+
+    // Invalidate the JavaSelector cache whenever the user changes a Java-related
+    // VS Code setting so the next findFirstValid() call picks up the new value.
+    context.subscriptions.push(JavaSelector.getInstance().watchConfigChanges());
+
+    // Warn users who still have the deprecated liberty.terminal.useJavaHome setting enabled.
+    const useJavaHome = workspace.getConfiguration("liberty").get<boolean>("terminal.useJavaHome");
+    if (useJavaHome) {
+        window.showWarningMessage(
+            "The 'liberty.terminal.useJavaHome' setting is deprecated and no longer has any effect. " +
+            "Set 'liberty.java.home' to the JDK path you want Liberty dev mode to use, or remove the setting to use automatic JDK detection."
+        );
+    }
 
     resolveLclsRequirements(api).then().catch((error => {
         window.showErrorMessage(error.message, error.label).then((selection) => {
@@ -63,7 +79,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             item.text = localize("liberty.ls.thumbs.up");
             item.tooltip = localize("liberty.ls.started");
             toggleItem(window.activeTextEditor, item);
-            handleWorkspaceSaveInProgress(context);
             registerCommands(context);
         }, (error: any) => {
             console.log("Liberty client was not ready. Did not initialize");
@@ -113,6 +128,10 @@ function registerCommands(context: ExtensionContext) {
             registerFileWatcher(projectProvider);
         }
         vscode.window.registerTreeDataProvider("liberty-dev", projectProvider);
+        // Re-run refresh so that any project written to workspaceState by
+        // handleWorkspaceSaveInProgress (which ran before the tree was registered)
+        // is picked up and displayed immediately.
+        projectProvider.refresh();
     }
 
     context.subscriptions.push(
@@ -189,15 +208,62 @@ export function deactivate(): Promise<void[]> {
  */
 export function registerFileWatcher(projectProvider: ProjectProvider): void {
 	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("{**/pom.xml,**/build.gradle,**/settings.gradle,**/src/main/liberty/config/server.xml}");
-	watcher.onDidCreate(async () => {
-		projectProvider.refresh();
-	});
-	watcher.onDidChange(async () => {
-		projectProvider.refresh();
-	});
-	watcher.onDidDelete(async () => {
-		projectProvider.refresh();
-	});
+    // Async handler for the file system events (create, change, delete)
+    const handleUri = async (uri: vscode.Uri) => {
+        if (uri.fsPath.endsWith("server.xml")) {
+            await projectProvider.refresh();
+            return;
+        }
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+
+        if (!workspaceFolders) {
+            return; // No workspace folders to process
+        }
+
+        // Loop through all workspace folders
+        for (let folder of workspaceFolders) {
+            let projectRoot = folder.uri.fsPath;
+            const relativePath = path.relative(projectRoot, uri.fsPath);
+
+            // Ensure that the file belongs to this project (starts with the projectRoot path)
+            if (!uri.fsPath.startsWith(projectRoot)) {
+                continue; // Skip if the file is outside the current project folder
+            }
+
+            // Check if the path includes 'target' or 'build' directly under the project root
+            if (/(target\/|build\/)/.test(relativePath)) {
+                /**
+                 * Determines the parent directory of the project root. 
+                 * If a valid parent exists, use its path for searching. Otherwise, use the project root path itself.
+                 */
+                let projectRootParent = path.dirname(projectRoot);
+                if (!(fs.existsSync(projectRootParent) && fs.statSync(projectRootParent).isDirectory())) {
+                    projectRootParent = projectRoot;// If the parent directory of the project root doesn't exist, set projectRootParent to projectRoot.
+                    console.debug("project root parent is not found");
+                }
+                const siblingFileExists = await helperUtil.checkSiblingFilesInTargetOrBuildParent(uri.fsPath, projectRootParent);
+                if (!siblingFileExists) {
+                    console.debug(`No sibling build file found, refreshing project... for  ` + uri.fsPath);
+                    // Refresh the project if no sibling file is found
+                    await projectProvider.refresh();
+                    return;
+                } else {
+                    console.debug(`Skipping refresh: Sibling build file found for ` + uri.fsPath);
+                    return; // Do not refresh
+                }
+            } else {
+                // If the file being processed is **outside** the `target` or `build` directory, always refresh
+                console.debug('Refreshing project...');
+                await projectProvider.refresh();
+                return;
+            }
+        }
+    };
+
+
+    watcher.onDidCreate(handleUri);
+    watcher.onDidChange(handleUri);
+    watcher.onDidDelete(handleUri);
 }
 
 function startLangServer(context: ExtensionContext, requirements: RequirementsData, isLiberty: boolean) {
@@ -257,6 +323,26 @@ async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
     if (!vscodeJava) {
         throw new Error("VSCode java is not installed");
     }
+    const javaVersion: string = (vscodeJava.packageJSON as Record<string, unknown>).version as string ?? "";
+    if (javaVersion) {
+        const [supportedMajor, supportedMinor] = SUPPORTED_JAVA_VERSION.split(".").map(p => parseInt(p, 10));
+        const [major, minor] = javaVersion.split(".").map(p => parseInt(p, 10));
+        const isIncompatible = major > supportedMajor || (major === supportedMajor && minor > supportedMinor);
+        if (isIncompatible) {
+            window.showWarningMessage(
+                localize("redhat.java.version.incompatible", javaVersion, SUPPORTED_JAVA_VERSION),
+                localize("redhat.java.version.incompatible.install"),
+                localize("redhat.java.version.incompatible.open")
+            ).then(selection => {
+                if (selection === localize("redhat.java.version.incompatible.install")) {
+                    commands.executeCommand("workbench.extensions.installExtension", `${JAVA_EXTENSION_ID}@${SUPPORTED_JAVA_VERSION}`);
+                    commands.executeCommand("extension.open", JAVA_EXTENSION_ID);
+                } else if (selection === localize("redhat.java.version.incompatible.open")) {
+                    commands.executeCommand("extension.open", JAVA_EXTENSION_ID);
+                }
+            });
+        }
+    }
     const api = await vscodeJava.activate();
     if (!api) {
         throw new Error("VSCode java api not found");
@@ -264,13 +350,21 @@ async function getJavaExtensionAPI(): Promise<JavaExtensionAPI> {
     return Promise.resolve(api);
 }
 
-function handleWorkspaceSaveInProgress(context: vscode.ExtensionContext) {
-    let projectProvider = getProjectProvider(context);
-    if (projectProvider.getContext().globalState.get('workspaceSaveInProgress') &&
-        projectProvider.getContext().globalState.get('selectedProject') !== undefined) {
-        devCommands.addProjectsToTheDashBoard(projectProvider, projectProvider.getContext().globalState.get('selectedProject') as string);
+async function handleWorkspaceSaveInProgress(context: vscode.ExtensionContext): Promise<boolean> {
+    const projectProvider = getProjectProvider(context);
+    const wip = projectProvider.getContext().globalState.get('workspaceSaveInProgress');
+    const sel = projectProvider.getContext().globalState.get('selectedProject');
+    if (wip && sel !== undefined) {
+        // Wait for the initial refresh() to finish so the project map is fully populated.
+        await projectProvider.initialRefresh;
+        // Write the project into workspaceState. Do NOT call fireChangeEvent here —
+        // the tree data provider may not be registered yet. registerCommands() will
+        // call refresh() after registering the tree, which will display it.
+        await projectProvider.addUserSelectedPath(sel as string, projectProvider.getProjects());
         helperUtil.clearDataSavedInGlobalState(projectProvider.getContext());
+        return true;
     }
+    return false;
 }
 
 function getProjectProvider(context: vscode.ExtensionContext): ProjectProvider {

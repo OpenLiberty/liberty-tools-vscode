@@ -1,11 +1,6 @@
-/**
- * Copyright (c) 2022 IBM Corporation.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2022
  */
 
 import { BaseLibertyProject } from "./baseLibertyProject";
@@ -38,6 +33,12 @@ export class DashboardData {
     } else if ( index < 0 ) {
       this.lastUsedStartParams.unshift(cmdParam);
     }
+  }
+
+  public removeStartCmdParam(cmdParam: ProjectStartCmdParam): void {
+    this.lastUsedStartParams = this.lastUsedStartParams.filter(
+      element => !(element.path === cmdParam.path && element.param === cmdParam.param)
+    );
   }
 
   public removeProject(path: string): void {
