@@ -317,6 +317,7 @@ async function stampProjects(
 					project.artifactId = metadata.artifactId;
 					project.parentArtifactId = metadata.parentArtifactId;
 					project.isAggregator = metadata.isAggregator;
+					project.hasLibertyPlugin = metadata.hasLibertyPlugin;
 					project.isLibertyEnabled = metadata.isLibertyEnabled
 					  || hasServerXML(entry.path, entry.xmlString, inheritedConfigDirectory(entry.xmlString, metadata.parentArtifactId));
 					project.installDirectory = metadata.installDirectory;
@@ -328,6 +329,7 @@ async function stampProjects(
 					project.artifactId = metadata.projectName;
 					project.parentArtifactId = metadata.parentProjectName;
 					project.isAggregator = metadata.isAggregator;
+					project.hasLibertyPlugin = metadata.hasLibertyPlugin;
 					project.isLibertyEnabled = metadata.isLibertyEnabled
 					  || hasServerXML(entry.path);
 					project.installDirectory = metadata.installDirectory;
@@ -413,6 +415,22 @@ async function linkProjects(
 					childProject.isLibertyEnabled = true;
 				}
 				console.debug(`Linked gradle subproject ${subproject} to parent ${parentMetadata.projectName} via filesystem path`);
+			}
+		}
+	}
+
+	// If any child of an aggregator has the Liberty plugin explicitly applied, suppress
+	// isLibertyEnabled on siblings that are only enabled via an inherited server.xml /
+	// configDirectory.  Without this, every child appears in the tree even when only
+	// some of them actually apply the plugin.
+	for (const project of projectsMap.values()) {
+		if (!project.isAggregator || project.children.length === 0) { continue; }
+		const anyChildHasPlugin = project.children.some(c => c.hasLibertyPlugin);
+		if (anyChildHasPlugin) {
+			for (const child of project.children) {
+				if (!child.hasLibertyPlugin) {
+					child.isLibertyEnabled = false;
+				}
 			}
 		}
 	}
