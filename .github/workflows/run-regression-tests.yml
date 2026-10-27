@@ -13,7 +13,8 @@ jobs:
       matrix:
         runtime: [ linux, mac ]
      # Removing windows as a standard run flavor   runtime: [ linux, mac, windows ]
-        targetVSCode: [previous, latest ]
+        targetVSCode: [latest]
+        buildTool: [maven, gradle]
       # As Vscode 1.79 and 1.78 are  the only support version for current release, running test with only latest,previous
       #Enable it in future for multiple releases as applicable  targetVSCode: [ previousMinusOne, previous, latest ]
         include:
@@ -21,18 +22,18 @@ jobs:
           os: ubuntu-latest
 
         - runtime: mac
-          os: macOS-13
+          os: macOS-15
 
       #  - runtime: windows
       #    os: windows-latest
 
-    name: Build Plugin
+    name: Test ${{ matrix.runtime }} - ${{ matrix.buildTool }} - ${{ matrix.targetVSCode }}
     runs-on: ${{ matrix.os }}
 
     steps:
       # Checkout the eclipse plugin repository.
       - name: 'Setup: Checkout plugin'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Install the required software.
       - name: 'Setup: Install required software'
@@ -44,14 +45,24 @@ jobs:
 
       # Archive artifacts
       - name: Archive artifacts
-        if: runner.os == 'linux' && matrix.targetVSCode == 'latest'
-        uses: actions/upload-artifact@v3
+        if: runner.os == 'linux' && matrix.targetVSCode == 'latest' && matrix.buildTool == 'maven'
+        uses: actions/upload-artifact@v4.3.4
         with:
           name: liberty-tools-vscode-${{ github.sha }}
           path: ./**/*.vsix
           if-no-files-found: warn
           retention-days: 7
 
-      # Build the plugin.
-      - name: 'Test: RunTests'
-        run: bash ./src/test/resources/ci/scripts/exec.sh TEST ${{ matrix.targetVSCode }}
+      # Run tests for specific build tool
+      - name: 'Test: Run ${{ matrix.buildTool }} Tests'
+        run: bash ./src/test/resources/ci/scripts/exec.sh TEST ${{ matrix.targetVSCode }} ${{ matrix.buildTool }}
+
+      # Archive screenshots
+      - name: Archive screenshots
+        if: always()
+        uses: actions/upload-artifact@v4.3.4
+        with:
+          name: liberty-tools-vscode-${{ matrix.runtime }}-${{ matrix.buildTool }}-${{ matrix.targetVSCode }}-tests-screenshots
+          path: ./screenshots/${{ matrix.buildTool }}/*.png
+          if-no-files-found: warn
+          retention-days: 7

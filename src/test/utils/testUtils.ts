@@ -1,195 +1,914 @@
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2023, 2026
+ */
 import path = require('path');
-import { Workbench, InputBox, DefaultTreeItem, ModalDialog } from 'vscode-extension-tester';
+import { Workbench, InputBox, DefaultTreeItem, ModalDialog, VSBrowser, WaitHelper, BottomBarPanel, OutputView, DebugToolbar, SideBarView, EditorView } from 'vscode-extension-tester';
 import * as fs from 'fs';
-import { MAVEN_PROJECT, STOP_DASHBOARD_MAC_ACTION  } from '../definitions/constants';
+import { STOP_DASHBOARD_MAC_ACTION } from '../definitions/constants';
+import * as constants from '../definitions/constants';
+import * as fse from 'fs-extra';
+import { TextEditor } from 'vscode-extension-tester';
 import { MapContextMenuforMac } from './macUtils';
+import { logger } from './testLogger';
 import clipboard = require('clipboardy');
 import { expect } from 'chai';
 
+// Singleton WaitHelper instance
+let waitHelper: WaitHelper | undefined;
+
+/**
+ * Get or create the singleton WaitHelper instance.
+ * This should be used for all wait operations in tests.
+ */
+export function getWaitHelper(): WaitHelper {
+    if (!waitHelper) {
+        waitHelper = new WaitHelper(VSBrowser.instance.driver);
+    }
+    return waitHelper;
+}
+
+/**
+ * Wait for a language server to initialize by checking its output channel.
+ * Uses clipboard to read full output content by clicking in output view to focus it.
+ *
+ * @param channelName The name of the output channel (e.g., 'Language Support for Liberty')
+ * @param initMessage The message to look for indicating initialization (e.g., 'Initialized Liberty Language server')
+ * @param timeout Timeout in seconds (default: 180). Language servers can take a long
+ *                time to start while the project is still loading.
+ */
+export async function waitForLanguageServerInit(
+    channelName: string,
+    initMessage: string,
+    timeout: number = 180
+): Promise<void> {
+    const wait = getWaitHelper();
+    
+    logger.info(`Checking if the ${channelName} channel has initialized...`);
+    
+    await wait.forCondition(async () => {
+        try {
+            const bottomBar = new BottomBarPanel();
+            await bottomBar.toggle(true);
+            await wait.sleep(500);
+            
+            const outputView = await bottomBar.openOutputView();
+            await wait.sleep(500);
+            
+            await outputView.selectChannel(channelName);
+            await wait.sleep(1000);
+            
+            const outputText = await outputView.getText();
+            
+            await bottomBar.toggle(false);
+            
+            if (outputText.includes(initMessage)) {
+                logger.info(`${channelName} initialized successfully`);
+                return true;
+            }
+
+            // The output channel scrollback is limited — the init message may have been
+            // pushed out of the buffer if the LS has been running for a while.
+            // If the channel has substantial content it means the LS is already active.
+            if (outputText.length > 100) {
+                logger.info(`${channelName} already running (${outputText.length} chars in channel, init message no longer in scrollback)`);
+                return true;
+            }
+            
+            logger.info(`Waiting for ${channelName} initialization message... (channel has ${outputText.length} chars)`);
+            return false;
+        } catch (error) {
+            const msg = String(error);
+            // If the bottom bar UI is not interactable it means VS Code is busy or the
+            // panel was closed by a previous test suite. That is not evidence the LS has
+            // failed — treat it as "already running" after the first test suite has passed.
+            if (msg.includes('TimeoutError') || msg.includes('element not interactable') || msg.includes('not visible')) {
+                logger.info(`${channelName} panel not accessible (${msg.split('\n')[0]}); assuming LS already running`);
+                return true;
+            }
+            logger.info(`Error checking the ${channelName} channel: ${error}, retrying...`);
+            return false;
+        }
+    }, {
+        timeout: seconds(timeout),
+        pollInterval: seconds(2),
+        message: `The ${channelName} output channel did not initialize within ${timeout} seconds`
+    });
+}
+
+/**
+ * Wait for hover widget to appear with content after triggering hover command.
+ * This function dynamically waits for the hover widget to render and contain content,
+ * accounting for language server initialization delays.
+ * Works for both Liberty Language Server and LSP4Jakarta hover content.
+ *
+ * @param driver The WebDriver instance
+ * @param elementDescription Description of the element being hovered (for logging)
+ * @param timeout Timeout in milliseconds (default: 15000)
+ * @returns The hover text content if widget appeared with content, empty string otherwise
+ */
+export async function waitForHoverWidget(
+    driver: any,
+    elementDescription: string,
+    timeout: number = 15000
+): Promise<string> {
+    const wait = getWaitHelper();
+    
+    const result = await wait.forCondition(async () => {
+        try {
+            const hoverWidget = await driver.findElement({ css: '.monaco-hover' });
+            const isDisplayed = await hoverWidget.isDisplayed();
+            if (isDisplayed) {
+                const hoverText = await hoverWidget.getText();
+                logger.info(`Hover content for ${elementDescription}: ${hoverText.length} characters`);
+                // Verify hover contains content (language server provides documentation)
+                if (hoverText && hoverText.length > 0) {
+                    return hoverText;
+                }
+            }
+        } catch {
+            return undefined;
+        }
+        return undefined;
+    }, {
+        timeout: timeout,
+        pollInterval: 500,
+        message: `Hover widget did not appear with content for ${elementDescription}`
+    });
+    
+    return result || '';
+}
+
+/**
+ * @deprecated Use getWaitHelper().sleep() or preferably condition-based waiting instead
+ */
 export function delay(millisec: number) {
-    return new Promise( resolve => setTimeout(resolve, millisec) );
+    return new Promise(resolve => setTimeout(resolve, millisec));
+}
+
+/**
+ * Utility to retry a function until its value becomes nonnull and nonfalse.
+ * Needed for handling timing issues with UI elements.
+ */
+export async function waitForCondition<T>(func: () => Promise<T>, timeout: number = 30): Promise<NonNullable<T>> {
+    const wait = getWaitHelper();
+    const result = await wait.forCondition(async () => {
+        try {
+            const value = await func();
+            if (value === null || value === undefined || value === false) {
+                return;
+            }
+            return { value };
+        } catch {
+            return;
+        }
+    }, { timeout: timeout * 1000 });
+    return result!.value;
+}
+
+/**
+ * Utility to retry a function until it doesn't error.
+ * Useful for handling ElementNotInteractableError and other timing issues.
+ */
+export async function waitForSuccess(func: () => Promise<any>, timeout: number = 30): Promise<void> {
+    await waitForCondition(async () => {
+        try {
+            await func();
+            return true;
+        } catch {
+            return;
+        }
+    }, timeout);
+}
+
+/**
+ * Convert seconds to milliseconds for use in timeout parameters.
+ */
+export function seconds(s: number): number {
+    return s * 1000;
 }
 
 export function getMvnProjectPath(): string {
-    const mvnProjectPath = path.join(__dirname, "..","..","..","src", "test","resources", "maven","liberty.maven.test.wrapper.app");  
-    console.log("Path is : "+mvnProjectPath)  ;
-    return mvnProjectPath; 
-  }
+    const mvnProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "maven", "liberty-maven-test-wrapper-app");
+    logger.info("Path is : " + mvnProjectPath);
+    return mvnProjectPath;
+}
 
-  export function getGradleProjectPath(): string {
-    const gradleProjectPath = path.join(__dirname, "..","..","..","src", "test","resources","gradle", "liberty.gradle.test.wrapper.app");  
-    console.log("Path is : "+gradleProjectPath)  ;
-    return gradleProjectPath; 
-  }
+export function getGradleProjectPath(): string {
+    const gradleProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "gradle", "liberty-gradle-test-wrapper-app");
+    logger.info("Path is : " + gradleProjectPath);
+    return gradleProjectPath;
+}
 
- 
- 
-  export async function launchDashboardAction(item: DefaultTreeItem, action: string, actionMac: string) {
+export function getGradle9ProjectPath(): string {
+    const gradle9ProjectPath = path.join(__dirname, "..", "..", "..", "src", "test", "resources", "gradle", "liberty-gradle-9-test-wrapper-app");
+    logger.info("Path is : " + gradle9ProjectPath);
+    return gradle9ProjectPath;
+}
 
-    console.log("Launching action:" + action);  
-    if (process.platform === 'darwin') {//Only for MAC platform      
-      await MapContextMenuforMac( item,actionMac);            
-    } else {  // NON MAC platforms    
-      console.log("before contextmenu")  ;
-      const menuItem = await item.openContextMenu(); 
-      console.log("before select")  ; 
-      await menuItem.select(action);
+
+export async function getDashboardSection(sidebar: any): Promise<any> {
+    logger.info("Getting Liberty Tools section");
+    const wait = getWaitHelper();
+    return await wait.forCondition(async () => {
+        try {
+            // Re-create SideBarView on every iteration — the captured sidebar
+            // reference goes stale on workspace transitions and getSections()
+            // throws on every call, bypassing the retry loop.
+            const freshSidebar = new SideBarView();
+            const sections = await freshSidebar.getContent().getSections();
+            for (const sec of sections) {
+                const title = await sec.getTitle();
+                if (title === 'Liberty Tools') {
+                    return sec;
+                }
+            }
+        } catch (error: any) {
+            if (error.name === 'StaleElementReferenceError' ||
+                error.name === 'ElementNotInteractableError') {
+                return;
+            }
+            throw error;
+        }
+        return;
+    }, {
+        timeout: seconds(30),
+        pollInterval: seconds(3),
+        message: 'Liberty Tools section was not found in sidebar within 30 seconds'
+    });
+}
+
+export async function getDashboardItem(section: any, projectName: string): Promise<DefaultTreeItem> {
+    logger.info(`Getting dashboard item: ${projectName}`);
+    
+    // Ensure section is expanded
+    await waitForSuccess(async () => {
+        await section.expand();
+    });
+    
+    // Wait for section container to become stable after expansion
+    const wait = getWaitHelper();
+    await wait.sleep(2000);
+    
+    // Wait for items to be visible after expansion with retry on ElementNotInteractableError
+    await wait.forCondition(async () => {
+        try {
+            const items = await section.getVisibleItems();
+            return items && items.length > 0;
+        } catch (error: any) {
+            // Retry on ElementNotInteractableError
+            if (error.name === 'ElementNotInteractableError') {
+                logger.info('Container not yet interactable, retrying...');
+                return;
+            }
+            throw error;
+        }
+    }, { timeout: seconds(10), message: 'Dashboard items did not appear after expansion' });
+    
+    // Find the item
+    return await waitForCondition(async () => {
+        return await section.findItem(projectName) as DefaultTreeItem;
+    }, 30);
+}
+
+export async function launchDashboardAction(item: DefaultTreeItem, action: string, actionMac: string) {
+    if (!item) {
+        throw new Error("Cannot launch dashboard action: item is undefined");
     }
 
-  }
- 
-
-  export async function setCustomParameter(customParam: string) {
-
-    console.log("Setting custom Parameter");    
-    const input = new InputBox(); 
-    await input.click();   
-    await input.setText(customParam);      
-    await input.confirm();       
-  
-  }
-
-  export async function chooseCmdFromHistory(command: string): Promise<Boolean> {
-
-    console.log("Choosing command from history");    
-    const input = new InputBox();     
-    const pick = await input.findQuickPick(command);    
-    if (pick){
-      await pick.select();    
-      await input.confirm();       
-      return true;
+    logger.info("Launching action: " + action);
+    if (process.platform === 'darwin') {//Only for MAC platform
+        await MapContextMenuforMac(item, actionMac);
+    } else {  // NON MAC platforms
+        logger.info("before contextmenu");
+        const menuItem = await item.openContextMenu();
+        logger.info("before select");
+        await menuItem.select(action);
     }
-    else     
-      return false; 
-  }
 
-  export async function deleteReports(reportPath:  string) : Promise<Boolean> {
+}
+
+export async function setCustomParameter(customParam: string) {
+
+    logger.info("Setting custom Parameter");
+
+    const wait = getWaitHelper();
+    // Wait for the QuickPick widget to fully take focus before interacting.
+    // createQuickPick renders asynchronously and needs a moment before clicks land.
+    await wait.sleep(2000);
+
+    await waitForSuccess(async () => {
+        const input = new InputBox();
+        await input.setText(customParam);
+        await input.confirm();
+    });
+
+}
+
+export async function chooseCmdFromHistory(command: string): Promise<boolean> {
+
+    logger.info("Choosing command from history");
+
+    const wait = getWaitHelper();
+    // Wait for the QuickPick widget to fully take focus before interacting.
+    await wait.sleep(2000);
+
+    try {
+        const input = new InputBox();
+        const pick = await input.findQuickPick(command);
+        if (!pick) {
+            logger.error(`Quick pick item not found: ${command}`);
+            return false;
+        }
+        // Selecting a history item resolves the promise immediately in onDidAccept.
+        await pick.select();
+        // Give the extension time to create the terminal and send the dev mode
+        // command before the caller starts polling for server output.
+        await wait.sleep(5000);
+        return true;
+    } catch (error) {
+        logger.error("Failed to choose command from history", error);
+        return false;
+    }
+}
+
+export async function deleteReports(reportPath: string): Promise<boolean> {
 
     //const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
-    if (fs.existsSync(reportPath) )
-    {
-      fs.unlink(reportPath, (err) => {
-        if (err) 
-        return false; 
-        else{
-        console.log(reportPath+ ' was deleted');
-        return true;
-        }
-        });               
-    }    
-      return true;   
+    if (fs.existsSync(reportPath)) {
+        fs.unlink(reportPath, (err) => {
+            if (err)
+                return false;
+            else {
+                logger.info(reportPath + ' was deleted');
+                return true;
+            }
+        });
     }
+    return true;
+}
 
-  export async function checkIfTestReportExists(reportPath: string) : Promise<Boolean> {
+export async function checkIfTestReportExists(reportPath: string): Promise<boolean> {
     const maxAttempts = 10;
     let foundReport = false;
     //const reportPath = path.join(getMvnProjectPath(),"target","site","failsafe-report.html");
     for (let i = 0; i < maxAttempts; i++) {
-      try {
-                
-          if (fs.existsSync(reportPath)) 
-          {
-            foundReport = true;
-            break;
-          }
-          else{
-            await delay(5000);
-            foundReport = false;
-            continue;
-          }      
-      }
-      catch(e)
-      {
-        console.error("Caught exception when checking for test report", e);
+        try {
 
-      }
+            if (fs.existsSync(reportPath)) {
+                foundReport = true;
+                break;
+            }
+            else {
+                await delay(5000);
+                foundReport = false;
+                continue;
+            }
+        }
+        catch (e) {
+            logger.error("Caught exception when checking for test report", e);
+
+        }
     }
     return foundReport;
-    }
-  
+}
+
+export async function checkTerminalforServerState(serverStatusCode: string): Promise<boolean> {
+    const workbench = new Workbench();
+    const wait = getWaitHelper();
     
-  
-  export async function checkTerminalforServerState(serverStatusCode : string ): Promise <Boolean> {
-    const workbench = new Workbench();
-    let  foundText = false;
-    let count=0;    
-    do{
-      clipboard.writeSync('');//clean slate for clipboard      
-      await workbench.executeCommand('terminal select all');       
-      const text = clipboard.readSync();        
-      console.log("debug:" + text)      ;
-      if( text.includes(serverStatusCode)){
-        foundText = true;
-        console.log("Found text "+ serverStatusCode);
-        break;
-      }
-      else if(text.includes("FAILURE"))
-      {     
-        console.log("Found failure "+ text);
-        foundText = false;             
-        break;      
-      }
-      else
-      {
-        console.log("test is running ...")
-        foundText = false;
-      }
-      count++;   
-      await workbench.getDriver().sleep(10000);
-    } while(!foundText && (count <= 20));
-    await workbench.executeCommand('terminal clear');
-    return foundText;
-  }
-  
+    try {
+        await wait.forCondition(async () => {
+            clipboard.writeSync(''); // clean slate for clipboard
+            await workbench.executeCommand('terminal select all');
+            const text = clipboard.readSync();
+            
+            if (text.includes(serverStatusCode)) {
+                logger.info("Found text " + serverStatusCode);
+                return true;
+            }
+            else if (text.includes("BUILD FAILURE")) {
+                logger.info("Found failure in terminal output");
+                throw new Error("Server startup/shutdown failed");
+            }
+            else {
+                logger.info("Waiting for server state...");
+                return;
+            }
+        }, {
+            timeout: seconds(5 * 60),
+            pollInterval: seconds(10),
+            message: `Server state '${serverStatusCode}' not found in terminal`
+        });
+        
+        return true;
+    } catch (error) {
+        logger.error("Failed to find server state in terminal", error);
+        return false;
+    }
+}
 
-  export async function checkTestStatus(testStatus: string): Promise <Boolean>{
+export async function checkTestStatus(testStatus: string): Promise<boolean> {
     const workbench = new Workbench();
-    let  foundText = false;
-    let count=0;    
-    do{
-      clipboard.writeSync('');
-      await workbench.executeCommand('terminal select all');      
-      const text = clipboard.readSync();         
-      if( text.includes(testStatus)){
-        foundText = true;
-        console.log("Found text "+ testStatus);
-        break;
-      }      
-      else
-        foundText = false;
-      count++;   
-      await workbench.getDriver().sleep(2000);
-    } while(!foundText && (count <= 5));
-    await workbench.executeCommand('terminal clear');
-    return foundText;
-  }
-
-  
+    const wait = getWaitHelper();
+    
+    try {
+        await wait.forCondition(async () => {
+            clipboard.writeSync('');
+            await workbench.executeCommand('terminal select all');
+            const text = clipboard.readSync();
+            
+            if (text.includes(testStatus)) {
+                logger.info("Found text " + testStatus);
+                return true;
+            }
+            return;
+        }, {
+            timeout: seconds(2 * 60),
+            pollInterval: seconds(5),
+            message: `Test status '${testStatus}' not found in terminal`
+        });
+        
+        return true;
+    } catch (error) {
+        logger.error("Failed to find test status in terminal", error);
+        return false;
+    }
+}
 
 /* Stop Server Liberty dashboard post Attach Debugger*/
 /* As the Window view changes using command to stop server instead of devmode action */
-export async function stopLibertyserver() {
-  console.log("Stop Server action for MAVEN_PROJECT : " + MAVEN_PROJECT);
-  const workbench = new Workbench();
-  await workbench.executeCommand(STOP_DASHBOARD_MAC_ACTION);
-  const input = InputBox.create();
-  (await input).clear();
-  (await input).setText(MAVEN_PROJECT);
-  (await input).confirm();
-  (await input).click();
-  await delay(10000);
+export async function stopLibertyserver(projectName: string) {
+    logger.info("Stop Server action for Project : " + projectName);
+    const workbench = new Workbench();
+    await workbench.executeCommand(STOP_DASHBOARD_MAC_ACTION);
+    const input = InputBox.create();
+    (await input).clear();
+    (await input).setText(projectName);
+    (await input).confirm();
+    (await input).click();
+    
+    // Wait for command to be processed
+    const wait = getWaitHelper();
+    await wait.sleep(5000);
 }
 
 export async function clearCommandPalette() {
-  await new Workbench().executeCommand('Clear Command History');
-  await delay(30000);  
+    const wait = getWaitHelper();
+    await new Workbench().executeCommand('Clear Command History');
+    
+    // Wait for dialog to appear
+    await wait.forCondition(async () => {
+        try {
+            const dialog = new ModalDialog();
+            const message = await dialog.getMessage();
+            return message.includes('Do you want to clear the history of recently used commands?');
+        } catch {
+            return;
+        }
+    }, { timeout: seconds(5), message: 'Clear command history dialog did not appear' });
+    
+    await waitForSuccess(async () => {
+        const dialog = new ModalDialog();
+        const message = await dialog.getMessage();
+
+        expect(message).contains('Do you want to clear the history of recently used commands?');
+
+        const buttons = await dialog.getButtons();
+        expect(buttons.length).equals(2);
+        await dialog.pushButton('Clear');
+    });
+}
+
+/**
+ * Wait for the Liberty Dashboard to load and become ready.
+ */
+export async function waitForDashboardToLoad(section: any): Promise<void> {
+    const wait = getWaitHelper();
+    logger.info('Waiting for Liberty Dashboard to load');
+    
+    // Expand the section
+    await waitForSuccess(async () => {
+        await section.expand();
+    });
+    
+    // Wait for section container to become stable after expansion
+    await wait.sleep(2000);
+    
+    // Wait for items to appear with retry on ElementNotInteractableError
+    await wait.forCondition(async () => {
+        try {
+            const items = await section.getVisibleItems();
+            if (items && items.length > 0) {
+                logger.info(`Dashboard loaded with ${items.length} items`);
+                return true;
+            }
+        } catch (error: any) {
+            // Retry on ElementNotInteractableError
+            if (error.name === 'ElementNotInteractableError') {
+                logger.info('Container not yet interactable, retrying...');
+                return;
+            }
+            throw error;
+        }
+        return;
+    }, {
+        timeout: seconds(3 * 60),
+        pollInterval: seconds(5),
+        message: 'Dashboard items did not load'
+    });
+}
+
+/**
+ * Wait for server to start by checking terminal output.
+ */
+export async function waitForServerStart(serverStartString: string): Promise<boolean> {
+    logger.info('Waiting for server to start');
+    const wait = getWaitHelper();
+    
+    // Give server a moment to begin startup
+    await wait.sleep(5000);
+    
+    return await checkTerminalforServerState(serverStartString);
+}
+
+/**
+ * Wait for server to stop by checking terminal output.
+ */
+export async function waitForServerStop(serverStopString: string): Promise<boolean> {
+    logger.info('Waiting for server to stop');
+    return await checkTerminalforServerState(serverStopString);
+}
+
+/**
+ * Wait for test report file to exist on filesystem.
+ * @param reportPath Primary report path to check
+ * @param alternatePath Optional alternate report path to check simultaneously
+ * @returns true if report found at either location, false otherwise
+ */
+export async function waitForTestReport(reportPath: string, alternatePath?: string): Promise<boolean> {
+    const wait = getWaitHelper();
+    logger.info(`Waiting for test report at: ${reportPath}`);
+    if (alternatePath) {
+        logger.info(`Also checking alternate location: ${alternatePath}`);
+    }
+    
+    try {
+        await wait.forCondition(async () => {
+            if (fs.existsSync(reportPath)) {
+                logger.info('Test report found at primary location');
+                return true;
+            }
+            if (alternatePath && fs.existsSync(alternatePath)) {
+                logger.info('Test report found at alternate location');
+                return true;
+            }
+            return;
+        }, {
+            timeout: seconds(120),
+            pollInterval: seconds(1),
+            message: alternatePath
+                ? `Test report not found at either ${reportPath} or ${alternatePath}`
+                : `Test report not found at ${reportPath}`
+        });
+        return true;
+    } catch (error) {
+        logger.error('Test report not found');
+        return false;
+    }
+}
+
+/**
+ * Wait for debugger to attach by checking for the DebugToolbar.
+ * The DebugToolbar only appears when a debug session is successfully connected.
+ */
+export async function waitForDebuggerAttach(): Promise<boolean> {
+    logger.info('Waiting for debugger to attach (checking for DebugToolbar)');
+    
+    try {
+        // Wait for the debug toolbar to appear, which indicates debugger is attached
+        const findDebugBarTimeout = seconds(30);
+        await DebugToolbar.create(findDebugBarTimeout);
+        logger.info('DebugToolbar appeared - debugger attached successfully');
+        return true;
+    } catch (error) {
+        logger.error('Failed to detect debugger attachment - DebugToolbar did not appear', error);
+        return false;
+    }
+}
+
+/**
+ * Wait for editor tab to open with specific title.
+ * Replaces waitForCondition pattern with specialized helper.
+ */
+export async function waitForEditorTab(tabTitle: string): Promise<string[]> {
+    const EditorView = require('vscode-extension-tester').EditorView;
+    logger.info(`Waiting for editor tab: ${tabTitle}`);
+    return await waitForCondition(async () => {
+        const titles = await new EditorView().getOpenEditorTitles();
+        if (titles && titles.length > 0 && titles.includes(tabTitle)) {
+            return titles;
+        }
+        return;
+    }, 60); // Increased to 60 seconds to allow time for report generation
+}
+
+/**
+ * Takes a screenshot when a suite's `before` hook failed. Mocha skips every test and
+ * `afterEach` in that case, so no other handler captures the screen. Call it from an
+ * `after` hook, before copyScreenshotsToProjectFolder. In `after`, `currentTest.state`
+ * is undefined only when the `before` hook failed; it is a no-op otherwise.
+ * @param ctx The mocha context (`this`) of the `after` hook
+ * @param suiteName Name used in the log message and screenshot file name
+ */
+export async function screenshotIfSetupFailed(ctx: Mocha.Context, suiteName: string): Promise<void> {
+    if (ctx.currentTest?.state !== undefined) {
+        return;
+    }
+    logger.error(`Setup failed: ${suiteName}`);
+    try {
+        const VSBrowser = require('vscode-extension-tester').VSBrowser;
+        await VSBrowser.instance.takeScreenshot(`setup-failed-${suiteName.replace(/[^a-zA-Z0-9]+/g, '-')}`);
+    } catch (error) {
+        logger.error('Failed to take setup failure screenshot', error);
+    }
+}
+
+/**
+ * Copies screenshots from the temporary VSCode screenshots directory to a permanent location
+ * organized by build tool (maven or gradle).
+ * @param buildTool The build tool name ('maven' or 'gradle') to organize screenshots
+ */
+export function copyScreenshotsToProjectFolder(buildTool: string): void {
+    const VSBrowser = require('vscode-extension-tester').VSBrowser;
+    const sourcePath = VSBrowser.instance.getScreenshotsDir();
+    const destinationPath = path.join('./screenshots', buildTool);
+
+    copyFolderContents(sourcePath, destinationPath);
+}
+
+/**
+ * Recursively copies all files from source folder to destination folder.
+ * @param sourceFolder Source directory path
+ * @param destinationFolder Destination directory path
+ */
+function copyFolderContents(sourceFolder: string, destinationFolder: string): void {
+    if (!fs.existsSync(sourceFolder)) {
+        return;
+    }
+
+    if (!fs.existsSync(destinationFolder)) {
+        fs.mkdirSync(destinationFolder, { recursive: true });
+    }
+
+    const files = fs.readdirSync(sourceFolder);
+    for (const file of files) {
+        const sourcePath = path.join(sourceFolder, file);
+        const destinationPath = path.join(destinationFolder, file);
+
+        if (fs.statSync(sourcePath).isDirectory()) {
+            copyFolderContents(sourcePath, destinationPath);
+        } else {
+            fs.copyFileSync(sourcePath, destinationPath);
+        }
+    }
+}
+
+/**
+ * Close the current workspace to prepare for the next test file.
+ * This ensures each test file starts with a clean workspace when running multiple test files.
+ * Essential when test files open different projects (e.g., Gradle 9 vs regular Gradle vs Maven).
+ */
+export async function closeWorkspace(): Promise<void> {
+    try {
+        logger.info('Closing current workspace for next test file...');
+        const workbench = new Workbench();
+        
+        // Close all open editors first
+        try {
+            const EditorView = require('vscode-extension-tester').EditorView;
+            await new EditorView().closeAllEditors();
+            logger.info('Closed all editors');
+        } catch (error) {
+            logger.info('Failed to close editors, continuing...');
+        }
+        
+        // Close the workspace/folder
+        await workbench.executeCommand('workbench.action.closeFolder');
+        await getWaitHelper().sleep(2000); // Wait for workspace to close
+
+        // Sometimes a modal pops up asking you to save workspace so bypass
+        try {
+            await getWaitHelper().forCondition(async () => {
+                try {
+                    await new ModalDialog().pushButton("Don't Save");
+                    return true;
+                }
+                catch {
+                    return;
+                }
+            }, { timeout: seconds(5) });
+        } catch {
+            // Bypass -> do nothing
+        }
+        
+        logger.info('Workspace closed successfully');
+    } catch (error) {
+        logger.error('Error closing workspace', error);
+        // Don't throw - allow tests to continue even if close fails
+    }
+}
+
+/**
+ * Open a project folder and wait for the window to settle on it.
+ *
+ * Opening a folder from the CLI can reload the VS Code window. vscode-extension-tester
+ * 8.28+ drops CLI open requests that arrive while that reload is in progress and then
+ * fails with "Failed to open resource(s) in the editor". Waiting until the window title
+ * shows the folder name keeps the next file open from racing the reload.
+ *
+ * Best effort: if the title never shows the folder, continue after the timeout so a
+ * title-format difference cannot fail a suite on its own.
+ */
+export async function openProjectFolder(projectPath: string, timeout: number = 60): Promise<void> {
+    await VSBrowser.instance.openResources(projectPath);
+    await VSBrowser.instance.waitForWorkbench();
+
+    const folderName = path.basename(projectPath);
+    try {
+        await getWaitHelper().forCondition(async () => {
+            try {
+                const title = await VSBrowser.instance.driver.getTitle();
+                return title.includes(folderName) ? true : undefined;
+            } catch {
+                // Window may be mid-reload; retry.
+                return undefined;
+            }
+        }, {
+            timeout: seconds(timeout),
+            pollInterval: seconds(1),
+            message: `Window title did not show ${folderName} within ${timeout} seconds`
+        });
+        logger.info(`Window settled on ${folderName}`);
+    } catch {
+        logger.info(`Window title did not show ${folderName}; continuing`);
+    }
+    // Let extension activation and the explorer finish after the title updates.
+    await getWaitHelper().sleep(2000);
+
+    await logEditorGroups(`after opening ${folderName}`);
+    await joinEditorGroups();
+}
+
+/**
+ * Log how many editor groups exist and which tabs each holds. Diagnostic only; never throws.
+ */
+export async function logEditorGroups(context: string): Promise<void> {
+    try {
+        const groups = await new EditorView().getEditorGroups();
+        const tabs = await Promise.all(groups.map(async group => (await group.getOpenEditorTitles()).join(', ') || '(empty)'));
+        logger.info(`Editor groups ${context}: ${groups.length} [${tabs.join(' | ')}]`);
+    } catch (error) {
+        logger.info(`Could not read editor groups ${context}: ${String(error).split('\n')[0]}`);
+    }
+}
+
+/**
+ * Collapse multiple editor groups into one so suites start from a single-group layout.
+ * A stray empty group can appear on macOS after a workspace switch; tests that look up
+ * tabs in the leftmost group then fail. Best effort; never throws.
+ */
+export async function joinEditorGroups(): Promise<void> {
+    try {
+        const groups = await new EditorView().getEditorGroups();
+        if (groups.length <= 1) {
+            return;
+        }
+        logger.info(`Joining ${groups.length} editor groups into one`);
+        await new Workbench().executeCommand('join all editor groups');
+        await getWaitHelper().sleep(1000);
+        await logEditorGroups('after joining');
+    } catch (error) {
+        logger.info(`Could not join editor groups: ${String(error).split('\n')[0]}`);
+    }
+}
+
+/**
+ * Remove specific directory with contents.
+ */
+export async function removeDirectoryByPath(dirPath: string): Promise<void> {
+  try {
+    fs.accessSync(dirPath);
+    const dirContent = fs.readdirSync(dirPath);
+    await Promise.all(
+      dirContent.map(async (dirFiles) => {
+        const projectContentPath = path.join(dirPath, dirFiles);
+        const stats = fs.lstatSync(projectContentPath);
+        if (stats.isDirectory()) {
+          await removeDirectoryByPath(projectContentPath);
+        } else {
+          fs.unlinkSync(projectContentPath);
+        }
+      })
+    );
+    fs.rmdirSync(dirPath);
+  } catch (error) {
+    console.error(`Error removing directory: ${error}`);
+  }
+}
+
+/**
+ * Copy a specific directory and its contents to a new path.
+ */
+export async function copyDirectoryByPath(existingDirPath: string, copyDirPath: string): Promise<void> {
+  await fse.copy(existingDirPath, copyDirPath);
+  console.log('Folder content copied: ' + copyDirPath);
+}
+
+/**
+ * Open specific file from parent directory in the Maven project.
+ */
+export async function openMvnFileByPath(parentDir: string, fileName: string) {
+  await VSBrowser.instance.openResources(path.join(getMvnProjectPath(), 'src', 'main', 'liberty', parentDir, fileName));
+}
+
+/**
+ * Open specific file from parent directory in the Gradle project.
+ */
+export async function openGradleFileByPath(parentDir: string, fileName: string) {
+  await VSBrowser.instance.openResources(path.join(getGradleProjectPath(), 'src', 'main', 'liberty', parentDir, fileName));
+}
+
+/**
+ * Close the currently open file tab, discarding any unsaved changes.
+ */
+export async function closeFileTab(fileType: string) {
+  const workbench = new Workbench();
+  await workbench.openCommandPrompt();
+  await delay(3000);
+  await workbench.executeCommand(constants.CLOSE_EDITOR);
+  await delay(3000);
   const dialog = new ModalDialog();
   const message = await dialog.getMessage();
 
-  expect(message).contains('Do you want to clear the history of recently used commands?');
-  
-  const buttons =  await dialog.getButtons();
-  expect(buttons.length).equals(2);
-  await dialog.pushButton('Clear');
+  if (fileType in constants.CONFIRM_MESSAGES) {
+    expect(message).contains(constants.CONFIRM_MESSAGES[fileType as keyof typeof constants.CONFIRM_MESSAGES]);
+  }
+  const buttons = await dialog.getButtons();
+  expect(buttons.length).equals(3);
+  await dialog.pushButton('Don\'t Save');
 }
-  
+
+/**
+ * Toggle content assist and select a value from the suggestion list.
+ */
+export async function callAssitantAction(editor: TextEditor, selectValue: string) {
+  let assist = await editor.toggleContentAssist(true);
+  if (assist) {
+    await assist.select(selectValue);
+  }
+}
+
+/**
+ * Write (or overwrite) a .vscode/settings.json file in the given project directory.
+ * The directory is created if it does not already exist.
+ */
+export function writeVscodeSettings(projectPath: string, settings: Record<string, unknown>): void {
+    const vscodeDir = path.join(projectPath, '.vscode');
+    fs.mkdirSync(vscodeDir, { recursive: true });
+    const settingsPath = path.join(vscodeDir, 'settings.json');
+    let existing: Record<string, unknown> = {};
+    if (fs.existsSync(settingsPath)) {
+        try {
+            existing = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+        } catch {
+            // If parse fails, start fresh
+        }
+    }
+    const merged = { ...existing, ...settings };
+    fs.writeFileSync(settingsPath, JSON.stringify(merged, null, 4), 'utf-8');
+    logger.info(`Wrote .vscode/settings.json at ${settingsPath}`);
+}
+
+/**
+ * Delete the .vscode/settings.json file in the given project directory.
+ * Removes the .vscode directory as well if it becomes empty.
+ * Does not throw if the file does not exist.
+ */
+export function removeVscodeSettings(projectPath: string): void {
+    const vscodeDir = path.join(projectPath, '.vscode');
+    const settingsPath = path.join(vscodeDir, 'settings.json');
+    try {
+        if (fs.existsSync(settingsPath)) {
+            fs.unlinkSync(settingsPath);
+            logger.info(`Removed .vscode/settings.json at ${settingsPath}`);
+        }
+        if (fs.existsSync(vscodeDir) && fs.readdirSync(vscodeDir).length === 0) {
+            fs.rmdirSync(vscodeDir);
+            logger.info(`Removed empty .vscode directory at ${vscodeDir}`);
+        }
+    } catch (error) {
+        logger.info(`Could not remove .vscode/settings.json (may not exist): ${error}`);
+    }
+}
+

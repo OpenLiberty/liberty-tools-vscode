@@ -1,13 +1,14 @@
 # Liberty Tools for Visual Studio Code
 
 <!-- Match the VSCode and Java version in #requirements, and user-guide.md -->
-> Note: Requires **Visual Studio Code 1.78.0** or later, and **Java 17** or later.
+> Note: Requires **Visual Studio Code 1.78.0** or later, and **Java 21** or later.
 > 
 > This page provides an overview of Liberty Tools for Visual Studio Code.
 > For minimum requirements information and detailed instructions on how to use Liberty Tools, check the [user-guide](docs/user-guide.md).
 
-[![Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/Open-Liberty.liberty-dev-vscode-ext?style=for-the-badge&label=VS%20Market "Current Release")](https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext)
-[![License](https://img.shields.io/github/license/OpenLiberty/liberty-tools-vscode?style=for-the-badge&logo=eclipse)](https://www.eclipse.org/legal/epl-2.0/)
+[![Marketplace Version](https://vsmarketplacebadges.dev/version/Open-Liberty.liberty-dev-vscode-ext.png "Current Release")](https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext)
+[![Open VSX](https://img.shields.io/open-vsx/v/Open-Liberty/liberty-dev-vscode-ext.png "Current Release")](https://open-vsx.org/extension/Open-Liberty/liberty-dev-vscode-ext)
+[![License](https://img.shields.io/github/license/OpenLiberty/liberty-tools-vscode.png?flat&logo=eclipse)](https://www.eclipse.org/legal/epl-2.0/)
 
 Liberty Tools for Visual Studio Code offers features for developing cloud-native Java applications with [Open Liberty](https://openliberty.io/) and [WebSphere Liberty](https://www.ibm.com/products/websphere-liberty). Iterate fast with Liberty dev mode, code with assistance for MicroProfile & Jakarta EE APIs, and easily edit Liberty configuration files.
 
@@ -26,6 +27,7 @@ For minimum requirements information and detailed instructions on how to use Lib
 
 ## Features
 
+- Create Liberty starter projects.
 - View supported Liberty projects in the Liberty dashboard.
 - Start/Stop dev mode.
 - Start dev mode with custom parameters.
@@ -64,18 +66,20 @@ Liberty Tools for Visual Studio Code depends on the [Tools for MicroProfile](htt
 ## Quick start
 
 - Install [Liberty Tools for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext)
+- Open an existing Liberty project or create a new one using the **Liberty: Create a Liberty project** command.
 - Select a project in the Liberty dashboard to view the available commands.
 
-Projects with the Liberty Maven Plugin or Liberty Gradle Plugin configured will appear in the Liberty Dashboard on the sidebar.
+Projects with the Liberty Maven Plugin or Liberty Gradle Plugin configured will appear in Liberty Tools on the sidebar.
 
 For minimum requirements information and detailed instructions on how to use the Liberty commands, check out the [Liberty Tools for Visual Studio Code user guide](docs/user-guide.md) page.
 
 ## Commands
 
-The following commands are available when you select a project in the Liberty Dashboard.
+The following commands are available in Liberty Tools:
 
 | Command | Description |
 | --- | --- |
+| Create a Liberty project | Create a new Open Liberty starter project with Maven or Gradle, Jakarta EE, and MicroProfile. |
 | Start  | Start dev mode. |
 | Start…​ | Start dev mode with custom parameters. Supported parameters can be found in the documentation for the [dev goal of the Liberty Maven Plugin](https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev) and the [libertyDev task of the Liberty Gradle Plugin](https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#command-line-parameters). |
 | Start in a container | Start dev mode with Liberty running in a container. The `liberty-maven-plugin` must be version `3.3-M1` or higher. The `liberty-gradle-plugin` must be version `3.1-M1` or higher. |
@@ -88,9 +92,9 @@ The following commands are available when you select a project in the Liberty Da
 ## Requirements
 
 <!-- Match the VSCode and Java version on top of README.md, and user-guide.md  -->
-**Visual Studio Code 1.78.0** or later, and **Java 17** or later.
+**Visual Studio Code 1.93.0** or later, and **Java 21** or later.
 
-Liberty Tools for Visual Studio Code will check the `xml.java.home` VS Code setting or the `JAVA_HOME` system environment variable to ensure the LemMinX language server uses Java 17 or later. For further information on configuring your Java runtime for language servers, consult this [user guide section](/docs/user-guide.md#configure-your-java-runtime-for-language-servers).
+Liberty Tools for Visual Studio Code will check the `xml.java.home` VS Code setting or the `JAVA_HOME` system environment variable to ensure the LemMinX language server uses Java 21 or later. For further information on configuring your Java runtime for language servers, consult this [user guide section](/docs/user-guide.md#configure-your-java-runtime-for-language-servers).
 
 The following extensions are bundled with Liberty Tools for Visual Studio Code during installation and are provided here for additional information.
 

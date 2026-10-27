@@ -1,0 +1,86 @@
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2026
+ */
+
+import { EditorView, TextEditor, VSBrowser, Workbench } from 'vscode-extension-tester';
+import * as utils from './testUtils';
+
+/**
+ * Reset the editor to an empty, saved buffer.
+ */
+export async function clearEditor(editor: TextEditor): Promise<void> {
+    await editor.setText('');
+    await editor.save();
+}
+
+/**
+ * Place the cursor at the start of the last line of content.
+ * Note: split('\n').length counts a trailing empty segment when the file
+ * ends in a newline, so `lastLine - 1` lands on the last real line.
+ */
+export async function moveCursorToEnd(editor: TextEditor): Promise<void> {
+    const lastLine = (await editor.getText()).split('\n').length;
+    await editor.setCursor(lastLine - 1, 1);
+}
+
+/**
+ * On the first line containing `token`, replace `find` with `replace`.
+ * Does not save.
+ * @throws if no line contains `token`.
+ */
+export async function replaceTextWithinLineContaining(
+    editor: TextEditor,
+    token: string,
+    find: string,
+    replace: string
+): Promise<void> {
+    const lineNum = await editor.getLineOfText(token);
+    if (lineNum < 1) throw new Error(`Could not find a line containing "${token}"`);
+    const oldLine = await editor.getTextAtLine(lineNum);
+    await editor.setTextAtLine(lineNum, oldLine.replace(find, replace));
+}
+
+/**
+ * Position the cursor, trigger the hover widget, and return its text.
+ * @param elementDescription Human-readable element name, for logging.
+ */
+export async function hoverOver(
+    editor: TextEditor,
+    line: number,
+    column: number,
+    elementDescription: string,
+    timeoutMs = 15000
+): Promise<string> {
+    await editor.setCursor(line, column);
+    await new Workbench().executeCommand('editor.action.showHover');
+    return utils.waitForHoverWidget(VSBrowser.instance.driver, elementDescription, timeoutMs);
+}
+
+/**
+ * Close all open editors across all groups, but only if any are open.
+ * Swallows the "no editors" case so callers only see genuine failures.
+ */
+export async function closeAllEditors(): Promise<void> {
+    const editorView = new EditorView();
+    const openTabs = (await editorView.getOpenEditorTitles().catch(() => [])) as string[];
+    if (openTabs.length > 0) {
+        await editorView.closeAllEditors();
+    }
+}
+
+
+/**
+ * Open the editor tab with the given title, searching every editor group.
+ * EditorView.openEditor() only looks in the leftmost group, which fails when the file
+ * is open in a second group and the first one is empty.
+ * @throws if no group contains a tab with that title.
+ */
+export async function openEditorInAnyGroup(title: string): Promise<TextEditor> {
+    for (const group of await new EditorView().getEditorGroups()) {
+        if ((await group.getOpenEditorTitles()).includes(title)) {
+            return await group.openEditor(title) as TextEditor;
+        }
+    }
+    throw new Error(`No editor with title '${title}' in any editor group`);
+}

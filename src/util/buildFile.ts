@@ -1,11 +1,6 @@
-/**
- * Copyright (c) 2020 IBM Corporation.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2020, 2026
  */
 interface BuildFile {
     buildFilePath: string;
@@ -47,6 +42,14 @@ export class BuildFileImpl implements BuildFile{
     public isValidBuildFile(): boolean{
         return this.validBuildFile;
     }
+    
+    /**
+     * Check if this build file has the Liberty plugin
+     * @returns true if projectType is not empty (indicating Liberty plugin is present)
+     */
+    public hasLibertyPlugin(): boolean {
+        return this.projectType !== "";
+    }
 }
 
 /**
@@ -66,5 +69,13 @@ export class GradleBuildFile extends BuildFileImpl implements BuildFile {
 
     public setChildren(children: string[]): void {
         this.children = children;
+    }
+    
+    /**
+     * Check if this is an aggregator project (has child modules)
+     * @returns true if this project has children
+     */
+    public isAggregator(): boolean {
+        return this.children.length > 0;
     }
 }

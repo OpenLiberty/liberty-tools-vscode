@@ -1,16 +1,12 @@
-/**
- * Copyright (c) 2024 IBM Corporation.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2024, 2026
  */
 
 import * as Path from "path";
 import * as vscode from "vscode";
 import { pathExists } from "fs-extra";
+import { MAVEN_INSTALL_DIR_PARAM_REGEX, GRADLE_INSTALL_DIR_PARAM_REGEX } from "../definitions/constants";
 
 /**
  * Reused from vscode-maven
@@ -26,9 +22,17 @@ enum ShellType {
 
 /**
  * Return the maven command based on the OS and Terminal for start, start in container, start..
+ * @param pomPath Path to the pom.xml file (or aggregator pom for multi-module)
+ * @param command Maven command to execute
+ * @param terminalType Type of terminal
+ * @param customCommand Custom parameters
+ * @param artifactId Optional artifact ID for multi-module projects (uses -pl :artifactId -am)
  */
-export async function getCommandForMaven(pomPath: string, command: string, terminalType?: string, customCommand?: string): Promise<string> {
+export async function getCommandForMaven(pomPath: string, command: string, terminalType?: string, customCommand?: string, artifactId?: string): Promise<string> {
 
+    // For multi-module projects, add -pl :artifactId -am
+    const moduleSelector = artifactId ? ` -pl :${artifactId} -am` : "";
+    
     // attempt to use the Maven executable path, if empty try using mvn or mvnw according to the preferMavenWrapper setting
     const mavenExecutablePath: string | undefined = vscode.workspace.getConfiguration("maven").get<string>("executable.path");
     if (mavenExecutablePath) {
@@ -36,37 +40,44 @@ export async function getCommandForMaven(pomPath: string, command: string, termi
             /**
             * Function call to get the command for powershell in Windows OS
             */
-            return formPowershellCommand(mavenExecutablePath, pomPath, command, "-f ", customCommand);
+            return formPowershellCommand(mavenExecutablePath, pomPath, command, "-f ", customCommand, moduleSelector);
         }
-        return formDefaultCommandWithPath(mavenExecutablePath, pomPath, command, "-f ", customCommand);
+        return formDefaultCommandWithPath(mavenExecutablePath, pomPath, command, "-f ", customCommand, moduleSelector);
     }
     let mvnCmdStart = await mvnCmd(pomPath);
     if (mvnCmdStart === "mvn") {
-        return formDefaultCommand(mvnCmdStart, pomPath, command, "-f ", customCommand);
+        return formDefaultCommand(mvnCmdStart, pomPath, command, "-f ", customCommand, moduleSelector);
     }
     //checking the OS type for command customization
     if (isWin()) {
-        return getMavenCommandForWin(mvnCmdStart, pomPath, command, terminalType, customCommand);
+        return getMavenCommandForWin(mvnCmdStart, pomPath, command, terminalType, customCommand, moduleSelector);
     } else {
-        return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand);
+        return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand, moduleSelector);
     }
 }
 
 /**
  * Return the gradle command based on the OS and Terminal for start, start in container, start..
+ * @param buildGradlePath Path to the build.gradle file. For child modules pass the parent's build.gradle.
+ * @param command         Gradle task name (e.g. "libertyDev")
+ * @param terminalType    Type of terminal
+ * @param customCommand   Custom parameters
+ * @param projectName     Optional Gradle sub-project name. When provided the task is prefixed as
+ *                        :<projectName>:<command> so the build runs from the root project directory.
  */
-export async function getCommandForGradle(buildGradlePath: string, command: string, terminalType?: String, customCommand?: string): Promise<string> {
+export async function getCommandForGradle(buildGradlePath: string, command: string, terminalType?: String, customCommand?: string, projectName?: string): Promise<string> {
     let gradleCmdStart = await gradleCmd(buildGradlePath);
+    const projectDir = Path.dirname(buildGradlePath);
+    const task = projectName ? `:${projectName}:${command}` : command;
 
     if (gradleCmdStart === "gradle") {
-        return formDefaultCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
+        return formGradleCommand(projectDir, "gradle", task, customCommand);
     }
     //checking the OS type for command customization
     if (isWin()) {
-        return getGradleCommandForWin(gradleCmdStart, buildGradlePath, command, terminalType, customCommand);
+        return getGradleCommandForWin(gradleCmdStart, projectDir, task, terminalType, customCommand);
     } else {
-        gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
-        return formDefaultCommandWithPath(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
+        return formGradleCommand(projectDir, gradleCmdStart, task, customCommand);
     }
 }
 
@@ -113,9 +124,11 @@ async function mvnCmd(pomPath: string): Promise<string> {
 async function gradleCmd(buildGradle: string): Promise<string> {
     const preferGradleWrapper: boolean | undefined = vscode.workspace.getConfiguration("java").get<boolean>("import.gradle.wrapper.enabled");
     if (preferGradleWrapper) {
-        const localGradlewPath: string | undefined = await getLocalGradleWrapperDir(Path.dirname(buildGradle));
-        if (localGradlewPath) {
-            return `${localGradlewPath}`;
+        const localGradlewDir: string | undefined = await getLocalGradleWrapperDir(Path.dirname(buildGradle));
+        if (localGradlewDir) {
+            // Return full path to wrapper executable
+            const wrapperName = isWin() ? "gradlew.bat" : "gradlew";
+            return Path.join(localGradlewDir, wrapperName);
         }
     }
     return "gradle";
@@ -163,81 +176,114 @@ async function getLocalMavenWrapperDir(projectFolder: string): Promise<string | 
 /**
  * Returns the gradle command for windows OS based on the terminal configured
  */
-function getGradleCommandForWin(gradleCmdStart: string, buildGradlePath: string, command: string, terminalType?: String, customCommand?: string): string {
+function getGradleCommandForWin(gradleCmdStart: string, projectDir: string, command: string, terminalType?: String, customCommand?: string): string {
     switch (terminalType) {
         case ShellType.GIT_BASH:
-            gradleCmdStart = Path.join(gradleCmdStart, "gradlew");
-            return formDefaultCommandWithPath(gradleCmdStart, buildGradlePath, command, "-b=", customCommand); //Bash
+            return formGradleCommand(projectDir, gradleCmdStart, command, customCommand); //Bash
         case ShellType.POWERSHELL:
-            gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
-            return formPowershellCommand(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
+            return formGradlePowershellCommand(projectDir, gradleCmdStart, command, customCommand);
         case ShellType.WSL:
-            return formLinuxBasedCommand(toDefaultWslPath(gradleCmdStart), command, "./gradlew ", customCommand); //Wsl
+            return formGradleCommand(toDefaultWslPath(projectDir), gradleCmdStart, command, customCommand); //Wsl
         default:
             // The default case is ShellType CMD or OTHERS
-            gradleCmdStart = Path.join(gradleCmdStart, "gradlew.bat");
-            return formDefaultCommandWithPath(gradleCmdStart, buildGradlePath, command, "-b=", customCommand);
+            return formGradleWindowsCommand(projectDir, gradleCmdStart, command, customCommand);
     }
 }
 
 /**
  * Returns the maven command for windows OS based on the terminal configured
  */
-function getMavenCommandForWin(mvnCmdStart: string, pomPath: string, command: string, terminalType?: String, customCommand?: string): string {
+function getMavenCommandForWin(mvnCmdStart: string, pomPath: string, command: string, terminalType?: String, customCommand?: string, moduleSelector?: string): string {
     switch (terminalType) {
         case ShellType.GIT_BASH:
-            return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand);
+            return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand, moduleSelector);
         case ShellType.POWERSHELL:
             mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
-            return formPowershellCommand(mvnCmdStart, pomPath, command, "-f ", customCommand);
+            return formPowershellCommand(mvnCmdStart, pomPath, command, "-f ", customCommand, moduleSelector);
         case ShellType.WSL:
             mvnCmdStart = toDefaultWslPath(mvnCmdStart);
-            return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand);
+            return formLinuxBasedCommand(mvnCmdStart, command, "./mvnw ", customCommand, moduleSelector);
         default:
             // The default case is ShellType CMD or OTHERS
             mvnCmdStart = Path.join(mvnCmdStart, "mvnw.cmd");
-            return formDefaultCommandWithPath(mvnCmdStart, pomPath, command, "-f ", customCommand);
+            return formDefaultCommandWithPath(mvnCmdStart, pomPath, command, "-f ", customCommand, moduleSelector);
     }
 }
 
 /**
  * Returns the Powershell based command for windows OS
  */
-function formPowershellCommand(cmdStart: string, projectPath: string, command: string, cmdOption: String, customCommand?: string): string {
+function formPowershellCommand(cmdStart: string, projectPath: string, command: string, cmdOption: String, customCommand?: string, moduleSelector?: string): string {
+    const modulePart = moduleSelector || "";
     if (customCommand) {
-        return "& \"" + cmdStart + "\" " + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${projectPath}"`; //Powershell for start..
+        return "& \"" + cmdStart + "\" " + `${command}` + ` ${customCommand}` + `${modulePart}` + ` ${cmdOption}"${projectPath}"`; //Powershell for start..
     }
-    return "& \"" + cmdStart + "\" " + `${command}` + ` ${cmdOption}"${projectPath}"`;  //PowerShell
+    return "& \"" + cmdStart + "\" " + `${command}` + `${modulePart}` + ` ${cmdOption}"${projectPath}"`;  //PowerShell
 }
 
 /**
  * Returns the Linux based command
  */
-function formLinuxBasedCommand(cmdStart: string, command: string, wrapperType: String, customCommand?: string): string {
+function formLinuxBasedCommand(cmdStart: string, command: string, wrapperType: String, customCommand?: string, moduleSelector?: string): string {
+    const modulePart = moduleSelector || "";
     if (customCommand) {
-        return "cd \"" + cmdStart + "\" && " + `${wrapperType}` + `${command}` + ` ${customCommand}`; //Bash or WSL for start..
+        return "cd \"" + cmdStart + "\" && " + `${wrapperType}` + `${command}` + ` ${customCommand}` + `${modulePart}`; //Bash or WSL for start..
     }
-    return "cd \"" + cmdStart + "\" && " + `${wrapperType}` + `${command}`; //Bash or WSL command
+    return "cd \"" + cmdStart + "\" && " + `${wrapperType}` + `${command}` + `${modulePart}`; //Bash or WSL command
 }
 
 /**
  * Returns default command
  */
-function formDefaultCommand(projectPath: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string): string {
+function formDefaultCommand(projectPath: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string, moduleSelector?: string): string {
+    const modulePart = moduleSelector || "";
     if (customCommand) {
-        return `${projectPath} ` + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${buildFilePath}"`;
+        return `${projectPath} ` + `${command}` + ` ${customCommand}` + `${modulePart}` + ` ${cmdOption}"${buildFilePath}"`;
     }
-    return `${projectPath} ` + `${command}` + ` ${cmdOption}"${buildFilePath}"`;
+    return `${projectPath} ` + `${command}` + `${modulePart}` + ` ${cmdOption}"${buildFilePath}"`;
 }
 
 /**
- * Returns default format for the command with Path  
+ * Returns default format for the command with Path
  */
-function formDefaultCommandWithPath(projectPath: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string): string {
+function formDefaultCommandWithPath(projectPath: string, buildFilePath: String, command: string, cmdOption: String, customCommand?: string, moduleSelector?: string): string {
+    const modulePart = moduleSelector || "";
     if (customCommand) {
-        return "\"" + projectPath + "\" " + `${command}` + ` ${customCommand}` + ` ${cmdOption}"${buildFilePath}"`;
+        return "\"" + projectPath + "\" " + `${command}` + ` ${customCommand}` + `${modulePart}` + ` ${cmdOption}"${buildFilePath}"`;
     }
-    return "\"" + projectPath + "\" " + `${command}` + ` ${cmdOption}"${buildFilePath}"`;
+    return "\"" + projectPath + "\" " + `${command}` + `${modulePart}` + ` ${cmdOption}"${buildFilePath}"`;
+}
+
+/**
+ * Returns the Gradle command by cd'ing into the project directory
+ * This approach is compatible with all Gradle versions including Gradle 9+
+ * where the -b option was removed
+ */
+function formGradleCommand(projectDir: string, gradleCmd: string, command: string, customCommand?: string): string {
+    if (customCommand) {
+        return `cd "${projectDir}" && "${gradleCmd}" ${command} ${customCommand}`;
+    }
+    return `cd "${projectDir}" && "${gradleCmd}" ${command}`;
+}
+
+/**
+ * Returns the Gradle command for PowerShell by cd'ing into the project directory
+ */
+function formGradlePowershellCommand(projectDir: string, gradleCmd: string, command: string, customCommand?: string): string {
+    if (customCommand) {
+        return `cd "${projectDir}"; & "${gradleCmd}" ${command} ${customCommand}`;
+    }
+    return `cd "${projectDir}"; & "${gradleCmd}" ${command}`;
+}
+
+/**
+ * Returns the Gradle command for Windows CMD by cd'ing into the project directory
+ */
+function formGradleWindowsCommand(projectDir: string, gradleCmd: string, command: string, customCommand?: string): string {
+    if (customCommand) {
+        return `cd "${projectDir}" && "${gradleCmd}" ${command} ${customCommand}`;
+    }
+    return `cd "${projectDir}" && "${gradleCmd}" ${command}`;
 }
 
 /**
@@ -271,4 +317,49 @@ export function defaultWindowsShell(): ShellType {
     }
 }
 
+/**
+ * Strip a matching pair of surrounding single or double quotes from a string value.
+ * Used to normalise CLI flag values where a user may quote the path
+ * (e.g. -DinstallDirectory="/opt/wlp" or -Pliberty.installDir='/opt/wlp').
+ * An unmatched single quote character is returned unchanged.
+ */
+function stripQuotes(value: string): string {
+    if (value.length >= 2) {
+        const first = value[0];
+        const last = value[value.length - 1];
+        if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+            return value.slice(1, -1);
+        }
+    }
+    return value;
+}
+
+/**
+ * Parses a custom Start… parameter string for a CLI-supplied installDirectory value.
+ *
+ * Maven projects: looks for  -DinstallDirectory=<value>
+ * Gradle projects: looks for -Pliberty.installDir=<value>
+ *   (the documented LGP project property per ci.gradle installLiberty docs)
+ *
+ * The captured value is stripped of surrounding single or double quotes so that
+ * -DinstallDirectory="/opt/wlp" and -DinstallDirectory=/opt/wlp both return /opt/wlp.
+ *
+ * Returns the extracted path string (trimmed, unquoted), or undefined if not present.
+ *
+ * @param params         The raw custom parameter string entered by the user.
+ * @param isMavenProject True for Maven projects (uses -D), false for Gradle (uses -P).
+ */
+export function extractInstallDirFromParams(params: string, isMavenProject: boolean): string | undefined {
+    if (!params || params.trim().length === 0) {
+        return undefined;
+    }
+    const pattern = isMavenProject
+        ? MAVEN_INSTALL_DIR_PARAM_REGEX
+        : GRADLE_INSTALL_DIR_PARAM_REGEX;
+    const match = pattern.exec(params);
+    if (match && match[1].trim().length > 0) {
+        return stripQuotes(match[1].trim());
+    }
+    return undefined;
+}
 

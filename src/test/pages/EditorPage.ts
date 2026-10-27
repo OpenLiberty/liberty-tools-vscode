@@ -1,0 +1,49 @@
+/*
+ * IBM Confidential
+ * Copyright IBM Corp. 2026
+ */
+
+import { TextEditor, VSBrowser } from 'vscode-extension-tester';
+import * as utils from '../utils/testUtils';
+import * as editorUtils from '../utils/editorUtils';
+
+export class EditorPage {
+    private editor!: TextEditor;
+
+    /**
+     * Open a file and bind this page object to its editor.
+     * Polls until the editor tab is visible rather than sleeping a fixed amount,
+     * so it works reliably even when VSCode is slow to register the new tab.
+     *
+     * @param filePath  Absolute path to the file.
+     * @param tabTitle  The editor tab title (usually the file name).
+     * @param timeoutS  Maximum seconds to wait for the tab to appear (default 120).
+     */
+    async openFile(filePath: string, tabTitle: string, timeoutS = 120): Promise<this> {
+        await VSBrowser.instance.openResources(filePath);
+        // Poll until the tab is registered in any editor group.
+        const ed = await utils.waitForCondition(async () => {
+            try {
+                return await editorUtils.openEditorInAnyGroup(tabTitle);
+            } catch {
+                return undefined;
+            }
+        }, timeoutS);
+        await utils.logEditorGroups(`after opening ${tabTitle}`);
+        // Brief pause to let the editor content area become interactable after the tab appears.
+        // getText() cannot be used here because it hangs indefinitely on empty files.
+        await utils.getWaitHelper().sleep(1500);
+        this.editor = ed;
+        return this;
+    }
+
+    static from(editor: TextEditor): EditorPage {
+        const page = new EditorPage();
+        page.editor = editor;
+        return page;
+    }
+
+    getEditor(): TextEditor {
+        return this.editor;
+    }
+}
