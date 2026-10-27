@@ -368,6 +368,7 @@
 						"default": true,
 						"description": "If this value is false the extension will not try to refresh the liberty dashboard upon changes in the workspace.",
 						"scope": "window"
+					},
 					"liberty.test.report.surefire.path": {
 						"type": "string",
 						"default": "",
