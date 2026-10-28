@@ -146,10 +146,13 @@ function bindRequest(request: string) {
 
 function registerCommands(context: ExtensionContext) {
     let projectProvider = getProjectProvider(context);
+    const refreshEnabled: any = helperUtil.getConfiguration("refresh.enabled");
 
     let treeView: vscode.TreeView<LibertyProject> | undefined;
     if (vscode.workspace.workspaceFolders !== undefined) {
-        registerFileWatcher(projectProvider);
+        if(refreshEnabled) {
+            registerFileWatcher(projectProvider);
+        }
         treeView = vscode.window.createTreeView("liberty-dev", {
             treeDataProvider: projectProvider,
             showCollapseAll: false,
@@ -205,6 +208,12 @@ function registerCommands(context: ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('liberty.starterProject', () => starterProject(context))
     );
+     // Listens for any new folders are added to the workspace
+     if(refreshEnabled) {
+        context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+            projectProvider.refresh();
+        }));
+     }
 }
 
 // vscode-languageclient requires implementation of the deactivate() method to return the stop promise from each language client

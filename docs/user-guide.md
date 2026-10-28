@@ -87,6 +87,7 @@ The following settings are provided by Liberty Tools and can be configured in yo
 | --- | --- | --- |
 | `liberty.java.home` | Path to the JDK used to run Liberty dev mode in the terminal. When set, this overrides any JDK detected from VS Code Java settings (`java.configuration.runtimes`, `java.jdt.ls.java.home`). Leave empty to use the JDK configured via VS Code Java settings, or the system PATH if none is set. | `""` |
 | `liberty.dev.debugStartTimeout` | Maximum time in seconds to wait for the Liberty server to start before automatically attaching the debugger when using **Start in debug mode**. Increase this value if your server takes longer than the default to start. | `180` |
+| `liberty.refresh.enabled` | Controls whether the extension automatically refreshes the Liberty dashboard when it detects changes in the workspace. Set to `false` to disable automatic refresh; you can still refresh manually with the **Refresh** button in the Liberty dashboard. | `true` |
 
 ### External extension settings
 
