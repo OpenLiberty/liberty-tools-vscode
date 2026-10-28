@@ -41,6 +41,8 @@ export class LibertyProject extends vscode.TreeItem {
 	public children: LibertyProject[] = [];
 	public isAggregator: boolean = false;
 	public isLibertyEnabled: boolean = false;
+	/** True when the Liberty plugin is explicitly declared in this project's own build file. */
+	public hasLibertyPlugin: boolean = false;
 	public artifactId: string = "";
 	public parentArtifactId?: string;
 	public installDirectory?: string;

@@ -6,6 +6,7 @@ import { LIBERTY_MAVEN_PLUGIN_CONTAINER_VERSION, LIBERTY_PROJECT_MAVEN_CONTAINER
 import { BuildFileImpl } from "./buildFile";
 import { localize } from "../util/i18nUtil";
 import * as semver from "semver";
+import * as path from "path";
 
 /**
  * Look for a valid parent pom.xml.
@@ -427,6 +428,208 @@ function extractInstallDirectoryFromProfiles(profiles: any[] | undefined): strin
     }
     return undefined;
 }
+
+/**
+ * Read <configuration><configDirectory> from a single liberty-maven-plugin
+ * plugin node (as parsed by xml2js). Returns the trimmed string value if
+ * the plugin is the liberty-maven-plugin and configDirectory is non-empty,
+ * otherwise undefined.
+ *
+ * @param p A single plugin entry from the parsed xml2js plugin array.
+ */
+function extractConfigDirectoryFromPluginNode(p: any): string | undefined {
+    if (p.artifactId?.[0] === "liberty-maven-plugin" &&
+        p.groupId?.[0] === "io.openliberty.tools") {
+        const configDir: string | undefined =
+            p.configuration?.[0]?.configDirectory?.[0];
+        if (configDir && configDir.trim().length > 0) {
+            return configDir.trim();
+        }
+    }
+    return undefined;
+}
+
+/**
+ * Scan a <build><plugins> array for the liberty-maven-plugin and return the
+ * value of <configuration><configDirectory> if present, otherwise undefined.
+ *
+ * @param build The build array from a parsed pom.xml (result.project.build)
+ */
+function extractConfigDirectoryFromBuild(
+    build: Array<{ plugins: Array<{ plugin: any }> }> | undefined
+): string | undefined {
+    if (!build) { return undefined; }
+    for (const buildEntry of build) {
+        const plugins = buildEntry.plugins;
+        if (!plugins) { continue; }
+        for (const pluginGroup of plugins) {
+            const plugin = pluginGroup.plugin;
+            if (!plugin) { continue; }
+            for (const p of plugin) {
+                const found = extractConfigDirectoryFromPluginNode(p);
+                if (found) { return found; }
+            }
+        }
+    }
+    return undefined;
+}
+
+/**
+ * Scan a <build><pluginManagement><plugins> block for the liberty-maven-plugin
+ * and return the value of <configuration><configDirectory> if present.
+ * This is where parent POMs commonly declare configDirectory so that child
+ * modules inherit it via Maven's standard plugin management mechanism.
+ *
+ * @param build The build array from a parsed pom.xml (result.project.build)
+ */
+function extractConfigDirectoryFromPluginManagement(
+    build: Array<{ pluginManagement?: Array<{ plugins?: Array<{ plugin: any }> }> }> | undefined
+): string | undefined {
+    if (!build) { return undefined; }
+    for (const buildEntry of build) {
+        const pluginManagement = buildEntry.pluginManagement;
+        if (!pluginManagement) { continue; }
+        for (const pmEntry of pluginManagement) {
+            const plugins = pmEntry.plugins;
+            if (!plugins) { continue; }
+            for (const pluginGroup of plugins) {
+                const plugin = pluginGroup.plugin;
+                if (!plugin) { continue; }
+                for (const p of plugin) {
+                    const found = extractConfigDirectoryFromPluginNode(p);
+                    if (found) { return found; }
+                }
+            }
+        }
+    }
+    return undefined;
+}
+
+/**
+ * Scan <profiles> for the liberty-maven-plugin and return <configDirectory>
+ * from the first profile that declares it (checking both <build><plugins>
+ * and <build><pluginManagement><plugins>), otherwise undefined.
+ *
+ * @param profiles The profiles array from a parsed pom.xml (result.project.profiles)
+ */
+function extractConfigDirectoryFromProfiles(profiles: any[] | undefined): string | undefined {
+    if (!profiles) { return undefined; }
+    for (const profilesEntry of profiles) {
+        const profile = profilesEntry.profile;
+        if (!profile) { continue; }
+        for (const p of profile) {
+            const found = extractConfigDirectoryFromBuild(p.build)
+                ?? extractConfigDirectoryFromPluginManagement(p.build);
+            if (found) { return found; }
+        }
+    }
+    return undefined;
+}
+
+/**
+ * Parse a pom.xml string and return the <configDirectory> value declared in
+ * the liberty-maven-plugin configuration, or undefined if not present.
+ *
+ * Checks in order:
+ *  1. <build><plugins>
+ *  2. <build><pluginManagement><plugins>  (where parent POMs typically declare it)
+ *  3. <profiles> — each profile's <build><plugins> and <pluginManagement>
+ *
+ * Returns the raw string value (not resolved to an absolute path — callers
+ * are responsible for path resolution).
+ *
+ * @param xmlString The raw text content of a pom.xml file.
+ */
+export function extractConfigDirectoryFromPom(xmlString: string): string | undefined {
+    const parseString = require("xml2js").parseString;
+    let configDirectory: string | undefined;
+
+    parseString(xmlString, (err: any, result: any) => {
+        if (err || !result?.project) { return; }
+
+        configDirectory =
+            extractConfigDirectoryFromBuild(result.project.build)
+            ?? extractConfigDirectoryFromPluginManagement(result.project.build)
+            ?? extractConfigDirectoryFromProfiles(result.project.profiles);
+    });
+
+    return configDirectory;
+}
+
+/**
+ * Resolve a raw <configDirectory> value to an absolute path.
+ * Expands the Maven `${project.basedir}` and `${basedir}` placeholders to the
+ * module directory; any other relative value is resolved against that directory too.
+ *
+ * @param configDir  Raw value returned by extractConfigDirectoryFromPom
+ * @param projectDir Directory containing the module's pom.xml
+ */
+export function resolveConfigDirectory(configDir: string, projectDir: string): string {
+    const expanded = configDir.replace(/\$\{(?:project\.)?basedir\}/g, projectDir);
+    return path.isAbsolute(expanded) ? expanded : path.resolve(projectDir, expanded);
+}
+
+/**
+ * Return the <artifactId> and <parent><artifactId> declared in a pom.xml string.
+ * Used to walk a module's parent chain so inherited plugin configuration
+ * (e.g. configDirectory in a parent's pluginManagement) can be located.
+ *
+ * @param xmlString The raw text content of a pom.xml file.
+ */
+export function extractPomIdentity(xmlString: string): { artifactId?: string; parentArtifactId?: string } {
+    const parseString = require("xml2js").parseString;
+    const identity: { artifactId?: string; parentArtifactId?: string } = {};
+    parseString(xmlString, (err: any, result: any) => {
+        if (err || !result?.project) { return; }
+        identity.artifactId = result.project.artifactId?.[0];
+        identity.parentArtifactId = result.project.parent?.[0]?.artifactId?.[0];
+    });
+    return identity;
+}
+
+/**
+ * Index pom.xml contents by <artifactId> so a module's parent chain can be walked
+ * without re-reading files. If two poms share an artifactId the first one wins.
+ *
+ * @param entries Array of objects carrying xmlString for each pom.xml
+ */
+export function indexPomsByArtifactId(entries: Array<{ xmlString?: string }>): Map<string, string> {
+    const index = new Map<string, string>();
+    for (const entry of entries) {
+        if (!entry.xmlString) { continue; }
+        const artifactId = extractPomIdentity(entry.xmlString).artifactId;
+        if (artifactId && !index.has(artifactId)) { index.set(artifactId, entry.xmlString); }
+    }
+    return index;
+}
+
+/**
+ * Walk a pom's <parent> chain and return the first <configDirectory> declared by an
+ * ancestor (Maven inherits plugin configuration from <build><pluginManagement> and
+ * <build><plugins> of parent poms). The module's own pom is NOT consulted.
+ * The raw value is returned; resolve it against the module directory with
+ * resolveConfigDirectory().
+ *
+ * @param xmlString     The module's pom.xml content
+ * @param pomsByArtifactId Index built by indexPomsByArtifactId()
+ */
+export function findInheritedConfigDirectory(
+    xmlString: string,
+    pomsByArtifactId: Map<string, string>
+): string | undefined {
+    const visited = new Set<string>();
+    let parentId = extractPomIdentity(xmlString).parentArtifactId;
+    while (parentId && !visited.has(parentId)) {
+        visited.add(parentId);
+        const parentXml = pomsByArtifactId.get(parentId);
+        if (!parentXml) { return undefined; }
+        const found = extractConfigDirectoryFromPom(parentXml);
+        if (found) { return found; }
+        parentId = extractPomIdentity(parentXml).parentArtifactId;
+    }
+    return undefined;
+}
+
 
 /**
  * Scan a <build><plugins> array for the given Maven reporting plugin and return
