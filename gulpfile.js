@@ -18,11 +18,11 @@ const ECLIPSE_SNAPSHOT_BASE_URL = "https://repo.eclipse.org/content/repositories
 const libertyGroupId = "io.openliberty.tools";
 const libertyLemminxArtifactId = "liberty-langserver-lemminx";
 const libertyLSArtifactId = "liberty-langserver";
-const libertyVersion = "2.4.2";
+const libertyVersion = "2.4.3";
 const jakartaGroupId = "org.eclipse.lsp4jakarta";
 const jakartaJdtArtifactId = "org.eclipse.lsp4jakarta.jdt.core";
 const jakartaLSArtifactId = "org.eclipse.lsp4jakarta.ls";
-const jakartaVersion = "0.2.7";
+const jakartaVersion = "0.3.0";
 var lclsReleaseLevel = "releases";  //snapshots or releases
 var jakartaReleaseLevel = "releases";
 
