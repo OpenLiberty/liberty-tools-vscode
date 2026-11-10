@@ -35,6 +35,13 @@ jobs:
       - name: 'Setup: Checkout plugin'
         uses: actions/checkout@v4
 
+      # Setup Java 21
+      - name: 'Setup: Java 21'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
       # Install the required software.
       - name: 'Setup: Install required software'
         run: bash ./src/test/resources/ci/scripts/setup.sh
