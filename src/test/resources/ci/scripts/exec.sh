@@ -138,12 +138,13 @@ startDisplayAndDocker() {
 
 #find current vscode version
 setVscodeVersionToTest() {
-        if [[ $VSCODE_VERSION_TO_RUN == 'latest' ]]; then
+        # BUILD runs without a version, and 'latest' needs no lookup.
+        if [[ -z $VSCODE_VERSION_TO_RUN || $VSCODE_VERSION_TO_RUN == 'latest' ]]; then
                 return
         fi
 
         local versions_json
-        versions_json=$(curl -sf "https://update.code.visualstudio.com/api/releases/stable")
+        versions_json=$(curl -sf --retry 5 --retry-delay 5 --retry-all-errors "https://update.code.visualstudio.com/api/releases/stable")
 
         if [[ -z "$versions_json" ]]; then
                 echo "ERROR: Failed to fetch VS Code release list."
