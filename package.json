@@ -429,7 +429,7 @@
 		"chai": "4.3.7",
 		"clipboardy": "2.3.0",
 		"eslint": "10.8.1",
-		"fast-xml-parser": "5.8.0",
+		"fast-xml-parser": "5.12.0",
 		"glob": "13.0.0",
 		"gulp": "5.0.1",
 		"minimatch": "9.0.7",
