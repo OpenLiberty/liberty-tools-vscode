@@ -296,7 +296,12 @@ export async function startDevModeWithDebugger(libProject?: LibertyProject | und
             return;
         }
 
-        const watcher = vscode.workspace.createFileSystemWatcher(watchPattern);
+        const pattern = watchPattern;
+        const debugStartTime = Date.now();
+        // Set once a debug port has been found, so the watcher and the poll below
+        // never attach twice.
+        let portFound = false;
+        const watcher = vscode.workspace.createFileSystemWatcher(pattern);
 
         // Reads server.env and, when WLP_DEBUG_ADDRESS is present, waits for the Liberty
         // server to reach ServerStarted/Running state before attaching the debugger.
@@ -313,8 +318,13 @@ export async function startDevModeWithDebugger(libProject?: LibertyProject | und
                     return; // WLP_DEBUG_ADDRESS not written yet — wait for the next event.
                 }
 
+                if (portFound) {
+                    return;
+                }
                 // Port found — stop watching the file.
+                portFound = true;
                 clearTimeout(timeoutHandle);
+                clearInterval(pollHandle);
                 watcher.dispose();
 
                 // Wait until Liberty logs CWWKF0011I ("server ready") before attaching.
@@ -369,8 +379,30 @@ export async function startDevModeWithDebugger(libProject?: LibertyProject | und
         watcher.onDidCreate(tryAttach);
         watcher.onDidChange(tryAttach);
 
+        // File watcher events are not always delivered (e.g. Gradle build/ output on Linux),
+        // so also poll for a server.env written after this debug start request.
+        const pollHandle = setInterval(async () => {
+            if (portFound) {
+                return;
+            }
+            try {
+                const files = await vscode.workspace.findFiles(pattern, null, 20);
+                for (const uri of files) {
+                    if (portFound) {
+                        break;
+                    }
+                    if (fse.statSync(uri.fsPath).mtimeMs >= debugStartTime) {
+                        await tryAttach(uri);
+                    }
+                }
+            } catch {
+                // Search or stat failed — try again on the next tick.
+            }
+        }, 2000);
+
         // Safety timeout: give up after the configured timeout and prompt the user to attach manually.
         const timeoutHandle = setTimeout(() => {
+            clearInterval(pollHandle);
             watcher.dispose();
             vscode.window.showWarningMessage(localize("liberty.dev.debug.start.timeout"));
         }, vscode.workspace.getConfiguration("liberty").get<number>("dev.debugStartTimeout", 180) * 1000);
