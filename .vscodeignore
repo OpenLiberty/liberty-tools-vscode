@@ -13,3 +13,6 @@ node_modules
 test-resources/**
 test-tools/**
 screenshots/**
+.mocha*
+.bob/**
+test-mocks/**
