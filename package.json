@@ -363,6 +363,12 @@
 						"description": "%configuration.liberty.dev.debugStartTimeout.description%",
 						"scope": "window"
 					},
+					"liberty.dev.clean": {
+						"type": "boolean",
+						"default": false,
+						"description": "%configuration.liberty.dev.clean.description%",
+						"scope": "window"
+					},
 					"liberty.refresh.enabled": {
 						"type": "boolean",
 						"default": true,
