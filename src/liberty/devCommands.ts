@@ -177,6 +177,10 @@ async function sendDevModeCommand(
     customCommand?: string,
     javaHome?: string
 ): Promise<void> {
+    if (vscode.workspace.getConfiguration("liberty").get<boolean>("dev.clean", false)) {
+        mavenGoal = `clean ${mavenGoal}`;
+        gradleTask = `clean ${gradleTask}`;
+    }
     let cmd: string | undefined;
     if (isMaven(project.getContextValue())) {
         const pomPath = project.parent ? project.parent.getPath() : project.getPath();

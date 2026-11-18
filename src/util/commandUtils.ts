@@ -68,7 +68,8 @@ export async function getCommandForMaven(pomPath: string, command: string, termi
 export async function getCommandForGradle(buildGradlePath: string, command: string, terminalType?: String, customCommand?: string, projectName?: string): Promise<string> {
     let gradleCmdStart = await gradleCmd(buildGradlePath);
     const projectDir = Path.dirname(buildGradlePath);
-    const task = projectName ? `:${projectName}:${command}` : command;
+    // Prefix each space-separated task.
+    const task = projectName ? command.split(" ").map(t => `:${projectName}:${t}`).join(" ") : command;
 
     if (gradleCmdStart === "gradle") {
         return formGradleCommand(projectDir, "gradle", task, customCommand);
