@@ -202,14 +202,14 @@ export class LibertyProject extends vscode.TreeItem {
 					this.setState(DevModeState.Running);
 					onStateChange(this);
 					vscode.window.showInformationMessage(`Liberty server started: ${this.label}`);
-				} else if (chunk.includes(LIBERTY_MSG_STOPPED)) {
+				} else if (chunk.includes(LIBERTY_MSG_STOPPED) || chunk.includes("defaultServer stopped")) {
 					this.setState(undefined);
 					onStateChange(this);
 					break;
 				}
 			}
-			if (!disposed && this.state === DevModeState.Starting) {
-				console.log(`[startMonitoring] stream ended while Starting for ${this.label} — build likely failed, resetting state`);
+			if (!disposed && this.state !== undefined) {
+				console.log(`[startMonitoring] stream ended while state=${this.state} for ${this.label} — resetting state`);
 				this.setState(undefined);
 				onStateChange(this);
 			}

@@ -872,10 +872,26 @@ export async function openReport(reportType: string, libProject?: LibertyProject
 export async function deleteTerminal(terminal: vscode.Terminal): Promise<void> {
     try {
         const pid = await terminal.processId;
-        const libProject = terminals[Number(pid)];
-        libProject.deleteTerminal();
-        const pp = ProjectTreeProvider.getInstance();
-        if (pp) { pp.notifyDevModeChanged(libProject); }
+        let libProject = pid !== undefined ? terminals[Number(pid)] : undefined;
+        if (!libProject) {
+            const registry = ProjectRegistry.getInstance();
+            if (registry) {
+                for (const p of registry.getProjects().values()) {
+                    if (p.getTerminal() === terminal) {
+                        libProject = p;
+                        break;
+                    }
+                }
+            }
+        }
+        if (libProject) {
+            libProject.deleteTerminal();
+            if (pid !== undefined) {
+                delete terminals[Number(pid)];
+            }
+            const pp = ProjectTreeProvider.getInstance();
+            if (pp) { pp.notifyDevModeChanged(libProject); }
+        }
     } catch {
         console.error(localize("unable.to.delete.terminal", terminal.name));
     }
