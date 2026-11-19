@@ -40,15 +40,27 @@ export class ProjectRegistry {
 
 	private _registerShellIntegrationListener(): void {
 		console.log(`[ProjectRegistry] _registerShellIntegrationListener called, API available=${typeof vscode.window.onDidStartTerminalShellExecution === "function"}`);
-		if (typeof vscode.window.onDidStartTerminalShellExecution !== "function") { return; }
-		vscode.window.onDidStartTerminalShellExecution(event => {
-			const project = this._findProjectByTerminal(event.terminal);
-			if (project === undefined) { return; }
-			const pp = ProjectTreeProvider.getInstance();
-			project.enableShellListener(event.execution, (changed) => {
-				if (pp) { pp.notifyDevModeChanged(changed); }
+		if (typeof vscode.window.onDidStartTerminalShellExecution === "function") {
+			vscode.window.onDidStartTerminalShellExecution(event => {
+				const project = this._findProjectByTerminal(event.terminal);
+				if (project === undefined) { return; }
+				const pp = ProjectTreeProvider.getInstance();
+				project.enableShellListener(event.execution, (changed) => {
+					if (pp) { pp.notifyDevModeChanged(changed); }
+				});
 			});
-		});
+		}
+		if (typeof vscode.window.onDidEndTerminalShellExecution === "function") {
+			vscode.window.onDidEndTerminalShellExecution(event => {
+				const project = this._findProjectByTerminal(event.terminal);
+				if (project === undefined) { return; }
+				if (project.state !== undefined) {
+					project.setState(undefined);
+					const pp = ProjectTreeProvider.getInstance();
+					if (pp) { pp.notifyDevModeChanged(project); }
+				}
+			});
+		}
 	}
 
 	private _findProjectByTerminal(terminal: vscode.Terminal): LibertyProject | undefined {

@@ -100,7 +100,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		const statusMessage = vscode.window.setStatusBarMessage(localize("refreshing.liberty.dashboard"));
 		const t0 = Date.now();
 		try {
-			await this.updateProjects(false);
+			await this.updateProjects();
 			console.log(`[perf] refresh total: ${Date.now() - t0}ms`);
 			this._onDidChangeTreeData.fire(undefined);
 		} finally {
@@ -117,7 +117,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		const statusMessage = vscode.window.setStatusBarMessage(localize("refreshing.liberty.dashboard"));
 		const t0 = Date.now();
 		try {
-			await this.updateProjects(true);
+			await this.updateProjects();
 			console.log(`[perf] manualRefresh total: ${Date.now() - t0}ms`);
 			this._onDidChangeTreeData.fire(undefined);
 		} finally {
@@ -350,11 +350,11 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 		return project.children.some(child => this.hasLibertyDescendants(child));
 	}
 
-	private async updateProjects(forceRebuild: boolean): Promise<void> {
+	private async updateProjects(): Promise<void> {
 		const t0 = Date.now();
 		const context = this._registry.getContext();
 		const wsFolders = vscode.workspace.workspaceFolders ?? [];
-		const existingProjects = forceRebuild ? new Map() : this._registry.getProjects();
+		const existingProjects = this._registry.getProjects();
 
 		const { projects, rootProjects, rejectedBuildFiles, maxAggregatorDepth } = await discoverWorkspace(
 			context,
@@ -366,6 +366,26 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<LibertyProje
 				this._onDidChangeTreeData.fire(undefined);
 			}
 		);
+
+		// Validate terminals and refresh active state decorations/descriptions
+		for (const project of projects.values()) {
+			const term = project.getTerminal();
+			if (term !== undefined && !vscode.window.terminals.includes(term)) {
+				project.deleteTerminal();
+				this.notifyDevModeChanged(project);
+			} else if (project.state !== undefined) {
+				if (project.resourceUri) {
+					this.decorationProvider.notify(project.resourceUri);
+				}
+			}
+		}
+
+		// Update aggregator descriptions to reflect preserved child running states
+		for (const project of projects.values()) {
+			if (project.isAggregator) {
+				this._updateAggregatorDescription(project);
+			}
+		}
 
 		this._registry.setProjects(projects);
 		this._registry.setRootProjects(this.sortRoots(rootProjects));

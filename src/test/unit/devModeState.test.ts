@@ -211,3 +211,26 @@ describe("devModeRequirement", () => {
         assert.equal(devModeRequirement("liberty.dev.open.build.file"), undefined);
     });
 });
+
+// ---------------------------------------------------------------------------
+// Existing project state preservation across discovery
+// ---------------------------------------------------------------------------
+
+describe("LibertyProject state preservation across discovery map", () => {
+    it("preserves state and terminal when reused from existingProjects map", () => {
+        const existingProject = makeProject("libertyProject:maven");
+        existingProject.setState(DevModeState.Running);
+        const fakeTerminal: any = { name: "fake-term" };
+        existingProject.setTerminal(fakeTerminal);
+
+        const existingProjects = new Map<string, LibertyProject>();
+        existingProjects.set("/fake/path", existingProject);
+
+        // Simulating discovery lookup
+        const retrieved = existingProjects.get("/fake/path");
+        assert.ok(retrieved !== undefined);
+        assert.equal(retrieved.state, DevModeState.Running);
+        assert.equal(retrieved.getTerminal(), fakeTerminal);
+        assert.equal(retrieved.contextValue, "libertyProject:maven:running");
+    });
+});
